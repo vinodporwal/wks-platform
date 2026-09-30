@@ -250,10 +250,10 @@ public class VgohtNormBasisController {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        Plants plant = plantsRepository.findById((plantFKId))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+        Plants plant = plantsRepository.findById((plantFKId)).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-        if(vertical.getName().equalsIgnoreCase("VGOHT")) {
+       
+        if(plant.getName().equalsIgnoreCase("DHT1")) {
         	return vgohtNormBasisServiceImpl.getConfigurationDataWithThreeValues(year, plantFKId);
         }else {
         	return vgohtNormBasisServiceImpl.getConfigurationDataWithTwoValues(year, plantFKId);
@@ -279,7 +279,7 @@ public class VgohtNormBasisController {
         // Declare variable outside the if/else block so it is accessible in the return check
         List<VgohtNormConfigurationDTO> failedRecords;
 
-        if ("VGOHT".equalsIgnoreCase(vertical.getName())) {
+        if(plant.getName().equalsIgnoreCase("DHT1")) {
             failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithThreeValues(year, plantFKId, configurationDataList);
         } else {
             failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithTwoValues(year, plantFKId, configurationDataList);
@@ -308,7 +308,7 @@ public class VgohtNormBasisController {
              Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
                      .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
              byte[] excelBytes;
-             if ("VGOHT".equalsIgnoreCase(vertical.getName())) {
+             if(plant.getName().equalsIgnoreCase("DHT1")) {
             	  excelBytes = vgohtNormBasisServiceImpl
                          .exportConfigurationDataWithThreeValues(year, plantFKId, false, null);
              }else {
@@ -346,7 +346,8 @@ public class VgohtNormBasisController {
 
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-        if ("VGOHT".equalsIgnoreCase(vertical.getName())) {
+                
+                if(plant.getName().equalsIgnoreCase("DHT1")) {
         	 return vgohtNormBasisServiceImpl.importConfigurationDataWithThreeValues(year, plantFKId, file);
         }else {
         	 return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
