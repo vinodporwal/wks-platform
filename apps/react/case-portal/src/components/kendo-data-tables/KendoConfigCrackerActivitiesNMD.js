@@ -5,7 +5,7 @@ import {
   TextField,
   Button,
 } from '@mui/material'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -81,6 +81,15 @@ const DecokingConfigNMD = () => {
   const [currentRowIdRunLength, setCurrentRowId3] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
   const [dateError, setDateError] = useState(false)
+  const [summaryEdited, setSummaryEdited] = useState(false)
+
+  const [otherFurnanceDetailsList, setOtherFurnanceDetailsList] = useState([])
+  const otherFurnanceDetailsListRef = useRef(otherFurnanceDetailsList)
+
+  useEffect(() => {
+    otherFurnanceDetailsListRef.current = otherFurnanceDetailsList
+  }, [otherFurnanceDetailsList])
+
   //my chnage
   const [modifiedCellsSdTa, setModifiedCellsSdTa] = React.useState({})
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
@@ -179,6 +188,70 @@ const DecokingConfigNMD = () => {
       Number(actualRunLength) -
       (Number(actualRunLength) * Number(reduction)) / 100
     return isNaN(val) ? null : Math.ceil(val) // <-- round up to nearest integer
+  }
+  const fetchOtherCost = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      const resp = await DataService.getOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (resp?.code === 200 && Array.isArray(resp?.data)) {
+        let apiData = resp.data;
+        if (apiData.length === 0) {
+          apiData = [
+            { name: 'F SAD Duration', displayName: 'F SAD Duration (Days)', attributeValue: '' },
+            { name: 'FN SAD Duration', displayName: 'FN SAD Duration (Days)', attributeValue: '' }
+          ];
+        }
+        const formattedRows = apiData.map((item) => {
+          const num = parseFloat(item.attributeValue)
+          const formattedVal =
+            item.attributeValue != null && item.attributeValue !== '' && !isNaN(num)
+              ? num.toFixed(2)
+              : item.attributeValue ?? ''
+          return {
+            ...item,
+            attributeValue: formattedVal,
+          }
+        })
+        setOtherFurnanceDetailsList(formattedRows)
+        otherFurnanceDetailsListRef.current = formattedRows
+      }
+    } catch (error) {
+      console.error('Error fetching other furnance details:', error)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    fetchOtherCost()
+  }, [fetchOtherCost])
+
+  const saveRunningDurationParams = async () => {
+    const listToSave =
+      otherFurnanceDetailsListRef.current &&
+        otherFurnanceDetailsListRef.current.length > 0
+        ? otherFurnanceDetailsListRef.current
+        : otherFurnanceDetailsList
+
+    if (!Array.isArray(listToSave) || listToSave.length === 0) return true
+
+    try {
+      const resp = await DataService.saveOtherFurnanceDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        listToSave,
+      )
+      if (resp?.code === 200) {
+        return true
+      }
+    } catch (err) {
+      console.error('Error saving dynamic furnace parameters:', err)
+      return false
+    }
+    return true
   }
 
   const fetchData = useCallback(
@@ -602,6 +675,12 @@ const DecokingConfigNMD = () => {
   const postIbr = async (newRow) => {
     setLoading(true)
     try {
+      const success = await saveRunningDurationParams()
+      if (!success) {
+        setLoading(false)
+        return
+      }
+
       const formatIfDate = (value) => {
         if (!value) return ''
         const parsed = moment.utc(
@@ -652,6 +731,7 @@ const DecokingConfigNMD = () => {
           severity: 'success',
         })
         setModifiedCellsSdTa({})
+        setSummaryEdited(false)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -671,6 +751,12 @@ const DecokingConfigNMD = () => {
   const postIbr2 = async (newRow) => {
     setLoading(true)
     try {
+      const success = await saveRunningDurationParams()
+      if (!success) {
+        setLoading(false)
+        return
+      }
+
       const formatIfDate = (value) => {
         if (!value) return ''
         const parsed = moment.utc(
@@ -721,6 +807,7 @@ const DecokingConfigNMD = () => {
           severity: 'success',
         })
         setModifiedCellsSdTa({})
+        setSummaryEdited(false)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1045,7 +1132,10 @@ const DecokingConfigNMD = () => {
               id='global-ta-start-date'
               format='dd-MM-yyyy'
               value={globalTaStartDate}
-              onChange={(e) => setGlobalTaStartDate(e.value)}
+              onChange={(e) => {
+                setGlobalTaStartDate(e.value)
+                setSummaryEdited(true)
+              }}
               style={{ height: '80px' }}
               size={'small'}
               disabled={READ_ONLY}
@@ -1060,12 +1150,81 @@ const DecokingConfigNMD = () => {
               id='global-ta-end-date'
               format='dd-MM-yyyy'
               value={globalTaEndDate}
-              onChange={(e) => setGlobalTaEndDate(e.value)}
+              onChange={(e) => {
+                setGlobalTaEndDate(e.value)
+                setSummaryEdited(true)
+              }}
               style={{ height: '80px' }}
               size={'small'}
               disabled={READ_ONLY}
             />
           </Box>
+
+          {otherFurnanceDetailsList.map((item, idx) => (
+            <Box
+              key={item.id || item.name || idx}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
+                {item.displayName || item.name}
+              </Typography>
+              <TextField
+                id={`other-furnace-detail-${item.name || idx}`}
+                type='number'
+                size='small'
+                value={item.attributeValue ?? ''}
+                onChange={(e) => {
+                  const newVal = e.target.value
+                  setOtherFurnanceDetailsList((prev) => {
+                    const updated = prev.map((row, i) =>
+                      i === idx || (row.id && row.id === item.id) || (row.name && row.name === item.name)
+                        ? { ...row, attributeValue: newVal }
+                        : row,
+                    )
+                    otherFurnanceDetailsListRef.current = updated
+                    return updated
+                  })
+                  setSummaryEdited(true)
+                }}
+                onBlur={(e) => {
+                  const val = e.target.value
+                  const num = parseFloat(val)
+                  if (!isNaN(num)) {
+                    const formatted = num.toFixed(2)
+                    setOtherFurnanceDetailsList((prev) => {
+                      const updated = prev.map((row, i) =>
+                        i === idx || (row.id && row.id === item.id) || (row.name && row.name === item.name)
+                          ? { ...row, attributeValue: formatted }
+                          : row,
+                      )
+                      otherFurnanceDetailsListRef.current = updated
+                      return updated
+                    })
+                  }
+                }}
+                disabled={READ_ONLY}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    height: '36px',
+                    minWidth: '185px',
+                    backgroundColor: '#ffffff',
+                  },
+                  '& input[type=number]': {
+                    '-moz-appearance': 'textfield',
+                    margin: 0,
+                  },
+                  '& input[type=number]::-webkit-outer-spin-button': {
+                    '-webkit-appearance': 'none',
+                    margin: 0,
+                  },
+                  '& input[type=number]::-webkit-inner-spin-button': {
+                    '-webkit-appearance': 'none',
+                    margin: 0,
+                  },
+                }}
+              />
+            </Box>
+          ))}
         </Box>
       </LocalizationProvider>
 
@@ -1091,6 +1250,8 @@ const DecokingConfigNMD = () => {
         setRemarkDialogOpen={setRemarkDialogOpenSdTa}
         rowClass={rowClass}
         handleCalculate={handleCalculateSdTa}
+        summaryEdited={summaryEdited}
+        setSummaryEdited={setSummaryEdited}
       />
 
       <FurnaceRunLengthGridNMD

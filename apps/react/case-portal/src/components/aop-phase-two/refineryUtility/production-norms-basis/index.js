@@ -18,6 +18,7 @@ import UtilityConsumption from './UtilityConsumption'
 import CatChemConsumption from './CatChemConsumption'
 import TreatmentVendor from './TreatmentVendor'
 import CommoditySelection from './CommoditySelection'
+import OwnerSelection from './OwnerSelection'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -251,6 +252,8 @@ const ProductionNormsBasis = () => {
         return <TreatmentVendor />
       case 'Commodity Chemicals':
         return <CommoditySelection />
+      case 'Plant Owner':
+        return <OwnerSelection />
       default:
         return null
     }
