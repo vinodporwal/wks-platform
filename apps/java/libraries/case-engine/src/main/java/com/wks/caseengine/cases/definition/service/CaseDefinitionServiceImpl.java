@@ -957,7 +957,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
 		requestBody.put("CC_GENRECOM_SEND_TO_ASM_CHR", "NO");
 		requestBody.put("MI_REC_AUTHO_NM_CHR", dataGridEntry.path("recommendationAuthor").asText());
-         requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
+		requestBody.put("Pending_Approval_Domain_Id", dataGridEntry.path("recommendationPendingApproval").asText());
 		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_BASIS", "EED");
@@ -1301,6 +1301,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            newRecommendationNode.put("recommendationDescription1", newRecommendation.getRecommendationDescription1());
 	            newRecommendationNode.put("recommendationAssignedTo1", newRecommendation.getRecommendationAssignedTo1());
 	            newRecommendationNode.put("recommendationAssignedTo2", newRecommendation.getRecommendationAssignedTo2());
+	            newRecommendationNode.put("recommendationPendingApproval", newRecommendation.getRecommendationPendingApproval());
 	            newRecommendationNode.put("recommendationStatus", newRecommendation.getRecommendationStatus());
 	            newRecommendationNode.put("equipmentFunctionLocation", newRecommendation.getEquipmentFunctionLocation());
 	            newRecommendationNode.put("recommendationTargetCompletionDate1", newRecommendation.getRecommendationTargetCompletionDate1());

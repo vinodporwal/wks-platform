@@ -28,6 +28,8 @@ public class Recommendations {
     private String RecommendationSubmit;
     
     private String recommendationAssignedTo2;
+
+    private String recommendationPendingApproval;
     
     private boolean RecommendationSubmit3;
     
@@ -150,6 +152,14 @@ public class Recommendations {
 
 	public void setRecommendationAssignedTo2(String recommendationAssignedTo2) {
 		this.recommendationAssignedTo2 = recommendationAssignedTo2;
+	}
+
+	public String getRecommendationPendingApproval() {
+		return recommendationPendingApproval;
+	}
+
+	public void setRecommendationPendingApproval(String recommendationPendingApproval) {
+		this.recommendationPendingApproval = recommendationPendingApproval;
 	}
 
 	public boolean isRecommendationSubmit3() {

@@ -3443,6 +3443,7 @@
                                         "recommendationHeadline": "",
                     "recommendationDescription1": "",
                     "recommendationAssignedTo2": "",
+                    "recommendationPendingApproval": "",
                     "recommendationStatus": "",
                     "equipmentFunctionLocation": "",
                                         "recommendationTargetCompletionDate1": "",
@@ -3907,15 +3908,15 @@
                                                       "defaultValue": ""
                                                     },
                           {
-                            "label": "Status",
+                            "label": "Recommendation No.",
                             "applyMaskOn": "change",
                             "disabled": true,
                             "tableView": true,
                             "clearOnHide": false,
-                            "key": "recommendationStatus",
+                            "key": "recommendationNo1",
                             "type": "textfield",
                             "input": true,
-                            "id": "eciy5p9",
+                            "id": "eer5h8e",
                             "placeholder": "",
                             "prefix": "",
                             "customClass": "",
@@ -3959,6 +3960,37 @@
                             "conditional": {
                               "eq": ""
                             },
+                            "customConditional": "",
+                            "logic": [
+                              {
+                                "name": "Read Only - recommendationNo",
+                                "trigger": {
+                                  "type": "javascript",
+                                  "javascript": "true"
+                                },
+                                "actions": [
+                                  {
+                                    "name": "Make recommendationNo read only.",
+                                    "type": "customAction",
+                                    "customAction": "instance.root.getComponent(instance.path)?.element?.querySelector('input')?.setAttribute('readonly', true);"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "Hyperlink - recommendationNo",
+                                "trigger": {
+                                  "type": "javascript",
+                                  "javascript": "//data?.container?.caseNo\\r\\n\\r\\n\r\nresult = !!(row.recommendationNo1 && row.recommendationNo1.trim() !== \"\");\r\n"
+                                },
+                                "actions": [
+                                  {
+                                    "name": "Add hyperlink to recommendationNo.",
+                                    "type": "customAction",
+                                    "customAction": "// console.log(\\u0027inside logic\\u0027);\\r\\n// if (instance.element) {\\r\\n//   instance.element.style.cursor \\u003d \\u0027pointer\\u0027;\\r\\n//   instance.element.style.color \\u003d \\u0027blue\\u0027;\\r\\n//   instance.element.style.textDecoration \\u003d \\u0027underline\\u0027;\\r\\n\\r\\n//   instance.element.addEventListener(\\u0027click\\u0027, () \\u003d\\u003e {\\r\\n//           window.open(`https://www.google.com/`, \\u0027_blank\\u0027);\\r\\n\\r\\n//     // if (data?.container?.caseNo) {\\r\\n//     //   window.open(`https://your-site.com/case/${data.container.caseNo}`, \\u0027_blank\\u0027);\\r\\n//     // }\\r\\n//   });\\r\\n// }\\r\\n\\r\\nsetTimeout(() \\u003d\\u003e {\\r\\n  const inputEl \\u003d instance.element.querySelector(\\u0027input\\u0027);\\r\\n  if (inputEl \\u0026\\u0026 data?.container?.caseNo) {\\r\\n    inputEl.style.cursor \\u003d \\u0027pointer\\u0027;\\r\\n    inputEl.style.color \\u003d \\u0027blue\\u0027;\\r\\n    inputEl.style.textDecoration \\u003d \\u0027underline\\u0027;\\r\\n\\r\\n    inputEl.addEventListener(\\u0027click\\u0027, () \\u003d\\u003e {\\r\\n          window.open(`https://www.google.com/`, \\u0027_blank\\u0027);\\r\\n    });\\r\\n  }\\r\\n}, 300);\\r\\n\\r\\n\"\r\n"
+                                  }
+                                ]
+                              }
+                            ],
                             "overlay": {
                               "style": "",
                               "left": "",
@@ -4307,15 +4339,92 @@
                             }
                           },
                           {
-                            "label": "Recommendation No.",
+                            "label": "Pending Approval",
+                            "labelPosition": "top",
+                            "widget": "choicesjs",
+                            "placeholder": "",
+                            "customClass": "custom-select-height",
+                            "hidden": false,
+                            "hideLabel": false,
+                            "disabled": false,
+                            "tableView": true,
+                            "multiple": false,
+                            "dataSrc": "values",
+                            "data": {
+                              "values": [],
+                              "resource": "",
+                              "url": "",
+                              "json": "",
+                              "custom": ""
+                            },
+                            "valueProperty": "value",
+                            "template": "<span>{{ item.label }}</span>",
+                            "clearOnRefresh": false,
+                            "searchEnabled": true,
+                            "persistent": true,
+                            "clearOnHide": false,
+                            "calculateValue": "",
+                            "validateOn": "change",
+                            "validate": {
+                              "required": true,
+                              "onlyAvailableItems": false,
+                              "customMessage": "",
+                              "custom": "",
+                              "customPrivate": false,
+                              "json": "",
+                              "strictDateValidation": false,
+                              "multiple": false,
+                              "unique": false
+                            },
+                            "key": "recommendationPendingApproval",
+                            "conditional": {
+                              "eq": "",
+                              "json": ""
+                            },
+                            "logic": [
+                              {
+                                "name": "Disable Pending Approval if recommendationNo1 is filled",
+                                "trigger": {
+                                  "type": "javascript",
+                                  "javascript": "result = !!(row.recommendationNo1 && row.recommendationNo1.trim() !== \"\");\r\n"
+                                },
+                                "actions": [
+                                  {
+                                    "name": "Disable Pending Approval",
+                                    "type": "property",
+                                    "property": {
+                                      "label": "Disabled",
+                                      "value": "disabled",
+                                      "type": "boolean"
+                                    },
+                                    "state": true
+                                  }
+                                ]
+                              }
+                            ],
+                            "type": "select",
+                            "dataGridLabel": false,
+                            "lazyLoad": false,
+                            "disableLimit": false,
+                            "searchField": "",
+                            "searchDebounce": 0.3,
+                            "minSearch": 2,
+                            "limit": 100,
+                            "redrawOn": "",
+                            "input": true,
+                            "id": "recommendationPendingApproval",
+                            "defaultValue": ""
+                          },
+                          {
+                            "label": "Status",
                             "applyMaskOn": "change",
                             "disabled": true,
                             "tableView": true,
                             "clearOnHide": false,
-                            "key": "recommendationNo1",
+                            "key": "recommendationStatus",
                             "type": "textfield",
                             "input": true,
-                            "id": "eer5h8e",
+                            "id": "eciy5p9",
                             "placeholder": "",
                             "prefix": "",
                             "customClass": "",
@@ -4359,37 +4468,6 @@
                             "conditional": {
                               "eq": ""
                             },
-                            "customConditional": "",
-                            "logic": [
-                              {
-                                "name": "Read Only - recommendationNo",
-                                "trigger": {
-                                  "type": "javascript",
-                                  "javascript": "true"
-                                },
-                                "actions": [
-                                  {
-                                    "name": "Make recommendationNo read only.",
-                                    "type": "customAction",
-                                    "customAction": "instance.root.getComponent(instance.path)?.element?.querySelector('input')?.setAttribute('readonly', true);"
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "Hyperlink - recommendationNo",
-                                "trigger": {
-                                  "type": "javascript",
-                                  "javascript": "//data?.container?.caseNo\\r\\n\\r\\n\r\nresult = !!(row.recommendationNo1 && row.recommendationNo1.trim() !== \"\");\r\n"
-                                },
-                                "actions": [
-                                  {
-                                    "name": "Add hyperlink to recommendationNo.",
-                                    "type": "customAction",
-                                    "customAction": "// console.log(\\u0027inside logic\\u0027);\\r\\n// if (instance.element) {\\r\\n//   instance.element.style.cursor \\u003d \\u0027pointer\\u0027;\\r\\n//   instance.element.style.color \\u003d \\u0027blue\\u0027;\\r\\n//   instance.element.style.textDecoration \\u003d \\u0027underline\\u0027;\\r\\n\\r\\n//   instance.element.addEventListener(\\u0027click\\u0027, () \\u003d\\u003e {\\r\\n//           window.open(`https://www.google.com/`, \\u0027_blank\\u0027);\\r\\n\\r\\n//     // if (data?.container?.caseNo) {\\r\\n//     //   window.open(`https://your-site.com/case/${data.container.caseNo}`, \\u0027_blank\\u0027);\\r\\n//     // }\\r\\n//   });\\r\\n// }\\r\\n\\r\\nsetTimeout(() \\u003d\\u003e {\\r\\n  const inputEl \\u003d instance.element.querySelector(\\u0027input\\u0027);\\r\\n  if (inputEl \\u0026\\u0026 data?.container?.caseNo) {\\r\\n    inputEl.style.cursor \\u003d \\u0027pointer\\u0027;\\r\\n    inputEl.style.color \\u003d \\u0027blue\\u0027;\\r\\n    inputEl.style.textDecoration \\u003d \\u0027underline\\u0027;\\r\\n\\r\\n    inputEl.addEventListener(\\u0027click\\u0027, () \\u003d\\u003e {\\r\\n          window.open(`https://www.google.com/`, \\u0027_blank\\u0027);\\r\\n    });\\r\\n  }\\r\\n}, 300);\\r\\n\\r\\n\"\r\n"
-                                  }
-                                ]
-                              }
-                            ],
                             "overlay": {
                               "style": "",
                               "left": "",
