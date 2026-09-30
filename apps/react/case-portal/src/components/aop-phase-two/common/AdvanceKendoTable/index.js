@@ -194,6 +194,7 @@ export const dateFields = [
   'exclusionStartDate',
   'exclusionEndDate',
   'dateOfCommencement',
+  'targetDate',
 ]
 export const monthMap = {
   january: 1,
@@ -1487,6 +1488,10 @@ const AdvanceKendoTable = ({
 
   // Helper to check if a cell is editable based on conditional rules
   const isCellEditableByCondition = (dataItem, col) => {
+    // Check per-cell configuration from code
+    if (dataItem?.nonEditableFields?.includes(col.field)) return false;
+    if (dataItem?.editableFields && !dataItem?.editableFields?.includes(col.field)) return false;
+
     if (!col.conditionalEditable) return true
 
     const { dependsOn, editableValues } = col.conditionalEditable
@@ -1612,13 +1617,16 @@ const AdvanceKendoTable = ({
             locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : undefined}
             cells={{
-              data: (cellProps) => (
-                <RemarkCell
-                  {...cellProps}
-                  showPlaceholder={col.showPlaceholder}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
-                />
-              ),
+              data: (cellProps) => {
+                const cellIsEditable = isEditable && cellProps.dataItem?.isEditable !== false && isCellEditableByCondition(cellProps.dataItem, col);
+                return (
+                  <RemarkCell
+                    {...cellProps}
+                    showPlaceholder={col.showPlaceholder}
+                    onRemarkClick={cellIsEditable ? handleRemarkCellClick : () => {}}
+                  />
+                );
+              },
               headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
@@ -1646,12 +1654,15 @@ const AdvanceKendoTable = ({
             locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : ''}
             cells={{
-              data: (cellProps) => (
-                <RemarkCell
-                  {...cellProps}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
-                />
-              ),
+              data: (cellProps) => {
+                const cellIsEditable = isEditable && cellProps.dataItem?.isEditable !== false && isCellEditableByCondition(cellProps.dataItem, col);
+                return (
+                  <RemarkCell
+                    {...cellProps}
+                    onRemarkClick={cellIsEditable ? handleRemarkCellClick : () => {}}
+                  />
+                );
+              },
               headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
@@ -2603,7 +2614,7 @@ const AdvanceKendoTable = ({
                   const { dataItem, field, onChange } = cellProps
                   const checked = !!dataItem[field]
                   const isCellDisabled =
-                    !isEditable || dataItem?.isEditable === false
+                    !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
                   return (
                     <td style={{ textAlign: 'center', padding: '6px 2px' }}>
                       <Checkbox
@@ -2627,7 +2638,7 @@ const AdvanceKendoTable = ({
                 const { dataItem, field, tdProps } = cellProps
                 const checked = !!dataItem[field]
                 const isCellDisabled =
-                  !isEditable || dataItem?.isEditable === false
+                  !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
                 return (
                   <td
                     {...tdProps}

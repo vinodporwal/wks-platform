@@ -34,7 +34,6 @@ const ConfigurationOtherCost = ({ permissions }) => {
   })
   const [calculationObject, setCalculationObject] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  console.log("dataGridStore configuration other cost ", dataGridStore)
   const {
     verticalChange,
     screenTitle,

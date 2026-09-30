@@ -330,11 +330,12 @@ const FILTER_CONFIG_DUMMY_DATA = [
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const apiRes = await ProductionNormsApiService.getConfigurationData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const apiRes = FILTER_CONFIG_DUMMY_DATA
+      //  await ProductionNormsApiService.getConfigurationData(
+      //   keycloak,
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      // )
       
       let res = []
       if (apiRes && apiRes.length > 0) {
