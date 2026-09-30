@@ -6372,7 +6372,7 @@ else {
 			// Col 15: NormParameterFKId (hidden)
 			// Col 16: Id (hidden)
 			List<String> headerNames = new ArrayList<>(Arrays.asList(
-					"Particulars", "UOM",
+					"Particulars", "UOM / MT",
 					"Apr-" + startYearShort,
 					"May-" + startYearShort,
 					"Jun-" + startYearShort,
@@ -6763,6 +6763,37 @@ else {
 		aopMessageVM.setMessage("Data saved successfully");
 		return aopMessageVM;
 	}
+
+	@Override
+    @Transactional
+    public AOPMessageVM calculateOtherCost(UUID plantId, String aopYear, String periodFrom, String periodTo) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(plantId).get();
+       Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+       Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+       String procedureName = vertical.getName() + "_" + site.getName() + "_OtherCostCalculate";
+
+        try {
+          
+            String sql = "EXEC dbo." + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear, @periodFrom = :periodFrom, @periodTo = :periodTo";
+            Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("plantId", plantId.toString());
+            query.setParameter("aopYear", aopYear);
+            query.setParameter("periodFrom", periodFrom);
+            query.setParameter("periodTo", periodTo);
+            query.executeUpdate();
+
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Calculate SP executed successfully");
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        } catch (Exception e) {
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to execute calculate SP: " + e.getMessage());
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        }
+    }
 		
 }
 			
