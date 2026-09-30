@@ -44,7 +44,7 @@ const AnnualProductionPlan = () => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
-
+  const IS_CHEMICAL_VERTICAL = lowerVertName === 'chemical'
   let oldYear1 = ''
   if (thisYear && thisYear.includes('-')) {
     const [start, end] = thisYear.split('-').map(Number)
@@ -132,7 +132,7 @@ const AnnualProductionPlan = () => {
       flex: 1,
       align: 'right',
       widthT: 150,
-      type: 'number',
+      type: 'maxHourlyRateValue',
       format: '{0:#.##}',
     },
     { field: 'uom', headerName: 'UOM', editable: true, widthT: 120 },
@@ -360,18 +360,59 @@ const AnnualProductionPlan = () => {
             : null,
         }))
         if (type === 'maxRate') {
-          const dateRegex = /^(\d{1,2}-[a-zA-Z]{3}-\d{2,4})$/
-
           res = res.map((item) => {
+            const isDate =
+              item?.activity && /recorded date/i.test(item.activity)
+            if (isDate) {
+              const val = item.maxHourlyRateValue
+              let dateObj = null
+              if (val) {
+                if (val instanceof Date) {
+                  dateObj = isNaN(val.getTime()) ? null : val
+                } else if (typeof val === 'string') {
+                  const trimmed = val.trim()
+                  const m = moment(
+                    trimmed,
+                    [
+                      'DD MMM YYYY',
+                      'DD MMM YY',
+                      'DD/MM/YY',
+                      'DD/MM/YYYY',
+                      'DD-MMM-YY',
+                      'DD-MMM-YYYY',
+                      'DD-MM-YYYY',
+                      'YYYY-MM-DD',
+                    ],
+                    true,
+                  )
+                  if (m.isValid()) {
+                    dateObj = m.toDate()
+                  } else {
+                    const d = new Date(trimmed)
+                    if (
+                      !isNaN(d.getTime()) &&
+                      d.getFullYear() >= 1970 &&
+                      d.getFullYear() <= 2100
+                    ) {
+                      dateObj = d
+                    }
+                  }
+                }
+              }
+              return {
+                ...item,
+                isDateRow: true,
+                maxHourlyRateValue: dateObj,
+              }
+            }
+
             const value = item.maxHourlyRateValue
             const num = parseFloat(value)
 
             return {
               ...item,
               maxHourlyRateValue:
-                typeof value === 'string' &&
-                !dateRegex.test(value.trim()) &&
-                !isNaN(num)
+                typeof value === 'string' && !isNaN(num)
                   ? num // ? keep raw number
                   : typeof value === 'number'
                     ? value // ? keep as number
@@ -544,13 +585,53 @@ const AnnualProductionPlan = () => {
         return
       }
 
-      const dataList = data.map((row) => ({
-        id: row.idFromApi,
-        uom: row.uom,
-        sno: row.sno,
-        activity: row.activity,
-        maxHourlyRateValue: row.maxHourlyRateValue,
-      }))
+      const dataList = data.map((row) => {
+        let val = row.maxHourlyRateValue
+        const isDate =
+          row?.isDateRow ||
+          (row?.activity && /recorded date/i.test(row.activity))
+        if (isDate) {
+          if (val instanceof Date && !isNaN(val.getTime())) {
+            val = moment(val).format('DD MMM YYYY')
+          } else if (
+            val &&
+            moment(
+              val,
+              [
+                'DD MMM YYYY',
+                'DD MMM YY',
+                'DD/MM/YY',
+                'DD/MM/YYYY',
+                'DD-MMM-YY',
+                'DD-MMM-YYYY',
+                'DD-MM-YYYY',
+                'YYYY-MM-DD',
+              ],
+              true,
+            ).isValid()
+          ) {
+            val = moment(val, [
+              'DD MMM YYYY',
+              'DD MMM YY',
+              'DD/MM/YY',
+              'DD/MM/YYYY',
+              'DD-MMM-YY',
+              'DD-MMM-YYYY',
+              'DD-MM-YYYY',
+              'YYYY-MM-DD',
+            ]).format('DD MMM YYYY')
+          } else if (!val) {
+            val = ''
+          }
+        }
+        return {
+          id: row.idFromApi,
+          uom: row.uom,
+          sno: row.sno,
+          activity: row.activity,
+          maxHourlyRateValue: val != null ? String(val) : '',
+        }
+      })
       const res = await AOPWorkFlowService.saveAnnualProduction(
         PLANT_ID,
         AOP_YEAR,
@@ -773,11 +854,17 @@ const AnnualProductionPlan = () => {
           allAction: true,
           showReportTitle: true,
           addButton:
-            IS_PE_PP_VERTICAL || IS_PTA_VERTICAL || IS_VCM_VERTICAL
+            IS_PE_PP_VERTICAL ||
+            IS_PTA_VERTICAL ||
+            IS_VCM_VERTICAL ||
+            IS_CHEMICAL_VERTICAL
               ? true
               : false,
           deleteButton:
-            IS_PE_PP_VERTICAL || IS_PTA_VERTICAL || IS_VCM_VERTICAL
+            IS_PE_PP_VERTICAL ||
+            IS_PTA_VERTICAL ||
+            IS_VCM_VERTICAL ||
+            IS_CHEMICAL_VERTICAL
               ? true
               : false,
         }}
