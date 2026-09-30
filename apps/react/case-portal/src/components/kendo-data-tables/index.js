@@ -107,6 +107,10 @@ import {
   ConstantValueDataCell,
   parseDateRobust,
 } from './ConstantValueCells'
+import {
+  MaxHourlyRateEditCell,
+  MaxHourlyRateDataCell,
+} from './Utilities-Kendo/MaxHourlyRateCells'
 import DisabledUOM from './Utilities-Kendo/DisabledUOM'
 import AutoCalculatePopup from './Utilities-Kendo/AutoCalculatePopup'
 
@@ -4944,6 +4948,45 @@ const KendoDataTables = ({
                                 />
                               )
                             },
+                            headerCell: SimpleHeaderWithTooltip,
+                          }}
+                          columnMenu={ColumnMenuCheckboxFilter}
+                          filter='numeric'
+                          format={col?.format}
+                        />
+                      )
+                    }
+
+                    if (
+                      col?.field === 'maxHourlyRateValue' ||
+                      col?.type === 'maxHourlyRateValue'
+                    ) {
+                      return (
+                        <GridColumn
+                          locked={col.locked || false}
+                          key={col?.field}
+                          field={col?.field}
+                          title={col?.title || col?.headerName}
+                          width={setWidth(col?.minWidth || 150)}
+                          hidden={col?.hidden}
+                          className={`
+                          ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                          ${col?.isBold ? 'bold-text' : ''}
+                        `}
+                          editable={col?.editable ? true : false}
+                          headerClassName={numericHeaderClass(isActive, col)}
+                          cells={{
+                            edit: {
+                              numeric: MaxHourlyRateEditCell,
+                              text: MaxHourlyRateEditCell,
+                              date: MaxHourlyRateEditCell,
+                            },
+                            data: (props) => (
+                              <MaxHourlyRateDataCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                              />
+                            ),
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           columnMenu={ColumnMenuCheckboxFilter}
