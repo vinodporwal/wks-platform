@@ -34,6 +34,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
   })
   const [calculationObject, setCalculationObject] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
+  console.log("dataGridStore configuration other cost ", dataGridStore)
   const {
     verticalChange,
     screenTitle,
@@ -248,8 +249,8 @@ const ConfigurationOtherCost = ({ permissions }) => {
     },
     {
       field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
+      title: 'UOM / MT',
+      minWidth: 120,
       editable: false,
       locked: true,
     },
@@ -493,6 +494,7 @@ const ConfigurationOtherCost = ({ permissions }) => {
 
       return data
     } catch (error) {
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: error.message || 'An error occurred',
@@ -500,8 +502,6 @@ const ConfigurationOtherCost = ({ permissions }) => {
       })
 
       console.error('Error!', error)
-    } finally{
-      setLoading(false)
     }
   }
 
@@ -609,8 +609,8 @@ const ConfigurationOtherCost = ({ permissions }) => {
       titleName: `${SCREEN_NAME}`,
       uploadExcelBtn: true,
       ExcelName: `${EXCEL_EXPORT_TITLE}`,
-      showCalculate: false,
-      calculateDisabled: false,
+      showCalculate: true,
+      calculateDisabled: !calculationObject || Object.keys(calculationObject).length === 0,
       showReleaseBtn: showReleaseButton ? true : false,
     },
     isOldYear,
