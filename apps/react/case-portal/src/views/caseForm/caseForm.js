@@ -374,38 +374,77 @@ console.log('*****  taskId:  ', taskId);
           console.error('Form structure or components are undefined.')
         }
         // Prefer fetching by businessKey (exact match). If not available, fall back to getCaseById.
-        let caseData = null;
-        try {
-          if (currentCase && currentCase.businessKey) {
-            const resp = await CaseService.getCaseByBusinessKey(
-              keycloak,
-              currentCase.caseDefinitionId,
-              currentCase.businessKey,
-            );
-            console.log('[DEBUG] getCaseByBusinessKey raw response:', resp)
-            if (resp && resp.data && resp.data.length > 0) {
-              console.log("in caseForm : caseData.........", resp.data[0]);
-              // API returns an array in the same mapped format
-              caseData = resp.data[0];
-            } else {
-              console.warn('[DEBUG] getCaseByBusinessKey returned no data. resp:', resp)
-            }
-          }
-        } catch (err) {
-          console.error('Error fetching case by businessKey', err)
-        }
+        // let caseData = null;
+        // try {
+        //   if (currentCase && currentCase.businessKey) {
+        //     const resp = await CaseService.getCaseByBusinessKey(
+        //       keycloak,
+        //       currentCase.caseDefinitionId,
+        //       currentCase.businessKey,
+        //     );
+        //     console.log('[DEBUG] getCaseByBusinessKey raw response:', resp)
+        //     if (resp && resp.data && resp.data.length > 0) {
+        //       console.log("in caseForm : caseData.........", resp.data[0]);
+        //       // API returns an array in the same mapped format
+        //       caseData = resp.data[0];
+        //     } else {
+        //       console.warn('[DEBUG] getCaseByBusinessKey returned no data. resp:', resp)
+        //     }
+        //   }
+        // } catch (err) {
+        //   console.error('Error fetching case by businessKey', err)
+        // }
 
-        if (!caseData) {
-          console.log("in caseForm : caseData not found.........", caseData);
-          caseData = await CaseService.getCaseById(
-            keycloak,
-            currentCase.businessKey,
-          )
-        }
+        // if (!caseData) {
+        //   console.log("in caseForm : caseData not found.........", caseData);
+        //   caseData = await CaseService.getCaseById(
+        //     keycloak,
+        //     currentCase.businessKey,
+        //   )
+        // }
 
-        currentCase.documents = caseData?.documents || []
-        currentCase.comments = caseData?.comments || []
-        return { caseData: currentCase, updatedFormStructure }
+        // currentCase.documents = caseData?.documents || []
+        // currentCase.comments = caseData?.comments || []
+        // return { caseData: currentCase, updatedFormStructure }
+        
+       
+ let caseData = null;
+try {
+  if (currentCase && currentCase.businessKey) {
+    const resp = await CaseService.getCaseByBusinessKey(
+      keycloak,
+      currentCase.caseDefinitionId,
+      currentCase.businessKey,
+    );
+
+    console.log('[DEBUG] getCaseByBusinessKey raw response:', resp);
+
+    if (resp && resp.businessKey) {
+      caseData = resp;
+    }
+  }
+} catch (err) {
+  console.error('Error fetching case by businessKey', err);
+}
+
+if (!caseData) {
+  caseData = await CaseService.getCaseById(
+    keycloak,
+    currentCase.businessKey,
+  );
+}
+
+const latestCaseData = {
+  ...currentCase,
+  ...caseData,
+  documents: caseData?.documents ?? currentCase.documents ?? [],
+  comments: caseData?.comments ?? currentCase.comments ?? [],
+};
+
+return {
+  caseData: latestCaseData,
+  updatedFormStructure,
+};
       })
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
