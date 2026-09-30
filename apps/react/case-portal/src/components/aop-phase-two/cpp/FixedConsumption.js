@@ -638,6 +638,7 @@ const FixedConsumption = () => {
       case 'dmd':
       case 'hmd':
       case 'vmd':
+      case 'pmd':
         return <FixedConsumptionDMD />
       case 'nmd':
       default:

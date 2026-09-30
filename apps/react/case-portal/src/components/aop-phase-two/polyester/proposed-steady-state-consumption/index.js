@@ -348,6 +348,7 @@ const ProposedSteadyStateConsumption = () => {
         })
         fetchData()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Data Refresh Failed!',
@@ -355,15 +356,14 @@ const ProposedSteadyStateConsumption = () => {
         })
       }
     } catch (error) {
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: error.message || 'An error occurred during calculation',
         severity: 'error',
       })
       console.error('Calculation Error!', error)
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const EXCEL_EXPORT_TITLE = generateExcelName(

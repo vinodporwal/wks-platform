@@ -45,7 +45,7 @@ const FuelRatio = () => {
       title: 'Fuel',
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 200,
     },
     {
