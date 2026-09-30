@@ -198,114 +198,65 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 	@Override
 	public AOPMessageVM getNetProductionData(String year, String plantId) {
-		try {
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	    try {
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String procedure = vertical.getName()+"_"+site.getName()+"_GetNetProduction";
-			List<Object[]> obj=null;
-			
-			obj = findNetProductionData(year, UUID.fromString(plantId), procedure);
-			 
-			System.out.println("obj" + obj);
-			
-			Map<String, NetProductionDTO> dtoMap = new LinkedHashMap<>();
 
-			for (Object[] row : obj) {
-			    String sapMATCode = row[0] != null ? row[0].toString() : "";
-			    String product = row[1] != null ? row[1].toString() : "";
-			    String monthStr = row[2] != null ? row[2].toString() : null; 
-			    Double actualQty = row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0;
-			    String uom = row[4] != null ? row[4].toString() : "";
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 
-			    
-			    String groupKey = sapMATCode + "_" + product;
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
+	        String procedure = vertical.getName() + "_" + site.getName() + "_GetNetProduction";
+	        List<Object[]> obj = findNetProductionData(year, UUID.fromString(plantId), procedure);
 
-			    NetProductionDTO dto = dtoMap.computeIfAbsent(groupKey, k -> {
-			        NetProductionDTO newDto = new NetProductionDTO();
-			        newDto.setSapMATCode(sapMATCode);
-			        newDto.setProduct(product);
-			        newDto.setUom(uom);
-			        
-			        
-			        newDto.setJan(0.0);
-			        newDto.setFeb(0.0);
-			        newDto.setMar(0.0);
-			        newDto.setApr(0.0);
-			        newDto.setMay(0.0);
-			        newDto.setJun(0.0);
-			        newDto.setJul(0.0);
-			        newDto.setAug(0.0);
-			        newDto.setSep(0.0);
-			        newDto.setOct(0.0);
-			        newDto.setNov(0.0);
-			        newDto.setDec(0.0);
-			        
-			        return newDto;
-			    });
+	       List<NetProductionDTO> netProductionDTOs = new ArrayList<NetProductionDTO>();
 
-			   
-			    if (monthStr != null && !monthStr.isEmpty()) {
-			        try {
-			            
-			            String monthPart = monthStr.split("-")[0].toUpperCase();
-			            
-			            switch (monthPart) {
-			                case "JAN": case "JANUARY": case "01": case "1": dto.setJan(actualQty); break;
-			                case "FEB": case "FEBRUARY": case "02": case "2": dto.setFeb(actualQty); break;
-			                case "MAR": case "MARCH": case "03": case "3": dto.setMar(actualQty); break;
-			                case "APR": case "APRIL": case "04": case "4": dto.setApr(actualQty); break;
-			                case "MAY": dto.setMay(actualQty); break;
-			                case "JUN": case "JUNE": case "06": case "6": dto.setJun(actualQty); break;
-			                case "JUL": case "JULY": case "07": case "7": dto.setJul(actualQty); break;
-			                case "AUG": case "AUGUST": case "08": case "8": dto.setAug(actualQty); break;
-			                case "SEP": case "SEPTEMBER": case "09": case "9": dto.setSep(actualQty); break;
-			                case "OCT": case "OCTOBER": case "10": dto.setOct(actualQty); break;
-			                case "NOV": case "NOVEMBER": case "11": dto.setNov(actualQty); break;
-			                case "DEC": case "DECEMBER": case "12": dto.setDec(actualQty); break;
-			            }
-			        } catch (Exception e) {
-			           
-			        }
-			    }
-			}
+	        if (obj != null) {
+	            for (Object[] row : obj) {
+	                NetProductionDTO newDto = new NetProductionDTO();
+	                newDto.setSapMATCode(row[0] != null ? row[0].toString() : "");
+	                newDto.setProduct(row[1] != null ? row[1].toString() : "");
+	                newDto.setUom(row[2] != null ? row[2].toString() : "");
+	                newDto.setApr(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+	                newDto.setMay(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+	                newDto.setJun(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+	                newDto.setJul(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+	                newDto.setAug(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+	                newDto.setSep(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+	                newDto.setOct(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+	                newDto.setNov(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+	                newDto.setDec(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+	                newDto.setJan(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+	                newDto.setFeb(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+	                newDto.setMar(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
 
-			
-			List<NetProductionDTO> netProductionDTOs = new ArrayList<>(dtoMap.values());
-			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			aopMessageVM.setCode(200);
-			aopMessageVM.setData(netProductionDTOs);
-			aopMessageVM.setMessage("Data fetched successfully");
-			return aopMessageVM;
-			
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to fetch data", ex);
-		}
+	                netProductionDTOs.add(newDto);
+	            }
+	        }
+
+	        AOPMessageVM aopMessageVM = new AOPMessageVM();
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setData(netProductionDTOs);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
 	}
-
+	
 	public List<Object[]> findNetProductionData(String aopYear, UUID plantId, String procedureName) {
 	    try {
-	     
-	        String[] years = aopYear.split("-");
-	        String startYear = years[0].trim();
-	        String endYearPrefix = startYear.substring(0, 2); 
-	        String endYear = endYearPrefix + years[1].trim(); 
-
-	        String periodFrom = startYear + "-04-01"; 
-	        String periodTo = endYear + "-03-31";    
-
 	        String sql = "EXEC " + "[" + procedureName + "]"
-	                + " @PlantId = :plantId, @aopYear = :aopYear, @PeriodFrom = :periodFrom, @PeriodTo = :periodTo";
+	                + " @plantId = :plantId, @aopYear = :aopYear";
 
 	        Query query = entityManager.createNativeQuery(sql);
 	        query.setParameter("plantId", plantId);
 	        query.setParameter("aopYear", aopYear);
-	        query.setParameter("periodFrom", periodFrom);
-	        query.setParameter("periodTo", periodTo);
 
 	        return query.getResultList();
 	    } catch (RestInvalidArgumentException e) {

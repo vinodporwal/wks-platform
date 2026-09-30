@@ -1207,7 +1207,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	@Transactional(transactionManager = "db2TransactionManager")
 	public AOPMessageVM deletePlantProductionPlanData(String id) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {

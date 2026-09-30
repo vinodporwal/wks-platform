@@ -794,10 +794,7 @@ public class JMDCPPNormPricesServiceImpl implements JMDCPPNormPricesService {
         // Protect the sheet so locked/unlocked cell styles take effect.
         // Only the 12 month columns (Apr–Mar) and Remarks are unlocked (editable);
         // all other columns are locked with a grey background.
-        sheet.protectSheet("");
-        org.apache.poi.xssf.usermodel.XSSFSheet xssfSheet = (org.apache.poi.xssf.usermodel.XSSFSheet) sheet;
-        xssfSheet.lockFormatColumns(false);  // allow column width changes + unhide
-        xssfSheet.lockFormatRows(false);     // allow row height changes
+        ExcelStyles.applySheetProtectionWithAutoFilter(sheet, totalColumns);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
