@@ -954,11 +954,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			// Create request body
          Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("RECOMMENDATION_Des", "EED Headline");
-		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
+		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAuthor").asText());
 		requestBody.put("CC_GENRECOM_SEND_TO_ASM_CHR", "NO");
 		requestBody.put("MI_REC_AUTHO_NM_CHR", dataGridEntry.path("recommendationAuthor").asText());
-		requestBody.put("Pending_Approval_Domain_Id", dataGridEntry.path("recommendationPendingApproval").asText());
-		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
+		requestBody.put("Pending_Approval_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
+		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_BASIS", "EED");
 		requestBody.put("CC_GENRECOM_PRIO_GUID_CHR", "reims.ril.com");
@@ -1301,7 +1301,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            newRecommendationNode.put("recommendationDescription1", newRecommendation.getRecommendationDescription1());
 	            newRecommendationNode.put("recommendationAssignedTo1", newRecommendation.getRecommendationAssignedTo1());
 	            newRecommendationNode.put("recommendationAssignedTo2", newRecommendation.getRecommendationAssignedTo2());
-	            newRecommendationNode.put("recommendationPendingApproval", newRecommendation.getRecommendationPendingApproval());
 	            newRecommendationNode.put("recommendationStatus", newRecommendation.getRecommendationStatus());
 	            newRecommendationNode.put("equipmentFunctionLocation", newRecommendation.getEquipmentFunctionLocation());
 	            newRecommendationNode.put("recommendationTargetCompletionDate1", newRecommendation.getRecommendationTargetCompletionDate1());
@@ -1426,7 +1425,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	@Scheduled(cron = "0 */5 * * * ?")
+	@Scheduled(cron = "0 0 22 * * ?")
 	public List<Case> updateRecommendationStatus() throws Exception {
 	    LocalDate today = LocalDate.now();
 	    LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);

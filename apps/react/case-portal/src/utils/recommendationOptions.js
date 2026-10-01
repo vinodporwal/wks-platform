@@ -195,8 +195,7 @@ export const bindRecommendationUserSearch = (formInstance, keycloak) => {
     formInstance.everyComponent((instance) => {
       if (
         instance?.component?.key !== 'recommendationAssignedTo2' &&
-        instance?.component?.key !== 'recommendationReviewer' &&
-        instance?.component?.key !== 'recommendationPendingApproval'
+        instance?.component?.key !== 'recommendationReviewer'
       ) {
         return
       }
@@ -293,8 +292,7 @@ export const hydrateRecommendationUserSearch = (form) => {
   const hydrate = (component) => {
     if (
       component?.key === 'recommendationAssignedTo2' ||
-      component?.key === 'recommendationReviewer' ||
-      component?.key === 'recommendationPendingApproval'
+      component?.key === 'recommendationReviewer'
     ) {
       component.dataSrc = 'values'
       component.data = {

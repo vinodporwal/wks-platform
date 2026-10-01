@@ -1341,7 +1341,6 @@ const handleFormChange = (submission, flags, modified) => {
       recommendationPriority,
       recommendationReviewer,
       recommendationAssignedTo2,
-      recommendationPendingApproval,
       recommendationHeadline,
       recommendationTargetCompletionDate1,
       recommendationDescription1,
@@ -1358,8 +1357,6 @@ const handleFormChange = (submission, flags, modified) => {
       missingFields.push('Recommendation Reviewer')
     if (!recommendationAssignedTo2)
       missingFields.push('Recommendation Assigned To')
-    if (!recommendationPendingApproval)
-      missingFields.push('Pending Approval')
     if (!recommendationHeadline)
       missingFields.push('Recommendation Headline')
     else if (recommendationHeadline.length > 40)
@@ -1388,7 +1385,6 @@ const handleFormChange = (submission, flags, modified) => {
       recommendationHeadline,
       recommendationDescription1,
       recommendationAssignedTo2,
-      recommendationPendingApproval,
       equipmentFunctionLocation,
       recommendationTargetCompletionDate1,
       recommendationTargetCompletionDateForApm: formatLocalDateTime(recommendationTargetCompletionDate1),
@@ -2412,9 +2408,8 @@ const handleFormChange = (submission, flags, modified) => {
         ['recommendationPlannerGroup', 'recommendationPriority'],
         ['recommendationHeadline', 'equipmentFunctionLocation'],
         ['recommendationAssignedTo2', 'recommendationTargetCompletionDate1'],
-        ['recommendationReviewer', 'recommendationPendingApproval'],
-        ['recommendationStatus', 'recommendationNo1'],
-        ['RecommendationConfirmSAP3', null],
+        ['recommendationReviewer', 'recommendationNo1'],
+        ['recommendationStatus', 'RecommendationConfirmSAP3'],
         ['recommendationDescription1', 'FULL_WIDTH'],
       ]
       const recommendationSection = pdfSection(
