@@ -116,13 +116,15 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         return
       }
 
-      console.log('Constants data:', res)
+      
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
+        normType: item?.normType || null,
         id: item?.id || index + 1,
         type: item?.type === "boolean" ? "checkbox" : item?.type === "text" ? "text" : "number"
       }))
+      
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -217,7 +219,15 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       return
     }
 
-    const payload = modifiedData
+    const payload = data.map((row) => {
+      return {
+        ...row,
+        apr: row?.apr === true ? 1 : row?.apr === false ? 0 : row?.apr || 0,
+        may: row?.may === true ? 1 : row?.may === false ? 0 : row?.may || 0,
+        jun: row?.jun === true ? 1 : row?.jun === false ? 0 : row?.jun || 0,
+        value: row?.value || 0,
+      }
+    })
     try {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
@@ -378,7 +388,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['normType']}
+        // groupBy={['normType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

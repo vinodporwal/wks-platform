@@ -348,7 +348,13 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingConstantDataWithThreeRecords(year, dtoList);
 
-		List<VgohtNormConfigurationDTO> failedRecords = validateConstantRemarksWithThreeRecords(dtoList, existingMap);
+		List<VgohtNormConfigurationDTO> activeInactiveFailedRecords = validateActiveInactiveValues(dtoList, existingMap);
+
+		List<VgohtNormConfigurationDTO> remarkFailedRecords = validateConstantRemarksWithThreeRecords(dtoList, existingMap);
+
+		List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+		failedRecords.addAll(activeInactiveFailedRecords);
+		failedRecords.addAll(remarkFailedRecords);
 
 		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
 	
@@ -473,6 +479,8 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		for (VgohtNormConfigurationDTO dto : dtoList) {
 
+			if("FAILED".equalsIgnoreCase(dto.getSaveStatus())) continue;
+
 			VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
 
 			double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
@@ -498,6 +506,35 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return failedRecords;
 	}
+
+	private List<VgohtNormConfigurationDTO> validateActiveInactiveValues(
+		List<VgohtNormConfigurationDTO> dtoList,
+		Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+	List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+	for (VgohtNormConfigurationDTO dto : dtoList) {
+
+		if("FAILED".equalsIgnoreCase(dto.getSaveStatus())) continue;
+
+		VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+		
+
+		if (!"boolean".equalsIgnoreCase(existing.getType())) continue;
+
+		if (!((dto.getApr() == null || dto.getApr() == 0.0 || dto.getApr() == 1.0)
+			&& (dto.getMay() == null || dto.getMay() == 0.0 || dto.getMay() == 1.0)
+			&& (dto.getJun() == null || dto.getJun() == 0.0 || dto.getJun() == 1.0))) {
+			dto.setSaveStatus("FAILED");
+			dto.setErrDescription("Active/Inactive values must be either 0 or 1");
+			failedRecords.add(dto);
+		}
+	}
+	 
+
+	return failedRecords;
+}
 
 
 	// considered april and oct as summer and winter
@@ -602,7 +639,8 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
 				"MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May, " +
 				"MAX(CASE WHEN NAT.AOPMonth = 6 THEN NAT.AttributeValue END) AS Jun, " +
-				"MAX(NAT.Remarks) AS Remarks " +
+				"MAX(NAT.Remarks) AS Remarks, " +
+				"MAX(NP.Type) AS Type " +
 				"FROM NormParameters NP " +
 				"LEFT JOIN NormAttributeTransactions NAT " +
 				"    ON NAT.NormParameter_FK_Id = NP.Id " +
@@ -624,6 +662,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			existing.setMay(parseDouble(row[2]));
 			existing.setJun(parseDouble(row[3]));
 			existing.setRemarks(row[4] != null ? row[4].toString() : "");
+			existing.setType(row[5] != null ? row[5].toString() : "");
 			existingMap.put(existing.getNormParameterFKId(), existing);
 		}
 
@@ -1791,11 +1830,31 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			Sheet sheet = workbook.createSheet("Norms Basis Constant");
 			int currentRow = 0;
 
+			// ── Header cell style: bold font + grey background + all-sides thin border ──
+			CellStyle headerStyle = workbook.createCellStyle();
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerStyle.setFont(headerFont);
+			headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			headerStyle.setBorderTop(BorderStyle.THIN);
+			headerStyle.setBorderBottom(BorderStyle.THIN);
+			headerStyle.setBorderLeft(BorderStyle.THIN);
+			headerStyle.setBorderRight(BorderStyle.THIN);
+			headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+			// ── Data cell style: all-sides thin border ──
+			CellStyle dataStyle = workbook.createCellStyle();
+			dataStyle.setBorderTop(BorderStyle.THIN);
+			dataStyle.setBorderBottom(BorderStyle.THIN);
+			dataStyle.setBorderLeft(BorderStyle.THIN);
+			dataStyle.setBorderRight(BorderStyle.THIN);
+
 			// Visible columns: Particulars(0), UOM(1), EOR Value(2), SOR Value(3), Remark(4)
 			// Hidden column:   NormParameterFKId(5)
 			// After-save only: Status(6), Error Description(7)
 			List<String> headerNames = new ArrayList<>(Arrays.asList(
-					"Particulars", "UOM", "EOR Value", "SOR Value", "SD Value", "Remark", "NormParameterFKId"));
+					"Particulars", "UOM", "Normal", "Slow Down", "SOR", "Remark", "NormParameterFKId"));
 			if (isAfterSave) {
 				headerNames.add("Status");
 				headerNames.add("Error Description");
@@ -1803,23 +1862,25 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 			Row headerRow = sheet.createRow(currentRow++);
 			for (int col = 0; col < headerNames.size(); col++) {
-				headerRow.createCell(col).setCellValue(headerNames.get(col));
+				Cell headerCell = headerRow.createCell(col);
+				headerCell.setCellValue(headerNames.get(col));
+				headerCell.setCellStyle(headerStyle);
 			}
 
 			for (VgohtNormConfigurationDTO dto : dtoList) {
 				Row row = sheet.createRow(currentRow++);
 
-				row.createCell(0).setCellValue(dto.getProductName() != null ? dto.getProductName() : "");
-				row.createCell(1).setCellValue(dto.getUOM() != null ? dto.getUOM() : "");
-				row.createCell(2).setCellValue(dto.getApr() != null ? dto.getApr() : 0.0);
-				row.createCell(3).setCellValue(dto.getMay() != null ? dto.getMay() : 0.0);
-				row.createCell(4).setCellValue(dto.getJun() != null ? dto.getJun() : 0.0);
-				row.createCell(5).setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
-				row.createCell(6).setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : "");
+				Cell c0 = row.createCell(0); c0.setCellValue(dto.getProductName() != null ? dto.getProductName() : "");         c0.setCellStyle(dataStyle);
+				Cell c1 = row.createCell(1); c1.setCellValue(dto.getUOM() != null ? dto.getUOM() : "");                         c1.setCellStyle(dataStyle);
+				Cell c2 = row.createCell(2); c2.setCellValue(dto.getApr() != null ? dto.getApr() : 0.0);                        c2.setCellStyle(dataStyle);
+				Cell c3 = row.createCell(3); c3.setCellValue(dto.getMay() != null ? dto.getMay() : 0.0);                        c3.setCellStyle(dataStyle);
+				Cell c4 = row.createCell(4); c4.setCellValue(dto.getJun() != null ? dto.getJun() : 0.0);                        c4.setCellStyle(dataStyle);
+				Cell c5 = row.createCell(5); c5.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");                 c5.setCellStyle(dataStyle);
+				Cell c6 = row.createCell(6); c6.setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : ""); c6.setCellStyle(dataStyle);
 
 				if (isAfterSave) {
-					row.createCell(7).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
-					row.createCell(8).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					Cell c7 = row.createCell(7); c7.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");       c7.setCellStyle(dataStyle);
+					Cell c8 = row.createCell(8); c8.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : ""); c8.setCellStyle(dataStyle);
 				}
 			}
 
@@ -1954,6 +2015,10 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dto.setJun(getCellDouble(sdCell));
 				dto.setRemarks(remark);
 				dto.setNormParameterFKId(normParamFKId);
+
+				if(dto.getProductName().equalsIgnoreCase("Sulphuric Acid")) { 
+
+				}
 
 				dtoList.add(dto);
 			}

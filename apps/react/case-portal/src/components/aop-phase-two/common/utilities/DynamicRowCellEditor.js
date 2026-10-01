@@ -6,6 +6,7 @@ import { TextCellEditorUpdated } from './TextCellEditorUpdated'
 import DateOnlyPicker from './DatePicker'
 import DateTimePickerEditor from './DatePickeronSelectedYr'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
+import { Checkbox } from '@mui/material'
 
 const FormulaTextEditor = ({ dataItem, field, onChange }) => {
   const [localValue, setLocalValue] = React.useState('');
@@ -84,6 +85,26 @@ const FormulaTextEditor = ({ dataItem, field, onChange }) => {
     </td>
   );
 };
+
+export const CheckboxCellEditor = ({ dataItem, field, onChange }) => {
+  const checked = !!dataItem[field];
+  const isCellDisabled = dataItem?.isEditable === false;
+  return (
+    <td style={{ textAlign: 'center', padding: '6px 2px' }}>
+      <Checkbox
+        checked={checked}
+        disabled={isCellDisabled}
+        onChange={(e) => {
+          if (isCellDisabled) return;
+          const newVal = typeof e.target.checked === 'boolean' ? e.target.checked : !checked;
+          onChange({ dataItem, field, value: newVal });
+        }}
+        size='medium'
+      />
+    </td>
+  );
+};
+
 export const DynamicRowCellEditor = (props) => {
   const { dataItem, field, onChange } = props
   const inputType = dataItem?.type
@@ -97,7 +118,6 @@ export const DynamicRowCellEditor = (props) => {
     }
     return opt
   })
-
   switch (inputType) {
     case 'number':
     case 'numeric':
@@ -151,6 +171,9 @@ export const DynamicRowCellEditor = (props) => {
     case 'datetime':
       return <DateTimePickerEditor {...props} />
 
+    case 'checkbox':
+      return <CheckboxCellEditor {...props} />
+
     default:
       return <NoSpinnerNumericEditor {...props} allowNegative={allowNegative} />
   }
@@ -163,7 +186,7 @@ export const DynamicRowDisplayCell = (props) => {
 
   let displayValue = value
 
-  if (inputType === 'boolean' || inputType === 'yesno') {
+  if (inputType === 'boolean' || inputType === 'yesno' || inputType === 'checkbox') {
     displayValue = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value
   } else if (inputType === 'date' && value instanceof Date) {
     const year = value.getFullYear()

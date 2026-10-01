@@ -5,6 +5,7 @@ import {
   DynamicRowDisplayCell,
 } from '../utilities/DynamicRowCellEditor'
 import { useSelector } from 'react-redux'
+import { Checkbox } from '@mui/material'
 
 const RowBasedKendoTable = (props) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -24,91 +25,120 @@ const RowBasedKendoTable = (props) => {
   }
 
   const enhancedColumns = useMemo(() => {
-    return columns.map((col) => {
-      if (col.type === 'row-based' || col.type === 'conditional') {
-              const renderDataCell = (cellProps, inEditPhase = false) => {
-                const { dataItem, field } = cellProps
-                const rowId = dataItem.id
-                const customModifiedCells =
-                  props.externalCustomModifiedCells || {}
-
-                const isEdited = Object.prototype.hasOwnProperty.call(
-                  customModifiedCells?.[rowId] || {},
-                  field,
-                )
-
-                const value = dataItem?.[field]
-                const inputType = dataItem?.type
-
-                let displayValue = value
-
-                if (inputType === 'boolean' || inputType === 'yesno') {
-                  displayValue =
-                    typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value
-                } else if (inputType === 'date' && value instanceof Date) {
-                  const year = value.getFullYear()
-                  const month = String(value.getMonth() + 1).padStart(2, '0')
-                  const day = String(value.getDate()).padStart(2, '0')
-                  displayValue = `${year}-${month}-${day}`
-                } else if (inputType === 'datetime' && value instanceof Date) {
-                  const year = value.getFullYear()
-                  const month = String(value.getMonth() + 1).padStart(2, '0')
-                  const day = String(value.getDate()).padStart(2, '0')
-                  const hours = String(value.getHours()).padStart(2, '0')
-                  const minutes = String(value.getMinutes()).padStart(2, '0')
-                  displayValue = `${year}-${month}-${day} ${hours}:${minutes}`
-                } else if (!isNaN(value) && value !== null && value !== '') {
-                  const decimals = isFilamentOrStaple 
-                    ? getDecimalPlacesFromFormat(col.format)
-                    : dataItem.isEditable ? 2 : 2
-                  displayValue = Number(value).toFixed(decimals)
-                }
-
-                return (
-                  <td
-                    {...cellProps.tdProps}
-                    title={String(displayValue ?? '')}
-                    style={{
-                      color: isEdited && !inEditPhase ? 'orange' : inEditPhase ? '#999' : undefined,
-                      fontWeight: isEdited ? 'bold' : undefined,
-                      ...(inEditPhase ? {
-                        backgroundColor: '#f5f5f5',
-                        cursor: 'not-allowed',
-                      } : {}),
-                    }}
-                  >
-                    {displayValue ?? ''}
-                  </td>
-                )
-              }
-
-              return {
-                ...col,
-                type: 'row-based',
-                cells: {
-                  edit: {
-                    text: (cellProps) => {
-                      const { dataItem, field } = cellProps;
-                      const isColEditable = col.editable !== false;
-                      const isRowEditable = dataItem.isEditable !== false;
-                      
-                      let isCellEditable = true;
-                      if (dataItem?.nonEditableFields?.includes(field)) isCellEditable = false;
-                      if (dataItem?.editableFields && !dataItem?.editableFields?.includes(field)) isCellEditable = false;
-                      
-                      if (!isColEditable || !isRowEditable || !isCellEditable) {
-                        return renderDataCell(cellProps, true);
-                      }
-                      
-                      return <DynamicRowCellEditor {...cellProps} />
-                    }
-                  },
-                  data: (cellProps) => renderDataCell(cellProps, false),
-                },
-              }
+    const enhanceColumn = (col) => {
+      let enhanced = { ...col }
+      
+      if (enhanced.children && Array.isArray(enhanced.children)) {
+        enhanced.children = enhanced.children.map(enhanceColumn)
       }
-      return col
-    })
+
+      if (enhanced.type === 'row-based' || enhanced.type === 'conditional') {
+        const renderDataCell = (cellProps, inEditPhase = false) => {
+          const { dataItem, field, onChange } = cellProps
+          const rowId = dataItem.id
+          const customModifiedCells = props.externalCustomModifiedCells || {}
+
+          const isEdited = Object.prototype.hasOwnProperty.call(
+            customModifiedCells?.[rowId] || {},
+            field,
+          )
+
+          const value = dataItem?.[field]
+          const inputType = dataItem?.type
+
+          let displayValue = value
+
+          if (inputType === 'boolean' || inputType === 'yesno' || inputType === 'checkbox') {
+            displayValue = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value
+          } else if (inputType === 'date' && value instanceof Date) {
+            const year = value.getFullYear()
+            const month = String(value.getMonth() + 1).padStart(2, '0')
+            const day = String(value.getDate()).padStart(2, '0')
+            displayValue = `${year}-${month}-${day}`
+          } else if (inputType === 'datetime' && value instanceof Date) {
+            const year = value.getFullYear()
+            const month = String(value.getMonth() + 1).padStart(2, '0')
+            const day = String(value.getDate()).padStart(2, '0')
+            const hours = String(value.getHours()).padStart(2, '0')
+            const minutes = String(value.getMinutes()).padStart(2, '0')
+            displayValue = `${year}-${month}-${day} ${hours}:${minutes}`
+          } else if (!isNaN(value) && value !== null && value !== '') {
+            const decimals = isFilamentOrStaple
+              ? getDecimalPlacesFromFormat(enhanced.format)
+              : dataItem.isEditable ? 2 : 2
+            displayValue = Number(value).toFixed(decimals)
+          }
+
+          const tdStyle = {
+            color: isEdited && !inEditPhase ? 'orange' : inEditPhase ? '#999' : undefined,
+            fontWeight: isEdited ? 'bold' : undefined,
+            ...(inEditPhase ? {
+              backgroundColor: '#f5f5f5',
+              cursor: 'not-allowed',
+            } : {}),
+          }
+
+          if (inputType === 'checkbox') {
+            const isCellDisabled = dataItem?.isEditable === false;
+            return (
+              <td
+                {...cellProps.tdProps}
+                title={String(displayValue ?? '')}
+                style={{ ...tdStyle, textAlign: 'center', padding: '6px 2px' }}
+                className='k-checkbox-center'
+              >
+                <div style={{ pointerEvents: 'none', display: 'inline-block', textAlign: 'center' }}>
+                  <Checkbox
+                    checked={!!value}
+                    disabled={isCellDisabled}
+                    size="medium"
+                    style={{ padding: '0px' }}
+                  />
+                </div>
+              </td>
+            )
+          }
+
+          return (
+            <td
+              {...cellProps.tdProps}
+              title={String(displayValue ?? '')}
+              style={tdStyle}
+            >
+              {displayValue ?? ''}
+            </td>
+          )
+        }
+
+        return {
+          ...enhanced,
+          type: 'row-based',
+          cells: {
+            edit: {
+              text: (cellProps) => {
+                const { dataItem, field } = cellProps;
+                const isColEditable = enhanced.editable !== false;
+                const isRowEditable = dataItem.isEditable !== false;
+                
+                let isCellEditable = true;
+                if (dataItem?.nonEditableFields?.includes(field)) isCellEditable = false;
+                if (dataItem?.editableFields && !dataItem?.editableFields?.includes(field)) isCellEditable = false;
+                
+                if (!isColEditable || !isRowEditable || !isCellEditable) {
+                  return renderDataCell(cellProps, true);
+                }
+                
+                return <DynamicRowCellEditor {...cellProps} />
+              }
+            },
+            data: (cellProps) => renderDataCell(cellProps, false),
+          },
+        }
+      }
+      return enhanced
+    }
+
+    return columns.map(enhanceColumn)
   }, [columns, props.externalCustomModifiedCells])
 
   return (

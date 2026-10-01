@@ -59,6 +59,7 @@ const OwnerSelection = () => {
       if (dataRes?.code === 200) {
         const formattedData = (dataRes?.data || []).map((item, index) => ({
           ...item,
+          id: item?.normParameterId ?? (item?.id || index),
           idFromApi: item?.id,
           plantOwner: 'Plant Owner',
           remarks: item?.remarks || '',
@@ -144,11 +145,10 @@ const OwnerSelection = () => {
           (opt) => opt.value === row.plantOwnerSelection
         )
         return {
-          id:
-          selectedOption?.id || (row.idFromApi || row.id) || undefined,
+          id: selectedOption?.id || row.idFromApi || undefined,
           remarks: row.remarks || '',
           normParameterId: row.normParameterId,
-        } 
+        }
       })
 
       const response = await ProductionNormsApiService.saveSelectedPlantOwner(

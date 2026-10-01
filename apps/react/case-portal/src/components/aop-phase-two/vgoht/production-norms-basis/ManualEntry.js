@@ -190,7 +190,11 @@ const ManualEntry = ({ startDate, endDate, refreshData }) => {
         }
 
         if (isEorSor) {
-          row.options = ['EOR', 'SOR']
+          row.options = [
+            'Normal Operation',
+            'Slowdown Operation',
+            'Start of Run Operation',
+          ]
         }
 
         monthKeys.forEach((key) => {

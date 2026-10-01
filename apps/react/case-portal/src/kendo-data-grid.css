@@ -287,6 +287,14 @@
   font-weight: 500 !important;
 }
 
+.k-checkbox-center td,
+.k-checkbox-center-disabled td {
+  text-align: center !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
 .disabled-cell,
 .non-editable-cell,
 .k-right-disabled,
