@@ -6766,7 +6766,7 @@ else {
 
 	@Override
     @Transactional
-    public AOPMessageVM calculateOtherCost(UUID plantId, String aopYear, String periodFrom, String periodTo) {
+    public AOPMessageVM calculateOtherCost(UUID plantId, String aopYear) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
 		Plants plant = plantsRepository.findById(plantId).get();
        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
@@ -6775,12 +6775,10 @@ else {
 
         try {
           
-            String sql = "EXEC dbo." + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear, @periodFrom = :periodFrom, @periodTo = :periodTo";
+            String sql = "EXEC dbo." + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("plantId", plantId.toString());
             query.setParameter("aopYear", aopYear);
-            query.setParameter("periodFrom", periodFrom);
-            query.setParameter("periodTo", periodTo);
             query.executeUpdate();
 
             aopMessageVM.setCode(200);

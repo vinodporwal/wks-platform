@@ -168,7 +168,7 @@ const ManualEntry = ({ startDate, endDate, refreshData }) => {
       const generatedMonthCols = monthKeys.map((key) => ({
         field: key,
         title: key,
-        minWidth: 120,
+        minWidth: 200,
         type: 'row-based',
         editable: true,
       }))

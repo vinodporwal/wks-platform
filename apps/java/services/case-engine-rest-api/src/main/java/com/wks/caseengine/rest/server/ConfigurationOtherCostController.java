@@ -67,7 +67,7 @@ public class ConfigurationOtherCostController {
 	}
 
 	@GetMapping(value = "/calculate-other-cost")
-	public AOPMessageVM calculateOtherCost(@RequestParam UUID plantId, @RequestParam String aopYear, @RequestParam String periodFrom, @RequestParam String periodTo) {
-		return configurationService.calculateOtherCost(plantId, aopYear, periodFrom, periodTo);
+	public AOPMessageVM calculateOtherCost(@RequestParam UUID plantId, @RequestParam String aopYear) {
+		return configurationService.calculateOtherCost(plantId, aopYear);
 	}
 }
