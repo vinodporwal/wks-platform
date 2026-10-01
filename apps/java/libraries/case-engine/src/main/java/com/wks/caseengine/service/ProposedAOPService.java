@@ -22,7 +22,7 @@ public interface ProposedAOPService {
 
     public AOPMessageVM getProposedSteadyState(UUID plantId, String aopYear);
 
-    public AOPMessageVM saveProposedSteadyState(List<ProposedAOPDTO> dtoList);
+    public List<ProposedAOPDTO> saveProposedSteadyState(List<ProposedAOPDTO> dtoList);
 
     public byte[] createProposedSteadyStateExcel(UUID plantId, String aopYear, boolean isAfterSave, List<ProposedAOPDTO> dtoList);
 
