@@ -87,6 +87,7 @@ const RowBasedKendoTable = (props) => {
                 style={{ ...tdStyle, textAlign: 'center', padding: '6px 2px' }}
                 className='k-checkbox-center'
               >
+                {dataItem?.hideCheckbox ? null : (
                 <div style={{ pointerEvents: 'none', display: 'inline-block', textAlign: 'center' }}>
                   <Checkbox
                     checked={!!value}
@@ -95,6 +96,7 @@ const RowBasedKendoTable = (props) => {
                     style={{ padding: '0px' }}
                   />
                 </div>
+                )}
               </td>
             )
           }

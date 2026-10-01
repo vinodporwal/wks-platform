@@ -2617,19 +2617,21 @@ const AdvanceKendoTable = ({
                     !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
                   return (
                     <td style={{ textAlign: 'center', padding: '6px 2px' }}>
-                      <Checkbox
-                        checked={checked}
-                        disabled={isCellDisabled}
-                        onChange={(e) => {
-                          if (isCellDisabled) return
-                          const newVal =
-                            typeof e.value === 'boolean'
-                              ? e.value
-                              : e.target?.checked ?? !checked
-                          onChange({ dataItem, field, value: newVal })
-                        }}
-                        size='medium'
-                      />
+                      {dataItem?.hideCheckbox ? null : (
+                        <Checkbox
+                          checked={checked}
+                          disabled={isCellDisabled}
+                          onChange={(e) => {
+                            if (isCellDisabled) return
+                            const newVal =
+                              typeof e.value === 'boolean'
+                                ? e.value
+                                : e.target?.checked ?? !checked
+                            onChange({ dataItem, field, value: newVal })
+                          }}
+                          size='medium'
+                        />
+                      )}
                     </td>
                   )
                 },
@@ -2650,19 +2652,21 @@ const AdvanceKendoTable = ({
                     // doesn't enter full row-edit mode on checkbox click
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Checkbox
-                      checked={checked}
-                      disabled={isCellDisabled}
-                      onChange={(e) => {
-                        if (isCellDisabled) return
-                        const newVal =
-                          typeof e.value === 'boolean'
-                            ? e.value
-                            : e.target?.checked ?? !checked
-                        itemChange({ dataItem, field, value: newVal })
-                      }}
-                      size='medium'
-                    />
+                    {dataItem?.hideCheckbox ? null : (
+                      <Checkbox
+                        checked={checked}
+                        disabled={isCellDisabled}
+                        onChange={(e) => {
+                          if (isCellDisabled) return
+                          const newVal =
+                            typeof e.value === 'boolean'
+                              ? e.value
+                              : e.target?.checked ?? !checked
+                          itemChange({ dataItem, field, value: newVal })
+                        }}
+                        size='medium'
+                      />
+                    )}
                   </td>
                 )
               },

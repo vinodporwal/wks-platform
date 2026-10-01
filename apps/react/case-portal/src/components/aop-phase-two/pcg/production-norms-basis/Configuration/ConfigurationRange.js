@@ -175,6 +175,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
     isEditable: true,
     nonEditableFields: ['rangeValue'],
     type: 'text',
+    hideCheckbox: true,
   },
   {
     id: 4,
@@ -188,6 +189,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
     isEditable: true,
     nonEditableFields: ['rangeValue'],
     type: 'text',
+    hideCheckbox: true,
   },
   {
     id: 5,
@@ -201,6 +203,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
     isEditable: true,
     nonEditableFields: ['rangeValue'],
     type: 'text',
+    hideCheckbox: true,
   },
   {
     id: 6,
@@ -214,6 +217,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
     isEditable: true,
     nonEditableFields: ['rangeValue'],
     type: 'text',
+    hideCheckbox: true,
   },
   {
     id: 7,
@@ -594,6 +598,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
       setModifiedCells({})
 
       if (response?.code === 422) {
+        setLoading(false)
         // Show success notification first
         setSnackbarOpen(true)
         setSnackbarData({
@@ -621,15 +626,14 @@ const FILTER_CONFIG_DUMMY_DATA = [
 
       await fetchConfigurationData()
     } catch (error) {
+      setLoading(false)
       console.error('Error saving configuration data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const handleExcelUpload = async (file) => {
@@ -701,9 +705,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
         message: `Failed to import Excel file: ${error.message}`,
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const handleExport = async () => {

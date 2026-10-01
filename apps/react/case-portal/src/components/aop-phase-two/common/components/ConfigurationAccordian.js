@@ -116,10 +116,10 @@ const ConfigurationAccordian = ({
   const [sorEndDate, setSorEndDate] = useState()
   const [sorStartShow, setSorStartShow] = useState(false)
   const [sorEndShow, setSorEndShow] = useState(false)
-  const [eorStartDate, setEorStartDate] = useState()
-  const [eorEndDate, setEorEndDate] = useState()
-  const [eorStartShow, setEorStartShow] = useState(false)
-  const [eorEndShow, setEorEndShow] = useState(false)
+  const [slowDownStartDate, setSlowDownStartDate] = useState()
+  const [slowDownEndDate, setSlowDownEndDate] = useState()
+  const [slowDownStartShow, setSlowDownStartShow] = useState(false)
+  const [slowDownEndShow, setSlowDownEndShow] = useState(false)
   const [summary, setSummary] = useState('')
   const [lastModifiedBy, setLastModifiedBy] = useState('')
   const [dateEdited, setDateEdited] = useState(false)
@@ -314,8 +314,8 @@ const ConfigurationAccordian = ({
       setEndDate(getDateValue('EndDate'))
       setSorStartDate(getDateValue('SORStartDate'))
       setSorEndDate(getDateValue('SOREndDate'))
-      setEorStartDate(getDateValue('EORStartDate'))
-      setEorEndDate(getDateValue('EOREndDate'))
+      setSlowDownStartDate(getDateValue('SlowDownStartDate'))
+      setSlowDownEndDate(getDateValue('SlowDownEndDate'))
     } else {
       const today = new Date()
       const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
@@ -328,8 +328,8 @@ const ConfigurationAccordian = ({
       setEndDate(fallbackEndDate)
       setSorStartDate(fallbackStartDate)
       setSorEndDate(fallbackEndDate)
-      setEorStartDate(fallbackStartDate)
-      setEorEndDate(fallbackEndDate)
+      setSlowDownStartDate(fallbackStartDate)
+      setSlowDownEndDate(fallbackEndDate)
     }
   }, [configurationExecutionDetails])
 
@@ -415,8 +415,8 @@ const ConfigurationAccordian = ({
         AOP_YEAR,
         sorStartDate,
         sorEndDate,
-        eorStartDate,
-        eorEndDate
+        slowDownStartDate,
+        slowDownEndDate
       )
 
       if (!payload) {
@@ -539,9 +539,9 @@ const ConfigurationAccordian = ({
   // Notify parent component when dates change
   useEffect(() => {
     if (onDatesChange && startDate && endDate) {
-      onDatesChange(startDate, endDate, sorStartDate, sorEndDate, eorStartDate, eorEndDate)
+      onDatesChange(startDate, endDate, sorStartDate, sorEndDate, slowDownStartDate, slowDownEndDate)
     }
-  }, [startDate, endDate, sorStartDate, sorEndDate, eorStartDate, eorEndDate, onDatesChange])
+  }, [startDate, endDate, sorStartDate, sorEndDate, slowDownStartDate, slowDownEndDate, onDatesChange])
 
   const startDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
@@ -710,7 +710,7 @@ const ConfigurationAccordian = ({
                   {isThreeDates && (
                     <Stack direction='row' alignItems='center' spacing={2} style={{ marginLeft: '10px' }}>
                       <Typography variant='caption' className='aop-design-basis-label' sx={{ width: '160px', textAlign: 'left' }}>
-                        Slow down operation
+                        Slow Down operation
                       </Typography>
                       <Stack
                         direction='row'
@@ -718,8 +718,8 @@ const ConfigurationAccordian = ({
                         alignItems='center'
                         flexWrap='wrap'
                       >
-                        {renderDatePickerPill('Start Date', eorStartDate, setEorStartDate, eorStartShow, setEorStartShow, 'eor-start-date')}
-                        {renderDatePickerPill('End Date', eorEndDate, setEorEndDate, eorEndShow, setEorEndShow, 'eor-end-date')}
+                        {renderDatePickerPill('Start Date', slowDownStartDate, setSlowDownStartDate, slowDownStartShow, setSlowDownStartShow, 'slow-down-start-date')}
+                        {renderDatePickerPill('End Date', slowDownEndDate, setSlowDownEndDate, slowDownEndShow, setSlowDownEndShow, 'slow-down-end-date')}
                       </Stack>
                     </Stack>
                   )}
@@ -825,10 +825,10 @@ const ConfigurationAccordian = ({
     sorEndDate,
     sorStartShow,
     sorEndShow,
-    eorStartDate,
-    eorEndDate,
-    eorStartShow,
-    eorEndShow,
+    slowDownStartDate,
+    slowDownEndDate,
+    slowDownStartShow,
+    slowDownEndShow,
     isEORSORDATE,
     isThreeDates,
     summary,
