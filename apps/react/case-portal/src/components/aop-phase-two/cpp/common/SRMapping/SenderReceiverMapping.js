@@ -259,6 +259,12 @@ const SenderReceiverMapping = () => {
         label: plant.plantName || plant.plantCode || 'Unknown Plant',
         code: plant.plantCode || '',
         sourceName: plant.sourceName?.toLowerCase() || '',
+        siteId: plant.siteId || '',
+        siteName: plant.siteName || '',
+        siteDisplayName: plant.siteDisplayName || '',
+        verticalId: plant.verticalId || '',
+        verticalName: plant.verticalName || '',
+        verticalDisplayName: plant.verticalDisplayName || '',
       }))
       setPlantsDropdown(plantsOptions)
 
@@ -412,6 +418,20 @@ const SenderReceiverMapping = () => {
       const filtered = plantsDropdown.filter(
         (p) =>
           p.sourceName?.toLowerCase() === selectedCppPlantId?.toLowerCase(),
+      )
+      return filtered
+    },
+    [plantsDropdown],
+  )
+  const getFilteredReceiverPlants = useCallback(
+    (dataItem) => {
+      const selectedCppPlantId = dataItem?.cppPlantId
+      if (!selectedCppPlantId) return []
+
+      const filtered = plantsDropdown.filter(
+        (p) =>
+          p.sourceName?.toLowerCase() === selectedCppPlantId?.toLowerCase() &&
+          p.verticalName?.toLowerCase() === 'cpp',
       )
       return filtered
     },
@@ -623,8 +643,8 @@ const SenderReceiverMapping = () => {
       {
         field: 'senderCostCenterName',
         title: 'Sender Cost Center',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
@@ -635,15 +655,15 @@ const SenderReceiverMapping = () => {
         field: 'senderCostCenterCode',
         title: 'Sender Cost Center Code',
         widthT: 200,
-        minWidth: 200,
+        minWidth: 180,
         type: 'text',
         editable: false,
       },
       {
         field: 'senderPlantName',
         title: 'Sender Plant',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
@@ -654,16 +674,16 @@ const SenderReceiverMapping = () => {
       {
         field: 'senderPlantCode',
         title: 'Sender Plant Code',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 180,
+        minWidth: 180,
         type: 'text',
         editable: false,
       },
       {
         field: 'senderUtilityName',
         title: 'Utility',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
@@ -690,8 +710,8 @@ const SenderReceiverMapping = () => {
       {
         field: 'receiverCostCenterName',
         title: 'Receiver Cost Center',
-        widthT: 180,
-        minWidth: 180,
+        widthT: 220,
+        minWidth: 220,
         editable: isSRMappingRole || isSRMappingEditRole,
         type: 'select',
         dynamicOptions: true,
@@ -709,28 +729,28 @@ const SenderReceiverMapping = () => {
       {
         field: 'receiverPlantName',
         title: 'Receiver Plant',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
-        getOptions: getFilteredPlants,
+        getOptions: getFilteredReceiverPlants,
         editable: isSRMappingRole,
         conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'receiverPlantCode',
         title: 'Receiver Plant Code',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 180,
+        minWidth: 180,
         type: 'text',
         editable: false,
       },
       {
         field: 'receiverUtilityName',
         title: 'Receiver Utility',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
@@ -782,6 +802,7 @@ const SenderReceiverMapping = () => {
       cppPlantList,
       getFilteredCostCenters,
       getFilteredPlants,
+      getFilteredReceiverPlants,
       getFilteredSenderUtilities,
       getFilteredReceiverUtilities,
       actionCell,
@@ -1170,7 +1191,7 @@ const SenderReceiverMapping = () => {
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
-          customHeight={80}
+          customHeight={70}
           customItemChange={handleCustomItemChange}
           paginationConfig={{
             threshold: 100,
