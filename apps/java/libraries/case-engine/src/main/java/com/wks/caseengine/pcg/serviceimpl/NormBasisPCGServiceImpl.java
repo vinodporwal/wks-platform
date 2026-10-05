@@ -60,27 +60,46 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 
 	    String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
 
-	    return jdbcTemplate.query(sql, (rs, rowNum) -> {
+	    // Execute native query expecting Object[] rows
+	    List<Object[]> rows = jdbcTemplate.query(
+	        sql,
+	        (rs, rowNum) -> {
+	            int columnCount = rs.getMetaData().getColumnCount();
+	            Object[] row = new Object[columnCount];
+	            for (int i = 0; i < columnCount; i++) {
+	                row[i] = rs.getObject(i + 1);
+	            }
+	            return row;
+	        },
+	        plantId.toString(),
+	        aopYear
+	    );
 
-	        String idStr = rs.getString("NormParameter_FK_Id");
+	    List<NormBasisPCGDTO> resultList = new ArrayList<>();
 
-	        UUID id = (idStr != null && !idStr.isBlank())
-	                ? UUID.fromString(idStr)
+	    for (Object[] row : rows) {
+	        NormBasisPCGDTO dto = new NormBasisPCGDTO();
+
+	        String idStr = row[0] != null ? row[0].toString() : null;
+	        UUID normParameterFkId = (idStr != null && !idStr.isBlank()) 
+	                ? UUID.fromString(idStr) 
 	                : null;
 
-	        return NormBasisPCGDTO.builder()
-	                .normParameterId(id)
-	                .name(rs.getString("DisplayName"))
-	                .displayName(rs.getString("DisplayName"))
-	                .uom(rs.getString("UOM"))
-	                .attributeValue(rs.getString("TargetValue"))
-	                .remarks(rs.getString("Remarks"))
-	                .type(rs.getString("Type"))
-	                .normParameterType(rs.getString("NormParameterTypeDisplayName"))
-	                .dependantAttributeId(rs.getString("DependantAttributeId"))
-	                .build();
+	        dto.setNormParameterFkId(normParameterFkId);
+	        dto.setDisplayName(row[1] != null ? row[1].toString() : "");
+	        dto.setDependantAttributeId(row[2] != null ? row[2].toString() : "");
+	        dto.setTargetValue(row[3] != null ? row[3].toString() : "");
+	        dto.setRange(row[4] != null ? row[4].toString() : "");
+	        dto.setSelection(row[5] != null ? row[5].toString() : "");
+	        dto.setRemarks(row[6] != null ? row[6].toString() : "");
+	        dto.setUom(row[7] != null ? row[7].toString() : "");
+	        dto.setNormParameterTypeDisplayName(row[8] != null ? row[8].toString() : "");
+	        dto.setType(row[9] != null ? row[9].toString() : "");
 
-	    }, plantId.toString(), aopYear);
+	        resultList.add(dto);
+	    }
+
+	    return resultList;
 	}
 	
 	@Override
@@ -88,11 +107,6 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			String periodFrom, String periodTo) {
 
 		List<Object[]> updates = new ArrayList<>();
-
-		for (NormBasisPCGDTO normBasisDTO : normBasisDTOs) {
-			updates.add(
-					new Object[] { normBasisDTO.getAttributeValue(), normBasisDTO.getRemarks(), normBasisDTO.getNormParameterId() });
-		}
 
 		if (updates.size() > 0) {
 			String sql = "update NormAttributeTransactions set AttributeValue = ?, Remarks = ? where Id = ?";
