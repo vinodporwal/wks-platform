@@ -49,7 +49,7 @@ export const ProductionNormsApiService = {
  * @returns {Promise} Configuration data
  */
 async function getConfigurationData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/norm-basis-filters?aopYear=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

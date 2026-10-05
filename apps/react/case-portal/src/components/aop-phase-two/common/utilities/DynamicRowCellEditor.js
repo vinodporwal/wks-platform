@@ -16,7 +16,7 @@ const FormulaTextEditor = ({ dataItem, field, onChange }) => {
 
   React.useEffect(() => {
     const value = String(dataItem?.[field] || '');
-    const match = value.match(/^([\+\/-]+\s*)(\d+(?:\.\d+)?)(\s*%?)?$/);
+    const match = value.match(/^([+/-]+\s*)(\d+(?:\.\d+)?)(\s*%?)?$/);
     if (match) {
       setPrefix(match[1] || '');
       setLocalValue(match[2] || '');
@@ -157,7 +157,7 @@ export const DynamicRowCellEditor = (props) => {
       return <BooleanCellEditor {...props} />
 
     case 'formula-text':
-      if (/^[\+\/-]+\s*\d+(?:\.\d+)?\s*%?$/.test(String(dataItem?.[field] || ''))) {
+      if (/^[+/-]+\s*\d+(?:\.\d+)?\s*%?$/.test(String(dataItem?.[field] || ''))) {
         return <FormulaTextEditor {...props} />
       }
       return <TextCellEditorUpdated {...props} />
