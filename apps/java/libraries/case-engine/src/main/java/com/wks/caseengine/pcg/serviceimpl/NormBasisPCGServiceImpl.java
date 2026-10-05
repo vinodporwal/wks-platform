@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import com.wks.caseengine.pcg.service.NormBasisPCGService;
@@ -125,35 +126,44 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 	}
 
 	private void saveOrUpdateTransaction(UUID normParameterFKId, Integer aopMonth, String auditYear,
-			String attributeValue, String remarks) {
+	        String attributeValue, String remarks) {
 
-		Optional<NormAttributeTransactions> existingOpt = transactionsRepository
-				.findByNormParameterFKIdAndAopMonthAndAuditYear(normParameterFKId, aopMonth, auditYear);
+	    try {
+	        Optional<NormAttributeTransactions> existingOpt = transactionsRepository
+	                .findByNormParameterFKIdAndAopMonthAndAuditYear(normParameterFKId, aopMonth, auditYear);
 
-		NormAttributeTransactions transaction;
-		Date currentDate = new Date();
+	        NormAttributeTransactions transaction;
+	        Date currentDate = new Date();
 
-		if (existingOpt.isPresent()) {
-			transaction = existingOpt.get();
-			transaction.setAttributeValue(attributeValue != null ? attributeValue : "");
-			transaction.setRemarks(remarks);
-			transaction.setModifiedOn(currentDate);
-			transaction.setUserName(Utility.getUserName());
-		} else {
-			transaction = new NormAttributeTransactions();
-			transaction.setNormParameterFKId(normParameterFKId);
-			transaction.setAopMonth(aopMonth);
-			transaction.setAuditYear(auditYear);
-			transaction.setAttributeValue(attributeValue != null ? attributeValue : "");
-			transaction.setRemarks(remarks);
-			transaction.setCreatedOn(currentDate);
-			transaction.setModifiedOn(currentDate);
-			transaction.setUserName(Utility.getUserName());
-		}
+	        if (existingOpt.isPresent()) {
+	            transaction = existingOpt.get();
+	            transaction.setAttributeValue(attributeValue != null ? attributeValue : "");
+	            transaction.setRemarks(remarks != null ? remarks : "");
+	            transaction.setModifiedOn(currentDate);
+	            transaction.setUserName(Utility.getUserName());
+	        } else {
+	            transaction = new NormAttributeTransactions();
+	            transaction.setNormParameterFKId(normParameterFKId);
+	            transaction.setAopMonth(aopMonth);
+	            transaction.setAuditYear(auditYear);
+	            transaction.setAttributeValue(attributeValue != null ? attributeValue : "");
+	            transaction.setRemarks(remarks != null ? remarks : "");
+	            transaction.setCreatedOn(currentDate);
+	            transaction.setModifiedOn(currentDate);
+	            transaction.setUserName(Utility.getUserName());
+	        }
 
-		transactionsRepository.save(transaction);
+	        transactionsRepository.save(transaction);
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid argument provided for transaction saving", e);
+	    } catch (DataAccessException dae) {
+	        throw new RuntimeException("Database error occurred while saving transaction record", dae);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to save or update norm attribute transaction", ex);
+	    }
 	}
-
+	
 	@Override
 	public AOPMessageVM LoadButtonNormCalculation(UUID plantId, String aopYear, UUID siteId, String periodFrom,
 			String periodTo) {
