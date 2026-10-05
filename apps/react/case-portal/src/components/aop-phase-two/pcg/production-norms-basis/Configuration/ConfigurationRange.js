@@ -78,12 +78,11 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const columns = [
     {
       field: 'name',
-      title: 'Particulars',
+      title: 'Data Filters',
       widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
-      hidden: false,
     },
     {
       field: 'uom',
@@ -94,19 +93,24 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       editable: false,
     },
     {
-      field: 'attributeValue',
-      title: 'Value',
+      field: 'targetValue',
+      title: 'Target Value',
       editable: true,
-      widthT: 100,
-      minWidth: 80,
-      align: 'left',
-      headerAlign: 'left',
+      widthT: 120,
+      minWidth: 100,
       type: 'row-based',
-      format: valueFormat,
     },
     {
-      field: 'status',
-      title: 'Status',
+      field: 'rangeValue',
+      title: 'Range',
+      editable: true,
+      widthT: 120,
+      minWidth: 100,
+      type: 'row-based',
+    },
+    {
+      field: 'selection',
+      title: 'Selection',
       editable: true,
       widthT: 80,
       minWidth: 80,
@@ -121,81 +125,205 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       minWidth: 250,
       showPlaceholder: false,
     },
+    {
+      field: 'utilities',
+      title: 'Applicable Utilities & Cat-Chems',
+      widthT: 250,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+    },
   ]
 
-  const FILTER_CONFIG_DUMMY_DATA = [
-    // ── Fuel (Syngas) ────────────────────────────────────────────────────────────
-    {
-      id: 1,
-      name: 'C3 AGR C003',
-      uom: '',
-      criteriaType: 'Selection',
-      attributeValue: 'Inline',
-      type: 'dropdown',
-      normParameterType: 'Fuel (Syngas)',
-      status: true,
-      remarks: 'Inline → tag < 0 (°C); Bypass → tag > 0 (°C)',
-      isEditable: true,
-      options: ['Inline', 'Bypass'],
-      allowNegative: false,
-    },
-    {
-      id: 2,
-      name: 'C3 AGR C003 value',
-      uom: '°C',
-      criteriaType: 'Selection',
-      attributeValue: '0',
-      type: 'number',
-      normParameterType: 'Fuel (Syngas)',
-      status: true,
-      remarks: 'Inline → tag < 0 (°C); Bypass → tag > 0 (°C)',
-      isEditable: true,
-      options: [],
-      allowNegative: false,
-    },
-    {
-      id: 3,
-      name: 'J3 Acid Gas Flow Min',
-      uom: 'Nm³/hr',
-      criteriaType: 'Min Value',
-      attributeValue: '30000',
-      type: 'number',
-      normParameterType: 'Fuel (Syngas)',
-      status: true,
-      remarks: 'Min of range: 30000 – 45000 Nm³/hr',
-      isEditable: true,
-      options: [],
-      allowNegative: true,
-    },
-    {
-      id: 4,
-      name: 'J3 Acid Gas Flow Max',
-      uom: 'Nm³/hr',
-      criteriaType: 'Max Value',
-      attributeValue: '45000',
-      type: 'number',
-      normParameterType: 'Fuel (Syngas)',
-      status: true,
-      remarks: 'Max of range: 30000 – 45000 Nm³/hr',
-      isEditable: true,
-      options: [],
-      allowNegative: true,
-    },
-    {
-      id: 5,
-      name: 'J1 Acid Gas Flow',
-      uom: 'Nm³/hr',
-      criteriaType: 'Yearly Avg',
-      attributeValue: '9000',
-      type: 'number',
-      normParameterType: 'Fuel (Syngas)',
-      status: true,
-      remarks: 'Yearly average baseline. Filter applied as Avg ± 10000 Nm³/hr',
-      isEditable: true,
-      options: [],
-      allowNegative: true,
-    },
-  ]
+const FILTER_CONFIG_DUMMY_DATA = [
+  {
+    id: 1,
+    name: 'Sulphur Production',
+    uom: '',
+    targetValue: 'PIMS Sulphur Production (auto fetch from PIMS throughput tab)',
+    rangeValue: '+/- 5%',
+    selection: false,
+    remarks: '',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['targetValue'],
+    type: 'formula-text',
+  },
+  {
+    id: 2,
+    name: 'AGR C003 Inline/Bypass',
+    uom: '',
+    targetValue: 'Bypass',
+    rangeValue: '+/-5%',
+    selection: false,
+    remarks: '',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'dropdown',
+    options: ['Inline', 'Bypass'],
+  },
+  {
+    id: 3,
+    name: 'AGR C003 Inline (G330PI400340 A/B/C)',
+    uom: 'kg/cm2g',
+    targetValue: '1.2',
+    rangeValue: '',
+    selection: false,
+    remarks: 'Less than target value',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+    hideCheckbox: true,
+  },
+  {
+    id: 4,
+    name: 'AGR C003 Inline ( G330FIC400305)',
+    uom: '%',
+    targetValue: '10',
+    rangeValue: '',
+    selection: false,
+    remarks: 'more than target value',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+    hideCheckbox: true,
+  },
+  {
+    id: 5,
+    name: 'AGR C003 Bypass (G330PI400340 A/B/C)',
+    uom: 'kg/cm2g',
+    targetValue: '1.6',
+    rangeValue: '',
+    selection: false,
+    remarks: 'more than target value',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+    hideCheckbox: true,
+  },
+  {
+    id: 6,
+    name: 'AGR C003 Bypass ( G330FIC400305)',
+    uom: '%',
+    targetValue: '2',
+    rangeValue: '',
+    selection: false,
+    remarks: 'Less than target value',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+    hideCheckbox: true,
+  },
+  {
+    id: 7,
+    name: 'J1 Acid Gas Flow',
+    uom: 'Nm3/Hr',
+    targetValue: 'Manual input',
+    rangeValue: '+/- 500',
+    selection: false,
+    remarks: '',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: [],
+    type: 'formula-text',
+  },
+  {
+    id: 8,
+    name: 'Average J3 Acid Gas H2S Concentration',
+    uom: '%',
+    targetValue: 'Manual input',
+    rangeValue: '+/- 2%',
+    selection: false,
+    remarks: '',
+    utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: [],
+    type: 'formula-text',
+  },
+  {
+    id: 9,
+    name: 'Incinerator Temperature (G360TIC000157)',
+    uom: 'Deg C',
+    targetValue: '740',
+    rangeValue: '',
+    selection: false,
+    remarks: 'more than target value',
+    utilities: 'Fuel, HP Stam, LP Steam, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+  },
+  {
+    id: 10,
+    name: 'Incinerator Temperature (G361TIC000157)',
+    uom: 'Deg C',
+    targetValue: '740',
+    rangeValue: '',
+    selection: false,
+    remarks: 'more than target value',
+    utilities: 'Fuel, HP Stam, LP Steam, Return Steam Condensate, BFW',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+  },
+  {
+    id: 11,
+    name: 'Average O2 Enrichment',
+    uom: '%',
+    targetValue: 'Manual input',
+    rangeValue: '+/- 2%',
+    selection: false,
+    remarks: '',
+    utilities: 'Oxygen, Power',
+    isEditable: true,
+    nonEditableFields: [],
+    type: 'formula-text',
+  },
+  {
+    id: 12,
+    name: 'SWS-1 Sour Water Processing Rate',
+    uom: 'M3/Hr',
+    targetValue: '200',
+    rangeValue: '',
+    selection: false,
+    remarks: 'More than target value',
+    utilities: 'LP Steam & Return Steam Condensate',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+  },
+  {
+    id: 13,
+    name: 'SRU-1 Sulphur production (GSR1PR001)',
+    uom: 'TPD',
+    targetValue: '50',
+    rangeValue: '',
+    selection: false,
+    remarks: 'More than target value',
+    utilities: 'LLP N2, LP N2, Instrument Air, DM Water, Utility Water, Plant Air, caustic, CHEM Ammonia, Chem Maxtreat 3223 SJ',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+  },
+  {
+    id: 14,
+    name: 'SRU-2 Sulphur production (GSR2PR001)',
+    uom: 'TPD',
+    targetValue: '50',
+    rangeValue: '',
+    selection: false,
+    remarks: 'More than target value',
+    utilities: 'LLP N2, LP N2, Instrument Air, DM Water, Utility Water, Plant Air, caustic, CHEM Ammonia, Chem Maxtreat 3223 SJ',
+    isEditable: true,
+    nonEditableFields: ['rangeValue'],
+    type: 'text',
+  }
+]
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -206,12 +334,34 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      // const res = await ProductionNormsApiService.getConfigurationData(
+      const apiRes = FILTER_CONFIG_DUMMY_DATA
+      //  await ProductionNormsApiService.getConfigurationData(
       //   keycloak,
       //   PLANT_ID,
       //   AOP_YEAR,
       // )
-      const res = FILTER_CONFIG_DUMMY_DATA
+      
+      let res = []
+      if (apiRes && apiRes.length > 0) {
+        // Merge API response with static config to preserve frontend rules like nonEditableFields and formula-text type
+        res = apiRes.map((apiItem, index) => {
+          const dummyItem = FILTER_CONFIG_DUMMY_DATA.find(d => d.name === apiItem.name || d.name === apiItem.productName) 
+                         || FILTER_CONFIG_DUMMY_DATA[index] || {};
+                         
+          return {
+            ...dummyItem,
+            ...apiItem,
+            // Preserve UI specific fields from dummy data over API response if they exist
+            isEditable: dummyItem.isEditable !== undefined ? dummyItem.isEditable : true,
+            nonEditableFields: dummyItem.nonEditableFields || [],
+            type: dummyItem.type || 'text',
+            options: dummyItem.options || [],
+          }
+        })
+      } else {
+        // Fallback to dummy data if API returns empty (first load)
+        res = FILTER_CONFIG_DUMMY_DATA
+      }
 
       if (res?.length === 0) {
         setRows([])
@@ -300,6 +450,20 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         return row
       })
 
+      // Apply AGR C003 Inline/Bypass logic on initial load
+      const row2 = updatedFormattedData.find((r) => r.id === 2)
+      if (row2 && row2.targetValue) {
+        updatedFormattedData.forEach((row) => {
+          if (row2.targetValue === 'Bypass') {
+            if (row.id === 3 || row.id === 4) row.isEditable = false
+            if (row.id === 5 || row.id === 6) row.isEditable = true
+          } else if (row2.targetValue === 'Inline') {
+            if (row.id === 3 || row.id === 4) row.isEditable = true
+            if (row.id === 5 || row.id === 6) row.isEditable = false
+          }
+        })
+      }
+
       setRows(updatedFormattedData)
       setOriginalRows(updatedFormattedData)
 
@@ -325,7 +489,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     // showExport: true,
     downloadExcelBtnFromUI: true,
     ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
-    showImport: true,
+    showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Configuration',
@@ -386,7 +550,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       return
     }
 
-    const fieldsToCheck = ['attributeValue']
+    const fieldsToCheck = ['targetValue', 'rangeValue']
     const validationError = validateRowDataWithRemarks(
       data.filter((item) => item.isEditable == true),
       originalRows,
@@ -434,6 +598,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       setModifiedCells({})
 
       if (response?.code === 422) {
+        setLoading(false)
         // Show success notification first
         setSnackbarOpen(true)
         setSnackbarData({
@@ -461,15 +626,14 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
       await fetchConfigurationData()
     } catch (error) {
+      setLoading(false)
       console.error('Error saving configuration data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const handleExcelUpload = async (file) => {
@@ -541,9 +705,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         message: `Failed to import Excel file: ${error.message}`,
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const handleExport = async () => {
@@ -581,7 +743,23 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const handleCustomItemChange = (e, setRowsCallback) => {
     const { dataItem, field, value } = e
 
-    if (field !== 'attributeValue') return
+    if (field !== 'targetValue' && field !== 'rangeValue') return
+
+    // Dynamic row disable logic for AGR C003 Inline/Bypass
+    if (dataItem.id === 2 && field === 'targetValue') {
+      setRowsCallback((currentRows) => {
+        return currentRows.map((row) => {
+          if (value === 'Bypass') {
+            if (row.id === 3 || row.id === 4) return { ...row, isEditable: false }
+            if (row.id === 5 || row.id === 6) return { ...row, isEditable: true }
+          } else if (value === 'Inline') {
+            if (row.id === 3 || row.id === 4) return { ...row, isEditable: true }
+            if (row.id === 5 || row.id === 6) return { ...row, isEditable: false }
+          }
+          return row
+        })
+      })
+    }
 
     const currentProductName = dataItem.name
     let dependentFieldsToCheck = []
@@ -615,6 +793,49 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
           setCustomModifiedCells,
         })
         return
+      }
+
+// Handle multi-value mapping
+      if (calculationType === 'multiValueMapping' && valueMapping) {
+        const dependentValues = valueMapping[value]
+        if (dependentValues) {
+          Object.keys(dependentValues).forEach((dependentProductName) => {
+            const dependentValue = dependentValues[dependentProductName]
+            handleValueMappingDependency({
+              value,
+              dependencyConfig: { dependentProductName, valueMapping: { [value]: dependentValue } },
+              rows,
+              setRowsCallback,
+              setModifiedCells,
+              setCustomModifiedCells,
+              sourceFieldName: currentProductName,
+              editabilityRules,
+            })
+            dependentFieldsToCheck.push({ fieldName: dependentProductName, fieldValue: dependentValue })
+          })
+
+          if (dependentFieldsToCheck.length > 0) {
+            setTimeout(() => {
+              setRowsCallback((currentRows) => {
+                dependentFieldsToCheck.forEach(({ fieldName, fieldValue }) => {
+                  if (additionDependencyConfig.sourceFields.includes(fieldName)) {
+                    handleAdditionDependency({
+                      currentFieldName: fieldName,
+                      value: fieldValue,
+                      dependencyConfig: additionDependencyConfig,
+                      rows: currentRows,
+                      setRowsCallback,
+                      setModifiedCells,
+                      setCustomModifiedCells,
+                    })
+                  }
+                })
+                return currentRows
+              })
+            }, 0)
+          }
+          return
+        }
       }
 
       // Handle value mapping (dropdown dependencies)
@@ -708,7 +929,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         customItemChange={handleCustomItemChange}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
-        groupBy={['normParameterType']}
+
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

@@ -168,7 +168,7 @@ const ManualEntry = ({ startDate, endDate, refreshData }) => {
       const generatedMonthCols = monthKeys.map((key) => ({
         field: key,
         title: key,
-        minWidth: 120,
+        minWidth: 200,
         type: 'row-based',
         editable: true,
       }))
@@ -190,7 +190,11 @@ const ManualEntry = ({ startDate, endDate, refreshData }) => {
         }
 
         if (isEorSor) {
-          row.options = ['EOR', 'SOR']
+          row.options = [
+            'Normal Operation',
+            'Slowdown Operation',
+            'Start of Run Operation',
+          ]
         }
 
         monthKeys.forEach((key) => {

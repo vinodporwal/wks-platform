@@ -101,6 +101,7 @@ const ProposedSteadyStateConsumption = () => {
         setModifiedCells({})
         fetchData()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Save Failed!',
@@ -108,15 +109,14 @@ const ProposedSteadyStateConsumption = () => {
         })
       }
     } catch (error) {
+      setLoading(false)
       console.error('Error saving data!', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const saveChanges = React.useCallback(async () => {
@@ -416,15 +416,15 @@ const ProposedSteadyStateConsumption = () => {
         setModifiedCells({})
         fetchData()
       } else if (response?.code === 400 && response?.data) {
+        setLoading(false)
         downloadBase64Excel(response.data, 'Error File - Proposed AOP.xlsx')
-
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        fetchData()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Upload Failed!',
@@ -433,14 +433,13 @@ const ProposedSteadyStateConsumption = () => {
       }
     } catch (error) {
       console.error('Error uploading excel:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const permissions = {
