@@ -16,17 +16,15 @@ import lombok.NoArgsConstructor;
 @Data
 public class NormBasisPCGDTO {
 	
-    private String name;
+	private UUID normParameterFkId;
     private String displayName;
-    private String uom;
-    private String attributeValue;
-    private String config;
-    private String remarks;
-    private String type;
-    private String normParameterType;
-    private String displayOrder;
-    private boolean isEditable;
     private String dependantAttributeId;
-    private UUID normParameterId;
+    private String targetValue;
+    private String range;
+    private String selection;
+    private String remarks;
+    private String uom;
+    private String normParameterTypeDisplayName;
+    private String type;
 
 }
