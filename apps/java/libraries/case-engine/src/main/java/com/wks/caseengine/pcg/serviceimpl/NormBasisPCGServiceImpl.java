@@ -69,7 +69,7 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 	                : null;
 
 	        return NormBasisPCGDTO.builder()
-	                .id(id)
+	                .normParameterId(id)
 	                .name(rs.getString("DisplayName"))
 	                .displayName(rs.getString("DisplayName"))
 	                .uom(rs.getString("UOM"))
@@ -91,7 +91,7 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 
 		for (NormBasisPCGDTO normBasisDTO : normBasisDTOs) {
 			updates.add(
-					new Object[] { normBasisDTO.getAttributeValue(), normBasisDTO.getRemarks(), normBasisDTO.getId() });
+					new Object[] { normBasisDTO.getAttributeValue(), normBasisDTO.getRemarks(), normBasisDTO.getNormParameterId() });
 		}
 
 		if (updates.size() > 0) {

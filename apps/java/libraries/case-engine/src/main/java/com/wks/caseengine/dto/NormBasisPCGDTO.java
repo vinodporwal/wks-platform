@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class NormBasisPCGDTO {
 	
-	private UUID id;
     private String name;
     private String displayName;
     private String uom;
@@ -28,5 +27,6 @@ public class NormBasisPCGDTO {
     private String displayOrder;
     private boolean isEditable;
     private String dependantAttributeId;
+    private UUID normParameterId;
 
 }
