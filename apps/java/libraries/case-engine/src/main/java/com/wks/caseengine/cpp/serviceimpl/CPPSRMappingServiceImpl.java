@@ -43,11 +43,9 @@ import com.wks.caseengine.cpp.utility.ExcelColumns;
 import com.wks.caseengine.cpp.utility.ExcelStyles;
 import com.wks.caseengine.cpp.utility.FiscalYearMonths;
 import com.wks.caseengine.entity.AopCalculation;
-import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
-import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.utility.Utility;
 
@@ -59,14 +57,15 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
     private static final Logger logger = LoggerFactory.getLogger(CPPSRMappingServiceImpl.class);
 
+    /** NormParameterType names considered "utility" parameters for SR Mapping. */
+    private static final List<String> UTILITY_NORM_PARAMETER_TYPES =
+            List.of("UtilityConsumption", "Utilities");
+
     private final CPPSRMappingRepository repository;
 
     @Autowired
     @Qualifier("db1JdbcTemplate")
     private JdbcTemplate db1JdbcTemplate;
-
-    @Autowired
-    private PlantsRepository plantsRepository;
 
     @Autowired
     private ScreenMappingRepository screenMappingRepository;
@@ -507,6 +506,16 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         }
     }
 
+    /** Null-safe UUID from a raw string value. */
+    private UUID toUuidStr(String val) {
+        if (val == null || val.isBlank()) return null;
+        try { return UUID.fromString(val); }
+        catch (IllegalArgumentException e) {
+            logger.warn("Could not parse UUID: {}", val);
+            return null;
+        }
+    }
+
     // ── Cost Center Dropdown ──────────────────────────────────────────────
 
     @Override
@@ -578,30 +587,47 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         logger.info("getPlants: sourceNames={}", sourceNames);
         AOPMessageVM response = new AOPMessageVM();
         try {
-            List<Plants> plants;
+            StringBuilder sql = new StringBuilder(
+                    "SELECT p.Id AS plantId, p.DisplayName AS plantName, p.PlantCode AS plantCode, " +
+                    "p.SourceName AS sourceName, " +
+                    "p.Site_FK_Id AS siteId, s.Name AS siteName, s.DisplayName AS siteDisplayName, " +
+                    "p.Vertical_FK_Id AS verticalId, v.Name AS verticalName, v.DisplayName AS verticalDisplayName " +
+                    "FROM Plants p " +
+                    "LEFT JOIN Sites s ON s.Id = p.Site_FK_Id " +
+                    "LEFT JOIN Verticals v ON v.Id = p.Vertical_FK_Id " +
+                    "WHERE p.IsActive = 1 ");
+
+            List<Object> params = new ArrayList<>();
 
             boolean hasFilter = (sourceNames != null && !sourceNames.isBlank());
-
-            if (!hasFilter) {
-                // No filter — return all active plants
-                plants = plantsRepository.findByIsActiveTrueOrderByDisplayNameAsc();
-            } else {
-                // Split comma-separated SourceName values
+            if (hasFilter) {
+                // Split comma-separated SourceName values and build IN (...)
                 String[] parts = sourceNames.split(",");
-                List<String> nameList = new ArrayList<>();
-                for (String s : parts) nameList.add(s.trim());
-                plants = plantsRepository.findBySourceNameInAndIsActiveTrue(nameList);
+                StringBuilder inClause = new StringBuilder();
+                for (int i = 0; i < parts.length; i++) {
+                    if (i > 0) inClause.append(",");
+                    inClause.append("?");
+                    params.add(parts[i].trim());
+                }
+                sql.append("AND p.SourceName IN (").append(inClause).append(") ");
             }
 
-            List<CPPPlantDTO> data = new ArrayList<>();
-            for (Plants p : plants) {
-                data.add(new CPPPlantDTO(
-                        p.getId(),
-                        p.getDisplayName(),
-                        p.getPlantCode(),
-                        p.getSourceName()
-                ));
-            }
+            sql.append("ORDER BY p.DisplayName");
+
+            List<CPPPlantDTO> data = db1JdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
+                CPPPlantDTO dto = new CPPPlantDTO();
+                dto.setPlantId(toUuidStr(rs.getString("plantId")));
+                dto.setPlantName(rs.getString("plantName"));
+                dto.setPlantCode(rs.getString("plantCode"));
+                dto.setSourceName(rs.getString("sourceName"));
+                dto.setSiteId(toUuidStr(rs.getString("siteId")));
+                dto.setSiteName(rs.getString("siteName"));
+                dto.setSiteDisplayName(rs.getString("siteDisplayName"));
+                dto.setVerticalId(toUuidStr(rs.getString("verticalId")));
+                dto.setVerticalName(rs.getString("verticalName"));
+                dto.setVerticalDisplayName(rs.getString("verticalDisplayName"));
+                return dto;
+            }, params.toArray());
 
             logger.info("getPlants: {} records returned", data.size());
             response.setCode(200);
@@ -1541,10 +1567,17 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 "FROM Plants p " +
                 "INNER JOIN NormParameters np ON np.Plant_FK_Id = p.Id " +
                 "INNER JOIN NormTypes nt ON nt.Id = np.NormType_FK_Id " +
-                "WHERE p.SourceName = CAST(? AS VARCHAR(36))"
+                "INNER JOIN NormParameterType npt ON npt.Id = np.NormParameterType_FK_Id " +
+                "WHERE p.SourceName = CAST(? AS VARCHAR(36)) " +
+                "AND npt.IsActive = 1 AND npt.Name IN (" +
+                UTILITY_NORM_PARAMETER_TYPES.stream()
+                        .map(t -> "?")
+                        .collect(java.util.stream.Collectors.joining(",")) +
+                ")"
             );
             List<Object> params = new ArrayList<>();
             params.add(plantId);
+            params.addAll(UTILITY_NORM_PARAMETER_TYPES);
 
             if (normTypeId != null) {
                 sql.append(" AND np.NormType_FK_Id = ?");

@@ -4,10 +4,10 @@ import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithoutRemarks, validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
 const Constants = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
@@ -31,30 +31,13 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
 
-  const isEorSor = useMemo(() => {
-    const validConfigs = [
-      { site: 'sez', plant: 'vgoht-4' },
-      { site: 'sez', plant: 'vgoht-3' },
-      { site: 'dta', plant: 'dht1' },
-      { site: 'dta', plant: 'dht2' },
-    ]
-    return validConfigs.some(
-      (config) =>
-        config.site === siteObject?.name?.toLowerCase() &&
-        config.plant === plantObject?.name?.toLowerCase()
-    )
-  }, [siteObject?.name, plantObject?.name])
+  const site = siteObject?.name?.toLowerCase()
+  const plant = plantObject?.name?.toLowerCase()
 
-  const isNotRequiredRemarkValidation = useMemo(() => {
-    const validConfigs = [
-      { site: 'dta', plant: 'hnuu' },
-    ]
-    return validConfigs.some(
-      (config) =>
-        config.site === siteObject?.name?.toLowerCase() &&
-        config.plant === plantObject?.name?.toLowerCase()
-    )
-  }, [siteObject?.name, plantObject?.name])
+  const isEorSor = useMemo(() => (site === 'sez' && ['vgoht-4', 'vgoht-3'].includes(plant)) || (site === 'dta' && plant === 'dht2'), [site, plant])
+  const isThreeDatesUi = useMemo(() => site === 'dta' && plant === 'dht1', [site, plant])
+  const isNotRequiredRemarkValidation = useMemo(() => site === 'dta' && plant === 'hnuu', [site, plant])
+  const isSpecialUi = isEorSor || isThreeDatesUi
 
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
 
@@ -79,46 +62,24 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       },
     ]
 
+    const commonProps = { editable: true, widthT: 150, minWidth: 120, align: 'left', headerAlign: 'left', type: 'row-based', format: valueFormat, allowNegative: true }
+    
     if (isEorSor) {
       cols.push(
-        {
-          field: 'apr',
-          title: 'EOR Value',
-          editable: true,
-          widthT: 150,
-          minWidth: 120,
-          align: 'left',
-          headerAlign: 'left',
-          type: 'number1',
-          format: valueFormat,
-          allowNegative: true,
-        },
-        {
-          field: 'may',
-          title: 'SOR Value',
-          editable: true,
-          widthT: 150,
-          minWidth: 120,
-          align: 'left',
-          headerAlign: 'left',
-          type: 'number1',
-          format: valueFormat,
-          allowNegative: true,
-        }
+        { field: 'apr', title: 'SOR Value', ...commonProps },
+        { field: 'may', title: 'EOR Value', ...commonProps }
       )
-    } else {
+    } else if (isThreeDatesUi) {
       cols.push({
-        field: 'value',
-        title: 'Value',
-        editable: true,
-        widthT: 150,
-        minWidth: 120,
-        align: 'left',
-        headerAlign: 'left',
-        type: 'number1',
-        format: valueFormat,
-        allowNegative: true,
+        title: 'Operation',
+        children: [
+          { field: 'apr', title: 'Normal', ...commonProps },
+          { field: 'may', title: 'Slow Down', ...commonProps },
+          { field: 'jun', title: 'SOR', ...commonProps }
+        ]
       })
+    } else {
+      cols.push({ field: 'value', title: 'Value', ...commonProps })
     }
 
     cols.push({
@@ -131,13 +92,13 @@ const Constants = ({ startDate, endDate, refreshData }) => {
     })
 
     return cols
-  }, [valueFormat, isEorSor])
+  }, [valueFormat, isEorSor, isThreeDatesUi])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConstantsData()
     }
-  }, [PLANT_ID, AOP_YEAR, isEorSor, refreshData])
+  }, [PLANT_ID, AOP_YEAR, isEorSor, isThreeDatesUi, refreshData])
 
   const fetchConstantsData = async () => {
     setLoading(true)
@@ -145,17 +106,8 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       // Simulate API call with 1 second delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      const res = isEorSor
-        ? await ProductionNormsApiService.getConstantsDataEORSOR(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-          )
-        : await ProductionNormsApiService.getConstantsData(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+      const method = isSpecialUi ? 'getConstantsDataEORSOR' : 'getConstantsData'
+      const res = await ProductionNormsApiService[method](keycloak, PLANT_ID, AOP_YEAR)
 
       // const res = productionAndNormsBasisConstant.data
 
@@ -164,12 +116,15 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         return
       }
 
-      console.log('Constants data:', res)
+      
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
+        normType: item?.normType || null,
         id: item?.id || index + 1,
+        type: item?.type === "boolean" ? "checkbox" : item?.type === "text" ? "text" : "number"
       }))
+      
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -248,30 +203,11 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       setLoading(false)
       return
     }
-
-    const fieldsToCheck = isEorSor ? ['apr', 'may'] : ['value']
-    let validationError
-    if (
-      isNotRequiredRemarkValidation &&
-      data.some((row) => {
-        const typeStr = row.type || ''
-        return typeStr.toLowerCase() === 'filter criteria'
-      })
-    ) {
-      validationError = validateRowDataWithoutRemarks(
-        data,
-        originalRows,
-        fieldsToCheck,
-        'productName',
-      )
-    } else {
-      validationError = validateRowDataWithRemarks(
-        data,
-        originalRows,
-        fieldsToCheck,
-        'productName',
-      )
-    }
+    
+    const fieldsToCheck = isThreeDatesUi ? ['apr', 'may', 'jun'] : (isEorSor ? ['apr', 'may'] : ['value'])
+    const skipRemark = isNotRequiredRemarkValidation && data.some(r => (r.type || '').toLowerCase() === 'filter criteria')
+    const validator = skipRemark ? validateRowDataWithoutRemarks : validateRowDataWithRemarks
+    const validationError = validator(data, originalRows, fieldsToCheck, 'productName')
 
     if (validationError) {
       setSnackbarOpen(true)
@@ -283,31 +219,22 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       return
     }
 
-    const payload = modifiedData
+    const payload = data.map((row) => {
+      return {
+        ...row,
+        apr: row?.apr === true ? 1 : row?.apr === false ? 0 : row?.apr || 0,
+        may: row?.may === true ? 1 : row?.may === false ? 0 : row?.may || 0,
+        jun: row?.jun === true ? 1 : row?.jun === false ? 0 : row?.jun || 0,
+        value: row?.value || 0,
+      }
+    })
     try {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
 
-      const response = isEorSor
-        ? await ProductionNormsApiService.saveConstantsDataEORSOR(
-            keycloak,
-            AOP_YEAR,
-            PLANT_ID,
-            SITE_ID,
-            periodFrom,
-            periodTo,
-            payload,
-          )
-        : await ProductionNormsApiService.saveConstantsData(
-            keycloak,
-            AOP_YEAR,
-            PLANT_ID,
-            SITE_ID,
-            periodFrom,
-            periodTo,
-            payload,
-          )
+      const method = isSpecialUi ? 'saveConstantsDataEORSOR' : 'saveConstantsData'
+      await ProductionNormsApiService[method](keycloak, AOP_YEAR, PLANT_ID, SITE_ID, periodFrom, periodTo, payload)
 
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -346,21 +273,8 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      const response = isEorSor ? await ProductionNormsApiService.importConstantsExcelEORSOR(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        periodFrom,
-        periodTo,
-      ) : await ProductionNormsApiService.importConstantsExcel(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        periodFrom,
-        periodTo,
-      )
+      const method = isSpecialUi ? 'importConstantsExcelEORSOR' : 'importConstantsExcel'
+      const response = await ProductionNormsApiService[method](file, keycloak, PLANT_ID, AOP_YEAR, periodFrom, periodTo)
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -371,12 +285,8 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         await fetchConstantsData()
       } else if (response?.code === 400 && response?.data) {
         try {
-          const base64Data = response.data
-          const binaryString = window.atob(base64Data)
-          const bytes = new Uint8Array(binaryString.length)
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i)
-          }
+          const binaryString = window.atob(response.data)
+          const bytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0))
           const blob = new Blob([bytes], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           })
@@ -432,17 +342,8 @@ const Constants = ({ startDate, endDate, refreshData }) => {
     })
 
     try {
-      isEorSor ? await ProductionNormsApiService.exportConstantsExcelEORSOR(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME
-      ) : await ProductionNormsApiService.exportConstantsExcel(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME
-      )
+      const method = isSpecialUi ? 'exportConstantsExcelEORSOR' : 'exportConstantsExcel'
+      await ProductionNormsApiService[method](keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME)
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
@@ -465,7 +366,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <AdvanceKendoTable
+      <RowBasedKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}
@@ -487,7 +388,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['type']}
+        // groupBy={['normType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

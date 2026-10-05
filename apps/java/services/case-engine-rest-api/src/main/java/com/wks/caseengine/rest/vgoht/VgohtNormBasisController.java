@@ -10,7 +10,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
 import com.wks.caseengine.vgoht.serviceimpl.VgohtNormBasisServiceImpl;
 
@@ -28,6 +34,15 @@ public class VgohtNormBasisController {
     
     @Autowired
     private VgohtNormBasisServiceImpl vgohtNormBasisServiceImpl;
+    
+    @Autowired
+   	private PlantsRepository plantsRepository;
+
+    @Autowired
+   	private SiteRepository siteRepository;
+
+    @Autowired
+   	private VerticalsRepository verticalRepository;
 
 
 	@GetMapping(value="/vgoht/norms-basis")
@@ -235,29 +250,48 @@ public class VgohtNormBasisController {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        return vgohtNormBasisServiceImpl.getConfigurationDataWithTwoValues(year, plantFKId);
+        Plants plant = plantsRepository.findById((plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+       
+        if(plant.getName().equalsIgnoreCase("DHT1")) {
+        	return vgohtNormBasisServiceImpl.getConfigurationDataWithThreeValues(year, plantFKId);
+        }else {
+        	return vgohtNormBasisServiceImpl.getConfigurationDataWithTwoValues(year, plantFKId);
+        }      
     }
 
     @PostMapping(value = "/vgoht/constant")
     public AOPMessageVM saveConfigurationDataWithTwoValues(
-        @RequestParam String year,
-        @RequestParam UUID plantFKId,
-        @RequestBody List<VgohtNormConfigurationDTO> configurationDataList)  {
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestBody List<VgohtNormConfigurationDTO> configurationDataList) {
 
-        if (plantFKId == null || year == null || year.isEmpty()) {
+        if (plantFKId == null || year == null || year.trim().isEmpty()) {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        List<VgohtNormConfigurationDTO> failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithTwoValues(year, plantFKId, configurationDataList);
+        Plants plant = plantsRepository.findById(plantFKId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
-        if(failedRecords.isEmpty()) {
+        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
+
+        // Declare variable outside the if/else block so it is accessible in the return check
+        List<VgohtNormConfigurationDTO> failedRecords;
+
+        if(plant.getName().equalsIgnoreCase("DHT1")) {
+            failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithThreeValues(year, plantFKId, configurationDataList);
+        } else {
+            failedRecords = vgohtNormBasisServiceImpl.saveConfigurationDataWithTwoValues(year, plantFKId, configurationDataList);
+        }
+
+        if (failedRecords == null || failedRecords.isEmpty()) {
             return new AOPMessageVM(200, "Configuration data saved successfully", null);
         } else {
             return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
         }
-
     }
-
+    
     @GetMapping(value = "/vgoht/constant/export")
     public ResponseEntity<byte[]> exportConfigurationDataWithTwoValues(
             @RequestParam String year,
@@ -268,8 +302,20 @@ public class VgohtNormBasisController {
         }
 
         try {
-            byte[] excelBytes = vgohtNormBasisServiceImpl
-                    .exportConfigurationDataWithTwoValues(year, plantFKId, false, null);
+        	 Plants plant = plantsRepository.findById(plantFKId)
+                     .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+             Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                     .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
+             byte[] excelBytes;
+             if(plant.getName().equalsIgnoreCase("DHT1")) {
+            	  excelBytes = vgohtNormBasisServiceImpl
+                         .exportConfigurationDataWithThreeValues(year, plantFKId, false, null);
+             }else {
+            	 excelBytes = vgohtNormBasisServiceImpl
+                         .exportConfigurationDataWithTwoValues(year, plantFKId, false, null);
+             }
+             
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(
@@ -295,8 +341,17 @@ public class VgohtNormBasisController {
         if (plantFKId == null || year == null || year.isEmpty()) {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
+        Plants plant = plantsRepository.findById(plantFKId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
-        return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
+        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
+                
+                if(plant.getName().equalsIgnoreCase("DHT1")) {
+        	 return vgohtNormBasisServiceImpl.importConfigurationDataWithThreeValues(year, plantFKId, file);
+        }else {
+        	 return vgohtNormBasisServiceImpl.importConfigurationDataWithTwoValues(year, plantFKId, file);
+        }  
     }
 
     // fetch summer winter as april and oct

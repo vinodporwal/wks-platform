@@ -71,8 +71,18 @@ const ConfigurationAccordian = ({
     const validConfigs = [
       { vertical: 'hydrotreater', site: 'sez', plant: 'vgoht-4' },
       { vertical: 'hydrotreater', site: 'sez', plant: 'vgoht-3' },
-      { vertical: 'hydrotreater', site: 'dta', plant: 'dht1' },
       { vertical: 'hydrotreater', site: 'dta', plant: 'dht2' },
+    ]
+    return validConfigs.some(
+      (config) =>
+        config.vertical === VERTICAL_NAME &&
+        config.site === SITE_NAME &&
+        config.plant === PLANT_NAME,
+    )
+  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
+  const isThreeDates = useMemo(() => {
+    const validConfigs = [
+      { vertical: 'hydrotreater', site: 'dta', plant: 'dht1' },
     ]
     return validConfigs.some(
       (config) =>
@@ -106,6 +116,10 @@ const ConfigurationAccordian = ({
   const [sorEndDate, setSorEndDate] = useState()
   const [sorStartShow, setSorStartShow] = useState(false)
   const [sorEndShow, setSorEndShow] = useState(false)
+  const [slowDownStartDate, setSlowDownStartDate] = useState()
+  const [slowDownEndDate, setSlowDownEndDate] = useState()
+  const [slowDownStartShow, setSlowDownStartShow] = useState(false)
+  const [slowDownEndShow, setSlowDownEndShow] = useState(false)
   const [summary, setSummary] = useState('')
   const [lastModifiedBy, setLastModifiedBy] = useState('')
   const [dateEdited, setDateEdited] = useState(false)
@@ -300,6 +314,8 @@ const ConfigurationAccordian = ({
       setEndDate(getDateValue('EndDate'))
       setSorStartDate(getDateValue('SORStartDate'))
       setSorEndDate(getDateValue('SOREndDate'))
+      setSlowDownStartDate(getDateValue('SlowDownStartDate'))
+      setSlowDownEndDate(getDateValue('SlowDownEndDate'))
     } else {
       const today = new Date()
       const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
@@ -312,6 +328,8 @@ const ConfigurationAccordian = ({
       setEndDate(fallbackEndDate)
       setSorStartDate(fallbackStartDate)
       setSorEndDate(fallbackEndDate)
+      setSlowDownStartDate(fallbackStartDate)
+      setSlowDownEndDate(fallbackEndDate)
     }
   }, [configurationExecutionDetails])
 
@@ -367,7 +385,7 @@ const ConfigurationAccordian = ({
       (item) =>
         (item.Name === 'SORStartDate' || item.Name === 'SOREndDate') && item.Id,
     )
-    if (isEORSORDATE && sorConfigExists) {
+    if ((isEORSORDATE || isThreeDates) && sorConfigExists) {
       const sorValidation = validateDateRange(sorStartDate, sorEndDate)
       if (!sorValidation.valid) {
         setSnackbarOpen(true)
@@ -397,6 +415,8 @@ const ConfigurationAccordian = ({
         AOP_YEAR,
         sorStartDate,
         sorEndDate,
+        slowDownStartDate,
+        slowDownEndDate
       )
 
       if (!payload) {
@@ -519,9 +539,9 @@ const ConfigurationAccordian = ({
   // Notify parent component when dates change
   useEffect(() => {
     if (onDatesChange && startDate && endDate) {
-      onDatesChange(startDate, endDate, sorStartDate, sorEndDate)
+      onDatesChange(startDate, endDate, sorStartDate, sorEndDate, slowDownStartDate, slowDownEndDate)
     }
-  }, [startDate, endDate, sorStartDate, sorEndDate, onDatesChange])
+  }, [startDate, endDate, sorStartDate, sorEndDate, slowDownStartDate, slowDownEndDate, onDatesChange])
 
   const startDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
@@ -644,21 +664,30 @@ const ConfigurationAccordian = ({
                 flexWrap='wrap'
               >
                 <Stack direction='column' spacing={0.5}>
-                  {isEORSORDATE && (
+                  {(isEORSORDATE || isThreeDates) && (
                     <Typography
                       variant='caption'
                       className='aop-design-basis-label'
+                      sx={{ fontWeight: 700, color: '#333', fontSize: '14px' }}
                     >
                       Historical Period
                     </Typography>
                   )}
-                  <Stack
-                    direction='row'
-                    sx={{ columnGap: 1, rowGap: 0 }}
-                    alignItems='center'
-                    flexWrap='wrap'
-                  >
-                    {renderDatePickerPill(
+                  
+                  {/* Normal Operation */}
+                  <Stack direction='row' alignItems='center' spacing={2} style={{ marginLeft: isThreeDates ? '10px' : 0 }}>
+                    {isThreeDates && (
+                      <Typography variant='caption' className='aop-design-basis-label' sx={{ width: '160px', textAlign: 'left' }}>
+                        Normal Operation
+                      </Typography>
+                    )}
+                    <Stack
+                      direction='row'
+                      sx={{ columnGap: 1, rowGap: 0 }}
+                      alignItems='center'
+                      flexWrap='wrap'
+                    >
+                      {renderDatePickerPill(
                       'Start Date',
                       startDate,
                       setStartDate,
@@ -674,39 +703,48 @@ const ConfigurationAccordian = ({
                       setEndShow,
                       'end-date',
                     )}
-                  </Stack>
-                  {isEORSORDATE && (
-                    <Typography
-                      variant='caption'
-                      className='aop-design-basis-label'
-                    >
-                      SOR
-                    </Typography>
-                  )}
-                  {isEORSORDATE && (
-                    <Stack
-                      direction='row'
-                      sx={{ columnGap: 1, rowGap: 0 }}
-                      alignItems='center'
-                      flexWrap='wrap'
-                    >
-                      {renderDatePickerPill(
-                        'Start Date',
-                        sorStartDate,
-                        setSorStartDate,
-                        sorStartShow,
-                        setSorStartShow,
-                        'sor-start-date',
-                      )}
-                      {renderDatePickerPill(
-                        'End Date',
-                        sorEndDate,
-                        setSorEndDate,
-                        sorEndShow,
-                        setSorEndShow,
-                        'sor-end-date',
-                      )}
                     </Stack>
+                  </Stack>
+
+                  {/* Slow down operation */}
+                  {isThreeDates && (
+                    <Stack direction='row' alignItems='center' spacing={2} style={{ marginLeft: '10px' }}>
+                      <Typography variant='caption' className='aop-design-basis-label' sx={{ width: '160px', textAlign: 'left' }}>
+                        Slow Down operation
+                      </Typography>
+                      <Stack
+                        direction='row'
+                        sx={{ columnGap: 1, rowGap: 0 }}
+                        alignItems='center'
+                        flexWrap='wrap'
+                      >
+                        {renderDatePickerPill('Start Date', slowDownStartDate, setSlowDownStartDate, slowDownStartShow, setSlowDownStartShow, 'slow-down-start-date')}
+                        {renderDatePickerPill('End Date', slowDownEndDate, setSlowDownEndDate, slowDownEndShow, setSlowDownEndShow, 'slow-down-end-date')}
+                      </Stack>
+                    </Stack>
+                  )}
+
+                  {/* Start of run Operation */}
+                  {(isEORSORDATE || isThreeDates) && (
+                    <React.Fragment>
+                      {isEORSORDATE && (<Typography variant='caption' className='aop-design-basis-label'>
+                        Start of run Operation
+                      </Typography>)}
+                      <Stack direction='row' alignItems='center' spacing={2} style={{ marginLeft: isThreeDates ? '10px' : 0 }}>
+                        {isThreeDates && (<Typography variant='caption' className='aop-design-basis-label' sx={{ width: '160px', textAlign: 'left' }}>
+                          Start of run Operation
+                        </Typography>)}
+                        <Stack
+                          direction='row'
+                          sx={{ columnGap: 1, rowGap: 0 }}
+                          alignItems='center'
+                          flexWrap='wrap'
+                        >
+                          {renderDatePickerPill('Start Date', sorStartDate, setSorStartDate, sorStartShow, setSorStartShow, 'sor-start-date')}
+                          {renderDatePickerPill('End Date', sorEndDate, setSorEndDate, sorEndShow, setSorEndShow, 'sor-end-date')}
+                        </Stack>
+                      </Stack>
+                    </React.Fragment>
                   )}
                 </Stack>
 
@@ -787,7 +825,12 @@ const ConfigurationAccordian = ({
     sorEndDate,
     sorStartShow,
     sorEndShow,
+    slowDownStartDate,
+    slowDownEndDate,
+    slowDownStartShow,
+    slowDownEndShow,
     isEORSORDATE,
+    isThreeDates,
     summary,
     configurationExecutionDetails,
     isOldYear,

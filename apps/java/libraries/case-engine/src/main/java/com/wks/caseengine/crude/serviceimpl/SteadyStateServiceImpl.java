@@ -56,12 +56,18 @@ public class SteadyStateServiceImpl implements SteadyStateService {
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		boolean crude = vertical.getName().equalsIgnoreCase("CRUDE");
 		
 		boolean refineryUtilityDMD = vertical.getName().equalsIgnoreCase("RefineryUtility") && site.getName().equalsIgnoreCase("DMD");
 		boolean siteWiseSp = refineryUtilityDMD;
 
 		String storedProcedure = "";
-       if(siteWiseSp) { 
+
+		if(crude) {  
+			storedProcedure = vertical.getName()+"_"+site.getName() +"_NormsCalculation";
+		}
+       else if(siteWiseSp) { 
           storedProcedure = vertical.getName() + "_" + site.getName() + "_SteadyStateCalculation";
 	   }
 	   else {
