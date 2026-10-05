@@ -107,4 +107,6 @@ public interface ConfigurationService {
         public AOPMessageVM getGroupMaterialDetails(String year, String plantFKId);
 
         public AOPMessageVM saveGroupMaterialDetails(String year, List<GroupMaterialDetailsDTO> dtoList);
+
+        public AOPMessageVM calculateOtherCost(UUID plantId, String aopYear);
 }

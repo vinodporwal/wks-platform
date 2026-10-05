@@ -14,6 +14,7 @@ import JWAvgNorms from 'components/aop-phase-two/crude/production-norms-basis/JW
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/fcc/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ReportManualEntry from './ReportManualEntry'
+import ManualExclusionDates from './ManualExclusionDates'
 
 const ProductionNormsBasisFCC = () => {
   const keycloak = useSession()
@@ -254,6 +255,8 @@ const ProductionNormsBasisFCC = () => {
       case 'Manual Entry':
       case 'Report Manual Entry':
         return <ReportManualEntry startDate={startDate} endDate={endDate} />
+      case 'Manual Exclusion Dates':
+        return <ManualExclusionDates startDate={startDate} endDate={endDate} />
 
       default:
         return null

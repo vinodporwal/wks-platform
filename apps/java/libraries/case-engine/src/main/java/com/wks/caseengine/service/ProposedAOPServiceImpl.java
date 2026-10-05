@@ -745,7 +745,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 
 	@Override
 	@Transactional
-	public AOPMessageVM saveProposedSteadyState(List<ProposedAOPDTO> dtoList) {
+	public List<ProposedAOPDTO> saveProposedSteadyState(List<ProposedAOPDTO> dtoList) {
 		try {
 
 			List<ProposedAOPDTO> failedList = new ArrayList<>();
@@ -762,6 +762,15 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				}
 				if (year == null) {
 					year = dto.getAopYear();
+				}
+
+				// Remark validation: if Proposed value changed, Remark must also be updated
+				if (!isRemarkValidForProposedChange(dto)) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(
+							"Please update Remark");
+					failedList.add(dto);
+					continue;
 				}
 
 				// update MCUNormsValue_Proposed
@@ -817,14 +826,52 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				}
 			}
 
-		AOPMessageVM vm = new AOPMessageVM();
-			vm.setCode(200);
-			vm.setMessage("Proposed AOP saved successfully");
-			vm.setData(failedList);
-			return vm;
+		 return failedList;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to save proposed AOP", e);
 		}
+	}
+
+
+	private boolean isRemarkValidForProposedChange(ProposedAOPDTO dto) {
+		String fetchSql = "SELECT TOP 1 April, Remarks FROM MCUNormsValue_Proposed " +
+				"WHERE Material_FK_Id = ? AND FinancialYear = ? AND Plant_FK_Id = ?";
+
+		List<Map<String, Object>> rows = jdbcTemplate.queryForList(fetchSql,
+				dto.getNormParameterId(), dto.getAopYear(), dto.getPlantId());
+
+		if (rows.isEmpty()) {
+			return true; // No existing record – nothing to compare against
+		}
+
+		Map<String, Object> existing = rows.get(0);
+
+		Double existingProposed = existing.get("April") != null
+				? ((Number) existing.get("April")).doubleValue()
+				: null;
+		String existingRemarks = existing.get("Remarks") != null
+				? existing.get("Remarks").toString().trim()
+				: "";
+
+		Double incomingProposed = dto.getProposed();
+		String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+		// Determine whether the proposed value has changed
+		boolean proposedChanged;
+		if (existingProposed == null && incomingProposed == null) {
+			proposedChanged = false;
+		} else if (existingProposed == null || incomingProposed == null) {
+			proposedChanged = true;
+		} else {
+			proposedChanged = Double.compare(existingProposed, incomingProposed) != 0;
+		}
+
+		if (!proposedChanged) {
+			return true; // Value unchanged – remark update not required
+		}
+
+		// Proposed changed – remark must also have changed
+		return !existingRemarks.equals(incomingRemarks);
 	}
 
 	public Integer executeCalculateSP( String plantId, String aopYear, String procedureName) {
@@ -1178,7 +1225,8 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				}
 
 				try {
-					saveProposedSteadyState(Collections.singletonList(dto));
+				List<ProposedAOPDTO> failedToSaveRecords = saveProposedSteadyState(Collections.singletonList(dto));
+				failedRecords.addAll(failedToSaveRecords);
 				} catch (IllegalArgumentException e) {
 					dto.setSaveStatus("Failed");
 					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
