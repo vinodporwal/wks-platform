@@ -10,7 +10,7 @@ public interface NormBasisPCGService {
     
     public List<NormBasisPCGDTO> getAllNormBasis(UUID plantId, String aopYear);
 
-    public AOPMessageVM updateNormBasis(List<NormBasisPCGDTO> normBasisDTOs, UUID plantId, String aopYear, UUID siteid, String periodFrom, String periodTo);
+    public AOPMessageVM saveNormBasis(List<NormBasisPCGDTO> normBasisDTOList, String aopYear, String plantId);
 
     public AOPMessageVM LoadButtonNormCalculation(UUID plantId, String aopYear, UUID siteId, String periodFrom, String periodTo);
 

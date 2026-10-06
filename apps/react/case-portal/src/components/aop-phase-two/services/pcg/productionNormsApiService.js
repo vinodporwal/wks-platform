@@ -76,7 +76,7 @@ async function getConfigurationData(keycloak, plantId, year) {
  * @returns {Promise} Save response
  */
 async function saveConfigurationData(keycloak, year, payload, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/norm-basis-filters?aopYear=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

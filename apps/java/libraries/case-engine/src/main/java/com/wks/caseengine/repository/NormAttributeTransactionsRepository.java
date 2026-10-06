@@ -240,6 +240,10 @@ Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYe
 	 @Param("normParamId") UUID normParamId, 
 	 @Param("shutdownTypeId") UUID shutdownTypeId
 	);
-	
+	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAopMonthAndAuditYear(
+            UUID normParameterFKId, 
+            Integer aopMonth, 
+            String auditYear
+    );
 
 }

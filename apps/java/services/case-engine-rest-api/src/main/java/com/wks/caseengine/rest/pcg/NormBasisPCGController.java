@@ -36,8 +36,8 @@ public class NormBasisPCGController {
     }
 
     @PostMapping("/norm-basis-filters")
-    public ResponseEntity<AOPMessageVM> updateNormBasis(@RequestBody List<NormBasisPCGDTO> normBasisDTOs, @RequestParam String plantId, @RequestParam String aopYear, @RequestParam String siteId, @RequestParam String periodFrom, @RequestParam String periodTo) {
-        AOPMessageVM aopMessageVM = normBasisService.updateNormBasis(normBasisDTOs, UUID.fromString(plantId), aopYear, UUID.fromString(siteId), periodFrom, periodTo);
+    public ResponseEntity<AOPMessageVM> updateNormBasis(@RequestBody List<NormBasisPCGDTO> normBasisDTOs, @RequestParam String plantId, @RequestParam String aopYear) {
+        AOPMessageVM aopMessageVM = normBasisService.saveNormBasis(normBasisDTOs,aopYear, plantId);
         return ResponseEntity.ok(aopMessageVM);
     }
 

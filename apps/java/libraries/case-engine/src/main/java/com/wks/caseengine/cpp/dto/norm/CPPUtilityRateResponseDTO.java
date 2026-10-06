@@ -14,6 +14,9 @@ public class CPPUtilityRateResponseDTO {
     @JsonProperty("id")
     private Integer id;
 
+    @JsonProperty("cppPlantName")
+    private String cppPlantName;
+
     @JsonProperty("siteDescription")
     private String siteDescription;
 

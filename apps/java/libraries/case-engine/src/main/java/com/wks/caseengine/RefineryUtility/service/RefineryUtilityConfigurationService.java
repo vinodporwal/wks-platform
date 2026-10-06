@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
+import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
@@ -26,4 +27,6 @@ public interface RefineryUtilityConfigurationService {
     public AOPMessageVM getPlantOwnerDropdown(String plantFKId);
     public AOPMessageVM getSelectedPlantOwner(String plantFKId);
     public List<SelectedPlantOwnerDTO> saveSelectedPlantOwner(String plantFKId, List<SelectedPlantOwnerDTO> dtoList);
+    public AOPMessageVM getConsumerDemandData(String year, String plantFKId);
+    public List<ConsumerDemandDTO> saveConsumerDemandData(String year, String plantFKId, List<ConsumerDemandDTO> consumerDemandDTOList);
 }

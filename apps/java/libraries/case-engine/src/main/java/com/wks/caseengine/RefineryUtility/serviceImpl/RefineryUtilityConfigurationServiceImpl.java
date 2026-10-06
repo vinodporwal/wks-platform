@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
+import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
@@ -600,6 +601,26 @@ private boolean isRemarkValidationPassed(Double newValue, Double existingValue, 
     return true;
 }
 
+private boolean isRemarkValidationPassedForConsumerDemand(Double newValue, Double existingValue, String newRemark, String existingRemark) {
+  
+	if(existingValue == null || newValue == null) {
+		return true;
+	}
+	// Check if the value has changed (null-safe)
+    boolean valueChanged = !Objects.equals(newValue, existingValue);
+    
+    if (valueChanged) {
+        // If the value changed, the remark must be updated (must not be null/empty and must differ from the existing remark)
+        boolean isRemarkUpdated = newRemark != null 
+                && !newRemark.trim().isEmpty() 
+                && !Objects.equals(newRemark, existingRemark);
+        return isRemarkUpdated;
+    }
+    
+   // return true if values not changed
+    return true;
+}
+
 @Override
 public AOPMessageVM checkIsSummerWinterPlant(String plantId) {
 	AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1036,5 +1057,187 @@ public List<Object[]> getCommodityChemicalsDataFromSP(String aopYear, String pla
 
 		return failedList;
 	}
+
+	@Override
+    public AOPMessageVM getConsumerDemandData(String year, String plantFKId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetConsumerDemand";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = getConsumerDemandDataFromSP(year, plantFKId, procedureName);
+			List<ConsumerDemandDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				ConsumerDemandDTO dto = new ConsumerDemandDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+				dto.setName(row[1] != null ? row[1].toString() : null);
+				dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+				dto.setUom(row[3] != null ? row[3].toString() : null);
+				dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
+				dto.setPreviousFYAvg(parseDouble(row[5]));
+				dto.setApr(parseDouble(row[6]));
+				dto.setMay(parseDouble(row[7]));
+				dto.setJun(parseDouble(row[8]));
+				dto.setJul(parseDouble(row[9]));
+				dto.setAug(parseDouble(row[10]));
+				dto.setSep(parseDouble(row[11]));
+				dto.setOct(parseDouble(row[12]));
+				dto.setNov(parseDouble(row[13]));
+				dto.setDec(parseDouble(row[14]));
+				dto.setJan(parseDouble(row[15]));
+				dto.setFeb(parseDouble(row[16]));
+				dto.setMar(parseDouble(row[17]));
+				dto.setAuditYear(row[18] != null ? row[18].toString() : null);
+				dto.setRemarks(row[19] != null ? row[19].toString() : null);
+				dto.setDisplayOrder(row[20] != null ? Integer.parseInt(row[20].toString()) : null);
+				Boolean isEditable = null;
+				if (row[21] != null) {
+					if (row[21] instanceof Boolean) {
+						isEditable = (Boolean) row[21];
+					} else if (row[21] instanceof Number) {
+						isEditable = ((Number) row[21]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
+				
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getConsumerDemandDataFromSP(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional 
+	@Override
+	public List<ConsumerDemandDTO> saveConsumerDemandData(String year, String plantFKId,
+			List<ConsumerDemandDTO> consumerDemandDTOList) {
+		try {
+			List<ConsumerDemandDTO> failedList = new ArrayList<>();
+	
+			for (ConsumerDemandDTO consumerDemandDTO : consumerDemandDTOList) {
+				
+				if (consumerDemandDTO.getSaveStatus() != null
+						&& consumerDemandDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(consumerDemandDTO);
+					continue;
+				}
+
+			for (int i = 1; i <= 12; i++) {
+				
+				saveConsumerDemandData(consumerDemandDTO, i, year);
+				
+			}
+			
+			if("Failed".equalsIgnoreCase(consumerDemandDTO.getSaveStatus())) {
+				failedList.add(consumerDemandDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save consumer demand data", ex);
+		}
+	}
+
+	public void saveConsumerDemandData(ConsumerDemandDTO consumerDemandDTO, Integer i, String year) {
+
+		UUID normParameterFKId = UUID.fromString(consumerDemandDTO.getNormParameterFKId());
+		Double attributeValue = getAttributeValueForConsumerDemand(consumerDemandDTO, i);
+		String remark = consumerDemandDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+		Double existingValue = normAttributeTransactions.getAttributeValue() != null ? Double.parseDouble(normAttributeTransactions.getAttributeValue()) : null;
+		boolean isRemarkValidationPassed = isRemarkValidationPassedForConsumerDemand(attributeValue, existingValue, remark, normAttributeTransactions.getRemarks());
+		if(!isRemarkValidationPassed) { 
+			consumerDemandDTO.setSaveStatus("Failed");
+			consumerDemandDTO.setErrDescription("Please update remark");
+			return;
+		}
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+public Double getAttributeValueForConsumerDemand(ConsumerDemandDTO consumerDemandDTO, Integer i) {
+	switch (i) {
+		case 1:
+			return consumerDemandDTO.getJan();
+		case 2:
+			return consumerDemandDTO.getFeb();
+		case 3:
+			return consumerDemandDTO.getMar();
+		case 4:
+			return consumerDemandDTO.getApr();
+		case 5:
+			return consumerDemandDTO.getMay();
+		case 6:
+			return consumerDemandDTO.getJun();
+		case 7:
+			return consumerDemandDTO.getJul();
+		case 8:
+			return consumerDemandDTO.getAug();
+		case 9:
+			return consumerDemandDTO.getSep();
+		case 10:
+			return consumerDemandDTO.getOct();
+		case 11:
+			return consumerDemandDTO.getNov();
+		case 12:
+			return consumerDemandDTO.getDec();
+
+	}
+	return consumerDemandDTO.getJan();
+}
 
 }
