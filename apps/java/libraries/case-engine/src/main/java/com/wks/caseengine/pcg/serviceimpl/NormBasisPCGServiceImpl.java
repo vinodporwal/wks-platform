@@ -57,8 +57,8 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 		Plants plant = plantsRepository.findById(plantId)
 				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-
-		String procedureName = vertical.getName() + "_" + "GetConfiguration_Constant_Pivot";
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String procedureName = vertical.getName() + "_"+site.getName()+"_"+plant.getName() + "_GetConfiguration";
 		List<NormBasisPCGDTO> normBasisDTOs = fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
 		return normBasisDTOs;
 	}
