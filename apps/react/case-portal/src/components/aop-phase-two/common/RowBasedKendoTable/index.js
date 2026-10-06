@@ -38,6 +38,13 @@ const RowBasedKendoTable = (props) => {
           const rowId = dataItem.id
           const customModifiedCells = props.externalCustomModifiedCells || {}
 
+          let colSpan = cellProps.colSpan;
+          if (props.dynamicColumnMerger) {
+            const config = props.dynamicColumnMerger(dataItem, field);
+            if (config?.hidden) return null;
+            if (config?.colSpan) colSpan = config.colSpan;
+          }
+
           const isEdited = Object.prototype.hasOwnProperty.call(
             customModifiedCells?.[rowId] || {},
             field,
@@ -83,6 +90,7 @@ const RowBasedKendoTable = (props) => {
             return (
               <td
                 {...cellProps.tdProps}
+                colSpan={colSpan || cellProps.tdProps?.colSpan}
                 title={String(displayValue ?? '')}
                 style={{ ...tdStyle, textAlign: 'center', padding: '6px 2px' }}
                 className='k-checkbox-center'
@@ -104,6 +112,7 @@ const RowBasedKendoTable = (props) => {
           return (
             <td
               {...cellProps.tdProps}
+              colSpan={colSpan || cellProps.tdProps?.colSpan}
               title={String(displayValue ?? '')}
               style={tdStyle}
             >
@@ -118,7 +127,17 @@ const RowBasedKendoTable = (props) => {
           cells: {
             edit: {
               text: (cellProps) => {
-                const { dataItem, field } = cellProps;
+                let currentCellProps = cellProps;
+                const { dataItem, field } = currentCellProps;
+                
+                if (props.dynamicColumnMerger) {
+                  const config = props.dynamicColumnMerger(dataItem, field);
+                  if (config?.hidden) return null;
+                  if (config?.colSpan) {
+                    currentCellProps = { ...currentCellProps, tdProps: { ...currentCellProps.tdProps, colSpan: config.colSpan } };
+                  }
+                }
+
                 const isColEditable = enhanced.editable !== false;
                 const isRowEditable = dataItem.isEditable !== false;
                 
@@ -127,10 +146,10 @@ const RowBasedKendoTable = (props) => {
                 if (dataItem?.editableFields && !dataItem?.editableFields?.includes(field)) isCellEditable = false;
                 
                 if (!isColEditable || !isRowEditable || !isCellEditable) {
-                  return renderDataCell(cellProps, true);
+                  return renderDataCell(currentCellProps, true);
                 }
                 
-                return <DynamicRowCellEditor {...cellProps} />
+                return <DynamicRowCellEditor {...currentCellProps} />
               }
             },
             data: (cellProps) => renderDataCell(cellProps, false),

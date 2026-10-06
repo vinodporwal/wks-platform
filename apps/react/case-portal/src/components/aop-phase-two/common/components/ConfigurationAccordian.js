@@ -67,21 +67,11 @@ const ConfigurationAccordian = ({
   const SITE_NAME = siteObject?.name?.toLowerCase() || ''
   const PLANT_NAME = plantObject?.name?.toLowerCase() || ''
 
-  const isEORSORDATE = useMemo(() => {
+  const isThreeDates = useMemo(() => {
     const validConfigs = [
       { vertical: 'hydrotreater', site: 'sez', plant: 'vgoht-4' },
       { vertical: 'hydrotreater', site: 'sez', plant: 'vgoht-3' },
       { vertical: 'hydrotreater', site: 'dta', plant: 'dht2' },
-    ]
-    return validConfigs.some(
-      (config) =>
-        config.vertical === VERTICAL_NAME &&
-        config.site === SITE_NAME &&
-        config.plant === PLANT_NAME,
-    )
-  }, [VERTICAL_NAME, SITE_NAME, PLANT_NAME])
-  const isThreeDates = useMemo(() => {
-    const validConfigs = [
       { vertical: 'hydrotreater', site: 'dta', plant: 'dht1' },
     ]
     return validConfigs.some(
@@ -385,7 +375,7 @@ const ConfigurationAccordian = ({
       (item) =>
         (item.Name === 'SORStartDate' || item.Name === 'SOREndDate') && item.Id,
     )
-    if ((isEORSORDATE || isThreeDates) && sorConfigExists) {
+    if (isThreeDates && sorConfigExists) {
       const sorValidation = validateDateRange(sorStartDate, sorEndDate)
       if (!sorValidation.valid) {
         setSnackbarOpen(true)
@@ -664,7 +654,7 @@ const ConfigurationAccordian = ({
                 flexWrap='wrap'
               >
                 <Stack direction='column' spacing={0.5}>
-                  {(isEORSORDATE || isThreeDates) && (
+                  {isThreeDates && (
                     <Typography
                       variant='caption'
                       className='aop-design-basis-label'
@@ -725,11 +715,7 @@ const ConfigurationAccordian = ({
                   )}
 
                   {/* Start of run Operation */}
-                  {(isEORSORDATE || isThreeDates) && (
-                    <React.Fragment>
-                      {isEORSORDATE && (<Typography variant='caption' className='aop-design-basis-label'>
-                        Start of run Operation
-                      </Typography>)}
+                  {isThreeDates && (
                       <Stack direction='row' alignItems='center' spacing={2} style={{ marginLeft: isThreeDates ? '10px' : 0 }}>
                         {isThreeDates && (<Typography variant='caption' className='aop-design-basis-label' sx={{ width: '160px', textAlign: 'left' }}>
                           Start of run Operation
@@ -744,7 +730,6 @@ const ConfigurationAccordian = ({
                           {renderDatePickerPill('End Date', sorEndDate, setSorEndDate, sorEndShow, setSorEndShow, 'sor-end-date')}
                         </Stack>
                       </Stack>
-                    </React.Fragment>
                   )}
                 </Stack>
 
@@ -829,7 +814,6 @@ const ConfigurationAccordian = ({
     slowDownEndDate,
     slowDownStartShow,
     slowDownEndShow,
-    isEORSORDATE,
     isThreeDates,
     summary,
     configurationExecutionDetails,

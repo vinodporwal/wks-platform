@@ -2,6 +2,7 @@ package com.wks.caseengine.rest.vgoht;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.ManualExclusionDatesDTO;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
@@ -476,5 +478,26 @@ public class VgohtNormBasisController {
 	        ) {
 			return	vgohtNormBasisServiceImpl.importCatChemData(year,UUID.fromString(plantId), file,false); 
 	}
+
+    @GetMapping(value="/manual-exclusion-dates")
+    public AOPMessageVM getManualExclusionDates(@RequestParam String plantFKId, @RequestParam String year) {
+        return vgohtNormBasisServiceImpl.getManualExclusionDates(plantFKId, year);
+    }
+
+    @PostMapping(value="/manual-exclusion-dates")
+    public AOPMessageVM saveManualExclusionDates(@RequestParam String year, @RequestBody List<ManualExclusionDatesDTO> manualExclusionDatesDTOList) {
+       List<ManualExclusionDatesDTO> failedRecords = vgohtNormBasisServiceImpl.saveManualExclusionDates( manualExclusionDatesDTOList, year);
+
+       if(failedRecords.isEmpty()) {
+        return new AOPMessageVM(200, "Manual exclusion dates saved successfully", null);
+       } else {
+        return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
+       }
+    }
+
+    @DeleteMapping (value="/manual-exclusion-dates")
+    public AOPMessageVM deleteManualExclusionDates(@RequestBody List<ManualExclusionDatesDTO> manualExclusionDatesDTOList) {
+        return vgohtNormBasisServiceImpl.deleteManualExclusionDates(manualExclusionDatesDTOList);
+    }
 
 }
