@@ -29,6 +29,7 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
+  const [normParameterFKId, setNormParameterFKId] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const columns = [
@@ -73,13 +74,16 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
       
       const modifiedData = responseData.map((item, index) => ({
         ...item,
-        idFromApi: item?.id,
+        idFromApi: item?.Id || item?.id,
         id: index,
         srNo: index + 1,
-        targetDate: item?.targetDate ? new Date(item.targetDate) : null,
+        targetDate: item?.date || null,
         remarks: item?.remarks || '',
+        originalRemarks: item?.remarks || '',
       }))
-
+      if(responseData[0]?.normParameterFKId){
+        setNormParameterFKId(responseData[0]?.normParameterFKId)
+      }
       setRows(modifiedData)
     } catch (error) {
       console.error('Error fetching manual exclusion date data:', error)
@@ -110,30 +114,30 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
         return false
       }
 
-      if (startDate && endDate) {
-        const rowDate = new Date(row.targetDate)
-        const limitStart = new Date(startDate)
-        const limitEnd = new Date(endDate)
+      // if (startDate && endDate) {
+      //   const rowDate = new Date(row.targetDate)
+      //   const limitStart = new Date(startDate)
+      //   const limitEnd = new Date(endDate)
         
-        rowDate.setHours(0, 0, 0, 0)
-        limitStart.setHours(0, 0, 0, 0)
-        limitEnd.setHours(0, 0, 0, 0)
+      //   rowDate.setHours(0, 0, 0, 0)
+      //   limitStart.setHours(0, 0, 0, 0)
+      //   limitEnd.setHours(0, 0, 0, 0)
 
-        if (rowDate < limitStart || rowDate > limitEnd) {
-          const formatDDMMYYYY = (date) => {
-            if (!date) return ''
-            const d = new Date(date)
-            return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
-          }
-          setSnackbarData({
-            message: `Dates must be between ${formatDDMMYYYY(startDate)} and ${formatDDMMYYYY(endDate)}`,
-            severity: 'error',
-            autoHide: true,
-          })
-          return false
-        }
-      }
-
+      //   if (rowDate < limitStart || rowDate > limitEnd) {
+      //     const formatDDMMYYYY = (date) => {
+      //       if (!date) return ''
+      //       const d = new Date(date)
+      //       return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
+      //     }
+      //     setSnackbarData({
+      //       message: `Dates must be between ${formatDDMMYYYY(startDate)} and ${formatDDMMYYYY(endDate)}`,
+      //       severity: 'error',
+      //       autoHide: true,
+      //     })
+      //     return false
+      //   }
+      // }
+      
       const remarks = (row?.remarks ?? '').trim()
       if (!remarks) {
         setSnackbarData({
@@ -142,6 +146,19 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
           autoHide: true,
         })
         return false
+      }
+
+      const originalRow = rows.find((r) => r.id === row.id)
+      if (originalRow && originalRow.idFromApi) {
+        const originalRemarks = (originalRow.originalRemarks ?? '').trim()
+        if (remarks === originalRemarks) {
+          setSnackbarData({
+            message: 'Remarks is required and must be different',
+            severity: 'error',
+            autoHide: true,
+          })
+          return false
+        }
       }
     }
     return true
@@ -189,9 +206,11 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
       }
 
       return {
+        ...row,
         id: row?.idFromApi || null,
         date: toLocalDateOnly(row?.targetDate),
         remarks: row?.remarks,
+        normParameterFKId: normParameterFKId
       }
     })
 
@@ -223,11 +242,10 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
   }
 
   const deleteRowData = async (paramsForDelete) => {
-    setLoading(true)
     try {
       const { idFromApi, id } = paramsForDelete
       const deleteIdLocal = id
-      
+      setLoading(true)
       if (!idFromApi) {
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteIdLocal).map((row, idx) => ({...row, srNo: idx + 1})))
         setModifiedCells((prev) => {
@@ -235,10 +253,12 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
           delete newModified[deleteIdLocal]
           return newModified
         })
+        setLoading(false)
       } else {
+        const payload = [{ Id: idFromApi }]
         await ManualExclusionDateApiService.deleteManualExclusionDate(
-          idFromApi,
           keycloak,
+          payload
         )
         setSnackbarOpen(true)
         setSnackbarData({
@@ -248,15 +268,14 @@ const ManualExclusionDates = ({ startDate, endDate }) => {
         await fetchData()
       }
     } catch (error) {
+      setLoading(false)
       console.error('Error deleting Record', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to delete record',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
   
   const handleRemarkCellClick = (row) => {

@@ -149,10 +149,10 @@ export const buildConfigurationPayload = (
     (item) => item.Name === 'SOREndDate',
   )
   const eorStartDateObj = configurationExecutionDetails.find(
-    (item) => item.Name === 'EORStartDate',
+    (item) => item.Name === 'SlowDownStartDate',
   )
   const eorEndDateObj = configurationExecutionDetails.find(
-    (item) => item.Name === 'EOREndDate',
+    (item) => item.Name === 'SlowDownEndDate',
   )
 
   if (!startDateObj?.Id || !endDateObj?.Id) {

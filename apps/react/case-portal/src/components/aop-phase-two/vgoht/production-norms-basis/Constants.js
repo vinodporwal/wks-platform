@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
@@ -31,13 +31,16 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
 
-  const site = siteObject?.name?.toLowerCase()
-  const plant = plantObject?.name?.toLowerCase()
+  const site = siteObject?.name?.toLowerCase()?.trim()
+  const plant = plantObject?.name?.toLowerCase()?.trim()
 
-  const isEorSor = useMemo(() => (site === 'sez' && ['vgoht-4', 'vgoht-3'].includes(plant)) || (site === 'dta' && plant === 'dht2'), [site, plant])
-  const isThreeDatesUi = useMemo(() => site === 'dta' && plant === 'dht1', [site, plant])
+  const isThreeDatesUi = useMemo(() => {
+    if (site === 'sez' && ['vgoht-4', 'vgoht-3'].includes(plant)) return true
+    if (site === 'dta' && ['dht1', 'dht2'].includes(plant)) return true
+    return false
+  }, [site, plant])
+  
   const isNotRequiredRemarkValidation = useMemo(() => site === 'dta' && plant === 'hnuu', [site, plant])
-  const isSpecialUi = isEorSor || isThreeDatesUi
 
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
 
@@ -64,12 +67,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
 
     const commonProps = { editable: true, widthT: 150, minWidth: 120, align: 'left', headerAlign: 'left', type: 'row-based', format: valueFormat, allowNegative: true }
     
-    if (isEorSor) {
-      cols.push(
-        { field: 'apr', title: 'SOR Value', ...commonProps },
-        { field: 'may', title: 'EOR Value', ...commonProps }
-      )
-    } else if (isThreeDatesUi) {
+    if (isThreeDatesUi) {
       cols.push({
         title: 'Operation',
         children: [
@@ -92,27 +90,24 @@ const Constants = ({ startDate, endDate, refreshData }) => {
     })
 
     return cols
-  }, [valueFormat, isEorSor, isThreeDatesUi])
+  }, [valueFormat, isThreeDatesUi])
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchConstantsData()
-    }
-  }, [PLANT_ID, AOP_YEAR, isEorSor, isThreeDatesUi, refreshData])
 
-  const fetchConstantsData = async () => {
+  const fetchConstantsData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      // Simulate API call with 1 second delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setRows([])
+      setOriginalRows([])
+      setModifiedCells({})
 
-      const method = isSpecialUi ? 'getConstantsDataEORSOR' : 'getConstantsData'
+      const method = isThreeDatesUi ? 'getConstantsDataEORSOR' : 'getConstantsData'
       const res = await ProductionNormsApiService[method](keycloak, PLANT_ID, AOP_YEAR)
 
-      // const res = productionAndNormsBasisConstant.data
 
       if (res?.data?.length === 0) {
         setRows([])
+        setOriginalRows([])
         return
       }
 
@@ -120,19 +115,28 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
-        normType: item?.normType || null,
+        normType: item?.type || null,
         id: item?.id || index + 1,
-        type: item?.type === "boolean" ? "checkbox" : item?.type === "text" ? "text" : "number"
+        type: (item?.UOM?.toLowerCase() || item?.uom?.toLowerCase()) === "boolean" ? "checkbox" : "number"
       }))
       
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching constants data:', error)
+      setRows([])
+      setOriginalRows([])
     } finally {
-      setLoading(false)
+        setLoading(false)
     }
-  }
+  }, [PLANT_ID, AOP_YEAR, isThreeDatesUi, keycloak])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchConstantsData()
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [fetchConstantsData, refreshData])
 
   const permissions = {
     showAction: true,
@@ -204,7 +208,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       return
     }
     
-    const fieldsToCheck = isThreeDatesUi ? ['apr', 'may', 'jun'] : (isEorSor ? ['apr', 'may'] : ['value'])
+    const fieldsToCheck = isThreeDatesUi ? ['apr', 'may', 'jun']  : ['value']
     const skipRemark = isNotRequiredRemarkValidation && data.some(r => (r.type || '').toLowerCase() === 'filter criteria')
     const validator = skipRemark ? validateRowDataWithoutRemarks : validateRowDataWithRemarks
     const validationError = validator(data, originalRows, fieldsToCheck, 'productName')
@@ -226,6 +230,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         may: row?.may === true ? 1 : row?.may === false ? 0 : row?.may || 0,
         jun: row?.jun === true ? 1 : row?.jun === false ? 0 : row?.jun || 0,
         value: row?.value || 0,
+        type: row.normType
       }
     })
     try {
@@ -233,7 +238,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       const periodTo = formatDateForAPI(endDate)
 
 
-      const method = isSpecialUi ? 'saveConstantsDataEORSOR' : 'saveConstantsData'
+      const method = isThreeDatesUi ? 'saveConstantsDataEORSOR' : 'saveConstantsData'
       await ProductionNormsApiService[method](keycloak, AOP_YEAR, PLANT_ID, SITE_ID, periodFrom, periodTo, payload)
 
       setModifiedCells({})
@@ -273,7 +278,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      const method = isSpecialUi ? 'importConstantsExcelEORSOR' : 'importConstantsExcel'
+      const method = isThreeDatesUi ? 'importConstantsExcelEORSOR' : 'importConstantsExcel'
       const response = await ProductionNormsApiService[method](file, keycloak, PLANT_ID, AOP_YEAR, periodFrom, periodTo)
 
       if (response?.code === 200) {
@@ -342,7 +347,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
     })
 
     try {
-      const method = isSpecialUi ? 'exportConstantsExcelEORSOR' : 'exportConstantsExcel'
+      const method = isThreeDatesUi ? 'exportConstantsExcelEORSOR' : 'exportConstantsExcel'
       await ProductionNormsApiService[method](keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME)
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -363,6 +368,15 @@ const Constants = ({ startDate, endDate, refreshData }) => {
     setRemarkDialogOpen(true)
   }
 
+  const handleDynamicColumnMerger = (dataItem, field) => {
+    const megreColumns = ['Factors for Utility (HPS,MPS,LPS, Power) Norms', 'Factors for Utility Norms', 'Factors for Utility']
+    if (megreColumns.includes(dataItem?.normType)) {
+      if (field === 'apr') return { colSpan: 3 }
+      if (field === 'may' || field === 'jun') return { hidden: true }
+    }
+    return {}
+  }
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -372,6 +386,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
+        dynamicColumnMerger={handleDynamicColumnMerger}
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
@@ -388,7 +403,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // groupBy={['normType']}
+        groupBy={['normType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
