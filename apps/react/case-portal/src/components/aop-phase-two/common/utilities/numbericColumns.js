@@ -8,6 +8,7 @@ export const NoSpinnerNumericEditor = ({
   field,
   onChange,
   allowNegative = false,
+  tdProps,
 }) => {
   // Handle nested field paths (e.g., "apr.shutdownHrs")
   const getNestedValue = (obj, path) => {
@@ -70,7 +71,7 @@ export const NoSpinnerNumericEditor = ({
   }, [])
 
   return (
-    <td>
+    <td {...tdProps}>
       <InputBase
         inputRef={inputRef}
         value={localValue}
