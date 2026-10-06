@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
+import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
@@ -132,6 +133,21 @@ public class RefineryUtilityConfigurationController {
 			@RequestParam String plantFKId) {
 		List<SelectedPlantOwnerDTO> failedList = refineryUtilityConfigurationService.saveSelectedPlantOwner(plantFKId, dtoList);
 		if (failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
+
+	@GetMapping("/consumer-demand")
+	public ResponseEntity<AOPMessageVM> getConsumerDemandData(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getConsumerDemandData(year, plantFKId));
+	}
+
+	@PostMapping("/consumer-demand")
+	public ResponseEntity<AOPMessageVM> saveConsumerDemandData(@RequestBody List<ConsumerDemandDTO> consumerDemandDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<ConsumerDemandDTO> failedList = refineryUtilityConfigurationService.saveConsumerDemandData(year, plantFKId, consumerDemandDTOList);
+		if(failedList.isEmpty()) {
 			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
 		} else {
 			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
