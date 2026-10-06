@@ -8,7 +8,7 @@ export const ManualExclusionDateApiService = {
 }
 
 async function getManualExclusionDate(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/manual-exclusion-date?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/manual-exclusion-dates?year=${year}&plantFKId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -25,7 +25,7 @@ async function getManualExclusionDate(keycloak, plantId, year) {
 }
 
 async function postManualExclusionDate(payload, keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/manual-exclusion-date?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/manual-exclusion-dates?year=${year}&plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -44,16 +44,18 @@ async function postManualExclusionDate(payload, keycloak, plantId, year) {
   }
 }
 
-async function deleteManualExclusionDate(deleteId, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/manual-exclusion-date?id=${deleteId}`
+async function deleteManualExclusionDate(keycloak, payload) {
+  const url = `${Config.CaseEngineUrl}/task/manual-exclusion-dates`
   const headers = {
     Accept: 'application/json',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
     const resp = await fetch(url, {
       method: 'DELETE',
       headers,
+      body: JSON.stringify(payload)
     })
     if (!resp.ok) {
       throw new Error(
