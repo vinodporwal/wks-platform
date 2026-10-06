@@ -1425,9 +1425,6 @@ const handleFormChange = (submission, flags, modified) => {
       ])
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
     } finally {
       setIsRecommendationSubmitting(false)
     }
