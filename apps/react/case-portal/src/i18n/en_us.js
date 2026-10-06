@@ -159,6 +159,7 @@ const defs = {
     otherDocumentUpload: 'Other Document Upload',
     productionScheduling: 'Production Scheduling',
     configurationOtherCost: 'Other Cost',
+    consumerDemand: 'Consumer Demand',
   },
   pages: {
     dashboard: {
@@ -386,6 +387,7 @@ const defs = {
         gradeMixOptimizer: 'Grade Mix Optimizer',
         vcmAvailability: 'VCM Availability',
         otherDocumentUpload: 'Other Document Upload',
+        consumerDemand: 'Consumer Demand',
       },
     },
   },
