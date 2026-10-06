@@ -6,10 +6,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -19,11 +21,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.ManualExclusionDatesDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -60,6 +67,12 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
     @PersistenceContext
 	private EntityManager entityManager;
+
+	@Autowired
+	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+
+	@Autowired
+	private NormParametersRepository normParametersRepository;
     
 	public AOPMessageVM getConfigurationData(String year, UUID plantFKId,String version) {
 		try {
@@ -2874,4 +2887,131 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		
 	}
+
+
+    public AOPMessageVM getManualExclusionDates(String plantFKId, String year) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = "GetManualExclusionDates";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = getManualExclusionDatesFromSP(plantFKId, year,  procedureName);
+			List<ManualExclusionDatesDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				ManualExclusionDatesDTO dto = new ManualExclusionDatesDTO();
+
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setDate(row[1] != null ? row[1].toString() : null);
+				dto.setRemarks(row[2] != null ? row[2].toString() : null);
+				dto.setAuditYear(row[3] != null ? row[3].toString() : null);
+				dto.setNormParameterFKId(row[4] != null ? row[4].toString() : null);
+				
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getManualExclusionDatesFromSP(String plantFKId, String year, String procedureName) {
+		try {
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantFKId = :plantFKId, @year = :year";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantFKId", plantFKId);
+			query.setParameter("year", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional 
+	public List<ManualExclusionDatesDTO> saveManualExclusionDates(List<ManualExclusionDatesDTO> manualExclusionDatesDTOList, String year) {
+
+		if(year == null || year.isEmpty()) {
+			throw new RestInvalidArgumentException("Year is required", null);
+		}
+
+		List<ManualExclusionDatesDTO> failedRecords = new ArrayList<>();
+
+		List<Object[]> updates = new ArrayList<>();
+		List<Object[]> inserts = new ArrayList<>();
+
+		for (ManualExclusionDatesDTO manualExclusionDatesDTO : manualExclusionDatesDTOList) {
+		UUID normParameterFKId = UUID.fromString(manualExclusionDatesDTO.getNormParameterFKId());
+		String id = manualExclusionDatesDTO.getId();
+		String attributeValue = manualExclusionDatesDTO.getDate();
+		String remark = manualExclusionDatesDTO.getRemarks();
+
+		if(normParameterFKId == null || normParameterFKId.toString().isEmpty()) { 
+			throw new RestInvalidArgumentException("Norm parameter FK ID is required", null);
+		}
+	       NormParameters normParameters = normParametersRepository.findById(normParameterFKId).get();
+
+		   if(normParameters == null) { 
+			throw new RestInvalidArgumentException("Norm parameter not found", null);
+		   }
+
+
+		   if(id == null) {
+			inserts.add(new Object[] { attributeValue, remark, year, 4, normParameterFKId });
+		   }
+		   else {
+			updates.add(new Object[] { attributeValue, remark, id });
+		   }
+
+
+		}
+
+		if (!updates.isEmpty()) {
+            String updateSql = "UPDATE NormAttributeTransactions SET AttributeValue = ?, Remarks = ? WHERE Id = ?";
+            jdbcTemplate.batchUpdate(updateSql, updates);
+        }
+
+		if (!inserts.isEmpty()) {
+            String insertSql = "INSERT INTO NormAttributeTransactions (AttributeValue, Remarks, AuditYear, AOPMonth, NormParameter_FK_Id) VALUES (?, ?, ?, ?, ?)";
+            jdbcTemplate.batchUpdate(insertSql, inserts);
+        }
+
+		return failedRecords;
+	}
+
+	@Transactional 
+	public AOPMessageVM deleteManualExclusionDates(List<ManualExclusionDatesDTO> manualExclusionDatesDTOList) { 
+
+		List<Object[]> deletes = new ArrayList<>();
+
+		for (ManualExclusionDatesDTO manualExclusionDatesDTO : manualExclusionDatesDTOList) {
+
+	   if(manualExclusionDatesDTO.getId() == null || manualExclusionDatesDTO.getId().isEmpty()) {
+		throw new RestInvalidArgumentException("Id is required", null);
+	   }
+		deletes.add(new Object[] { manualExclusionDatesDTO.getId() });
+		}
+
+		if (!deletes.isEmpty()) {
+            String deleteSql = "DELETE FROM NormAttributeTransactions WHERE Id = ?";
+            jdbcTemplate.batchUpdate(deleteSql, deletes);
+        }
+
+		return new AOPMessageVM(200, deletes.size() + " Records deleted successfully", null);
+	}
+
 }
