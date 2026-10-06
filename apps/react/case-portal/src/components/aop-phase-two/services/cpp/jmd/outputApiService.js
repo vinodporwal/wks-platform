@@ -261,14 +261,21 @@ async function exportSRMappingOutputExcel(
 }
 
 // ===================== || MONTHLY CALCULATED NORMS OUTPUT APIs || ===================== //
-// GET /task/jmd/monthly-calculated-norms?plantIds=...&aopYear=...
+// GET /task/jmd/monthly-calculated-norms?plantIds=...&aopYear=...&fromDate=...&toDate=...
+// Calls SP CPP_GetMonthWiseFixedCalculatedUtilityNorms.
 // Returns monthly calculated norms rows for the given plant(s).
 // Each row is expected to contain: generatingPlantName, utilityName, utilityId,
 // uom, accountName, materialName, materialId, issuingPlantName, issuingUom,
 // normTypeName, and 12 monthly fields (aprNorms → marNorms).
-async function getMonthlyCalculatedNorms(keycloak, plantIds, aopYear) {
+async function getMonthlyCalculatedNorms(
+  keycloak,
+  plantIds,
+  aopYear,
+  fromDate,
+  toDate,
+) {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-calculated-norms?plantIds=${queryParams}&aopYear=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-calculated-norms?plantIds=${queryParams}&aopYear=${aopYear}&fromDate=${fromDate}&toDate=${toDate}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -286,15 +293,17 @@ async function getMonthlyCalculatedNorms(keycloak, plantIds, aopYear) {
   }
 }
 
-// GET /task/jmd/monthly-calculated-norms/export?plantIds=...&aopYear=...
+// GET /task/jmd/monthly-calculated-norms/export?plantIds=...&aopYear=...&fromDate=...&toDate=...
 async function exportMonthlyCalculatedNormsExcel(
   keycloak,
   plantIds,
   aopYear,
   EXCEL_NAME,
+  fromDate,
+  toDate,
 ) {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-calculated-norms/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-calculated-norms/export?plantIds=${queryParams}&aopYear=${aopYear}&fromDate=${fromDate}&toDate=${toDate}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
