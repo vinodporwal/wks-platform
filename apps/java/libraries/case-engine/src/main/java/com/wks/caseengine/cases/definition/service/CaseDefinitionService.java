@@ -82,7 +82,7 @@ public interface CaseDefinitionService {
 
 	FunctionalLocationValidationResponse validateFunctionalLocation(String functionalLocation);
 
-	Case addRecommendation(Recommendations recommendations);
+	Case addRecommendation(Recommendations recommendations, String authenticatedCurrentUserName);
 
 	void sendEmail(String emailId, String subject, String body);
 

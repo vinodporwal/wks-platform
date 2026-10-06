@@ -1407,28 +1407,27 @@ const handleFormChange = (submission, flags, modified) => {
 
     try {
       const response = await CaseService.saveRecommendation(keycloak, apiBody)
-      if (response.status !== 500) {
-        console.log('Recommendation submitted successfully:', response)
-        setHasUnsavedChanges(false);
-        setSnackbarMessages(['Recommendation submitted successfully'])
-        setSnackbarOpen(true)
-        setIsConfirmationOpen(false)
-        setTimeout(() => {
-          window.location.href = response.caseUrl;
-          // window.location.reload()
-        }, 1000)
-      } else {
-        setIsConfirmationOpen(false)
-        console.error('Error submitting recommendation:', response)
-        console.error('Error submitting recommendation:', JSON.stringify(response.body))
-        setSnackbarMessages(['Error submitting recommendation'])
-        setSnackbarOpen(true)
-      }
+      console.log('Recommendation submitted successfully:', response)
+      setHasUnsavedChanges(false);
+      setSnackbarMessages(['Recommendation submitted successfully'])
+      setSnackbarOpen(true)
+      setIsConfirmationOpen(false)
+      setTimeout(() => {
+        window.location.href = response.caseUrl;
+        // window.location.reload()
+      }, 1000)
       // getCaseInfo(aCase)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
-      setSnackbarMessages(['Error submitting recommendation'])
+      setSnackbarMessages([
+        error?.message ||
+          'Recommendation could not be submitted to APM. Please try again or contact support.',
+      ])
       setSnackbarOpen(true)
+      setIsConfirmationOpen(false)
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
     } finally {
       setIsRecommendationSubmitting(false)
     }

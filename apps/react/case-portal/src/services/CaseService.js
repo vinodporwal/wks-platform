@@ -262,7 +262,24 @@ async function saveRecommendation(keycloak, body) {
       },
       body: JSON.stringify(body),
     });
-    return json(keycloak, resp)
+    if (!resp.ok) {
+      if (resp.status === 401) return json(keycloak, resp)
+
+      let errorBody = null
+      try {
+        errorBody = await resp.json()
+      } catch (parseError) {
+        console.error('Unable to parse saveRecommendation error response:', parseError)
+      }
+
+      throw new Error(
+        errorBody?.errorMessage ||
+          errorBody?.message ||
+          'Recommendation could not be submitted to APM. Please try again or contact support.',
+      )
+    }
+
+    return resp.json()
   } catch (err) {
     console.error('Error in saveRecommendation API:', err);
     throw err;

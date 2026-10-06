@@ -171,7 +171,8 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/save-recommendation")
     public ResponseEntity<Case> addRecommendation(@RequestBody Recommendations recommendations) {
-        Case savedCase = caseDefinitionService.addRecommendation(recommendations);
+		String currentUserName = getCurrentUserName();
+		Case savedCase = caseDefinitionService.addRecommendation(recommendations, currentUserName);
         return ResponseEntity.ok(savedCase);
     }
 

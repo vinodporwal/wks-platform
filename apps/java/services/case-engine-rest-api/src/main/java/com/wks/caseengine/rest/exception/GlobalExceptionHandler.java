@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import lombok.extern.slf4j.Slf4j;
+import com.wks.caseengine.cases.definition.service.RecommendationSubmissionException;
 
 /**
  * @author victor.franca
@@ -44,6 +45,15 @@ public class GlobalExceptionHandler {
 		ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(),
 				"Message not readable: " + ex.getMostSpecificCause().getMessage());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+	}
+
+	@ExceptionHandler(RecommendationSubmissionException.class)
+	public ResponseEntity<ErrorResponse> handleRecommendationSubmissionException(
+			RecommendationSubmissionException ex) {
+		log.warn("Recommendation submission to APM failed: {}", ex.getMessage());
+		ErrorResponse errorResponse = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(),
+				ex.getMessage());
+		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
 	}
 
 	@ExceptionHandler(Exception.class)

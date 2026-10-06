@@ -878,7 +878,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		            recommendation.setRecommendationSubmit(dataGridEntry.path("RecommendationSubmit").asText());
 		            recommendation.setRecommendationTargetCompletionDate1(dataGridEntry.path("recommendationTargetCompletionDate1").asText());
 		            
-		            String[] recommendationStatusAndId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer(), dataGridEntry.path("recommendationTargetCompletionDate1").asText());
+		            String[] recommendationStatusAndId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer(), dataGridEntry.path("recommendationTargetCompletionDate1").asText(), dataGridEntry.path("recommendationAuthor").asText());
 		            System.out.println("GEPM Recommendation ID: "+recommendationStatusAndId[0]);
 		            System.out.println("GEPM Recommendation Status: "+recommendationStatusAndId[1]);
 		            ((ObjectNode) dataGridEntry).put("recommendationNo1", recommendationStatusAndId[0]);
@@ -896,8 +896,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return null;
 	}
 	
-	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId, String targetCompletionDateForApm) throws Exception {
-		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId, targetCompletionDateForApm);
+	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId, String targetCompletionDateForApm, String authenticatedCurrentUserName) throws Exception {
+		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId, targetCompletionDateForApm, authenticatedCurrentUserName);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
 		caseRecommendationMapping.setRecId(recommendationStatusAndId[0]);
@@ -908,7 +908,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId,
-			String reviewerUserId, String targetCompletionDateForApm) throws Exception {
+			String reviewerUserId, String targetCompletionDateForApm, String authenticatedCurrentUserName) throws Exception {
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
 		String functionalLocation = dataGridEntry.path("equipmentFunctionLocation").asText();
@@ -954,7 +954,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			// Create request body
          Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("RECOMMENDATION_Des", "EED Headline");
-		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAuthor").asText());
+		requestBody.put("Auther_Domain_Id", authenticatedCurrentUserName);
 		requestBody.put("CC_GENRECOM_SEND_TO_ASM_CHR", "NO");
 		requestBody.put("MI_REC_AUTHO_NM_CHR", dataGridEntry.path("recommendationAuthor").asText());
 		requestBody.put("Pending_Approval_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
@@ -998,17 +998,43 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 System.out.println("GE APM Response Status: " + response.getStatusCode());
 		 System.out.println("GE APM Response Body: " + response.getBody());
 
-			if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-				Map<String, Object> responseBody = response.getBody();
-				if (responseBody != null && responseBody.get("Data") instanceof Map) {
-		            Map<String, Object> responseData = (Map<String, Object>) responseBody.get("Data");
-		            recommendationId = responseData.get("MI_REC_ID") != null ? (String) responseData.get("MI_REC_ID") : "";
-					System.out.println("GE APM MI_REC_ID: " + recommendationId);
-					recommendationStatusAndId[0] = recommendationId;
-					recommendationStatusAndId[1] = status;
-				}
+			if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+				throw new RecommendationSubmissionException(
+						"Recommendation could not be submitted to APM. Please try again or contact support.");
 			}
+
+			Map<String, Object> responseBody = response.getBody();
+			String responseStatus = String.valueOf(responseBody.getOrDefault("status", ""));
+			String faultMessage = String.valueOf(responseBody.getOrDefault("faultMessage", ""));
+			if ("Fail".equalsIgnoreCase(responseStatus)) {
+				log.warn("GE APM Recommendation business failure: {}", faultMessage);
+				if (faultMessage.toLowerCase(Locale.ROOT).contains("user not found")) {
+					throw new RecommendationSubmissionException(
+							"The logged-in user is not configured or authorized to submit recommendations in APM.");
+				}
+				throw new RecommendationSubmissionException(
+						"Recommendation could not be submitted to APM. Please try again or contact support.");
+			}
+
+			if (!(responseBody.get("Data") instanceof Map)) {
+				throw new RecommendationSubmissionException(
+						"Recommendation could not be submitted to APM. Please try again or contact support.");
+			}
+
+			Map<String, Object> responseData = (Map<String, Object>) responseBody.get("Data");
+			Object recommendationIdValue = responseData.get("MI_REC_ID");
+			recommendationId = recommendationIdValue == null ? "" : recommendationIdValue.toString().trim();
+			if (recommendationId.isBlank()) {
+				throw new RecommendationSubmissionException(
+						"Recommendation could not be submitted to APM. Please try again or contact support.");
+			}
+
+			System.out.println("GE APM MI_REC_ID: " + recommendationId);
+			recommendationStatusAndId[0] = recommendationId;
+			recommendationStatusAndId[1] = status;
 			System.out.println("==========================================");
+		}catch(RecommendationSubmissionException e) {
+			throw e;
 		}catch(Exception e) {
 			Throwable rootCause = e;
 			while (rootCause.getCause() != null) {
@@ -1026,6 +1052,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			}
 			System.out.println("=======================================");
 			e.printStackTrace();
+			throw new RecommendationSubmissionException(
+					"Recommendation could not be submitted to APM. Please try again or contact support.", e);
         }
 		 sendMailToAssignedPerson(assignedUserId);
 		 sendMailToReviewerPerson(reviewerUserId);
@@ -1220,12 +1248,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
 	
 	@Override
-	public Case addRecommendation(Recommendations recommendation) {
+	public Case addRecommendation(Recommendations recommendation, String authenticatedCurrentUserName) {
 		String caseNo = recommendation.getCaseNo();
 		Case caseDetails = caseRepository.getByCaseNo(caseNo);
 		for(Attribute attribute: caseDetails.getAttributes()) {
 			String attributeValue = attribute.getValue();
-			String updatedAttributeValue = saveRecommendations(attributeValue, caseNo, recommendation);
+			String updatedAttributeValue = saveRecommendations(attributeValue, caseNo, recommendation, authenticatedCurrentUserName);
 			updatedAttributeValue = removeUnwantedRecommendations(updatedAttributeValue);
 			attribute.setValue(updatedAttributeValue);
 		}
@@ -1267,7 +1295,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    return null;
 	}
 	
-	private String saveRecommendations(String attributeValue, String caseNo, Recommendations newRecommendation) {
+	private String saveRecommendations(String attributeValue, String caseNo, Recommendations newRecommendation, String authenticatedCurrentUserName) {
 	    attributeValue = attributeValue.replace("\\\"", "\"");
 
 //	    System.out.println("Attribute Value: " + attributeValue);
@@ -1315,7 +1343,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	            // Append the new recommendation node to the dataGrid1 array
 	            
-		            String[] recommendationStatusAndId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer(), newRecommendation.getRecommendationTargetCompletionDateForApm());
+		            String[] recommendationStatusAndId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer(), newRecommendation.getRecommendationTargetCompletionDateForApm(), authenticatedCurrentUserName);
 	            
 	            newRecommendationNode.put("recommendationNo1", recommendationStatusAndId[0]);
 	            newRecommendationNode.put("recommendationStatus", recommendationStatusAndId[1]);
@@ -1325,6 +1353,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            System.out.println("Updated Attribute Value: " + updatedAttributeValue);
 	            return updatedAttributeValue;
 	        }
+	    } catch (RecommendationSubmissionException e) {
+	        throw e;
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
