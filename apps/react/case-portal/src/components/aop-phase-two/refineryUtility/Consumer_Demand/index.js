@@ -254,25 +254,62 @@ const ConsumerDemand = () => {
         const actualVal =
           item?.previousFYAvg !== undefined && item?.previousFYAvg !== null
             ? item.previousFYAvg
-            : (item?.actualConsumption ?? 0)
+            : item?.actualConsumption ?? 0
 
-        const aprVal = item?.apr !== undefined && item?.apr !== null ? item.apr : (item?.april ?? 0)
-        const mayVal = item?.may !== undefined && item?.may !== null ? item.may : 0
-        const junVal = item?.jun !== undefined && item?.jun !== null ? item.jun : (item?.june ?? 0)
-        const julVal = item?.jul !== undefined && item?.jul !== null ? item.jul : (item?.july ?? 0)
-        const augVal = item?.aug !== undefined && item?.aug !== null ? item.aug : (item?.august ?? 0)
-        const sepVal = item?.sep !== undefined && item?.sep !== null ? item.sep : (item?.september ?? item?.sept ?? 0)
-        const octVal = item?.oct !== undefined && item?.oct !== null ? item.oct : (item?.october ?? 0)
-        const novVal = item?.nov !== undefined && item?.nov !== null ? item.nov : (item?.november ?? 0)
-        const decVal = item?.dec !== undefined && item?.dec !== null ? item.dec : (item?.december ?? 0)
-        const janVal = item?.jan !== undefined && item?.jan !== null ? item.jan : (item?.january ?? 0)
-        const febVal = item?.feb !== undefined && item?.feb !== null ? item.feb : (item?.february ?? 0)
-        const marVal = item?.mar !== undefined && item?.mar !== null ? item.mar : (item?.march ?? 0)
+        const aprVal =
+          item?.apr !== undefined && item?.apr !== null
+            ? item.apr
+            : item?.april ?? 0
+        const mayVal =
+          item?.may !== undefined && item?.may !== null ? item.may : 0
+        const junVal =
+          item?.jun !== undefined && item?.jun !== null
+            ? item.jun
+            : item?.june ?? 0
+        const julVal =
+          item?.jul !== undefined && item?.jul !== null
+            ? item.jul
+            : item?.july ?? 0
+        const augVal =
+          item?.aug !== undefined && item?.aug !== null
+            ? item.aug
+            : item?.august ?? 0
+        const sepVal =
+          item?.sep !== undefined && item?.sep !== null
+            ? item.sep
+            : item?.september ?? item?.sept ?? 0
+        const octVal =
+          item?.oct !== undefined && item?.oct !== null
+            ? item.oct
+            : item?.october ?? 0
+        const novVal =
+          item?.nov !== undefined && item?.nov !== null
+            ? item.nov
+            : item?.november ?? 0
+        const decVal =
+          item?.dec !== undefined && item?.dec !== null
+            ? item.dec
+            : item?.december ?? 0
+        const janVal =
+          item?.jan !== undefined && item?.jan !== null
+            ? item.jan
+            : item?.january ?? 0
+        const febVal =
+          item?.feb !== undefined && item?.feb !== null
+            ? item.feb
+            : item?.february ?? 0
+        const marVal =
+          item?.mar !== undefined && item?.mar !== null
+            ? item.mar
+            : item?.march ?? 0
 
         return {
           ...item,
           id: item?.id || index + 1,
-          srNo: item?.srNo !== undefined && item?.srNo !== null ? item.srNo : index + 1,
+          srNo:
+            item?.srNo !== undefined && item?.srNo !== null
+              ? item.srNo
+              : index + 1,
           normParameterFKId: item?.normParameterFKId || null,
           name: item?.name || unitName,
           displayName: item?.displayName || unitName,
@@ -311,7 +348,7 @@ const ConsumerDemand = () => {
           mar: marVal,
           march: marVal,
           auditYear: item?.auditYear || AOP_YEAR,
-          displayOrder: item?.displayOrder ?? (index + 1),
+          displayOrder: item?.displayOrder ?? index + 1,
           isEditable: item?.isEditable !== undefined ? item.isEditable : true,
         }
       })
@@ -528,10 +565,7 @@ const ConsumerDemand = () => {
         setModifiedCells({})
         await fetchData()
       } else if (response?.code === 400 && response?.data) {
-        downloadBase64Excel(
-          response.data,
-          'Error File Consumer Demand.xlsx',
-        )
+        downloadBase64Excel(response.data, 'Error File Consumer Demand.xlsx')
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Partial data saved. Error file downloaded.',
@@ -569,8 +603,8 @@ const ConsumerDemand = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showExport: true,
-    showImport: true,
+    showExport: false,
+    showImport: false,
     showCalculate: false,
     ExcelName: `Consumer_Demand_${AOP_YEAR}`,
     showTitleNameBusiness: true,
