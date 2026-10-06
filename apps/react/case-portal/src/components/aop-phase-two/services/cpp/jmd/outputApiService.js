@@ -13,6 +13,14 @@ export const OutputApiService = {
   // Used in: Outputs/average-asset-loading/index.js (Average Asset Loading output grid)
   getAverageAssetLoading,
   exportAverageAssetLoadingExcel,
+
+  // Used in: Outputs/monthly-calculated-norms/index.js (Monthly Calculated Norms output grid)
+  getMonthlyCalculatedNorms,
+  exportMonthlyCalculatedNormsExcel,
+
+  // Used in: Outputs/utility-rate/UtilityRateGrid.js (Utility Rate output grid)
+  getUtilityRateData,
+  exportUtilityRateExcel,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -248,6 +256,150 @@ async function exportSRMappingOutputExcel(
     return { success: true, message: 'Excel exported successfully' }
   } catch (e) {
     console.error('Error exporting SR mapping output Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || MONTHLY CALCULATED NORMS OUTPUT APIs || ===================== //
+// GET /task/jmd/monthly-calculated-norms?plantIds=...&aopYear=...
+// Returns monthly calculated norms rows for the given plant(s).
+// Each row is expected to contain: generatingPlantName, utilityName, utilityId,
+// uom, accountName, materialName, materialId, issuingPlantName, issuingUom,
+// normTypeName, and 12 monthly fields (aprNorms → marNorms).
+async function getMonthlyCalculatedNorms(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-calculated-norms?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching monthly calculated norms data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/monthly-calculated-norms/export?plantIds=...&aopYear=...
+async function exportMonthlyCalculatedNormsExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-calculated-norms/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting monthly calculated norms Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || UTILITY RATE OUTPUT APIs || ===================== //
+// GET /task/jmd/cpp-utility-rates?plantIds=...&aopYear=...
+// Returns utility rate rows across all selected CPP plants for the given AOP year (multiplant).
+// Each row is expected to contain: siteDescription, utilityPlant, utilityPlantId,
+// utilityName, utilityId, uom, weightedAvgPrice, and 12 monthly price fields (apr → mar).
+async function getUtilityRateData(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/cpp-utility-rates?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching utility rate data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/cpp-utility-rates/export?plantIds=...&aopYear=...
+async function exportUtilityRateExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/cpp-utility-rates/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting utility rate Excel:', e)
     return Promise.reject(e)
   }
 }

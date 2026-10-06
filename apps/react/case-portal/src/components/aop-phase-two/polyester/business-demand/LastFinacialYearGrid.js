@@ -58,10 +58,10 @@ const LastFinacialYearGrid = () => {
   })
 
   const monthsConfig = [
-    { field: 'apr', key: 4, title: 'April' },
+    { field: 'april', key: 4, title: 'April' },
     { field: 'may', key: 5, title: 'May' },
-    { field: 'jun', key: 6, title: 'June' },
-    { field: 'jul', key: 7, title: 'July' },
+    { field: 'june', key: 6, title: 'June' },
+    { field: 'july', key: 7, title: 'July' },
     { field: 'aug', key: 8, title: 'August' },
     { field: 'sep', key: 9, title: 'September' },
     { field: 'oct', key: 10, title: 'October' },
@@ -69,7 +69,7 @@ const LastFinacialYearGrid = () => {
     { field: 'dec', key: 12, title: 'December' },
     { field: 'jan', key: 1, title: 'January' },
     { field: 'feb', key: 2, title: 'February' },
-    { field: 'mar', key: 3, title: 'March' },
+    { field: 'march', key: 3, title: 'March' },
   ]
 
   const MONTH_FIELDS = monthsConfig.map((m) => m.field)
@@ -124,6 +124,10 @@ const LastFinacialYearGrid = () => {
           id: index,
           originalRemark: item.remark,
           inEdit: false,
+          april: item?.apr,
+          june: item?.jun,
+          july: item?.jul,
+          march: item?.mar,
           Particulars: item.normParameterTypeDisplayName,
           total: MONTH_FIELDS.reduce(
             (sum, f) => sum + (Number(item[f]) || 0),

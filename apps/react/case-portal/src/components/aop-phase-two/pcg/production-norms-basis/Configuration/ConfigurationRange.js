@@ -9,13 +9,7 @@ import {
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
-import {
-  handleDateDifferenceCalculation,
-  handleValueMappingDependency,
-  handleLegacyDependencyRule,
-  handleAdditionDependency,
-} from '../utils/dependencyUtils'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Configuration = ({ startDate, endDate, refreshData }) => {
@@ -43,41 +37,10 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [dependencyRules, setDependencyRules] = useState({})
 
-  // Addition dependency configuration for MP Steam fields
-  const additionDependencyConfig = {
-    sourceFields: [
-      '38% Ejector inline for next AOP Cycle',
-      'Additional MP Steam in Main Ejector',
-    ],
-    targetField: 'Additional MP Steam in Ejector, A',
-  }
-
-  // Editability rules: Define when dependent fields should become non-editable
-  const editabilityRules = {
-    '38% Ejector Input': {
-      dependentField: '38% Ejector inline for next AOP Cycle',
-      nonEditableWhen: ['NO', 'No', 'no'], // Values that make dependent field non-editable
-    },
-  }
-
-  // Build dependency rules from row data
-  // Expects rows to have config property on controller fields
-  const buildDependencyRules = (rowsData) => {
-    const rules = {}
-    rowsData.forEach((row) => {
-      if (row.config && row.name) {
-        rules[row.name] = {
-          dependentProductName: row.config.dependentProductName,
-          values: row.config.valueMapping || {},
-        }
-      }
-    })
-    return rules
-  }
 
   const columns = [
     {
-      field: 'name',
+      field: 'displayName',
       title: 'Data Filters',
       widthT: 250,
       minWidth: 200,
@@ -101,7 +64,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       type: 'row-based',
     },
     {
-      field: 'rangeValue',
+      field: 'range',
       title: 'Range',
       editable: true,
       widthT: 120,
@@ -126,7 +89,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       showPlaceholder: false,
     },
     {
-      field: 'utilities',
+      field: 'dependantAttributeId',
       title: 'Applicable Utilities & Cat-Chems',
       widthT: 250,
       minWidth: 200,
@@ -138,10 +101,10 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 const FILTER_CONFIG_DUMMY_DATA = [
   {
     id: 1,
-    name: 'Sulphur Production',
+    displayName: 'Sulphur Production',
     uom: '',
     targetValue: 'PIMS Sulphur Production (auto fetch from PIMS throughput tab)',
-    rangeValue: '+/- 5%',
+    range: '+/- 5%',
     selection: false,
     remarks: '',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
@@ -151,80 +114,80 @@ const FILTER_CONFIG_DUMMY_DATA = [
   },
   {
     id: 2,
-    name: 'AGR C003 Inline/Bypass',
+    displayName: 'AGR C003 Inline/Bypass',
     uom: '',
     targetValue: 'Bypass',
-    rangeValue: '+/-5%',
+    range: '+/-5%',
     selection: false,
     remarks: '',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'dropdown',
     options: ['Inline', 'Bypass'],
   },
   {
     id: 3,
-    name: 'AGR C003 Inline (G330PI400340 A/B/C)',
+    displayName: 'AGR C003 Inline (G330PI400340 A/B/C)',
     uom: 'kg/cm2g',
     targetValue: '1.2',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'Less than target value',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
     hideCheckbox: true,
   },
   {
     id: 4,
-    name: 'AGR C003 Inline ( G330FIC400305)',
+    displayName: 'AGR C003 Inline ( G330FIC400305)',
     uom: '%',
     targetValue: '10',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'more than target value',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
     hideCheckbox: true,
   },
   {
     id: 5,
-    name: 'AGR C003 Bypass (G330PI400340 A/B/C)',
+    displayName: 'AGR C003 Bypass (G330PI400340 A/B/C)',
     uom: 'kg/cm2g',
     targetValue: '1.6',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'more than target value',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
     hideCheckbox: true,
   },
   {
     id: 6,
-    name: 'AGR C003 Bypass ( G330FIC400305)',
+    displayName: 'AGR C003 Bypass (G330FIC400305)',
     uom: '%',
     targetValue: '2',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'Less than target value',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
     hideCheckbox: true,
   },
   {
     id: 7,
-    name: 'J1 Acid Gas Flow',
+    displayName: 'J1 Acid Gas Flow',
     uom: 'Nm3/Hr',
     targetValue: 'Manual input',
-    rangeValue: '+/- 500',
+    range: '+/- 500',
     selection: false,
     remarks: '',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
@@ -234,10 +197,10 @@ const FILTER_CONFIG_DUMMY_DATA = [
   },
   {
     id: 8,
-    name: 'Average J3 Acid Gas H2S Concentration',
+    displayName: 'Average J3 Acid Gas H2S Concentration',
     uom: '%',
     targetValue: 'Manual input',
-    rangeValue: '+/- 2%',
+    range: '+/- 2%',
     selection: false,
     remarks: '',
     utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW',
@@ -247,36 +210,36 @@ const FILTER_CONFIG_DUMMY_DATA = [
   },
   {
     id: 9,
-    name: 'Incinerator Temperature (G360TIC000157)',
+    displayName: 'Incinerator Temperature (G360TIC000157)',
     uom: 'Deg C',
     targetValue: '740',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'more than target value',
     utilities: 'Fuel, HP Stam, LP Steam, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
   },
   {
     id: 10,
-    name: 'Incinerator Temperature (G361TIC000157)',
+    displayName: 'Incinerator Temperature (G361TIC000157)',
     uom: 'Deg C',
     targetValue: '740',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'more than target value',
     utilities: 'Fuel, HP Stam, LP Steam, Return Steam Condensate, BFW',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
   },
   {
     id: 11,
-    name: 'Average O2 Enrichment',
+    displayName: 'Average O2 Enrichment',
     uom: '%',
     targetValue: 'Manual input',
-    rangeValue: '+/- 2%',
+    range: '+/- 2%',
     selection: false,
     remarks: '',
     utilities: 'Oxygen, Power',
@@ -286,41 +249,41 @@ const FILTER_CONFIG_DUMMY_DATA = [
   },
   {
     id: 12,
-    name: 'SWS-1 Sour Water Processing Rate',
+    displayName: 'SWS-1 Sour Water Processing Rate',
     uom: 'M3/Hr',
     targetValue: '200',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'More than target value',
     utilities: 'LP Steam & Return Steam Condensate',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
   },
   {
     id: 13,
-    name: 'SRU-1 Sulphur production (GSR1PR001)',
+    displayName: 'SRU-1 Sulphur production (GSR1PR001)',
     uom: 'TPD',
     targetValue: '50',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'More than target value',
     utilities: 'LLP N2, LP N2, Instrument Air, DM Water, Utility Water, Plant Air, caustic, CHEM Ammonia, Chem Maxtreat 3223 SJ',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
   },
   {
     id: 14,
-    name: 'SRU-2 Sulphur production (GSR2PR001)',
+    displayName: 'SRU-2 Sulphur production (GSR2PR001)',
     uom: 'TPD',
     targetValue: '50',
-    rangeValue: '',
+    range: '',
     selection: false,
     remarks: 'More than target value',
     utilities: 'LLP N2, LP N2, Instrument Air, DM Water, Utility Water, Plant Air, caustic, CHEM Ammonia, Chem Maxtreat 3223 SJ',
     isEditable: true,
-    nonEditableFields: ['rangeValue'],
+    nonEditableFields: ['range'],
     type: 'text',
   }
 ]
@@ -334,28 +297,28 @@ const FILTER_CONFIG_DUMMY_DATA = [
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const apiRes = FILTER_CONFIG_DUMMY_DATA
-      //  await ProductionNormsApiService.getConfigurationData(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
+      // const apiRes = FILTER_CONFIG_DUMMY_DATA
+      const apiRes =  await ProductionNormsApiService.getConfigurationData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       
       let res = []
       if (apiRes && apiRes.length > 0) {
         // Merge API response with static config to preserve frontend rules like nonEditableFields and formula-text type
         res = apiRes.map((apiItem, index) => {
-          const dummyItem = FILTER_CONFIG_DUMMY_DATA.find(d => d.name === apiItem.name || d.name === apiItem.productName) 
+          const dummyItem = FILTER_CONFIG_DUMMY_DATA.find(d => d.displayName === apiItem.displayName || d.displayName === apiItem.productName) 
                          || FILTER_CONFIG_DUMMY_DATA[index] || {};
                          
           return {
             ...dummyItem,
             ...apiItem,
             // Preserve UI specific fields from dummy data over API response if they exist
-            isEditable: dummyItem.isEditable !== undefined ? dummyItem.isEditable : true,
-            nonEditableFields: dummyItem.nonEditableFields || [],
-            type: dummyItem.type || 'text',
-            options: dummyItem.options || [],
+            isEditable: dummyItem?.isEditable,
+            nonEditableFields: dummyItem?.nonEditableFields || [],
+            type: dummyItem?.type || 'text',
+            options: dummyItem?.options || [],
           }
         })
       } else {
@@ -369,8 +332,7 @@ const FILTER_CONFIG_DUMMY_DATA = [
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-
-      const formattedData = res?.map((item, index) => {
+      const updatedFormattedData = res?.map((item, index) => {
         // Parse config from JSON string if it exists
         let parsedAttributeValue = null
         if (item.config) {
@@ -421,55 +383,23 @@ const FILTER_CONFIG_DUMMY_DATA = [
           allowNegative: item?.allowNegative || item.name === 'Additional TSRF',
         }
       })
-
-      // Apply editability rules on initial load
-      const updatedFormattedData = formattedData.map((row) => {
-        // Check if this row is a dependent field in any editability rule
-        for (const [sourceFieldName, rule] of Object.entries(
-          editabilityRules,
-        )) {
-          if (rule.dependentField === row.name) {
-            // Find the source field
-            const sourceField = formattedData.find(
-              (r) => r.name === sourceFieldName,
-            )
-            if (sourceField && sourceField.attributeValue) {
-              // Check if source value makes this field non-editable
-              const shouldBeNonEditable = rule.nonEditableWhen.includes(
-                sourceField.attributeValue,
-              )
-              if (shouldBeNonEditable) {
-                return {
-                  ...row,
-                  isEditable: false,
-                }
-              }
-            }
-          }
-        }
-        return row
-      })
-
       // Apply AGR C003 Inline/Bypass logic on initial load
       const row2 = updatedFormattedData.find((r) => r.id === 2)
       if (row2 && row2.targetValue) {
         updatedFormattedData.forEach((row) => {
           if (row2.targetValue === 'Bypass') {
-            if (row.id === 3 || row.id === 4) row.isEditable = false
-            if (row.id === 5 || row.id === 6) row.isEditable = true
+            if (row.displayName === 'AGR C003 Inline ( G330FIC400305)' || row.displayName === 'AGR C003 Inline (G330PI400340 A/B/C)') row.isEditable = false
+            if (row.displayName === 'AGR C003 Bypass (G330FIC400305)' || row.displayName === 'AGR C003 Bypass (G330PI400340 A/B/C)') row.isEditable = true
           } else if (row2.targetValue === 'Inline') {
-            if (row.id === 3 || row.id === 4) row.isEditable = true
-            if (row.id === 5 || row.id === 6) row.isEditable = false
+            if (row.displayName === 'AGR C003 Inline (G330PI400340 A/B/C)' || row.displayName === 'AGR C003 Inline (G330PI400340 A/B/C)') row.isEditable = true
+            if (row.displayName === 'AGR C003 Bypass (G330FIC400305)' || row.displayName === 'AGR C003 Bypass (G330PI400340 A/B/C)') row.isEditable = false
           }
         })
       }
 
       setRows(updatedFormattedData)
       setOriginalRows(updatedFormattedData)
-
-      // Build dependency rules from the data
-      const rules = buildDependencyRules(formattedData)
-      setDependencyRules(rules)
+      
     } catch (error) {
       console.error('Error fetching configuration data:', error)
       setSnackbarOpen(true)
@@ -506,28 +436,6 @@ const FILTER_CONFIG_DUMMY_DATA = [
   const saveChanges = async () => {
     setLoading(true)
 
-    // Validate required parameters
-    if (!startDate || !endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message:
-          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
-
-    if (!SITE_ID) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Site ID is required.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
-
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
       setSnackbarOpen(true)
@@ -550,12 +458,12 @@ const FILTER_CONFIG_DUMMY_DATA = [
       return
     }
 
-    const fieldsToCheck = ['targetValue', 'rangeValue']
+    const fieldsToCheck = ['targetValue', 'range']
     const validationError = validateRowDataWithRemarks(
       data.filter((item) => item.isEditable == true),
       originalRows,
       fieldsToCheck,
-      'name',
+      'displayName',
     )
 
     if (validationError) {
@@ -582,17 +490,12 @@ const FILTER_CONFIG_DUMMY_DATA = [
     })
 
     try {
-      const periodFrom = formatDateForAPI(startDate)
-      const periodTo = formatDateForAPI(endDate)
 
       const response = await ProductionNormsApiService.saveConfigurationData(
         keycloak,
         AOP_YEAR,
         payload,
         PLANT_ID,
-        SITE_ID,
-        periodFrom,
-        periodTo,
       )
 
       setModifiedCells({})
@@ -743,162 +646,24 @@ const FILTER_CONFIG_DUMMY_DATA = [
   const handleCustomItemChange = (e, setRowsCallback) => {
     const { dataItem, field, value } = e
 
-    if (field !== 'targetValue' && field !== 'rangeValue') return
+    if (field !== 'targetValue' && field !== 'range') return
 
     // Dynamic row disable logic for AGR C003 Inline/Bypass
     if (dataItem.id === 2 && field === 'targetValue') {
       setRowsCallback((currentRows) => {
         return currentRows.map((row) => {
           if (value === 'Bypass') {
-            if (row.id === 3 || row.id === 4) return { ...row, isEditable: false }
-            if (row.id === 5 || row.id === 6) return { ...row, isEditable: true }
+            if (row.displayName === 'AGR C003 Inline ( G330FIC400305)' || row.displayName === 'AGR C003 Inline (G330PI400340 A/B/C)') return { ...row, isEditable: false }
+            if (row.displayName === 'AGR C003 Bypass (G330FIC400305)' || row.displayName === 'AGR C003 Bypass (G330PI400340 A/B/C)') return { ...row, isEditable: true }
           } else if (value === 'Inline') {
-            if (row.id === 3 || row.id === 4) return { ...row, isEditable: true }
-            if (row.id === 5 || row.id === 6) return { ...row, isEditable: false }
+            if (row.displayName === 'AGR C003 Inline ( G330FIC400305)' || row.displayName === 'AGR C003 Inline (G330PI400340 A/B/C)') return { ...row, isEditable: true }
+            if (row.displayName === 'AGR C003 Bypass (G330FIC400305)' || row.displayName === 'AGR C003 Bypass (G330PI400340 A/B/C)') return { ...row, isEditable: false }
           }
           return row
         })
       })
     }
 
-    const currentProductName = dataItem.name
-    let dependentFieldsToCheck = []
-
-    // Check if this field is part of addition dependency (MP Steam fields)
-    if (additionDependencyConfig.sourceFields.includes(currentProductName)) {
-      handleAdditionDependency({
-        currentFieldName: currentProductName,
-        value,
-        dependencyConfig: additionDependencyConfig,
-        rows,
-        setRowsCallback,
-        setModifiedCells,
-        setCustomModifiedCells,
-      })
-    }
-
-    // Check if this field has a dependency configuration
-    if (dataItem.config) {
-      const { calculationType, valueMapping, dependentProductName } =
-        dataItem.config
-
-      // Handle date difference calculation
-      if (calculationType === 'dateDifference') {
-        handleDateDifferenceCalculation({
-          value,
-          dependencyConfig: dataItem.config,
-          rows,
-          setRowsCallback,
-          setModifiedCells,
-          setCustomModifiedCells,
-        })
-        return
-      }
-
-// Handle multi-value mapping
-      if (calculationType === 'multiValueMapping' && valueMapping) {
-        const dependentValues = valueMapping[value]
-        if (dependentValues) {
-          Object.keys(dependentValues).forEach((dependentProductName) => {
-            const dependentValue = dependentValues[dependentProductName]
-            handleValueMappingDependency({
-              value,
-              dependencyConfig: { dependentProductName, valueMapping: { [value]: dependentValue } },
-              rows,
-              setRowsCallback,
-              setModifiedCells,
-              setCustomModifiedCells,
-              sourceFieldName: currentProductName,
-              editabilityRules,
-            })
-            dependentFieldsToCheck.push({ fieldName: dependentProductName, fieldValue: dependentValue })
-          })
-
-          if (dependentFieldsToCheck.length > 0) {
-            setTimeout(() => {
-              setRowsCallback((currentRows) => {
-                dependentFieldsToCheck.forEach(({ fieldName, fieldValue }) => {
-                  if (additionDependencyConfig.sourceFields.includes(fieldName)) {
-                    handleAdditionDependency({
-                      currentFieldName: fieldName,
-                      value: fieldValue,
-                      dependencyConfig: additionDependencyConfig,
-                      rows: currentRows,
-                      setRowsCallback,
-                      setModifiedCells,
-                      setCustomModifiedCells,
-                    })
-                  }
-                })
-                return currentRows
-              })
-            }, 0)
-          }
-          return
-        }
-      }
-
-      // Handle value mapping (dropdown dependencies)
-      if (valueMapping && dependentProductName) {
-        const dependentValue = valueMapping[value]
-        if (dependentValue !== undefined) {
-          handleValueMappingDependency({
-            value,
-            dependencyConfig: dataItem.config,
-            rows,
-            setRowsCallback,
-            setModifiedCells,
-            setCustomModifiedCells,
-            sourceFieldName: currentProductName,
-            editabilityRules,
-          })
-
-          // Track dependent field for cascading check
-          dependentFieldsToCheck.push({
-            fieldName: dependentProductName,
-            fieldValue: dependentValue,
-          })
-        }
-
-        // Process cascading dependencies after state updates
-        if (dependentFieldsToCheck.length > 0) {
-          setTimeout(() => {
-            setRowsCallback((currentRows) => {
-              dependentFieldsToCheck.forEach(({ fieldName, fieldValue }) => {
-                // Check if dependent field is part of addition dependency
-                if (additionDependencyConfig.sourceFields.includes(fieldName)) {
-                  handleAdditionDependency({
-                    currentFieldName: fieldName,
-                    value: fieldValue,
-                    dependencyConfig: additionDependencyConfig,
-                    rows: currentRows,
-                    setRowsCallback,
-                    setModifiedCells,
-                    setCustomModifiedCells,
-                  })
-                }
-              })
-              return currentRows
-            })
-          }, 0)
-        }
-        return
-      }
-    }
-
-    // Legacy support: Check old dependencyRules format
-    const dependencyRule = dependencyRules[currentProductName]
-    if (dependencyRule) {
-      handleLegacyDependencyRule({
-        value,
-        dependencyRule,
-        rows,
-        setRowsCallback,
-        setModifiedCells,
-        setCustomModifiedCells,
-        sourceFieldName: currentProductName,
-      })
-    }
   }
 
   return (
