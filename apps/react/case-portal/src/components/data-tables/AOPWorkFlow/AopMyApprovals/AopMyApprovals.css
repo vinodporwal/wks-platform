@@ -199,6 +199,14 @@
   border: 1px solid #e2e8f0 !important;
 }
 
+.aop-chip-pending {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 500 !important;
+  font-size: 0.76rem !important;
+}
+
 /* Stage status chips */
 .aop-chip-stage-default {
   background-color: #f1f5f9 !important;
