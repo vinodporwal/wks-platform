@@ -40,6 +40,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.ShutdownConsumptionDTO;
@@ -104,6 +105,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	
 	@Autowired
 	private ShutDownPlanService shutDownPlanService;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public ShutdownNormsServiceImpl(DataSource dataSource) {
@@ -925,6 +929,15 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	    UUID plantId = null;
 	    List<ShutdownNormsValue> shutdownNormsValueList = new ArrayList<>();
 	    List<ShutdownNormsValueDTO> failedList = new ArrayList<>();
+
+		Plants plant = plantsRepository.findById(plantId).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		boolean filament = vertical.getName().equalsIgnoreCase("Filament");
+		boolean staple = vertical.getName().equalsIgnoreCase("Staple");
+		
+	
 	    
 	    try {
 	        for (ShutdownNormsValueDTO dto : shutdownNormsValueDTOList) {
@@ -1028,6 +1041,16 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	            aopCalculationRepository.save(aopCalculation);
 	        }
 
+			// sp call for filament and staple
+			if(filament || staple) { 
+				String storedProcedure = vertical.getName() + "_" + site.getName() + "_CalculateTotalShutdownNorms";
+
+				String callSql = "{call " + "[" + storedProcedure + "]" + "(?, ?)}";
+
+
+				jdbcTemplate.update(callSql, plantId, year);
+			}
+
 	        Map<String, Object> map = new HashMap<>();
 	        map.put("data", failedList);
 	        return map;
@@ -1037,6 +1060,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	        throw new RuntimeException("Failed to save data", ex);
 	    }
 	}
+
 
 
 	public Map<String, Object> saveShutdownNormsDataByMaterialId(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {

@@ -205,6 +205,7 @@ import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
 import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
+import ConsumerDemand from 'components/aop-phase-two/refineryUtility/Consumer_Demand/index'
 
 // Naphthasplitter Ended
 
@@ -1284,6 +1285,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='overall-aop-consumption-refinery'>
                 <OverallAopConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'consumer-demand-refinery',
+            element: (
+              <PrivateRoute routeId='consumer-demand-refinery'>
+                <ConsumerDemand />
               </PrivateRoute>
             ),
           },
