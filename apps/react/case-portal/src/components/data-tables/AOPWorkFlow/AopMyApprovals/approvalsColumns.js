@@ -11,6 +11,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import HourglassTopIcon from '@mui/icons-material/HourglassTop'
 import RuleIcon from '@mui/icons-material/Rule'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import PersonIcon from '@mui/icons-material/Person'
 import { RoleApprovalsTooltip, formatRoleName } from 'components/Utilities/AopWorkflowStepper'
 
 export const formatActionDate = (ts) => {
@@ -63,6 +64,14 @@ export const getColumnWidth = (
         val = isCompleted ? 'All Approved' : (row.gateDisplayName || row.gateName || '')
       }
       else if (field === 'assignedRole') val = row.assignedRole || ''
+      else if (field === 'pendingWith') {
+        const list = Array.isArray(row.pendingWith)
+          ? row.pendingWith
+          : row.pendingWith
+          ? [row.pendingWith]
+          : []
+        val = list.slice(0, 2).join(', ')
+      }
       else if (field === 'action') val = 'Go to Plant'
       else val = String(row[field] || '')
 
@@ -326,7 +335,126 @@ export const getApprovalsColumns = (
   //       </td>
   //     )
   //   },
-  // },
+  {
+    field: 'pendingWith',
+    title: 'Pending With',
+    minWidth: getColumnWidth(
+      'pendingWith',
+      'Pending With',
+      filteredItems,
+      items,
+      170,
+    ),
+    editable: false,
+    cell: (props) => {
+      const row = props.dataItem || {}
+      const raw = row.pendingWith
+      const list = Array.isArray(raw)
+        ? raw
+            .map((u) =>
+              typeof u === 'object' && u !== null
+                ? u.name || u.username || u.userId || JSON.stringify(u)
+                : String(u),
+            )
+            .filter(Boolean)
+        : raw
+        ? [String(raw)]
+        : []
+
+      if (list.length === 0) {
+        return (
+          <td style={{ padding: '6px 12px' }}>
+            <Typography variant='caption' sx={{ color: '#94a3b8' }}>
+              -
+            </Typography>
+          </td>
+        )
+      }
+
+      const maxDirect = 2
+      const visible = list.slice(0, maxDirect)
+      const remaining = list.length - maxDirect
+
+      return (
+        <td style={{ padding: '6px 12px' }}>
+          <Stack
+            direction='row'
+            spacing={0.5}
+            alignItems='center'
+            flexWrap='nowrap'
+          >
+            {visible.map((user, idx) => (
+              <Tooltip key={idx} title={user} arrow>
+                <Chip
+                  className='aop-chip aop-chip-pending'
+                  size='small'
+                  icon={
+                    <PersonIcon style={{ fontSize: 13, color: '#475569' }} />
+                  }
+                  label={user}
+                  sx={{
+                    maxWidth: 130,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    },
+                  }}
+                />
+              </Tooltip>
+            ))}
+
+            {remaining > 0 && (
+              <Tooltip
+                title={
+                  <Box sx={{ p: 0.5 }}>
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        fontWeight: 700,
+                        display: 'block',
+                        mb: 0.5,
+                        borderBottom: '1px solid rgba(255,255,255,0.25)',
+                        pb: 0.25,
+                      }}
+                    >
+                      Pending With ({list.length}):
+                    </Typography>
+                    {list.map((u, i) => (
+                      <Typography
+                        key={i}
+                        variant='caption'
+                        sx={{ display: 'block', py: 0.2 }}
+                      >
+                        • {u}
+                      </Typography>
+                    ))}
+                  </Box>
+                }
+                arrow
+              >
+                <Chip
+                  size='small'
+                  label={`+${remaining}`}
+                  sx={{
+                    backgroundColor: '#e2e8f0',
+                    color: '#334155',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: '#cbd5e1',
+                    },
+                  }}
+                />
+              </Tooltip>
+            )}
+          </Stack>
+        </td>
+      )
+    },
+  },
   {
     field: 'actionTakenDate',
     title: 'ACTION AT',

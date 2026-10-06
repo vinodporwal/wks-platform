@@ -91,6 +91,11 @@ const AopMyApprovals = ({ onClose }) => {
         <ExcelExportColumn field='gateDisplayName' title='Stage' width={180} />
         <ExcelExportColumn field='statusMode' title='Status' width={160} />
         <ExcelExportColumn
+          field='formattedPendingWith'
+          title='Pending With'
+          width={200}
+        />
+        <ExcelExportColumn
           field='formattedActionDate'
           title='ACTION AT'
           width={180}

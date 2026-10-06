@@ -118,6 +118,9 @@ export default function useApprovalsInbox(onClose) {
           ).toLowerCase()
           const role = String(item.assignedRole || '').toLowerCase()
           const dateStr = String(item.actionTakenDate || '').toLowerCase()
+          const pendingWithRaw = Array.isArray(item.pendingWith)
+            ? item.pendingWith.join(' ')
+            : String(item.pendingWith || '')
           const modeStr =
             item.actions?.mode === 'ACTION'
               ? 'approval pending action required'
@@ -130,7 +133,8 @@ export default function useApprovalsInbox(onClose) {
             stage.includes(term) ||
             role.includes(term) ||
             dateStr.includes(term) ||
-            modeStr.includes(term)
+            modeStr.includes(term) ||
+            pendingWithRaw.toLowerCase().includes(term)
           )
         })
 
@@ -180,6 +184,21 @@ export default function useApprovalsInbox(onClose) {
         ? 'All Approved'
         : item.gateDisplayName || item.gateName || 'Pending'
 
+      const rawPending = item.pendingWith
+      const pendingList = Array.isArray(rawPending)
+        ? rawPending
+            .map((u) =>
+              typeof u === 'object' && u !== null
+                ? u.name || u.username || u.userId || JSON.stringify(u)
+                : String(u),
+            )
+            .filter(Boolean)
+        : rawPending
+        ? [String(rawPending)]
+        : []
+      const pendingText =
+        pendingList.length > 0 ? pendingList.join(', ') : '-'
+
       return {
         ...item,
         siteId: sid,
@@ -187,6 +206,9 @@ export default function useApprovalsInbox(onClose) {
         expanded: Boolean(expandedRows[rowId]),
         statusMode: statusModeStr,
         gateDisplayName: stageStr,
+        pendingWith: pendingList,
+        pendingWithText: pendingText,
+        formattedPendingWith: pendingText,
         formattedActionDate: item.actionTakenDate
           ? new Date(item.actionTakenDate).toLocaleString(undefined, {
               year: 'numeric',
