@@ -21,7 +21,10 @@ const Constants = ({ startDate, endDate }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, siteObject } = dataGridStore
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Production_Norms_Basis_Constants')
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'Production_Norms_Basis_Constants',
+  )
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -30,45 +33,93 @@ const Constants = ({ startDate, endDate }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const formatUomValue = (val, uom) => {
-    if (val === null || val === undefined || val === '') return ''
-    const num = parseFloat(val)
-    if (isNaN(num)) return val
+  const formatUomValue = useCallback(
+    (val, uom, itemOrName, displayName) => {
+      if (val === null || val === undefined || val === '') return ''
+      const num = parseFloat(val)
+      if (isNaN(num)) return val
 
-    const siteName = siteObject?.name?.toUpperCase() || ''
-    const plantName = plantObject?.name?.toUpperCase() || ''
-    const isSpecialPlant =
-      (siteName === 'DTA' && plantName === 'PCG ASU') ||
-      (siteName === 'SEZ' && plantName === 'PCG ASU') ||
-      (siteName === 'DTA' && plantName === 'AIR & ASU') ||
-      (siteName === 'SEZ' && plantName === 'AIR & ASU') ||
-      (siteName === 'C2' && plantName === 'ASU') ||
-      (siteName === 'C2' && plantName === 'AIR')
+      const siteName = siteObject?.name?.toUpperCase() || ''
+      const plantName = plantObject?.name?.toUpperCase() || ''
+      const isSpecialPlant =
+        (siteName === 'DTA' && plantName === 'PCG ASU') ||
+        (siteName === 'SEZ' && plantName === 'PCG ASU') ||
+        (siteName === 'DTA' && plantName === 'AIR & ASU') ||
+        (siteName === 'SEZ' && plantName === 'AIR & ASU') ||
+        (siteName === 'C2' && plantName === 'ASU') ||
+        (siteName === 'C2' && plantName === 'AIR')
 
-    const cleanUom = String(uom ?? '').trim().toLowerCase()
+      const isDtaCtPlant =
+        siteName === 'DTA' &&
+        (plantObject?.name === 'CT4 (C743)' ||
+          plantObject?.name === 'CT6 (2736)')
 
-    if (isSpecialPlant) {
-      if (cleanUom === '%' || cleanUom === 'm3/hr') {
-        return Math.trunc(num).toString()
-      }
-      return (Math.trunc(num * 100) / 100).toFixed(2)
-    } else {
-      if (cleanUom === 'coc') {
+      const cleanUom = String(uom ?? '')
+        .trim()
+        .toLowerCase()
+
+      const rawName =
+        typeof itemOrName === 'object' && itemOrName !== null
+          ? itemOrName?.Name || itemOrName?.name || ''
+          : String(itemOrName ?? '')
+
+      const rawDisplayName =
+        typeof itemOrName === 'object' && itemOrName !== null
+          ? itemOrName?.DisplayName ||
+            itemOrName?.displayName ||
+            itemOrName?.productName ||
+            ''
+          : String(displayName ?? '')
+
+      const cleanName = rawName.trim().toLowerCase()
+      const cleanDisplayName = rawDisplayName.trim().toLowerCase()
+
+      const isCoc =
+        cleanName === 'coc' ||
+        cleanName.startsWith('coc') ||
+        cleanDisplayName === 'coc' ||
+        cleanDisplayName.startsWith('coc') ||
+        cleanUom === 'coc'
+
+      const isDmdSite =
+        siteName === 'DMD' ||
+        siteName.trim() === 'DMD' ||
+        siteName.includes('DMD')
+
+      const isCoolingWaterDesign =
+        cleanName.includes('cooling water design') ||
+        cleanDisplayName.includes('cooling water design')
+
+      // 1 decimal conditions:
+      // 1) COC for DTA site and CT4 / CT6 plants
+      // 2) Name like 'Cooling Water Design' for DMD site
+      if ((isCoc && isDtaCtPlant) || (isDmdSite && isCoolingWaterDesign)) {
         return (Math.trunc(num * 10) / 10).toFixed(1)
-      } else if (['kw', 'kw/m3', 'kg/km3'].includes(cleanUom)) {
-        return (Math.trunc(num * 1000) / 1000).toFixed(3)
+      }
+
+      if (isSpecialPlant) {
+        if (cleanUom === '%' || cleanUom === 'm3/hr') {
+          return Math.trunc(num).toString()
+        }
+        return (Math.trunc(num * 100) / 100).toFixed(2)
       } else {
         return Math.trunc(num).toString()
       }
-    }
-  }
+    },
+    [siteObject?.name, plantObject?.name],
+  )
 
   useEffect(() => {
     const fetchPlantColumnConfig = async () => {
       if (!PLANT_ID) return
       try {
-        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(keycloak, PLANT_ID)
-        setIsTwoColumnPlant(Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn))
+        const res = await ProductionNormsApiService.checkIsSummerWinterPlant(
+          keycloak,
+          PLANT_ID,
+        )
+        setIsTwoColumnPlant(
+          Boolean(res?.data?.isSummerWinter ?? res?.data?.isTwoColumn),
+        )
       } catch (err) {
         console.error('Error checking plant column config:', err)
         setIsTwoColumnPlant(false)
@@ -177,22 +228,30 @@ const Constants = ({ startDate, endDate }) => {
       // console.log('Constants data:', res)
       const formattedData = res?.data?.map((item, index) => {
         const uom = item?.UOM || item?.uom || ''
+        const name = item?.Name || item?.name || ''
+        const displayName =
+          item?.DisplayName ||
+          item?.displayName ||
+          name ||
+          item?.productName ||
+          ''
         const rawApr =
           item?.apr !== undefined && item?.apr !== null
             ? item?.apr
             : item?.value ?? ''
         const rawOct =
           item?.oct !== undefined && item?.oct !== null ? item?.oct : ''
-        const formattedApr = formatUomValue(rawApr, uom)
+        const formattedApr = formatUomValue(rawApr, uom, item)
         const formattedOct =
           rawOct !== '' && rawOct !== null && rawOct !== undefined
-            ? formatUomValue(rawOct, uom)
+            ? formatUomValue(rawOct, uom, item)
             : ''
 
         return {
           ...item,
-          productName:
-            item?.DisplayName || item?.Name || item?.productName || '',
+          productName: displayName,
+          DisplayName: displayName,
+          Name: name,
           value: formattedApr,
           apr: formattedApr,
           oct: formattedOct,
@@ -465,30 +524,45 @@ const Constants = ({ startDate, endDate }) => {
     setRemarkDialogOpen(true)
   }
 
-  const handleItemChange = useCallback((e, setRows, setModifiedCells) => {
-    const { dataItem, field, value } = e
-    if (field === 'apr' || field === 'oct' || field === 'value') {
-      const uom = dataItem?.UOM || dataItem?.uom || ''
-      const formatted = formatUomValue(value, uom)
-      if (formatted !== value) {
-        setRows((prev) =>
-          prev.map((r) =>
-            r.id === dataItem.id ? { ...r, [field]: formatted } : r,
-          ),
-        )
-        setModifiedCells((prev) => {
-          const rowMod = prev[dataItem.id] || {}
-          return {
-            ...prev,
-            [dataItem.id]: {
-              ...rowMod,
-              [field]: formatted,
-            },
+  const handleItemChange = useCallback(
+    (e, setRows, setModifiedCells, setCustomModifiedCells) => {
+      const { dataItem, field, value } = e
+      if (field === 'apr' || field === 'oct' || field === 'value') {
+        const uom = dataItem?.UOM || dataItem?.uom || ''
+        const formatted = formatUomValue(value, uom, dataItem)
+        if (formatted !== value) {
+          setRows((prev) =>
+            prev.map((r) =>
+              r.id === dataItem.id ? { ...r, [field]: formatted } : r,
+            ),
+          )
+          setModifiedCells((prev) => {
+            const rowMod = prev[dataItem.id] || {}
+            return {
+              ...prev,
+              [dataItem.id]: {
+                ...rowMod,
+                [field]: formatted,
+              },
+            }
+          })
+          if (setCustomModifiedCells) {
+            setCustomModifiedCells((prev) => {
+              const rowMod = prev[dataItem.id] || {}
+              return {
+                ...prev,
+                [dataItem.id]: {
+                  ...rowMod,
+                  [field]: formatted,
+                },
+              }
+            })
           }
-        })
+        }
       }
-    }
-  }, [])
+    },
+    [formatUomValue],
+  )
 
   return (
     <Box>
@@ -508,7 +582,7 @@ const Constants = ({ startDate, endDate }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
