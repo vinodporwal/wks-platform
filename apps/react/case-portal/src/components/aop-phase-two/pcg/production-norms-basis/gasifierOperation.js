@@ -6,6 +6,7 @@ import { useGridApiRef } from '@mui/x-data-grid'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import TargetActualDafThroughput from './targetActualDafThroughput'
 
 // G-Operation dropdown options
 export const G_OPERATION_OPTIONS = [
@@ -139,7 +140,7 @@ const GasifierOperation = () => {
       showImport: false,
       showTitleNameBusiness: true,
       showTitle: true,
-      titleName: 'Configuartion',
+      titleName: 'Target Gasifier Filter',
       showCalculate: false,
       calculateDisabled: true,
     }),
@@ -158,10 +159,10 @@ const GasifierOperation = () => {
           prev.map((r) =>
             r.id === dataItem.id
               ? {
-                  ...r,
-                  gOperation: value,
-                  gConfiguration: nextConfig,
-                }
+                ...r,
+                gOperation: value,
+                gConfiguration: nextConfig,
+              }
               : r,
           ),
         )
@@ -296,6 +297,11 @@ const GasifierOperation = () => {
             defaultPageSize: 100,
           }}
         />
+      </Box>
+
+      {/* Target Actual DAF Throughput Grid */}
+      <Box sx={{ mt: 3 }}>
+        <TargetActualDafThroughput />
       </Box>
     </Box>
   )
