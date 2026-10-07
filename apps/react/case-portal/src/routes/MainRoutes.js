@@ -174,6 +174,8 @@ import NetProductionHoursPCG from 'components/aop-phase-two/pcg/net-production-h
 import MonthwiseProductionPlanPCG from 'components/aop-phase-two/pcg/monthwise-production-plan/index'
 import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activities/index'
 import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
+import ShutdownPlanPCG from 'components/aop-phase-two/pcg/shutdown-plan/index'
+import AOPProductionNormsPCG from 'components/aop-phase-two/pcg/aop-production-norms/index'
 
 // PCG Ended
 
@@ -1242,6 +1244,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='shutdown-consumption-pcg'>
                 <ShutdownConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-plan-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-plan-pcg'>
+                <ShutdownPlanPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'aop-production-norms-pcg',
+            element: (
+              <PrivateRoute routeId='aop-production-norms-pcg'>
+                <AOPProductionNormsPCG />
               </PrivateRoute>
             ),
           },
