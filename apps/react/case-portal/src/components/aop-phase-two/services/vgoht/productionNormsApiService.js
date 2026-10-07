@@ -43,6 +43,12 @@ export const ProductionNormsApiService = {
   getHistoricalMonths,
   saveHistoricalMonths,
   calculateHistoricalMonths,
+
+  // Shutdown Cat Chem
+  getShutdownCatChemData,
+  saveShutdownCatChemData,
+  importShutdownCatChemExcel,
+  exportShutdownCatChemExcel,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -795,4 +801,95 @@ async function calculateHistoricalMonths(keycloak, plantId, aopYear) {
     console.log(e)
     return await Promise.reject(e)
   }
+}
+//  ========================|| Shutdown Cat Chem API ||=====================================//
+/**
+ * Get Shutdown Cat Chem data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Shutdown Cat Chem data
+ */
+async function getShutdownCatChemData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/shut-down-cat-chem?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Shutdown Cat Chem data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {string} plantId - Plant ID
+ * @param {Array} payload - Data to save
+ * @returns {Promise} Save response
+ */
+async function saveShutdownCatChemData(keycloak, year, plantId, payload) {
+  const url = `${Config.CaseEngineUrl}/task/shut-down-cat-chem?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Import Shutdown Cat Chem Excel file
+ * @param {File} file - Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Import response
+ */
+async function importShutdownCatChemExcel(file, keycloak, plantId, year) {
+  return saveExcelData(file, keycloak, 'shut-down-cat-chem-import', {
+    year: year,
+    plantId: plantId,
+  })
+}
+
+/**
+ * Export Shutdown Cat Chem Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {string} fileName - File name
+ * @returns {Promise} Export response
+ */
+async function exportShutdownCatChemExcel(keycloak, plantId, year, fileName) {
+  return ImportExportApiService.exportExcelData(keycloak, {
+    endpoint: 'shut-down-cat-chem-export',
+    queryParams: { year: year, plantId: plantId },
+    fileName: fileName || `VGOHT_Shutdown_Cat_Chem_${year}.xlsx`,
+    method: 'POST',
+  })
 }
