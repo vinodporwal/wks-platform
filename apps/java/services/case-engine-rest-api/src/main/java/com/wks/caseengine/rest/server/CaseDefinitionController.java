@@ -239,7 +239,7 @@ public class CaseDefinitionController {
 	private String getCurrentEmail() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
-			String emil = jwtAuthentication.getToken().getClaimAsString("email");
+			String email = jwtAuthentication.getToken().getClaimAsString("email");
 			if (email != null && !email.isBlank()) {
 				return email;
 			}
