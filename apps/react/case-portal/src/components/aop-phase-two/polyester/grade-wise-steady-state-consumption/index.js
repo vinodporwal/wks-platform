@@ -286,10 +286,10 @@ const GradeWiseSteadyStateConsumption = () => {
   }, [PLANT_ID, AOP_YEAR, fetchData])
 
   // Re-fetch data & validate when selectedGradeId changes
-  useEffect(() => {
-      // fetchData(selectedGradeId)
-      if (!isFilament) validateGradeNorms(selectedGradeId)
-  }, [isFilament, validateGradeNorms])
+  // useEffect(() => {
+  //     // fetchData(selectedGradeId)
+  //     if (!isFilament) validateGradeNorms(selectedGradeId)
+  // }, [isFilament, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -428,7 +428,7 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
       let data;
-      if (isFilament) {
+      // if (isFilament) {
         data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPolyester(
           PLANT_ID,
           SITE_ID,
@@ -436,15 +436,15 @@ const GradeWiseSteadyStateConsumption = () => {
           AOP_YEAR,
           keycloak,
         )
-      } else {
-        data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
-          PLANT_ID,
-          SITE_ID,
-          VERTICAL_ID,
-          AOP_YEAR,
-          keycloak,
-        )
-      }
+      // } else {
+      //   data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+      //     PLANT_ID,
+      //     SITE_ID,
+      //     VERTICAL_ID,
+      //     AOP_YEAR,
+      //     keycloak,
+      //   )
+      // }
 
       if (data == 0 || data) {
         setSnackbarOpen(true)
