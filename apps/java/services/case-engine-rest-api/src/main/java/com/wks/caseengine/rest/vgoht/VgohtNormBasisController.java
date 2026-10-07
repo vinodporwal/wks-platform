@@ -19,6 +19,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.vgoht.dto.ShutDownCatChemDTO;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
 import com.wks.caseengine.vgoht.serviceimpl.VgohtNormBasisServiceImpl;
 
@@ -498,6 +499,21 @@ public class VgohtNormBasisController {
     @DeleteMapping (value="/manual-exclusion-dates")
     public AOPMessageVM deleteManualExclusionDates(@RequestBody List<ManualExclusionDatesDTO> manualExclusionDatesDTOList) {
         return vgohtNormBasisServiceImpl.deleteManualExclusionDates(manualExclusionDatesDTOList);
+    }
+
+    @GetMapping(value="/shut-down-cat-chem")
+    public AOPMessageVM getShutDownCatChemData(@RequestParam String year, @RequestParam String plantId) {
+        return vgohtNormBasisServiceImpl.getShutDownCatChemData(year, UUID.fromString(plantId));
+    }
+
+    @PostMapping(value = "/shut-down-cat-chem")
+    public AOPMessageVM saveShutDownCatChemData(@RequestParam String year, @RequestParam UUID plantId, @RequestBody List<ShutDownCatChemDTO> shutDownCatChemDTOList) {
+        List<ShutDownCatChemDTO> failedRecords = vgohtNormBasisServiceImpl.saveShutDownCatChemData(year, plantId.toString(), shutDownCatChemDTOList);
+        if(failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "Shut down cat chem data saved successfully", null);
+        } else {
+            return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
+        }
     }
 
 }

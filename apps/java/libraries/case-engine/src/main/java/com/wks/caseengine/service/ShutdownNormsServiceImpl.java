@@ -930,6 +930,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	    List<ShutdownNormsValue> shutdownNormsValueList = new ArrayList<>();
 	    List<ShutdownNormsValueDTO> failedList = new ArrayList<>();
 
+		// intialise plant Id 
+		plantId = UUID.fromString(shutdownNormsValueDTOList.get(0).getPlantFkId());
 		Plants plant = plantsRepository.findById(plantId).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
