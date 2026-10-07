@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.pcg.dto.AopProductionNormsDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownDTO;
 import com.wks.caseengine.pcg.dto.ShutdownTaTransactionDTO;
 import com.wks.caseengine.pcg.service.ShutdownActivitiesService;
@@ -60,6 +61,22 @@ public class ShutdownActivitiesController {
     public ResponseEntity<AOPMessageVM> saveShutdownTaTransactions( @RequestParam String plantId, @RequestBody List<ShutdownTaTransactionDTO> shutdownTaTransactionDTOList) {
 
         List<ShutdownTaTransactionDTO> result = shutdownActivitiesService.saveShutdownTaTransactions(UUID.fromString(plantId), shutdownTaTransactionDTOList);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setMessage("Success");
+        aopMessageVM.setData(result);
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @GetMapping("/aop-production-norms")
+    public ResponseEntity<AOPMessageVM> getAopProductionNorms(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<AopProductionNormsDTO> result = shutdownActivitiesService.getAopProductionNorms(UUID.fromString(plantId), aopYear);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         aopMessageVM.setMessage("Success");
         aopMessageVM.setData(result);
