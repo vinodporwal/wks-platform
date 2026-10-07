@@ -33,6 +33,31 @@ const FormulaTextEditor = ({ dataItem, field, onChange }) => {
     }
   };
 
+  const valueRef = React.useRef(localValue)
+  valueRef.current = localValue
+  const prefixRef = React.useRef(prefix)
+  prefixRef.current = prefix
+  const suffixRef = React.useRef(suffix)
+  suffixRef.current = suffix
+  const onChangeRef = React.useRef(onChange)
+  onChangeRef.current = onChange
+  const dataItemRef = React.useRef(dataItem)
+  dataItemRef.current = dataItem
+  const fieldRef = React.useRef(field)
+  fieldRef.current = field
+
+  React.useEffect(() => {
+    return () => {
+      let finalValue = valueRef.current;
+      if (prefixRef.current || suffixRef.current) {
+        finalValue = valueRef.current !== '' ? `${prefixRef.current}${valueRef.current}${suffixRef.current}` : '';
+      }
+      if (finalValue !== String(dataItemRef.current?.[fieldRef.current] || '')) {
+        onChangeRef.current({ dataItem: dataItemRef.current, field: fieldRef.current, value: finalValue });
+      }
+    }
+  }, [])
+
   const handleBlur = () => {
     let finalValue = localValue;
     if (prefix || suffix) {

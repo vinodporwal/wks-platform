@@ -17,7 +17,7 @@ const COLUMNS = [
   { field: 'dependantAttributeId', title: 'Applicable Utilities & Cat-Chems', widthT: 250, minWidth: 200, type: 'text', editable: false },
 ]
 
-const FILTER_CONFIG_DUMMY_DATA = [
+const FILTER_CONFIG = [
   { id: 1, displayName: 'Sulphur Production', uom: '', targetValue: 'PIMS Sulphur Production (auto fetch from PIMS throughput tab)', range: '+/- 5%', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['targetValue'], type: 'formula-text' },
   { id: 2, displayName: 'AGR C003 Inline/Bypass', uom: '', targetValue: 'Bypass', range: '+/-5%', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'dropdown', options: ['Inline', 'Bypass'] },
   { id: 3, displayName: 'AGR C003 Inline (G330PI400340 A/B/C)', uom: 'kg/cm2g', targetValue: '1.2', range: '', selection: false, remarks: 'Less than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'text', hideCheckbox: true },
@@ -79,16 +79,16 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       const apiRes = await ProductionNormsApiService.getConfigurationData(keycloak, PLANT_ID, AOP_YEAR)
       
       const res = apiRes?.length ? apiRes.map((apiItem, index) => {
-        const dummyItem = FILTER_CONFIG_DUMMY_DATA.find(d => [apiItem.displayName, apiItem.productName].includes(d.displayName)) || FILTER_CONFIG_DUMMY_DATA[index] || {}
+        const configItem = FILTER_CONFIG.find(d => [apiItem.displayName, apiItem.productName].includes(d.displayName)) || {}
         
         return {
-          ...dummyItem, ...apiItem,
-          isEditable: dummyItem.isEditable,
-          nonEditableFields: dummyItem.nonEditableFields || [],
-          type: dummyItem.type || 'text',
-          options: dummyItem.options || []
+          ...configItem, ...apiItem,
+          isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
+          nonEditableFields: configItem.nonEditableFields || [],
+          type: configItem.type || 'text',
+          options: configItem.options || []
         }
-      }) : FILTER_CONFIG_DUMMY_DATA
+      }) : FILTER_CONFIG
 
       if (!res.length) {
         showSnackbar('No data found')
@@ -107,15 +107,16 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
           remarks: item.remarks || '',
           id: item.id || index + 1,
           attributeValue: ['date', 'datetime'].includes(type) ? formatDate(item.attributeValue) : item.attributeValue,
-          allowNegative: item.allowNegative || item.name === 'Additional TSRF'
+          allowNegative: item.allowNegative || item.name === 'Additional TSRF',
+          selection: item.selection?.toLowerCase() === 'true' ? true : false
         }
       })
 
-      const inlineBypassRow = formattedData.find(row => row.id === 2)
+      const inlineBypassRow = formattedData.find(row => row.displayName === 'AGR C003 Inline/Bypass')
       if (inlineBypassRow) {
         const value = inlineBypassRow.targetValue
         formattedData = formattedData.map(row => {
-          if (row.id !== 2) {
+          if (row.displayName !== 'AGR C003 Inline/Bypass') {
             const isInline = row.displayName?.includes('AGR C003 Inline')
             const isBypass = row.displayName?.includes('AGR C003 Bypass')
             if (isInline || isBypass) {
@@ -138,6 +139,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const saveChanges = async () => {
     const { modifiedCells, originalRows } = state
     const modifiedData = Object.values(modifiedCells)
+    console.log("modifiedData", modifiedData)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
 
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
@@ -149,13 +151,12 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       'displayName'
     )
 
-    if (validationError) return showSnackbar(validationError, 'error')
+    // if (validationError) return showSnackbar(validationError, 'error')
 
     updateState({ loading: true })
     
-    const payload = modifiedData.map(({ config, ...rest }) => ({
+    const payload = modifiedData.map((rest) => ({
       ...rest,
-      config: config && typeof config === 'object' ? JSON.stringify(config) : config
     }))
 
     try {
@@ -230,9 +231,9 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const handleCustomItemChange = ({ dataItem, field, value }, setRowsCallback) => {
     if (!['targetValue', 'range'].includes(field)) return
 
-    if (dataItem.id === 2 && field === 'targetValue') {
+    if (dataItem.displayName === 'AGR C003 Inline/Bypass' && field === 'targetValue') {
       setRowsCallback((currentRows) => currentRows.map((row) => {
-        if (row.id !== 2) {
+        if (row.displayName !== 'AGR C003 Inline/Bypass') {
           const isInline = row.displayName?.includes('AGR C003 Inline')
           const isBypass = row.displayName?.includes('AGR C003 Bypass')
           if (isInline || isBypass) {
@@ -250,9 +251,9 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       <RowBasedKendoTable
         columns={COLUMNS}
         rows={state.rows}
-        setRows={(rows) => updateState({ rows: typeof rows === 'function' ? rows(state.rows) : rows })}
+        setRows={(rows) => setState((prev) => ({ ...prev, rows: typeof rows === 'function' ? rows(prev.rows) : rows }))}
         modifiedCells={state.modifiedCells}
-        setModifiedCells={(cells) => updateState({ modifiedCells: typeof cells === 'function' ? cells(state.modifiedCells) : cells })}
+        setModifiedCells={(cells) => setState((prev) => ({ ...prev, modifiedCells: typeof cells === 'function' ? cells(prev.modifiedCells) : cells }))}
         title={PERMISSIONS.showTitle ? PERMISSIONS.titleName : ''}
         permissions={{ ...PERMISSIONS, ExcelName: `${PERMISSIONS.ExcelName}_${AOP_YEAR}` }}
         handleRemarkCellClick={(row) => updateState({ currentRemark: row.remarks || '', currentRowId: row.id, remarkDialogOpen: true })}
@@ -268,10 +269,10 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         snackbarData={state.snackbarData}
         snackbarOpen={state.snackbarOpen}
         setSnackbarOpen={(open) => updateState({ snackbarOpen: open })}
-        setSnackbarData={(data) => updateState({ snackbarData: typeof data === 'function' ? data(state.snackbarData) : data })}
+        setSnackbarData={(data) => setState((prev) => ({ ...prev, snackbarData: typeof data === 'function' ? data(prev.snackbarData) : data }))}
         customItemChange={handleCustomItemChange}
         externalCustomModifiedCells={state.customModifiedCells}
-        externalSetCustomModifiedCells={(cells) => updateState({ customModifiedCells: typeof cells === 'function' ? cells(state.customModifiedCells) : cells })}
+        externalSetCustomModifiedCells={(cells) => setState((prev) => ({ ...prev, customModifiedCells: typeof cells === 'function' ? cells(prev.customModifiedCells) : cells }))}
         paginationConfig={{ threshold: 100, buttonCount: 5, pageSizes: [10, 20, 50, 100], defaultPageSize: 100 }}
       />
     </Box>
