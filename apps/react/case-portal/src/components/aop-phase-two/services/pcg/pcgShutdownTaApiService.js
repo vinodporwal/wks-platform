@@ -4,17 +4,43 @@ import { json } from 'services/request'
 export const PCGShutdownTaApiService = {
   getShutdownTaTransactions,
   getShutdownTaGasifierDropdown,
+  saveShutdownTaTransactions,
+}
+
+/**
+ * Get Gasifier Dropdown
+ * GET /gasifier-dropdown?plantId=&aopYear=
+ */
+async function getShutdownTaGasifierDropdown(keycloak, plantId, aopYear) {
+  let url = `${Config.CaseEngineUrl}/gasifier-dropdown`
+  const params = []
+  if (plantId) params.push(`plantId=${encodeURIComponent(plantId)}`)
+  if (aopYear) params.push(`aopYear=${encodeURIComponent(aopYear)}`)
+  if (params.length > 0) url += `?${params.join('&')}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching gasifier dropdown:', e)
+    return Promise.reject(e)
+  }
 }
 
 /**
  * Get Shutdown/TA Transactions
- * GET /task/shutdown-ta-transactions?plantId=&year=
+ * GET /shutdown-transactions?plantId=&aopYear=
  */
-async function getShutdownTaTransactions(keycloak, plantId, year) {
-  let url = `${Config.CaseEngineUrl}/task/shutdown-ta-transactions`
+async function getShutdownTaTransactions(keycloak, plantId, aopYear) {
+  let url = `${Config.CaseEngineUrl}/shutdown-transactions`
   const params = []
   if (plantId) params.push(`plantId=${encodeURIComponent(plantId)}`)
-  if (year) params.push(`year=${encodeURIComponent(year)}`)
+  if (aopYear) params.push(`aopYear=${encodeURIComponent(aopYear)}`)
   if (params.length > 0) url += `?${params.join('&')}`
 
   const headers = {
@@ -26,21 +52,19 @@ async function getShutdownTaTransactions(keycloak, plantId, year) {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
-    console.error('Error fetching shutdown TA transactions:', e)
-    return await Promise.reject(e)
+    console.error('Error fetching shutdown transactions:', e)
+    return Promise.reject(e)
   }
 }
 
 /**
- * Get Gasifier Dropdown for Shutdown/TA
- * GET /task/shutdown-ta-gasifier-dropdown?plantId=&year=
+ * Save Shutdown/TA Transactions
+ * POST /shutdown-transactions?plantId=
+ * Body: List<ShutdownTaTransactionDTO>
  */
-async function getShutdownTaGasifierDropdown(keycloak, plantId, year) {
-  let url = `${Config.CaseEngineUrl}/task/shutdown-ta-gasifier-dropdown`
-  const params = []
-  if (plantId) params.push(`plantId=${encodeURIComponent(plantId)}`)
-  if (year) params.push(`year=${encodeURIComponent(year)}`)
-  if (params.length > 0) url += `?${params.join('&')}`
+async function saveShutdownTaTransactions(keycloak, plantId, payload) {
+  let url = `${Config.CaseEngineUrl}/shutdown-transactions`
+  if (plantId) url += `?plantId=${encodeURIComponent(plantId)}`
 
   const headers = {
     Accept: 'application/json',
@@ -48,10 +72,14 @@ async function getShutdownTaGasifierDropdown(keycloak, plantId, year) {
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, { method: 'GET', headers })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
-    console.error('Error fetching shutdown TA gasifier dropdown:', e)
-    return await Promise.reject(e)
+    console.error('Error saving shutdown transactions:', e)
+    return Promise.reject(e)
   }
 }
