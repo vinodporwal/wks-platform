@@ -107,6 +107,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
           displayMode: 'label',
           editable: true,
           returnFullObject: true,
+          showClearOption: true,
           field: `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`,
           title,
         })),
@@ -351,12 +352,12 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     // If field ends with FuelName, also update the UUID field
     if (field.endsWith('FuelName')) {
       const uuidField = field.replace('FuelName', '')
-      if (value && typeof value === 'object') {
+      if (value && typeof value === 'object' && value.value) {
         updates[uuidField] = value.value // UUID for saving
         updates[field] = value.label // name for display
       } else {
         updates[uuidField] = null
-        updates[field] = value || ''
+        updates[field] = ''
       }
     }
 
