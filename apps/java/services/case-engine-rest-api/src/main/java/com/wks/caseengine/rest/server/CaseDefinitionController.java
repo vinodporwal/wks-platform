@@ -171,7 +171,7 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/save-recommendation")
     public ResponseEntity<Case> addRecommendation(@RequestBody Recommendations recommendations) {
-		String currentUserName = getCurrentUserName();
+		String currentUserName = getCurrentEmail();
 		Case savedCase = caseDefinitionService.addRecommendation(recommendations, currentUserName);
         return ResponseEntity.ok(savedCase);
     }
@@ -234,6 +234,17 @@ public class CaseDefinitionController {
 			}
 		}
 		throw new IllegalStateException("Authenticated JWT does not contain a valid preferred_username claim");
+	}
+
+	private String getCurrentEmail() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+			String emil = jwtAuthentication.getToken().getClaimAsString("email");
+			if (email != null && !email.isBlank()) {
+				return email;
+			}
+		}
+		throw new IllegalStateException("Authenticated JWT does not contain a valid email claim");
 	}
 
 	private void attemptOptionalHoneywellSecurityCall() {
