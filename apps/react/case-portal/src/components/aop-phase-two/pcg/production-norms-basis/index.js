@@ -248,10 +248,8 @@ const ProductionNormsBasisPCG = () => {
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Report Manual Entry':
         return <ManualEntry />
-      case 'Target Gasifier Operation':
-        return <GasifierOperation />
-      case 'Gasifier Operation':
-      case 'gasifier-operation':
+
+      case 'Target Gasifier Filter':
         return <GasifierOperation />
       default:
         return null
