@@ -347,24 +347,28 @@ const ShutdownPlanPCG = () => {
       return
     }
 
-    // Build payload
-    const shutdownDetails = data.map((row) => ({
-      discription: row.discription,
-      gasifier: row.gasifier,
-      productName: row.gasifier,
-      rate: row.rate,
-      maintStartDateTime: addTimeOffset(row.maintStartDateTime),
-      maintEndDateTime: addTimeOffset(row.maintEndDateTime),
-      durationInHrs: (() => {
-        const v = findDuration(row)
-        if (!v) return null
-        const [h = '00', m = '00'] = String(v).split('.')
-        return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
-      })(),
-      audityear: AOP_YEAR,
-      id: row.idFromApi || null,
-      remark: row.remark || 'null',
-    }))
+    // Build payload matching ShutdownTaTransactionDTO field names
+    const shutdownDetails = data.map((row) => {
+      const v = findDuration(row)
+      let durationInHrs = null
+      if (v) {
+        const [h = '0', m = '0'] = String(v).split('.')
+        // backend expects Double e.g. 13.0 not string "13.00"
+        durationInHrs = parseFloat(`${parseInt(h, 10)}.${String(m).padEnd(2, '0').slice(0, 2)}`)
+      }
+
+      return {
+        id: row.idFromApi || null,
+        name: row.gasifier,                             // gasifier goes to 'name'
+        description: row.discription,                   // 'description' not 'discription'
+        maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+        maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+        durationInHrs,                                  // Double, not String
+        auditYear: AOP_YEAR,                            // 'auditYear' not 'audityear'
+        remarks: row.remark || null,                    // 'remarks' not 'remark'
+        normParameterFKId: row.normParameterFKId || null,
+      }
+    })
 
     setLoading(true)
     try {
