@@ -368,7 +368,7 @@ const ShutdownPlanPCG = () => {
 
     setLoading(true)
     try {
-      await ShutdownPlanApiService.saveShutdownPlan(
+      await PCGShutdownTaApiService.saveShutdownTaTransactions(
         keycloak,
         PLANT_ID,
         shutdownDetails,
