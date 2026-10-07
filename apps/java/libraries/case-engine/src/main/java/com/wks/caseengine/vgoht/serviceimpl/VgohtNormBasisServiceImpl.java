@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +36,7 @@ import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
+import com.wks.caseengine.vgoht.dto.ShutDownCatChemDTO;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
 import com.wks.caseengine.vgoht.service.VgohtHelperService;
 import com.wks.caseengine.vgoht.service.VgohtNormBasisService;
@@ -3013,5 +3015,171 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return new AOPMessageVM(200, deletes.size() + " Records deleted successfully", null);
 	}
+
+	public AOPMessageVM getShutDownCatChemData(String year, UUID plantFKId) {
+        try {
+			String procedureName = "Get_ShutDown_CatChem";
+            String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @AOPYear = ?";
+
+            List<ShutDownCatChemDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                return ShutDownCatChemDTO.builder()
+                    .normParameterFKId(rs.getString("NormParameter_FK_Id"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .sapMaterialCode(rs.getString("SapMaterialCode"))
+                    .apr(rs.getDouble("Apr"))
+                    .may(rs.getDouble("May"))
+                    .jun(rs.getDouble("Jun"))
+                    .jul(rs.getDouble("Jul"))
+                    .aug(rs.getDouble("Aug"))
+                    .sep(rs.getDouble("Sep"))
+                    .oct(rs.getDouble("Oct"))
+                    .nov(rs.getDouble("Nov"))
+                    .dec(rs.getDouble("Dec"))
+					.jan(rs.getDouble("Jan"))
+					.feb(rs.getDouble("Feb"))
+					.mar(rs.getDouble("Mar"))
+					.remarks(rs.getString("Remarks"))
+					.type(rs.getString("Type"))
+					.displayOrder(rs.getInt("DisplayOrder"))
+					//.isEditable(rs.getBoolean("IsEditable"))
+                    .build();
+            }, plantFKId, year);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+	@Transactional 
+	public List<ShutDownCatChemDTO> saveShutDownCatChemData(String year, String plantFKId,
+			List<ShutDownCatChemDTO> shutDownCatChemDTOList) {
+		try {
+			List<ShutDownCatChemDTO> failedList = new ArrayList<>();
+	
+			for (ShutDownCatChemDTO shutDownCatChemDTO : shutDownCatChemDTOList) {
+				
+				if (shutDownCatChemDTO.getSaveStatus() != null
+						&& shutDownCatChemDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(shutDownCatChemDTO);
+					continue;
+				}
+
+			for (int i = 1; i <= 12; i++) {
+				
+				saveShutDownCatChemData(shutDownCatChemDTO, i, year);
+				
+			}
+			
+			if("Failed".equalsIgnoreCase(shutDownCatChemDTO.getSaveStatus())) {
+				failedList.add(shutDownCatChemDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save shut down cat chem data", ex);
+		}
+	}
+
+
+	public void saveShutDownCatChemData(ShutDownCatChemDTO shutDownCatChemDTO, Integer i, String year) {
+
+		UUID normParameterFKId = UUID.fromString(shutDownCatChemDTO.getNormParameterFKId());
+		Double attributeValue = getAttributeValueForShutDownCatChem(shutDownCatChemDTO, i);
+		String remark = shutDownCatChemDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+		// Double existingValue = normAttributeTransactions.getAttributeValue() != null ? Double.parseDouble(normAttributeTransactions.getAttributeValue()) : null;
+		// boolean isRemarkValidationPassed = isRemarkValidationPassedForShutDownCatChem(attributeValue, existingValue, remark, normAttributeTransactions.getRemarks());
+		// if(!isRemarkValidationPassed) { 
+		// 	shutDownCatChemDTO.setSaveStatus("Failed");
+		// 	shutDownCatChemDTO.setErrDescription("Please update remark");
+		// 	return;
+		// }
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+private boolean isRemarkValidationPassedForShutDownCatChem(Double newValue, Double existingValue, String newRemark, String existingRemark) {
+  
+	if(existingValue == null || newValue == null) {
+		return true;
+	}
+	// Check if the value has changed (null-safe)
+    boolean valueChanged = !Objects.equals(newValue, existingValue);
+    
+    if (valueChanged) {
+        // If the value changed, the remark must be updated (must not be null/empty and must differ from the existing remark)
+        boolean isRemarkUpdated = newRemark != null 
+                && !newRemark.trim().isEmpty() 
+                && !Objects.equals(newRemark, existingRemark);
+        return isRemarkUpdated;
+    }
+    
+   // return true if values not changed
+    return true;
+}
+
+public Double getAttributeValueForShutDownCatChem(ShutDownCatChemDTO shutDownCatChemDTO, Integer i) {
+	switch (i) {
+		case 1:
+			return shutDownCatChemDTO.getJan();
+		case 2:
+			return shutDownCatChemDTO.getFeb();
+		case 3:
+			return shutDownCatChemDTO.getMar();
+		case 4:
+			return shutDownCatChemDTO.getApr();
+		case 5:
+			return shutDownCatChemDTO.getMay();
+		case 6:
+			return shutDownCatChemDTO.getJun();
+		case 7:
+			return shutDownCatChemDTO.getJul();
+		case 8:
+			return shutDownCatChemDTO.getAug();
+		case 9:
+			return shutDownCatChemDTO.getSep();
+		case 10:
+			return shutDownCatChemDTO.getOct();
+		case 11:
+			return shutDownCatChemDTO.getNov();
+		case 12:
+			return shutDownCatChemDTO.getDec();
+
+	}
+	return shutDownCatChemDTO.getJan();
+}
 
 }
