@@ -191,6 +191,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					if(vertical.getName().equalsIgnoreCase("PCG")) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
+					if(vertical.getName().equalsIgnoreCase("MEROX")) {
+						dto.setLastFy(row[26] != null ? Double.valueOf(row[26].toString()) : null);
+					}
 				}
 
 				// apply grade filter for elastomerhmdsbr
