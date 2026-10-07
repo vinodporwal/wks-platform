@@ -5,7 +5,7 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
-import { MonthwiseProductionPlanApiService } from 'components/aop-phase-two/services/common/monthwiseProductionPlanApiService'
+import { PCGShutdownTaApiService } from 'components/aop-phase-two/services/pcg/pcgShutdownTaApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
@@ -160,8 +160,7 @@ const AOPProductionNormsPCG = () => {
     setRawRows([])
     setLoading(true)
     try {
-      let response =
-        await MonthwiseProductionPlanApiService.getMonthwiseProductionPlan(
+      const response = await PCGShutdownTaApiService.getAopProductionNorms(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
