@@ -206,14 +206,14 @@ const QualityParameters = () => {
       setIsSaveDisabled(false)
       return
     }
-
+    console.log("modifiedCells ", modifiedCells)
     const finalRows = rows.map((row) => {
       const modifiedRow = modifiedCells[row.id]
       return modifiedRow ? { ...row, ...modifiedRow } : row
     })
 
-    const qualityRow = finalRows.find((r) => r.name === 'Quality')
-    const otherRows = finalRows.filter((r) => r.name !== 'Quality')
+    const qualityRow = finalRows.find((r) => r.name?.toLowerCase() === 'quality')
+    const otherRows = finalRows.filter((r) => r.name?.toLowerCase() !== 'quality')
 
     if (qualityRow) {
       const qualityActual = parseFloat(qualityRow.actual) || 0
@@ -228,8 +228,8 @@ const QualityParameters = () => {
         0,
       )
 
-      const isActualValid = Math.abs(qualityActual - otherSumActual) <= 0.0001
-      const isNormValid = Math.abs(qualityNorm - otherSumNorm) <= 0.0001
+      const isActualValid = otherSumActual - qualityActual <= 0.0001
+      const isNormValid = otherSumNorm - qualityNorm <= 0.0001
 
       setIsSaveDisabled(!isActualValid || !isNormValid)
     }
@@ -408,7 +408,7 @@ const QualityParameters = () => {
     (e, setRowsState, setModifiedCellsState, setCustomModifiedCellsState) => {
       const { dataItem, field, value } = e
       
-      if ((field === 'proposedNorm' || field === 'actual') && dataItem.name !== 'Quality') {
+      if ((field === 'proposedNorm' || field === 'actual') && dataItem.name?.toLowerCase() !== 'quality') {
         const currentModified = {
           ...modifiedCells,
           [dataItem.id]: { ...modifiedCells[dataItem.id], [field]: value },
@@ -419,8 +419,8 @@ const QualityParameters = () => {
           return modifiedRow ? { ...row, ...modifiedRow } : row
         })
 
-        const qualityRow = finalRows.find((r) => r.name === 'Quality')
-        const otherRows = finalRows.filter((r) => r.name !== 'Quality')
+        const qualityRow = finalRows.find((r) => r.name?.toLowerCase() === 'quality')
+        const otherRows = finalRows.filter((r) => r.name?.toLowerCase() !== 'quality')
 
         if (qualityRow) {
           const qualityActual = parseFloat(qualityRow.actual) || 0
