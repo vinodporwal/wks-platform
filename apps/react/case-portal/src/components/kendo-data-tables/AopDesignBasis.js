@@ -51,6 +51,7 @@ import './common/ConfigurationAccordian.css'
 import { CalenderIcon } from 'assets/images/icons/index'
 import AopTabs from 'components/AopTabs'
 import ModeSelectionCracker from './ModeSelectionCracker'
+import CrackerReportMannualEntry from './SiteAOPReport/CrackerReportMannualEntry'
 
 const StyledConfirmDialog = styled(Dialog)(() => ({
   '& .MuiPaper-root': {
@@ -75,7 +76,7 @@ const DateHighlight = styled(Box)(() => ({
   margin: '0 4px',
 }))
 
-const AopDesignBasis = () => {
+const AopDesignBasis = ({ permissions }) => {
   const hasExecutedRef = useRef(false)
 
   const keycloak = useSession()
@@ -764,6 +765,15 @@ const AopDesignBasis = () => {
       case 'Mode Selection':
         return (
           <ModeSelectionCracker />
+        )
+      case 'ReportManualEntry':
+      case 'Report Manual Entry':
+        return (
+          <CrackerReportMannualEntry
+            tabIndex={5}
+            permissions={permissions}
+            tabDisplayName={currentTabName}
+          />
         )
       default:
         return null
