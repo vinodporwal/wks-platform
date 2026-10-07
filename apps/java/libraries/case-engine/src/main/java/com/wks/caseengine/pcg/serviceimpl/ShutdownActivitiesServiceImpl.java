@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.pcg.dto.AopProductionNormsDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownDTO;
 import com.wks.caseengine.pcg.dto.ShutdownTaTransactionDTO;
 import com.wks.caseengine.pcg.service.ShutdownActivitiesService;
@@ -188,4 +189,34 @@ public class ShutdownActivitiesServiceImpl implements ShutdownActivitiesService 
 	
 		return shutdownTaTransactionDTOList;
 	}
+
+    @Override
+    public List<AopProductionNormsDTO> getAopProductionNorms(UUID plantId, String aopYear) {
+
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_GetAOPProductionNorms";
+        String sql = "EXEC" + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int columnCount = rs.getMetaData().getColumnCount();
+            Object[] row = new Object[columnCount];
+            for (int i = 0; i < columnCount; i++) {
+                row[i] = rs.getObject(i + 1);
+            }
+            return row;
+        }, plantId.toString(), aopYear);
+
+        List<AopProductionNormsDTO> resultList = new ArrayList<>();
+        for (Object[] row : rows) {
+            AopProductionNormsDTO dto = new AopProductionNormsDTO();
+            dto.setParticulars(row[0] != null ? row[0].toString() : "");
+            dto.setValue(row[1] != null ? Double.parseDouble(row[1].toString()) : null);
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
 }

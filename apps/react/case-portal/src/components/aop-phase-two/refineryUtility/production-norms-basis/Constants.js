@@ -51,9 +51,7 @@ const Constants = ({ startDate, endDate }) => {
 
       const isDtaCtPlant =
         siteName === 'DTA' &&
-        (plantObject?.name === 'CT4 (C743)' ||
-          plantObject?.name === 'CT6 (2736)')
-
+        (plantObject?.name === 'CT4 (734)' || plantObject?.name === 'CT6 (736)')
       const cleanUom = String(uom ?? '')
         .trim()
         .toLowerCase()
@@ -75,11 +73,11 @@ const Constants = ({ startDate, endDate }) => {
       const cleanDisplayName = rawDisplayName.trim().toLowerCase()
 
       const isCoc =
-        cleanName === 'coc' ||
-        cleanName.startsWith('coc') ||
-        cleanDisplayName === 'coc' ||
-        cleanDisplayName.startsWith('coc') ||
-        cleanUom === 'coc'
+        cleanName.toLowerCase() === 'coc' ||
+        cleanName.toLowerCase().startsWith('coc') ||
+        cleanDisplayName.toLowerCase() === 'coc' ||
+        cleanDisplayName.toLowerCase().startsWith('coc') ||
+        cleanUom.toLowerCase() === 'coc'
 
       const isDmdSite =
         siteName === 'DMD' ||
