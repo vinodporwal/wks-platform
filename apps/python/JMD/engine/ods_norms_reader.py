@@ -868,8 +868,13 @@ class ODSNormsReader:
         """
         Return BPC generation quantities per producer from the ODS file.
 
-        For each producer (utility), picks any material row with non-zero norm
-        and non-zero quantity, then BPC_gen_qty = quantity / norm.
+        Where the ODS records generation directly it is used exactly:
+        POWERGEN material rows issued by a generating asset give that asset's
+        KWH, and the Power_Dis distribution total is the sum of its material
+        rows.  For other producers every material row with non-zero norm and
+        non-zero quantity yields an implied generation = quantity / norm and
+        the median is returned, so a single coarsely rounded norm cannot
+        dominate.
 
         For multi-asset producers like POWERGEN, keys by source_plant (asset name).
         For single-asset producers, keys by utility name.
@@ -880,7 +885,8 @@ class ODSNormsReader:
         if not self.is_available:
             return {}
 
-        result: dict = {}
+        direct: dict = {}
+        candidates: dict = {}
 
         for _, row in self._iter_data_rows():
             utility = str(row[_COL_UTILITY]).strip()
@@ -895,8 +901,19 @@ class ODSNormsReader:
                 continue
 
             utility_plant = str(row[_COL_UTILITY_PLANT]).strip() if pd.notna(row[_COL_UTILITY_PLANT]) else ""
+            issuing_plant = str(row[self._col_issuing_plant]).strip() if pd.notna(row[self._col_issuing_plant]) else ""
             norm_val = self._get_norm_val(row)
             qty_val = self._get_quantity_val(row)
+
+            if qty_val:
+                # Exact generation: the asset's POWERGEN material issued into
+                # the grid is its recorded generation — no norm rounding.
+                if material == "POWERGEN" and issuing_plant:
+                    direct[issuing_plant] = direct.get(issuing_plant, 0.0) + qty_val
+                # Power_Dis generation = total quantity distributed through it
+                # (same convention as the report's _bpc_gen_qty).
+                if utility == "Power_Dis":
+                    direct["Power_Dis"] = direct.get("Power_Dis", 0.0) + qty_val
 
             if norm_val == 0 or qty_val == 0:
                 continue
@@ -908,9 +925,21 @@ class ODSNormsReader:
             else:
                 key = utility
 
-            if key and key not in result:
-                result[key] = gen_qty
+            if key:
+                candidates.setdefault(key, []).append(gen_qty)
 
+        # Exact values win; otherwise median of the producer's implied
+        # generation rows so a single coarsely rounded norm (e.g. Cooling
+        # Water 0.0002) cannot dominate.
+        result = {}
+        for key, vals in candidates.items():
+            if key in direct:
+                result[key] = direct[key]
+                continue
+            vals.sort()
+            result[key] = vals[len(vals) // 2]
+        for key, val in direct.items():
+            result.setdefault(key, val)
         return result
 
     def get_bpc_quantities(self) -> dict:

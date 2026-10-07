@@ -1,0 +1,106 @@
+{
+  "_doc": "GT fuel MMBTU reverse-norm constants per CPP, from 'GT_HRSG_AB MMBTU_Calculation.xls' (sheet 'BPC Power loading and MMBTU'). Net GT fuel norm (MMBTU/kWh) = kcal_to_btu * (GrossHeatRate_kcal_kwh - SUM_tier[ FSF_tier * (SteamTemp_tier - ReferenceTemp) / efficiency ]) / 1e6. Which tiers apply to a given GT is detected at runtime from the linked HRSG's byproduct steam rows (negative norms in the ODS consumption norms): no byproduct = primary tier only, one byproduct = primary + that grade, two byproducts = all three tiers. Primary tier FSF comes from the interpolated DB FreeSteamFactor whenever available - the configured value is only its fallback (MP/LP tiers have no curve and always use the configured fsf). The heat rate is interpolated from the DB heat-rate curve at the dispatched MW. Optional per-GT pinning: add an 'asset_overrides' object under a plant keyed by exact asset name, e.g. \"asset_overrides\": {\"JMD - C2-GTG 2\": {\"heat_rate\": 2678.0, \"tiers\": {\"SHP\": {\"fsf\": 1.60}}}} - override tier entries merge over the plant tiers. Update numbers here to revise the calculation - no code change needed.",
+  "kcal_to_btu": 3.96567,
+  "plants": {
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": {
+      "label": "DTA-CPP",
+      "efficiency": 0.92,
+      "reference_temp_c": 45.0,
+      "tiers": {
+        "SHP": {
+          "temp_c": 810.0,
+          "fsf": null
+        },
+        "MP": {
+          "temp_c": 720.0,
+          "fsf": null
+        },
+        "LP": {
+          "temp_c": 640.0,
+          "fsf": 0.38
+        }
+      },
+      "asset_overrides": {}
+    },
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": {
+      "label": "DTA-PCG-CPP (LKPL/RSL)",
+      "efficiency": 0.92,
+      "reference_temp_c": 121.0,
+      "tiers": {
+        "SHP": {
+          "temp_c": 810.0,
+          "fsf": null
+        },
+        "MP": {
+          "temp_c": 720.0,
+          "fsf": 0.33
+        },
+        "LP": {
+          "temp_c": 640.0,
+          "fsf": 0.15
+        }
+      },
+      "asset_overrides": {}
+    },
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": {
+      "label": "SEZ-CPP",
+      "efficiency": 0.92,
+      "reference_temp_c": 45.0,
+      "tiers": {
+        "HP": {
+          "temp_c": 760.0,
+          "fsf": null
+        },
+        "MP": {
+          "temp_c": 720.0,
+          "fsf": null
+        },
+        "LP": {
+          "temp_c": 640.0,
+          "fsf": null
+        }
+      },
+      "asset_overrides": {}
+    },
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": {
+      "label": "SEZ-PCG-CPP",
+      "efficiency": 0.92,
+      "reference_temp_c": 45.0,
+      "tiers": {
+        "SHP": {
+          "temp_c": 810.0,
+          "fsf": null
+        },
+        "MP": {
+          "temp_c": 720.0,
+          "fsf": null
+        },
+        "LP": {
+          "temp_c": 640.0,
+          "fsf": null
+        }
+      },
+      "asset_overrides": {}
+    },
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": {
+      "label": "C2-CPP",
+      "efficiency": 0.92,
+      "reference_temp_c": 45.0,
+      "tiers": {
+        "SHP": {
+          "temp_c": 810.0,
+          "fsf": 1.6
+        },
+        "MP": {
+          "temp_c": 720.0,
+          "fsf": null
+        },
+        "LP": {
+          "temp_c": 640.0,
+          "fsf": 0.36
+        }
+      },
+      "asset_overrides": {}
+    }
+  }
+}

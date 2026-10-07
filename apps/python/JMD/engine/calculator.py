@@ -86,11 +86,17 @@ def _fy_months(fy_start_year: int) -> list:
 # ---------------------------------------------------------------------------
 
 def _get_demands(plant_id: str, month: int, year: int) -> dict:
+    from engine.u4u_iteration_loop import _normalize_for_match  # local to avoid circular import
     process = fetch_process_demands_raw(plant_id, month, year)
     fixed   = fetch_fixed_consumption_raw(plant_id, month, year)
     _log_utility_demand_rollup(process, fixed, month, year)
+    # Process-side power demand is stored in KWH — convert to MWh so the
+    # merged dict is unit-consistent (fixed consumption is already MWh).
+    # Same normalization as _log_utility_demand_rollup / _build_initial_demands.
     merged = {}
     for k, v in process.items():
+        if _normalize_for_match(k) in ("powerdis", "power"):
+            v = v / 1000.0
         merged[k] = merged.get(k, 0.0) + v
     for k, v in fixed.items():
         merged[k] = merged.get(k, 0.0) + v
@@ -143,6 +149,7 @@ def _log_utility_demand_rollup(process: dict, fixed: dict, month: int, year: int
 
 _SEZ_PLANT_ID     = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 _SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
+_DTA_PLANT_ID     = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
 _DTA_PCG_PLANT_ID = "F6D82E68-C3B6-494F-9905-48F19DC611E3"
 
 # source_plant_id → {target_plant_id, export_utilities: [ODS material names]}
@@ -164,6 +171,18 @@ _STATIC_INTERPLANT_EXPORTS = {
     (_DTA_PCG_PLANT_ID, 4, 2026): {
         "Desalinated water": 180_664.0,
         "NITROGEN_ASU":     10_548_215.0,
+    },
+    # DTA-CPP generates these utilities for other CPPs — April 2026.
+    # Quantities are the AOP-approved offtake amounts from
+    # 'Norm, Qty, Cost .csv' (restored: they were previously hard-coded in
+    # U4UIterationLoop._build_initial_demands and lost in the SEZ-PCG
+    # refactor).  Applies only to individual run_month(); the pooled JMD run
+    # disables this path and routes the same edges dynamically.
+    (_DTA_PLANT_ID, 4, 2026): {
+        "Sea Water":     1_463_688.0,   # M3 — DTA-CPP -> DTA-PCG-CPP
+        "D M Water":       337_922.91,  # M3 — DTA-CPP -> DTA-PCG-CPP
+        "Utility Water":     5_063.94,  # M3 — DTA-CPP -> DTA-PCG-CPP
+        "SWRO WATER":    1_970_149.0,   # M3 — DTA-CPP -> C2-CPP
     },
 }
 

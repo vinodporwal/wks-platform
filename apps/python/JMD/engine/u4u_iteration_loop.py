@@ -16,6 +16,7 @@ All norms are sourced dynamically from the ODS file via ODSNormsReader.
 No hardcoded norm values.
 """
 
+import json
 import logging
 import os
 import re
@@ -97,6 +98,41 @@ _FREE_STEAM_ENERGY_KCAL_KG = 760.87  # (810 - 110) / 0.92
 # halve HRSG fuel.
 _BTU_LB_TO_MMBTU_MT = 0.00396567
 
+# GT fuel MMBTU reverse-norm configuration (per CPP, editable constants).
+# Mirrors the workbook 'GT_HRSG_AB MMBTU_Calculation' (sheet "BPC Power
+# loading and MMBTU"):  net fuel norm (MMBTU/kWh) =
+#   3.96567 * (HR - SUM_tier FSF_tier * (T_tier - T_ref) / efficiency) / 1e6
+# The steam tiers applicable to a GT are detected at runtime from the
+# byproduct (negative-norm) steam rows of its linked HRSG's consumption
+# norms — see U4UIterationLoop._gt_steam_tiers.
+_GT_MMBTU_CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "data",
+    "gt_fuel_mmbtu_config.json",
+)
+_GT_MMBTU_CONFIG: Optional[dict] = None
+
+_GT_ASSET_NUM_RE = re.compile(
+    r"GT(?:G|\s+Power\s+Plant)?\s*[-_]?\s*(\d+)", re.IGNORECASE)
+# Tier token boundaries exclude letters/digits but allow separators like
+# '_LP STEAM'; the lookarounds prevent 'LP' inside 'LKPL' or 'HP' inside
+# 'SHP' from matching.
+_STEAM_TIER_RE = re.compile(
+    r"(?<![A-Z0-9])(SHP|HP|MP|LP)(?![A-Z0-9])", re.IGNORECASE)
+
+
+def _load_gt_mmbtu_config() -> dict:
+    global _GT_MMBTU_CONFIG
+    if _GT_MMBTU_CONFIG is None:
+        try:
+            with open(_GT_MMBTU_CONFIG_PATH, encoding="utf-8") as fh:
+                _GT_MMBTU_CONFIG = json.load(fh)
+        except Exception as exc:
+            logger.warning(
+                "  [GT FUEL] Cannot load %s (%s) — legacy single-tier fallback",
+                _GT_MMBTU_CONFIG_PATH, exc)
+            _GT_MMBTU_CONFIG = {"plants": {}}
+    return _GT_MMBTU_CONFIG
+
 
 def _interpolate_hrsg_heat_rate(hrsg_name: str, steam_flow_tph: float, lookup_df) -> float:
     """Interpolate HRSG heat rate (BTU/lb) from CPP_HRSGHeatRate lookup by steam flow (TPH).
@@ -156,7 +192,9 @@ def _prds_generation_from_dispatch(
     grade = str(step.get("produces", "")).replace(" Steam_Dis", "").replace("_Dis", "").lower()
     if not grade or float(demand_detail.get(f"{grade}_letdown", 0.0)) <= 0:
         return fallback
-    return float(demand_detail.get(f"{grade}_net", fallback))
+    # Bounded PRDS output is recorded for capacity-limited plants (DTA);
+    # other plants fall back to the grade net demand as before.
+    return float(demand_detail.get(f"{grade}_prds_out", demand_detail.get(f"{grade}_net", fallback)))
 
 
 def _build_db_to_ods_mapping(ods_material_names: set, db_utility_names: set) -> Dict[str, str]:
@@ -227,6 +265,8 @@ class U4UIterationLoop:
         gt_heat_rate_df = None,
         hrsg_heat_rate_df = None,
         interplant_export_demands: Optional[dict] = None,
+        pooled_power: bool = False,
+        steam_transfer_mode: str = "off",
     ):
         self.plant_id = plant_id
         self.month = month
@@ -247,6 +287,20 @@ class U4UIterationLoop:
         # Calculated dynamically by the calculator from the target plant's
         # (process + fixed + inter-plant U4U) demand for those utilities.
         self.interplant_export_demands = interplant_export_demands or {}
+
+        # JMD pooled-power mode: this loop runs inside a five-CPP lockstep
+        # iteration where power generation is dispatched globally by the JMD
+        # pool instead of per-CPP.  The BPC "Power" plug is then a derived
+        # result, not a demand input — the export-plug demand injection is
+        # skipped (see _build_dispatch_demands).  CTU import subtraction stays.
+        self.pooled_power = pooled_power
+
+        # Inter-site steam transfer mode: 'off' keeps the legacy static
+        # STEAM(<grade>) plug handling inline; 'bpc'/'solve' move positive
+        # plug credits to the steam_transfer_router's ext_steam channel so
+        # both sides of each physical edge are modelled (see
+        # engine/steam_transfer_router.py).
+        self.steam_transfer_mode = (steam_transfer_mode or "off").lower()
 
         self.consumption_norms: dict = {}
         self.all_consumption_norms: dict = {}
@@ -281,13 +335,22 @@ class U4UIterationLoop:
         # times with different issuing plants.
         self._own_utility_plant: Optional[str] = None
 
-    def run(self) -> dict:
-        """Run the U4U iteration loop until convergence or max iterations."""
+        # Set by prepare() — the demand map the iteration loop seeds from.
+        self._prepared: bool = False
+        self._initial_utility_demands: dict = {}
+
+    def prepare(self) -> bool:
+        """Load norms/BPC baseline and build initial demands.
+
+        Extracted from run() so an external orchestrator (e.g. the JMD pooled
+        power run) can drive the iteration loop itself.  Returns False when no
+        consumption norms are available.
+        """
         self.consumption_norms = self.ods_reader.get_consumption_norms(include_all_accounts=False)
         self.all_consumption_norms = self.ods_reader.get_all_consumption_norms()
         if not self.consumption_norms:
             logger.warning("  [U4U LOOP] No ODS consumption norms available")
-            return self._empty_result()
+            return False
 
         # BPC comparison data always comes from the original ODS file,
         # not from the database (which may contain model-generated values).
@@ -319,8 +382,16 @@ class U4UIterationLoop:
 
         self._all_producers = set(self.consumption_norms.keys())
         self._build_interplant_uom_set()
-        initial_utility_demands = self._build_initial_demands()  # sets _raw_process/_raw_fixed
-        self._precompute_initial_values()                         # reads _raw_process/_raw_fixed
+        self._initial_utility_demands = self._build_initial_demands()  # sets _raw_process/_raw_fixed
+        self._precompute_initial_values()                               # reads _raw_process/_raw_fixed
+        self._prepared = True
+        return True
+
+    def run(self) -> dict:
+        """Run the U4U iteration loop until convergence or max iterations."""
+        if not self.prepare():
+            return self._empty_result()
+        initial_utility_demands = self._initial_utility_demands
 
         logger.info("")
         logger.info("  %s", "=" * 78)
@@ -394,17 +465,7 @@ class U4UIterationLoop:
                 logger.info("  [U4U LOOP] ✓ CONVERGED in %d iterations", iteration)
                 break
 
-        if not self.converged:
-            logger.warning("")
-            logger.warning("  [U4U LOOP] ⚠ Did NOT converge after %d iterations", self.max_iterations)
-
-        if self._interplant_skipped:
-            logger.warning("")
-            logger.warning("  [U4U LOOP] Total inter-plant U4U skipped (not added to DTA U4U):")
-            for (prod, mat), qty in self._interplant_skipped.items():
-                logger.warning("    %s -> %s: %.2f", prod, mat, qty)
-
-        self._log_final_summary()
+        self.finalize_run()
 
         return {
             "converged": self.converged,
@@ -421,6 +482,25 @@ class U4UIterationLoop:
             "iteration_history": self.iteration_history,
             "interplant_skipped": dict(self._interplant_skipped),
         }
+
+    def finalize_run(self) -> None:
+        """Shared run tail: convergence warning, inter-plant skip report,
+        and the final summary tables.
+
+        Called by run() and by the JMD orchestrator once the coupled
+        iteration has finished (converged or hit max iterations).
+        """
+        if not self.converged:
+            logger.warning("")
+            logger.warning("  [U4U LOOP] ⚠ Did NOT converge after %d iterations", self.max_iterations)
+
+        if self._interplant_skipped:
+            logger.warning("")
+            logger.warning("  [U4U LOOP] Total inter-plant U4U skipped (not added to DTA U4U):")
+            for (prod, mat), qty in self._interplant_skipped.items():
+                logger.warning("    %s -> %s: %.2f", prod, mat, qty)
+
+        self._log_final_summary()
 
     # ------------------------------------------------------------------
     # Demand construction
@@ -449,9 +529,11 @@ class U4UIterationLoop:
         self._initial_steam_mt = {}   # {ods_material_name: initial_mt}
         for mat in self._all_producers:
             is_steam_dis = mat.endswith("_Dis") and "Steam" in mat
-            if not is_steam_dis and self.plant_id.upper() == _DTA_PCG_PLANT_ID:
-                # DTA-PCG names its LLP producer "LLP Steam Dis" (space, no
-                # underscore) — include it so LLP U4U increments propagate.
+            if not is_steam_dis and \
+                    self.plant_id.upper() in _BRANCHING_CASCADE_PLANTS:
+                # PCG plants name some producers "LLP Steam Dis" (space,
+                # no underscore) — include them so their U4U increments
+                # propagate to dispatch demands.
                 is_steam_dis = mat.endswith(" Dis") and "Steam" in mat
             if is_steam_dis:
                 proc  = float(self._raw_process.get(mat, 0.0))
@@ -714,14 +796,17 @@ class U4UIterationLoop:
             # If ODS records a negative 'Power' quantity for this month, treat the
             # absolute amount as an additional dispatch demand so GTs generate the
             # power that is being transferred to another site.
+            # In JMD pooled-power mode the inter-CPP plug is solved by the pool,
+            # not prescribed from BPC — skip the export-plug demand injection.
             power_export_mwh = 0.0
-            bpc_power = self._lookup_bpc_qty(key, _POWER_DIS_OTHER_PLANT_MATERIAL)
-            if bpc_power is not None and bpc_power < 0:
-                power_export_mwh = -float(bpc_power) / 1000.0
-                logger.info(
-                    "  [POWER_DIS] Adding %.2f MWh export to other plant as demand",
-                    power_export_mwh
-                )
+            if not self.pooled_power:
+                bpc_power = self._lookup_bpc_qty(key, _POWER_DIS_OTHER_PLANT_MATERIAL)
+                if bpc_power is not None and bpc_power < 0:
+                    power_export_mwh = -float(bpc_power) / 1000.0
+                    logger.info(
+                        "  [POWER_DIS] Adding %.2f MWh export to other plant as demand",
+                        power_export_mwh
+                    )
 
             dispatch_demands[key] = (
                 dispatch_demands.get(key, 0.0)
@@ -759,7 +844,8 @@ class U4UIterationLoop:
                     ods_material, steam_export_mt
                 )
             elif (
-                (
+                self.steam_transfer_mode == "off"
+                and (
                     (self.plant_id == _DTA_PLANT_ID and grade.upper() == "HP")
                     # DTA-PCG: a positive STEAM(<grade>) BPC quantity is an
                     # actual import that satisfies the grade's demand — e.g.
@@ -1048,6 +1134,106 @@ class U4UIterationLoop:
                             mp_extraction,
                         )
 
+    def _gt_steam_tiers(self, asset_name: str) -> list:
+        """Free-steam tiers applicable to a GT, detected from its linked HRSG.
+
+        The GT is paired to its HRSG by asset number (HRSG<n> <-> GT<n>, the
+        same convention as dispatch_engine._find_linked_gt_asset).  Every
+        negative-norm steam row on that HRSG is a byproduct grade, so the
+        tier set is the primary grade plus each byproduct grade — e.g.
+        HRSG10 (LP byproduct) -> ['SHP', 'LP'] for DTA GT-10, plain HRSGs
+        yield ['SHP'] / ['HP'], and LKPL HRSGs yield ['SHP', 'LP', 'MP'].
+        """
+        m = _GT_ASSET_NUM_RE.search(asset_name or "")
+        if m:
+            hrsg_key = next(
+                (k for k in self.consumption_norms
+                 if re.match("HRSG%s(?!\\d)" % m.group(1), k, re.IGNORECASE)),
+                None,
+            )
+            if hrsg_key:
+                prim = _STEAM_TIER_RE.search(hrsg_key)
+                tiers = [prim.group(1).upper()] if prim else ["SHP"]
+                for c in self.consumption_norms.get(hrsg_key, {}).get(
+                        "consumptions", []):
+                    if float(c.get("norm") or 0) >= 0:
+                        continue
+                    tm = _STEAM_TIER_RE.search(str(c.get("material", "")))
+                    if tm and tm.group(1).upper() not in tiers:
+                        tiers.append(tm.group(1).upper())
+                return tiers
+        return ["SHP"]
+
+    def _gt_fuel_reverse_norm(self, asset_name: str, hr: float,
+                              fsf_primary: float) -> float:
+        """Net GT fuel norm (MMBTU/kWh): gross heat rate minus the per-tier
+        free-steam enthalpy allocation.
+
+        Mirrors workbook row 14: for each steam tier produced by the linked
+        HRSG,  fuel_tier = FSF_tier * (T_tier - T_ref) / efficiency  (kcal per
+        kWh of generation) is deducted from the gross heat rate.  Per-CPP
+        constants come from data/gt_fuel_mmbtu_config.json.  The primary
+        tier uses the interpolated FreeSteamFactor from the GT heat-rate
+        table whenever available; the configured fsf is only its fallback.
+        Secondary (MP/LP) tiers always use the configured fsf.
+        Returns <= 0 when the norm cannot be computed so callers keep the
+        ODS norm.
+        """
+        if hr <= 0:
+            return 0.0
+        cfg_all = _load_gt_mmbtu_config()
+        kconv = float(cfg_all.get("kcal_to_btu") or _KCAL_TO_BTU)
+        cfg = cfg_all.get("plants", {}).get(str(self.plant_id).upper())
+        if not cfg:
+            return (kconv
+                    * (hr - fsf_primary * _FREE_STEAM_ENERGY_KCAL_KG)
+                    / _BTU_TO_MMBTU)
+        eff = float(cfg.get("efficiency") or 0.92)
+        if eff <= 0:
+            logger.warning("  [GT FUEL] %s: invalid efficiency %s in config — "
+                           "using 0.92", asset_name, eff)
+            eff = 0.92
+        ref = float(cfg.get("reference_temp_c") or 0.0)
+        # Optional per-asset overrides pin a single GT's heat rate and/or
+        # tier constants without touching code (see gt_fuel_mmbtu_config.json
+        # "asset_overrides").  Heat rate defaults to the DB-interpolated
+        # curve value at the dispatched load.
+        aov = (cfg.get("asset_overrides") or {}).get(asset_name) or {}
+        if aov.get("heat_rate"):
+            hr = float(aov["heat_rate"])
+        tier_cfg = dict(cfg.get("tiers") or {})
+        for tk, tv in (aov.get("tiers") or {}).items():
+            merged = dict(tier_cfg.get(tk) or {})
+            merged.update(tv)
+            tier_cfg[tk] = merged
+        deduction = 0.0
+        for i, tier in enumerate(self._gt_steam_tiers(asset_name)):
+            tc = tier_cfg.get(tier)
+            if not tc:
+                logger.warning("  [GT FUEL] %s: no config for %s tier — "
+                               "allocation skipped", asset_name, tier)
+                continue
+            if i == 0:
+                # Primary tier: the interpolated DB-curve FreeSteamFactor
+                # always wins; the configured fsf is only a fallback when
+                # the curve has no value for this load.
+                fsf = fsf_primary if fsf_primary and fsf_primary > 0 \
+                    else tc.get("fsf")
+            else:
+                fsf = tc.get("fsf")
+            if not fsf or fsf <= 0:
+                logger.warning("  [GT FUEL] %s: no FSF for %s tier — "
+                               "allocation skipped", asset_name, tier)
+                continue
+            deduction += float(fsf) * (float(tc.get("temp_c", 0.0)) - ref) / eff
+        net = hr - deduction
+        if net <= 0:
+            logger.warning("  [GT FUEL] %s: net fuel heat %.2f kcal/kWh <= 0 "
+                           "after free-steam allocation — keeping ODS norm",
+                           asset_name, net)
+            return 0.0
+        return kconv * net / _BTU_TO_MMBTU
+
     def _calculate_u4u_from_power(self, power_result: dict) -> tuple:
         """Calculate U4U from power dispatch using per-asset ODS norms.
 
@@ -1084,6 +1270,7 @@ class U4UIterationLoop:
 
             gen_kwh = dispatched_mwh * 1000  # MWh → KWH (ODS producer UOM)
 
+            fuel_norm_applied = False
             for c in consumptions:
                 if c.get("source_plant", "") != asset_name:
                     continue
@@ -1097,13 +1284,33 @@ class U4UIterationLoop:
                 material_uom = c.get("material_uom", "")
                 account = c["account"]
 
+                # Reverse-calculate MMBTU norm for Raw Material (fuel) rows
+                # on GT assets: gross heat rate minus the per-tier free-steam
+                # enthalpy allocation (workbook 'BPC Power loading and
+                # MMBTU').  Only the first fuel row carries the total MMBTU;
+                # remaining fuel rows are shown with 0 norm and 0 quantity.
+                is_secondary_fuel = False
+                if account == "Raw Material" and float(asset.get("heat_rate") or 0.0) > 0:
+                    if not fuel_norm_applied:
+                        fuel_norm_applied = True
+                        reverse_norm = self._gt_fuel_reverse_norm(
+                            asset_name,
+                            float(asset.get("heat_rate") or 0.0),
+                            float(asset.get("free_steam_factor") or 0.0),
+                        )
+                        if reverse_norm > 0:
+                            norm = reverse_norm
+                    else:
+                        norm = 0.0
+                        is_secondary_fuel = True
+
                 if is_fixed:
                     # Fixed consumption: use the fixed Quantity from DB, don't
                     # recalculate from norm × generation.
                     quantity = float(c.get("quantity", 0.0) or 0.0)
                     if quantity == 0:
                         continue
-                elif norm == 0:
+                elif norm == 0 and not is_secondary_fuel:
                     continue
                 else:
                     quantity = gen_kwh * norm
@@ -1302,11 +1509,8 @@ class U4UIterationLoop:
                 if account == "Raw Material" and hr > 0:
                     if not fuel_norm_applied:
                         fuel_norm_applied = True
-                        reverse_norm = (
-                            _KCAL_TO_BTU
-                            * (hr - fsf * _FREE_STEAM_ENERGY_KCAL_KG)
-                            / _BTU_TO_MMBTU
-                        )
+                        reverse_norm = self._gt_fuel_reverse_norm(
+                            asset_name, hr, fsf)
                         if reverse_norm > 0:
                             norm = reverse_norm
                     else:
@@ -1754,16 +1958,19 @@ class U4UIterationLoop:
             grade_byproduct_mt = byproduct_by_grade_mt.get(produces_grade.lower(), 0.0)
             net_prds_demand = max(0.0, gross_demand - grade_byproduct_mt)
 
-            if (
-                self.plant_id == _DTA_PLANT_ID
-                and produces_dis in ("MP Steam_Dis", "HP Steam_Dis")
-            ):
+            if self.plant_id == _DTA_PLANT_ID:
+                # DTA: PRDS output is capacity-bounded inside dispatch_steam
+                # (TPH cap x operational hours).  Use the bounded output so
+                # the U4U letdown feedback on the parent grade reflects the
+                # actual PRDS feed, not the uncapped demand.
                 dispatch_detail = (steam_result or {}).get("demand_detail") or {}
                 grade = produces_dis.split()[0].lower()
-                net_prds_demand = max(
-                    0.0,
-                    float(dispatch_detail.get(f"{grade}_net", net_prds_demand)),
-                )
+                out_key = f"{grade}_prds_out"
+                net_key = f"{grade}_net"
+                if out_key in dispatch_detail:
+                    net_prds_demand = max(0.0, float(dispatch_detail[out_key]))
+                elif net_key in dispatch_detail:
+                    net_prds_demand = max(0.0, float(dispatch_detail[net_key]))
 
             # Branching-cascade plants (SEZ-PCG, DTA-PCG): use the steam
             # dispatch's net demand as the PRDS generation so that BFW (and
@@ -2686,7 +2893,9 @@ class U4UIterationLoop:
         # 2. PRDS net output from the steam cascade (not the higher-grade letdown).
         dd = (self.final_steam_result or {}).get("demand_detail") or {}
         letdown_mt = float(dd.get(f"{grade.lower()}_letdown", 0.0))
-        net_mt = float(dd.get(f"{grade.lower()}_net", 0.0))
+        # Capacity-bounded output is recorded for DTA; other plants use the
+        # grade net demand as before.
+        net_mt = float(dd.get(f"{grade.lower()}_prds_out", dd.get(f"{grade.lower()}_net", 0.0)))
         # The PRDS exists when it lets down a higher grade (letdown > 0).
         # Its output of this grade is the net demand for this grade.
         if letdown_mt > 0:
@@ -3047,10 +3256,8 @@ class U4UIterationLoop:
                         if not fuel_norm_applied:
                             fuel_norm_applied = True
                             hr, fsf = power_asset_heat[gen_entry["producer"]]
-                            reverse_norm = (
-                                _KCAL_TO_BTU * (hr - fsf * _FREE_STEAM_ENERGY_KCAL_KG)
-                                / _BTU_TO_MMBTU
-                            )
+                            reverse_norm = self._gt_fuel_reverse_norm(
+                                gen_entry["producer"], hr, fsf)
                             if reverse_norm > 0:
                                 norm = reverse_norm
                         else:

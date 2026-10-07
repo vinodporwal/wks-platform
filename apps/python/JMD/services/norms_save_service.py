@@ -86,14 +86,30 @@ def save_calculated_norms(
 
     # ── Build a lookup of existing NormsMonthDetail rows from DB ──
     # so we can compare old vs new values and log clearly.
-    existing_rows = _fetch_existing_norms_month_detail(month, year)
+    # Only two kinds of DB rows can ever change:
+    #   1. rows directly referenced by a detail_record (norms/quantity update)
+    #   2. rows whose UtilityName is a generation utility (QTY update)
+    # Everything else is guaranteed SAME — fetching it only slows the save,
+    # so the query is scoped to those rows (utility names stay matched across
+    # plants, exactly as before).
+    detail_by_nmd_id: Dict[str, dict] = {}
+    for rec in detail_records:
+        nmd_id = rec.get("norms_month_detail_id")
+        if nmd_id:
+            detail_by_nmd_id[str(nmd_id)] = rec
+
+    existing_rows = _fetch_existing_norms_month_detail(
+        month, year,
+        nmd_ids=list(detail_by_nmd_id.keys()),
+        utility_names=list(generation_map.keys()),
+    )
 
     # Index by norms_month_detail_id for quick lookup
     existing_by_id: Dict[str, dict] = {}
     for row in existing_rows:
         existing_by_id[str(row["id"])] = row
 
-    # ── Iterate through ALL existing NormsMonthDetail rows and update them ──
+    # ── Iterate through the relevant NormsMonthDetail rows and update them ──
     # For generation utilities: QTY from generation_map, Norms/Quantity from detail_records
     # For consumption utilities: keep existing QTY, Norms/Quantity from detail_records
     mapped_count = 0
@@ -101,14 +117,6 @@ def save_calculated_norms(
     updated_count = 0
     same_count = 0
     unmapped_records: List[dict] = []
-
-    # Build a lookup from detail_records for norm and quantity
-    # Key: (norms_month_detail_id)
-    detail_by_nmd_id: Dict[str, dict] = {}
-    for rec in detail_records:
-        nmd_id = rec.get("norms_month_detail_id")
-        if nmd_id:
-            detail_by_nmd_id[str(nmd_id)] = rec
 
     # Sort existing rows for consistent logging
     sorted_existing = sorted(existing_rows, key=lambda r: (
@@ -236,6 +244,7 @@ def save_calculated_norms(
             try:
                 cur = conn.cursor()
                 cpp_norms_synced = 0
+                cpp_sync_disabled = False
 
                 for row in sorted_existing:
                     nmd_id = row["id"]
@@ -293,9 +302,13 @@ def save_calculated_norms(
 
                     # Sync to CPPNorms if norm changed and we have norms_header_id
                     # Note: JMD may need a different stored procedure than NMD
-                    if norm_changed and norms_header_id and fym_id:
-                        if _sync_to_cpp_norms(conn, norms_header_id, fym_id, new_norm):
+                    if norm_changed and norms_header_id and fym_id and not cpp_sync_disabled:
+                        sync_res = _sync_to_cpp_norms(conn, norms_header_id, fym_id, new_norm)
+                        if sync_res is True:
                             cpp_norms_synced += 1
+                        elif sync_res is None:
+                            # SP raised (missing/broken) — don't retry per row
+                            cpp_sync_disabled = True
 
                 conn.commit()
                 logger.info("")
@@ -324,7 +337,7 @@ def save_calculated_norms(
     # ── Summary ──
     logger.info("")
     logger.info("  NORMS SAVE SUMMARY")
-    logger.info("  Total DB rows:        %d", len(existing_rows))
+    logger.info("  DB rows fetched:      %d", len(existing_rows))
     logger.info("  Detail records:       %d", len(detail_records))
     logger.info("  Mapped to DB rows:    %d", mapped_count)
     logger.info("  Unmapped:             %d", unmapped_count)
@@ -359,7 +372,8 @@ def _sync_to_cpp_norms(conn, norms_header_fk_id: str, fym_id: str, norms_value: 
         modified_by: Who modified the norms (default: 'JMDModel')
 
     Returns:
-        True if sync succeeded, False otherwise
+        True if sync succeeded, False if the SP ran but did not return
+        'Success', None if the SP call raised (missing/broken SP).
     """
     try:
         cur = conn.cursor()
@@ -381,16 +395,48 @@ def _sync_to_cpp_norms(conn, norms_header_fk_id: str, fym_id: str, norms_value: 
         # The stored procedure may not exist for JMD yet
         logger.warning("  [NORMS SAVE] CPPNorms sync failed for NormsHeader %s: %s", norms_header_fk_id, e)
         logger.warning("  [NORMS SAVE] Note: CPP_UpdateNormsFromPythonModel SP may not exist for JMD. Create it if CPPNorms sync is required.")
-        return False
+        return None
 
 
-def _fetch_existing_norms_month_detail(month: int, year: int) -> List[dict]:
+def _fetch_existing_norms_month_detail(
+    month: int,
+    year: int,
+    nmd_ids: List[str] = None,
+    utility_names: List[str] = None,
+) -> List[dict]:
     """
     Fetch existing NormsMonthDetail rows for the given month/year.
+
+    When nmd_ids / utility_names are provided, the query is scoped to rows
+    referenced by those ids OR belonging to those utility names — the only
+    rows the save can modify.  Without them, every active row for the month
+    is returned (previous behaviour).
 
     Returns list of dicts with: id, norms_header_id, plant_name,
     utility_name, material_name, account_name, qty, norms, quantity.
     """
+    where = "WHERE fym.Month = ? AND fym.Year = ? AND nh.IsActive = 1"
+    params: list = [month, year]
+
+    # SQL Server allows max ~2100 parameters — bail out to the unfiltered
+    # query rather than risk a failed save if a run ever exceeds that.
+    nmd_ids = [i for i in (nmd_ids or []) if i]
+    utility_names = [u for u in (utility_names or []) if u]
+    if nmd_ids or utility_names:
+        if len(nmd_ids) + len(utility_names) <= 1900:
+            filters = []
+            if nmd_ids:
+                filters.append("nmd.Id IN (%s)" % ",".join("?" * len(nmd_ids)))
+                params.extend(nmd_ids)
+            if utility_names:
+                filters.append("nh.UtilityName IN (%s)" % ",".join("?" * len(utility_names)))
+                params.extend(utility_names)
+            where += " AND (" + " OR ".join(filters) + ")"
+        else:
+            logger.warning(
+                "  [NORMS SAVE] Filter list too large (%d ids + %d utilities) — fetching all rows for the month.",
+                len(nmd_ids), len(utility_names))
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -409,9 +455,8 @@ def _fetch_existing_norms_month_detail(month: int, year: int) -> List[dict]:
             INNER JOIN {T.NORMS_HEADER} nh ON nh.Id = nmd.NormsHeader_FK_Id
             INNER JOIN {T.PLANTS} p        ON p.Id  = nh.{T.NORMS_HEADER_PLANT_FK}
             INNER JOIN {T.FINANCIAL_YEAR_MONTH} fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
-            WHERE fym.Month = ? AND fym.Year = ?
-              AND nh.IsActive = 1
-        """, (month, year))
+            {where}
+        """, tuple(params))
 
         rows = []
         for row in cur.fetchall():

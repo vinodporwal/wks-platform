@@ -23,6 +23,7 @@ Usage:
     )
 """
 
+import functools
 import json
 import logging
 import os
@@ -917,6 +918,7 @@ def fetch_asset_operational_hours(plant_id: str, month: int, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_steam_asset_operational_hours(plant_id: str, month: int, year: int) -> list:
     """
     Fetch CPPSteamAssetsOperationalHours for all steam assets of a plant for a given month/year.
@@ -1026,6 +1028,7 @@ def fetch_asset_operational_hours_all_months(plant_id: str, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_asset_priority_all_months(plant_id: str, year: int) -> list:
     """
     Fetch CPPPowerAssetPriority for all 12 months (full FY) for a plant.
@@ -1086,6 +1089,7 @@ def fetch_asset_priority_all_months(plant_id: str, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_steam_asset_priority_all_months(plant_id: str, year: int) -> list:
     """
     Fetch CPPSteamAssetsPriority for all 12 months (full FY) for a plant.
@@ -1147,6 +1151,7 @@ def fetch_steam_asset_priority_all_months(plant_id: str, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_asset_priority(plant_id: str, month: int, year: int) -> list:
     """
     Fetch CPPPowerAssetPriority for a plant/month.
@@ -1209,6 +1214,7 @@ def fetch_asset_priority(plant_id: str, month: int, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_steam_asset_priority(plant_id: str, month: int, year: int) -> list:
     """
     Fetch CPPSteamAssetsPriority for a plant/month.
@@ -1271,6 +1277,7 @@ def fetch_steam_asset_priority(plant_id: str, month: int, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_steam_generation_assets(plant_id: str) -> list:
     """
     Fetch all CPPSteamGenerationAsset records for a plant.
@@ -1337,6 +1344,7 @@ def fetch_steam_generation_assets(plant_id: str) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_plant_power_info(plant_id: str, month: int, year: int) -> dict:
     """
     Combined fetch: plant info + all assets + operational hours for a month.
@@ -1390,6 +1398,7 @@ def fetch_plant_power_info(plant_id: str, month: int, year: int) -> dict:
 # 3c. Power Asset Capacity (CPPPowerAssetCapacity — Min/Max MW per month)
 # ---------------------------------------------------------------------------
 
+@functools.lru_cache(maxsize=None)
 def fetch_power_asset_capacity_all_months(plant_id: str, year: int) -> list:
     """
     Fetch CPPPowerAssetCapacity for all 12 months (full FY) for a plant.
@@ -1464,6 +1473,7 @@ def fetch_power_asset_capacity_all_months(plant_id: str, year: int) -> list:
         conn.close()
 
 
+@functools.lru_cache(maxsize=None)
 def fetch_steam_asset_capacity_all_months(plant_id: str, year: int) -> list:
     """
     Fetch CPPSteamAssetCapacity for all 12 months (full FY) for a plant.

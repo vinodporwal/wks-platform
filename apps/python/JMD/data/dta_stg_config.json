@@ -17,5 +17,13 @@
   "heat_rate_hhp_factor": 810.0,
   "heat_rate_hp_factor": 759.0,
   "heat_rate_mp_factor": 718.0,
-  "heat_rate_condensate_factor": 45.0
+  "heat_rate_condensate_factor": 45.0,
+
+  "_cases_note": "Four operating cases from 'All STG's Norm calculation - Digital AOP.ods' > DTA STG. MW is the stated output for the case; SSC is derived as Net HHP / MW (workbook semantics).",
+  "cases": [
+    {"id": "I",   "hp_extraction_tph": 145.0, "mp_extraction_tph": 75.0, "condensate_tph": 25.0, "hhp_tph": 245.0, "power_generation_mw": 20.0},
+    {"id": "II",  "hp_extraction_tph": 90.0,  "mp_extraction_tph": 75.0, "condensate_tph": 25.0, "hhp_tph": 190.0, "power_generation_mw": 17.0},
+    {"id": "III", "hp_extraction_tph": 145.0, "mp_extraction_tph": 50.0, "condensate_tph": 25.0, "hhp_tph": 220.0, "power_generation_mw": 17.0},
+    {"id": "IV",  "hp_extraction_tph": 90.0,  "mp_extraction_tph": 50.0, "condensate_tph": 50.0, "hhp_tph": 190.0, "power_generation_mw": 20.0}
+  ]
 }

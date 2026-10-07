@@ -5,6 +5,10 @@ For each month block in C2_JMD.ODS (April to March), reverse-calculates norms
 (Quantity / Gen Qty) for rows where the ODS norm is zero/NaN but Quantity > 0,
 then patches NormsMonthDetail and CPPNorms. Adds remarks and timestamps.
 
+Fixed-consumption utilities (CPPNorms.NormType_FK_Id = 10) are SKIPPED: their
+quantity does not scale with generation, so their norms must remain 0/blank —
+the same convention as SEZ / SEZ-PCG (and the engine's FIXED_CONSUMPTION_NORM_TYPE).
+
 Usage:
     py update_c2_zero_norms_all_months.py          # dry run
     py update_c2_zero_norms_all_months.py --execute
@@ -43,6 +47,10 @@ MONTH_COL_MAP = {
     7: "Jul_Norms", 8: "Aug_Norms", 9: "Sep_Norms",
     10: "Oct_Norms", 11: "Nov_Norms", 12: "Dec_Norms",
 }
+
+# NormType 10 = "Quantity" (fixed consumption). These utilities consume a fixed
+# quantity regardless of generation — norms stay 0; never reverse-calculate them.
+FIXED_CONSUMPTION_NORM_TYPE = 10
 
 
 def _to_float(value):
@@ -141,9 +149,26 @@ def _resolve_and_update(conn, reverse_map, execute=False):
     )
     plant_id_to_name = {r[0]: r[1] for r in cur.fetchall()}
 
+    # NormsHeader ids marked fixed consumption (NormType=10) under this CPP -
+    # their norms must stay 0 (quantity is fixed, not generation-proportional).
+    if plant_id_to_name:
+        placeholders = ",".join("?" for _ in plant_id_to_name)
+        cur.execute(
+            f"""SELECT DISTINCT cn.NormsHeader_FK_Id
+                FROM CPPNorms cn WITH (NOLOCK)
+                JOIN NormsHeader nh WITH (NOLOCK) ON nh.Id = cn.NormsHeader_FK_Id
+                WHERE cn.NormType_FK_Id = ? AND nh.Plant_FK_Id IN ({placeholders})""",
+            [FIXED_CONSUMPTION_NORM_TYPE] + list(plant_id_to_name.keys()),
+        )
+        fixed_header_ids = {str(r[0]).upper() for r in cur.fetchall()}
+    else:
+        fixed_header_ids = set()
+
     updated_headers = set()
     update_count_nmd = 0
     update_count_cpp = 0
+    skipped_fixed = 0
+    resolved = 0
 
     print(f"\n{'Month':<8} {'Year':<6} {'Plant':<30} {'Utility':<20} {'Material':<35} {'New Norm':<16}")
     print("-" * 125)
@@ -177,6 +202,9 @@ def _resolve_and_update(conn, reverse_map, execute=False):
                 continue
 
             header_id, nmd_id = row
+            if str(header_id).upper() in fixed_header_ids:
+                skipped_fixed += 1
+                continue
 
             # Determine FY label for CPPNorms
             fy_start = year if month >= 4 else year - 1
@@ -190,6 +218,7 @@ def _resolve_and_update(conn, reverse_map, execute=False):
             )
             cpp_row = cur.fetchone()
 
+            resolved += 1
             print(f"{month:<8} {year:<6} {plant_name:<30} {util_l:<20} {mat_l:<35} {reverse_norm:<16.8f}")
 
             if execute:
@@ -217,11 +246,14 @@ def _resolve_and_update(conn, reverse_map, execute=False):
                     )
                     update_count_cpp += cur.rowcount
 
+    if skipped_fixed:
+        print(f"\nSkipped {skipped_fixed} fixed-consumption (NormType=10) row(s) - norms stay 0 by design.")
+
     if execute:
         conn.commit()
         print(f"\n✓ Updates committed: NormsMonthDetail={update_count_nmd}, CPPNorms={update_count_cpp}, NormsHeader={len(updated_headers)}")
     else:
-        print(f"\n[DRY RUN] Would update: NormsMonthDetail rows for {len(reverse_map)} month-material combinations.")
+        print(f"\n[DRY RUN] Would update {resolved} NormsMonthDetail row(s) from {len(reverse_map)} candidate month-material combinations.")
 
 
 def main():

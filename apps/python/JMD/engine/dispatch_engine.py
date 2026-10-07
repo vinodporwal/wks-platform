@@ -44,6 +44,7 @@ from engine.dta_stg_calc import (
     calculate_dta_stg_extraction,
     get_default_dta_stg_calc,
     log_stg_extraction,
+    select_dta_stg_case,
 )
 from engine.dta_stg_config import get_dta_stg_config
 from engine.sez_stg_calc import calculate_sez_stg_extraction
@@ -197,6 +198,7 @@ def _get_asset_equipment_type(asset_name: str) -> str:
 # DTA STG extraction curve — averaged from the four cases in the site Excel.
 # Loaded on first use so it does not affect other plants.
 _DTA_PLANT_ID = "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"
+_C2_PLANT_ID = "BA558F95-8A3F-4769-9C78-FF7B6C639DDF"
 _SEZ_PLANT_ID = "2DFEE33F-4CFD-4887-B9DD-53388AA95271"
 _SEZ_PCG_PLANT_ID = "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"
 _DTA_PCG_PLANT_ID = "F6D82E68-C3B6-494F-9905-48F19DC611E3"
@@ -207,6 +209,13 @@ _DTA_PCG_PLANT_ID = "F6D82E68-C3B6-494F-9905-48F19DC611E3"
 # linear chain.  Linear-cascade plants (DTA-CPP, C2-CPP, SEZ-CPP) are
 # unaffected.
 _BRANCHING_CASCADE_PLANTS = {_SEZ_PCG_PLANT_ID, _DTA_PCG_PLANT_ID}
+
+# Plants where every grade's PRDS letdown already reaches the parent grade's
+# demand through the U4U path (_calculate_steam_cascade_u4u adds the letdown
+# onto the parent _Dis producer's demand).  For these plants the linear
+# cascade must NOT add prev_letdown on top of the raw demand, or the same
+# letdown flow is counted twice.
+_U4U_LETDOWN_FEED_PLANTS = {_DTA_PLANT_ID, _C2_PLANT_ID}
 _DTA_STG_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "dta_stg_extraction.csv")
 _DTA_STG_LOOKUP: list = []
 
@@ -232,6 +241,44 @@ def _stg_num_from_name(asset_name: str) -> int:
     """Extract STG number from asset names like 'JMD - SGT Plant 5'."""
     m = re.search(r"(?:STG|SGT)[^0-9]*(\d+)", asset_name, re.IGNORECASE)
     return int(m.group(1)) if m else 0
+
+
+def _get_dta_stg_extraction_requirement(plant_id: str, month: int, year: int) -> dict:
+    """
+    Required HP/MP extraction per DTA STG for the month, from the ODS
+    (BPC) material quantities.
+
+    The ODS carries the planned/actual extraction as material flows into the
+    steam headers:  "HP Steam_Dis" consumes "STG5_HP STEAM" (97,200 MT →
+    135 TPH for April), "MP Steam_Dis" consumes "STG5_MP STEAM", etc.
+
+    Returns {stg_num: {"hp_mt": float, "mp_mt": float}}.  Empty dict when the
+    ODS baseline is unavailable or no STG materials exist — callers then fall
+    back to the fixed max-extraction operating point.
+    """
+    from engine.ods_norms_reader import ODSNormsReader
+
+    try:
+        reader = ODSNormsReader.get_reader(plant_id, month, year)
+        bpc = reader.get_bpc_quantities() if reader and reader.is_available else {}
+    except Exception as e:
+        logger.warning("  [DTA STG] Could not load ODS extraction requirements: %s", e)
+        return {}
+
+    req: dict = {}
+    for dis_key in ("HP Steam_Dis", "HP Steam Dis"):
+        for material, qty in (bpc.get(dis_key) or {}).items():
+            m = re.match(r"STG(\d+)_HP STEAM", str(material).strip(), re.IGNORECASE)
+            if m:
+                req.setdefault(int(m.group(1)), {"hp_mt": 0.0, "mp_mt": 0.0})
+                req[int(m.group(1))]["hp_mt"] = float(qty or 0.0)
+    for dis_key in ("MP Steam_Dis", "MP Steam Dis"):
+        for material, qty in (bpc.get(dis_key) or {}).items():
+            m = re.match(r"STG(\d+)_MP STEAM", str(material).strip(), re.IGNORECASE)
+            if m:
+                req.setdefault(int(m.group(1)), {"hp_mt": 0.0, "mp_mt": 0.0})
+                req[int(m.group(1))]["mp_mt"] = float(qty or 0.0)
+    return req
 
 
 def _interpolate_dta_stg(load_mw: float) -> dict:
@@ -410,9 +457,13 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
     caps_by_id = {c["asset_id"]: c for c in cap_list}
     pri_by_id = {p["asset_id"]: p for p in pri_list}
 
-    # DTA STG effective capacity from the new extraction methodology
+    # DTA STG: operating case is selected per unit from the month's required
+    # HP/MP extraction (ODS BPC quantities).  A unit with no extraction
+    # requirement falls back to the legacy max-extraction point.
+    dta_stg_req = {}
     dta_stg_mw = None
     if plant_id == _DTA_PLANT_ID:
+        dta_stg_req = _get_dta_stg_extraction_requirement(plant_id, month, year)
         dta_stg_mw = get_default_dta_stg_calc()["mw"]
 
     result = []
@@ -457,9 +508,34 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
 
         fixed_max_mw = float(cap_row.get("fixed_max", 0) or 0)
 
-        # DTA STG: effective power cap is the MW at the max-extraction point
-        if dta_stg_mw is not None and atype == "STG":
-            max_mw = dta_stg_mw
+        # DTA STG: an extraction STG's MW output is determined by its steam
+        # duty, not the DB nameplate — select the AOP operating case that
+        # covers the required HP/MP extraction and pin the unit at the case
+        # MW (it is a steam-led machine: delivering the required extraction
+        # produces the case's stated power).
+        dta_stg_case = None
+        dta_stg_req_hp_tph = 0.0
+        dta_stg_req_mp_tph = 0.0
+        if plant_id == _DTA_PLANT_ID and atype == "STG":
+            stg_num = _stg_num_from_name(aname)
+            req = dta_stg_req.get(stg_num)
+            if req and (req["hp_mt"] > 0 or req["mp_mt"] > 0):
+                dta_stg_req_hp_tph = req["hp_mt"] / op_hours
+                dta_stg_req_mp_tph = req["mp_mt"] / op_hours
+                dta_stg_case = select_dta_stg_case(dta_stg_req_hp_tph, dta_stg_req_mp_tph)
+            if dta_stg_case:
+                if abs(max_mw - dta_stg_case["mw"]) / max(max_mw, 1e-9) > 0.05:
+                    logger.warning(
+                        "  [DTA STG] %s: DB max %.2f MW differs from selected Case %s "
+                        "output %.2f MW (req HP %.1f / MP %.1f TPH) — verify DB capacity",
+                        aname, max_mw, dta_stg_case["case_id"], dta_stg_case["mw"],
+                        dta_stg_req_hp_tph, dta_stg_req_mp_tph,
+                    )
+                min_mw = dta_stg_case["mw"]
+                max_mw = dta_stg_case["mw"]
+                mandatory = 1
+            elif dta_stg_mw is not None:
+                max_mw = dta_stg_mw
 
         max_mwh = max_mw * op_hours
 
@@ -467,6 +543,7 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             "asset_id": aid,
             "asset_name": aname,
             "asset_type": atype,
+            "plant_code": asset.get("plant_code", ""),
             "op_hours": op_hours,
             "min_mw": min_mw,
             "max_mw": max_mw,
@@ -475,6 +552,9 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             "mandatory": mandatory,
             "min_mwh": min_mw * op_hours,
             "max_mwh": max_mwh,
+            "dta_stg_case": dta_stg_case,
+            "dta_stg_req_hp_tph": dta_stg_req_hp_tph,
+            "dta_stg_req_mp_tph": dta_stg_req_mp_tph,
         })
 
     return result
@@ -527,45 +607,20 @@ def _get_power_demand(plant_id: str, month: int, year: int, demands: dict = None
     }
 
 
-def _dispatch_all_min_first(
-    assets: list,
-    demand_mwh: float,
-    plant_id: str,
-    month: int,
-    year: int,
-    ods_reader = None,
-    gt_lookup: dict = None,
-) -> list:
-    """
+def _min_first_allocation(dispatch: list, demand_mwh: float) -> float:
+    """Min-load-first + priority ramp allocation shared by per-CPP dispatch
+    and the JMD-wide power pool.
+
     Dispatch algorithm (Option A with mandatory load):
       1. Mandatory assets (Man_Load=1) start at MIN load.
       2. If mandatory MIN < demand → bring in optional assets at MIN.
       3. If all MIN < demand → ramp up by priority (1 = highest first).
       4. Equal-priority assets share additional load equally (equal MW).
-      5. If all at MAX and still deficit → deficit logged.
+      5. If all at MAX and still deficit → caller reports the deficit.
 
-    Args:
-        assets: list of asset dicts from _build_asset_table
-        demand_mwh: total power demand in MWh
-        plant_id: CPP plant UUID
-        month: selected month
-        year: selected year
-        ods_reader: pre-loaded ODSNormsReader for norms (avoids re-reading ODS)
-        gt_lookup: GT heat rate lookup dict from database or fallback
-
-    Returns:
-        list of asset dicts with added keys:
-            "dispatched_mw", "dispatched_mwh", "load_percent"
+    Mutates dispatched_mw/dispatched_mwh on each asset dict in `dispatch`.
+    Returns total generation dispatched (MWh).
     """
-    # Work on copies — start everyone at 0
-    dispatch = []
-    for a in assets:
-        dispatch.append({
-            **a,
-            "dispatched_mw": 0.0,
-            "dispatched_mwh": 0.0,
-        })
-
     # Step 1: Mandatory assets at MIN
     total_gen = 0.0
     for d in dispatch:
@@ -656,13 +711,19 @@ def _dispatch_all_min_first(
 
                 remaining -= (allocation_mwh - remaining_to_allocate)
 
-    # Fetch POWERGEN norms from norms reader (or fallback to factory)
-    if ods_reader is not None:
-        excel_norms = ods_reader.get_powergen_norms()
-    else:
-        excel_norms = get_norms_reader(plant_id, month, year).get_powergen_norms()
+    # Recompute from dispatched_mwh — step 3 ramps assets without updating
+    # the running total, so the caller must see the real dispatched sum.
+    return sum(d["dispatched_mwh"] for d in dispatch)
 
-    # Calculate derived fields
+
+def _enrich_power_dispatch(dispatch: list, excel_norms: dict, gt_lookup: dict) -> None:
+    """Populate derived per-asset fields after min-first allocation.
+
+    Computes load_percent, avg_load_mw, free steam (GT assets), heat rate,
+    and auxiliary power consumption using the owning plant's POWERGEN norms
+    and GT heat-rate lookup.  Shared by per-CPP dispatch and the JMD pool —
+    the caller must pass the norms/lookup of the plant that owns the assets.
+    """
     for d in dispatch:
         d["load_percent"] = round(
             (d["dispatched_mw"] / d["max_mw"] * 100) if d["max_mw"] > 0 else 0.0, 1
@@ -683,12 +744,12 @@ def _dispatch_all_min_first(
             table = None
             if gt_lookup:
                 table = gt_lookup.get(d["asset_id"])
-            
+
             # Fallback to hardcoded lookup if database lookup fails
             if not table:
                 equip_type = _get_asset_equipment_type(d["asset_name"])
                 table = _GT_LOAD_LOOKUP.get(equip_type)
-            
+
             if table:
                 d["heat_rate"] = _lookup_gt_heat_rate(d["avg_load_mw"], table)
                 d["free_steam_factor"] = _lookup_gt_load_factor(d["avg_load_mw"], table)
@@ -715,9 +776,60 @@ def _dispatch_all_min_first(
         if norm_val is None:
             logger.warning("  [DISPATCH] No aux power norm in ODS for asset '%s'; using 0.0", d["asset_name"])
             norm_val = 0.0
-            
+
         d["aux_power_norm"] = norm_val
         d["aux_power"] = round(d["dispatched_mwh"] * norm_val, 2)
+
+
+def _dispatch_all_min_first(
+    assets: list,
+    demand_mwh: float,
+    plant_id: str,
+    month: int,
+    year: int,
+    ods_reader = None,
+    gt_lookup: dict = None,
+) -> list:
+    """
+    Dispatch algorithm (Option A with mandatory load):
+      1. Mandatory assets (Man_Load=1) start at MIN load.
+      2. If mandatory MIN < demand → bring in optional assets at MIN.
+      3. If all MIN < demand → ramp up by priority (1 = highest first).
+      4. Equal-priority assets share additional load equally (equal MW).
+      5. If all at MAX and still deficit → deficit logged.
+
+    Args:
+        assets: list of asset dicts from _build_asset_table
+        demand_mwh: total power demand in MWh
+        plant_id: CPP plant UUID
+        month: selected month
+        year: selected year
+        ods_reader: pre-loaded ODSNormsReader for norms (avoids re-reading ODS)
+        gt_lookup: GT heat rate lookup dict from database or fallback
+
+    Returns:
+        list of asset dicts with added keys:
+            "dispatched_mw", "dispatched_mwh", "load_percent"
+    """
+    # Work on copies — start everyone at 0
+    dispatch = []
+    for a in assets:
+        dispatch.append({
+            **a,
+            "dispatched_mw": 0.0,
+            "dispatched_mwh": 0.0,
+        })
+
+    _min_first_allocation(dispatch, demand_mwh)
+
+    # Fetch POWERGEN norms from norms reader (or fallback to factory)
+    if ods_reader is not None:
+        excel_norms = ods_reader.get_powergen_norms()
+    else:
+        excel_norms = get_norms_reader(plant_id, month, year).get_powergen_norms()
+
+    # Calculate derived fields
+    _enrich_power_dispatch(dispatch, excel_norms, gt_lookup)
 
     return dispatch
 
@@ -830,6 +942,143 @@ def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int, sp
 # Public API
 # ---------------------------------------------------------------------------
 
+def _apply_stg_derived_fields(plant_id: str, dispatch: list) -> dict:
+    """Populate per-STG extraction/consumption fields and return totals.
+
+    DTA uses the AOP case selected per unit from its required HP/MP
+    extraction (units without a requirement keep the max-extraction point);
+    SEZ uses the per-load curve (load_mw → tph).  Other plants are untouched.
+
+    Mutates per-asset keys on `dispatch` (stg_* fields) and returns:
+        {
+            "shp_consumption_mt", "hp_consumption_mt", "hp_for_power_mt",
+            "hp_for_mp_consumption_mt", "hp_extraction_mt",
+            "mp_extraction_mt", "lp_extraction_mt", "condensate_mt",
+        }
+    """
+    totals = {
+        "shp_consumption_mt": 0.0,
+        "hp_consumption_mt": 0.0,
+        "hp_for_power_mt": 0.0,
+        "hp_for_mp_consumption_mt": 0.0,
+        "hp_extraction_mt": 0.0,
+        "mp_extraction_mt": 0.0,
+        "lp_extraction_mt": 0.0,
+        "condensate_mt": 0.0,
+    }
+
+    # DTA STG extraction: each running STG books the month's required HP/MP
+    # extraction (ODS BPC quantities) under the AOP operating case selected in
+    # _build_asset_table.  Units without an extraction requirement keep the
+    # legacy max-extraction operating point.
+    if plant_id == _DTA_PLANT_ID:
+        dta_stg_calc = get_default_dta_stg_calc()
+        for d in dispatch:
+            if "STG" not in d.get("asset_type", "").upper():
+                continue
+            hours = d.get("op_hours", 0.0)
+            mwh = d.get("dispatched_mwh", 0.0)
+            if hours <= 0 or mwh <= 0:
+                d["stg_shp_consumption_mt"] = 0.0
+                d["stg_hp_extraction_mt"] = 0.0
+                d["stg_mp_extraction_mt"] = 0.0
+                d["stg_lp_extraction_mt"] = 0.0
+                d["stg_condensate_mt"] = 0.0
+                continue
+            case = d.get("dta_stg_case")
+            if case:
+                hp_tph = min(d.get("dta_stg_req_hp_tph", 0.0), case["hp_extraction_tph"])
+                mp_tph = min(d.get("dta_stg_req_mp_tph", 0.0), case["mp_extraction_tph"])
+                cond_tph = case["condensate_tph"]
+                hp_f = case["hp_to_hhp_factor"]
+                mp_f = case["mp_to_hhp_factor"]
+                ext = {
+                    "shp_inlet_tph": hp_tph + mp_tph + cond_tph,
+                    "hp_extraction_tph": hp_tph,
+                    "mp_extraction_tph": mp_tph,
+                    "condensate_tph": cond_tph,
+                    "hp_hhp_equivalent_tph": hp_tph * hp_f,
+                    "mp_hhp_equivalent_tph": mp_tph * mp_f,
+                    "net_hhp_tph": case["net_hhp_tph"],
+                    "ssc_kg_kwh": case["ssc_kg_kwh"],
+                    "mw": case["mw"],
+                    "heat_rate_kcal_kwh": case["heat_rate_kcal_kwh"],
+                    "case_id": case["case_id"],
+                }
+                d["stg_case_id"] = case["case_id"]
+            else:
+                ext = dta_stg_calc
+            stg_num = _stg_num_from_name(d["asset_name"])
+            d["stg_shp_inlet_tph"] = round(ext["shp_inlet_tph"], 4)
+            d["stg_hp_extraction_tph"] = round(ext["hp_extraction_tph"], 4)
+            d["stg_mp_extraction_tph"] = round(ext["mp_extraction_tph"], 4)
+            d["stg_lp_extraction_tph"] = round(ext.get("lp_extraction_tph", 0.0), 4)
+            d["stg_condensate_tph"] = round(ext["condensate_tph"], 4)
+            d["stg_shp_consumption_mt"] = round(ext["shp_inlet_tph"] * hours, 2)
+            d["stg_hp_extraction_mt"] = round(ext["hp_extraction_tph"] * hours, 2)
+            d["stg_mp_extraction_mt"] = round(ext["mp_extraction_tph"] * hours, 2)
+            d["stg_lp_extraction_mt"] = round(ext.get("lp_extraction_tph", 0.0) * hours, 2)
+            d["stg_condensate_mt"] = round(ext["condensate_tph"] * hours, 2)
+            d["stg_hp_material"] = f"STG{stg_num}_HP STEAM" if stg_num else ""
+            d["stg_mp_material"] = f"STG{stg_num}_MP STEAM" if stg_num else ""
+            d["stg_heat_rate_kcal_kwh"] = round(ext.get("heat_rate_kcal_kwh", 0.0), 4)
+            totals["shp_consumption_mt"] += d["stg_shp_consumption_mt"]
+            totals["hp_extraction_mt"] += d["stg_hp_extraction_mt"]
+            totals["mp_extraction_mt"] += d["stg_mp_extraction_mt"]
+            totals["lp_extraction_mt"] += d["stg_lp_extraction_mt"]
+            totals["condensate_mt"] += d["stg_condensate_mt"]
+            if ext.get("case_id"):
+                logger.info(
+                    "  DTA STG %s → Case %s (required HP %.1f / MP %.1f TPH)",
+                    d["asset_name"], ext["case_id"],
+                    d.get("dta_stg_req_hp_tph", 0.0), d.get("dta_stg_req_mp_tph", 0.0),
+                )
+            log_stg_extraction(d["asset_name"], ext)
+
+    if plant_id == _SEZ_PLANT_ID:
+        for d in dispatch:
+            if "STG" not in d.get("asset_type", "").upper():
+                continue
+            hours = float(d.get("op_hours", 0.0))
+            mwh = float(d.get("dispatched_mwh", 0.0))
+            load_mw = mwh / hours if hours > 0 else 0.0
+            ext = calculate_sez_stg_extraction(load_mw)
+            stg_num = _stg_num_from_name(d["asset_name"])
+            d["stg_hp_inlet_tph"] = round(ext["hp_inlet_tph"], 4)
+            d["stg_hp_for_power_tph"] = round(ext["hp_for_power_tph"], 4)
+            d["stg_hp_for_mp_consumption_tph"] = round(ext["hp_for_mp_extraction_tph"], 4)
+            d["stg_mp_extraction_tph"] = round(ext["mp_extraction_tph"], 4)
+            d["stg_ssc_kg_kwh"] = round(ext["ssc_kg_kwh"], 4)
+            d["stg_heat_rate_kcal_kwh"] = round(ext["fy2025_26_heat_rate_kcal_kwh"], 4)
+            d["stg_hp_consumption_mt"] = round(ext["hp_inlet_tph"] * hours, 2)
+            d["stg_hp_for_power_mt"] = round(ext["hp_for_power_tph"] * hours, 2)
+            d["stg_hp_for_mp_consumption_mt"] = round(ext["hp_for_mp_extraction_tph"] * hours, 2)
+            d["stg_mp_extraction_mt"] = round(ext["mp_extraction_tph"] * hours, 2)
+            d["stg_mp_material"] = f"STG{stg_num}_MP STEAM" if stg_num else ""
+            totals["mp_extraction_mt"] += d["stg_mp_extraction_mt"]
+            logger.info(
+                "  SEZ STG calculation: %s load=%.4f MW, HP inlet=%.2f TPH, "
+                "HP power=%.2f TPH, HP for MP=%.2f TPH, MP extraction=%.2f TPH, "
+                "SSC=%.4f kg/kWh, heat rate=%.2f kcal/kWh",
+                d["asset_name"], load_mw, ext["hp_inlet_tph"],
+                ext["hp_for_power_tph"], ext["hp_for_mp_extraction_tph"],
+                ext["mp_extraction_tph"], ext["ssc_kg_kwh"],
+                ext["fy2025_26_heat_rate_kcal_kwh"],
+            )
+
+    totals["hp_consumption_mt"] = sum(
+        float(d.get("stg_hp_consumption_mt", 0.0)) for d in dispatch
+    )
+    totals["hp_for_power_mt"] = sum(
+        float(d.get("stg_hp_for_power_mt", 0.0)) for d in dispatch
+    )
+    totals["hp_for_mp_consumption_mt"] = sum(
+        float(d.get("stg_hp_for_mp_consumption_mt", 0.0)) for d in dispatch
+    )
+
+    return totals
+
+
 def dispatch_power(
     plant_id: str,
     month: int,
@@ -911,87 +1160,8 @@ def dispatch_power(
     total_free_steam = round(sum(d.get("free_steam_mt", 0) for d in dispatch), 2)
     total_aux = round(sum(d.get("aux_power", 0.0) for d in dispatch), 2)
 
-    # 4b. DTA STG extraction (Option A: averaged curve, per-load interpolation)
-    total_stg_shp_consumption_mt = 0.0
-    total_stg_hp_extraction_mt = 0.0
-    total_stg_mp_extraction_mt = 0.0
-    total_stg_condensate_mt = 0.0
-
-    if plant_id == _DTA_PLANT_ID:
-        dta_stg_calc = get_default_dta_stg_calc()
-        for d in dispatch:
-            if "STG" not in d.get("asset_type", "").upper():
-                continue
-            hours = d.get("op_hours", 0.0)
-            mwh = d.get("dispatched_mwh", 0.0)
-            if hours <= 0 or mwh <= 0:
-                d["stg_shp_consumption_mt"] = 0.0
-                d["stg_hp_extraction_mt"] = 0.0
-                d["stg_mp_extraction_mt"] = 0.0
-                d["stg_lp_extraction_mt"] = 0.0
-                d["stg_condensate_mt"] = 0.0
-                continue
-            ext = dta_stg_calc
-            stg_num = _stg_num_from_name(d["asset_name"])
-            d["stg_shp_inlet_tph"] = round(ext["shp_inlet_tph"], 4)
-            d["stg_hp_extraction_tph"] = round(ext["hp_extraction_tph"], 4)
-            d["stg_mp_extraction_tph"] = round(ext["mp_extraction_tph"], 4)
-            d["stg_lp_extraction_tph"] = round(ext.get("lp_extraction_tph", 0.0), 4)
-            d["stg_condensate_tph"] = round(ext["condensate_tph"], 4)
-            d["stg_shp_consumption_mt"] = round(ext["shp_inlet_tph"] * hours, 2)
-            d["stg_hp_extraction_mt"] = round(ext["hp_extraction_tph"] * hours, 2)
-            d["stg_mp_extraction_mt"] = round(ext["mp_extraction_tph"] * hours, 2)
-            d["stg_lp_extraction_mt"] = round(ext.get("lp_extraction_tph", 0.0) * hours, 2)
-            d["stg_condensate_mt"] = round(ext["condensate_tph"] * hours, 2)
-            d["stg_hp_material"] = f"STG{stg_num}_HP STEAM" if stg_num else ""
-            d["stg_mp_material"] = f"STG{stg_num}_MP STEAM" if stg_num else ""
-            d["stg_heat_rate_kcal_kwh"] = round(ext.get("heat_rate_kcal_kwh", 0.0), 4)
-            total_stg_shp_consumption_mt += d["stg_shp_consumption_mt"]
-            total_stg_hp_extraction_mt += d["stg_hp_extraction_mt"]
-            total_stg_mp_extraction_mt += d["stg_mp_extraction_mt"]
-            total_stg_condensate_mt += d["stg_condensate_mt"]
-            log_stg_extraction(d["asset_name"], ext)
-
-    if plant_id == _SEZ_PLANT_ID:
-        for d in dispatch:
-            if "STG" not in d.get("asset_type", "").upper():
-                continue
-            hours = float(d.get("op_hours", 0.0))
-            mwh = float(d.get("dispatched_mwh", 0.0))
-            load_mw = mwh / hours if hours > 0 else 0.0
-            ext = calculate_sez_stg_extraction(load_mw)
-            stg_num = _stg_num_from_name(d["asset_name"])
-            d["stg_hp_inlet_tph"] = round(ext["hp_inlet_tph"], 4)
-            d["stg_hp_for_power_tph"] = round(ext["hp_for_power_tph"], 4)
-            d["stg_hp_for_mp_consumption_tph"] = round(ext["hp_for_mp_extraction_tph"], 4)
-            d["stg_mp_extraction_tph"] = round(ext["mp_extraction_tph"], 4)
-            d["stg_ssc_kg_kwh"] = round(ext["ssc_kg_kwh"], 4)
-            d["stg_heat_rate_kcal_kwh"] = round(ext["fy2025_26_heat_rate_kcal_kwh"], 4)
-            d["stg_hp_consumption_mt"] = round(ext["hp_inlet_tph"] * hours, 2)
-            d["stg_hp_for_power_mt"] = round(ext["hp_for_power_tph"] * hours, 2)
-            d["stg_hp_for_mp_consumption_mt"] = round(ext["hp_for_mp_extraction_tph"] * hours, 2)
-            d["stg_mp_extraction_mt"] = round(ext["mp_extraction_tph"] * hours, 2)
-            d["stg_mp_material"] = f"STG{stg_num}_MP STEAM" if stg_num else ""
-            total_stg_mp_extraction_mt += d["stg_mp_extraction_mt"]
-            logger.info(
-                "  SEZ STG calculation: %s load=%.4f MW, HP inlet=%.2f TPH, "
-                "HP power=%.2f TPH, HP for MP=%.2f TPH, MP extraction=%.2f TPH, "
-                "SSC=%.4f kg/kWh, heat rate=%.2f kcal/kWh",
-                d["asset_name"], load_mw, ext["hp_inlet_tph"],
-                ext["hp_for_power_tph"], ext["hp_for_mp_extraction_tph"],
-                ext["mp_extraction_tph"], ext["ssc_kg_kwh"],
-                ext["fy2025_26_heat_rate_kcal_kwh"],
-            )
-
-    total_stg_hp_consumption_mt = sum(
-        float(d.get("stg_hp_consumption_mt", 0.0)) for d in dispatch
-    )
-    total_stg_hp_for_power_mt = sum(
-        float(d.get("stg_hp_for_power_mt", 0.0)) for d in dispatch
-    )
-    total_stg_hp_for_mp_consumption_mt = sum(
-        float(d.get("stg_hp_for_mp_consumption_mt", 0.0)) for d in dispatch
-    )
+    # 4b. STG extraction/consumption derived fields (DTA + SEZ)
+    stg_totals = _apply_stg_derived_fields(plant_id, dispatch)
 
     return {
         "demand_mwh": total_demand,
@@ -999,13 +1169,13 @@ def dispatch_power(
         "total_generation_mwh": round(total_gen, 2),
         "total_free_steam_mt": total_free_steam,
         "total_aux_power_mwh": total_aux,
-        "total_stg_shp_consumption_mt": round(total_stg_shp_consumption_mt, 2),
-        "total_stg_hp_consumption_mt": round(total_stg_hp_consumption_mt, 2),
-        "total_stg_hp_for_power_mt": round(total_stg_hp_for_power_mt, 2),
-        "total_stg_hp_for_mp_consumption_mt": round(total_stg_hp_for_mp_consumption_mt, 2),
-        "total_stg_hp_extraction_mt": round(total_stg_hp_extraction_mt, 2),
-        "total_stg_mp_extraction_mt": round(total_stg_mp_extraction_mt, 2),
-        "total_stg_condensate_mt": round(total_stg_condensate_mt, 2),
+        "total_stg_shp_consumption_mt": round(stg_totals["shp_consumption_mt"], 2),
+        "total_stg_hp_consumption_mt": round(stg_totals["hp_consumption_mt"], 2),
+        "total_stg_hp_for_power_mt": round(stg_totals["hp_for_power_mt"], 2),
+        "total_stg_hp_for_mp_consumption_mt": round(stg_totals["hp_for_mp_consumption_mt"], 2),
+        "total_stg_hp_extraction_mt": round(stg_totals["hp_extraction_mt"], 2),
+        "total_stg_mp_extraction_mt": round(stg_totals["mp_extraction_mt"], 2),
+        "total_stg_condensate_mt": round(stg_totals["condensate_mt"], 2),
         "spinning_margin_mw": power_spinning_margin,
         "surplus_mwh": surplus,
         "deficit_mwh": deficit,
@@ -1017,6 +1187,198 @@ def dispatch_power(
             else "Demand met"
         ),
     }
+
+
+def _match_pool_transfers(plug_by_plant: dict, tolerance_mwh: float = 0.01) -> list:
+    """Decompose signed per-CPP plug positions into a deterministic transfer matrix.
+
+    Positive plug = import requirement; negative plug = export position.
+    This is a reporting decomposition of the closed electrical pool — it does
+    not assert dedicated physical lines between each pair.
+    """
+    exporters = [[pid, -value] for pid, value in plug_by_plant.items() if value < -tolerance_mwh]
+    importers = [[pid, value] for pid, value in plug_by_plant.items() if value > tolerance_mwh]
+    transfers = []
+
+    for exporter in exporters:
+        for importer in importers:
+            quantity = min(exporter[1], importer[1])
+            if quantity <= tolerance_mwh:
+                continue
+            transfers.append({
+                "sender_plant_id": exporter[0],
+                "receiver_plant_id": importer[0],
+                "quantity_mwh": round(quantity, 2),
+            })
+            exporter[1] -= quantity
+            importer[1] -= quantity
+            if exporter[1] <= tolerance_mwh:
+                break
+
+    return transfers
+
+
+def _log_pool_dispatch(pool: dict, results: dict, plant_ids: list, month: int, year: int) -> None:
+    """Compact per-iteration log of the pooled JMD power dispatch."""
+    sep = "=" * 78
+    logger.info("  %s", sep)
+    logger.info("  JMD POWER POOL DISPATCH  (%s %d)", _MONTH_NAMES.get(month, ""), year)
+    logger.info("  %s", sep)
+    logger.info("  Pool demand: %.2f MWh   Pool generation: %.2f MWh",
+                pool["total_demand_mwh"], pool["total_generation_mwh"])
+    if pool["surplus_mwh"] > 0:
+        logger.info("  ⚠ POOL SURPLUS: %.2f MWh (minimum generation above demand)",
+                    pool["surplus_mwh"])
+    elif pool["deficit_mwh"] > 0:
+        logger.info("  ⚠ POOL DEFICIT: %.2f MWh (max generation below demand)",
+                    pool["deficit_mwh"])
+
+    logger.info("  %-13s  %14s  %14s  %14s", "CPP", "Demand MWh", "Gen MWh", "Plug MWh")
+    logger.info("  %s  %s  %s  %s", "-" * 13, "-" * 14, "-" * 14, "-" * 14)
+    for pid in plant_ids:
+        r = results.get(pid, {})
+        logger.info("  %-13s  %14.2f  %14.2f  %14.2f",
+                    str(pid)[:13],
+                    r.get("demand_mwh", 0.0),
+                    r.get("total_generation_mwh", 0.0),
+                    r.get("plug_mwh", 0.0))
+    logger.info("  %-13s  %14.2f", "CLOSURE", pool["closure_residual_mwh"])
+
+    if pool["transfers"]:
+        logger.info("  Pool transfer decomposition:")
+        for t in pool["transfers"]:
+            logger.info("    %s -> %s: %.2f MWh",
+                        t["sender_plant_id"], t["receiver_plant_id"], t["quantity_mwh"])
+    logger.info("  %s", sep)
+
+
+def dispatch_power_pool(
+    plant_ids: list,
+    month: int,
+    year: int,
+    demands_by_plant: dict = None,
+    ods_readers: dict = None,
+    gt_heat_rate_dfs: dict = None,
+) -> dict:
+    """Dispatch all JMD CPP power assets as one pool by priority.
+
+    Builds each CPP's asset table, merges them into a single pool, runs the
+    shared min-first + priority-ramp allocation against the combined demand,
+    then splits the result back per CPP — enriching each asset slice with the
+    owning plant's POWERGEN norms, GT heat-rate lookup, and STG curves so the
+    per-CPP result dicts are identical in shape to dispatch_power().
+
+    Args:
+        plant_ids:        CPP plant UUIDs to include in the pool
+        month:            1-12
+        year:             calendar year
+        demands_by_plant: {plant_id: dispatch_demands dict} — each dict carries
+                          "_power_process_mwh" / "_power_fixed_mwh" already net
+                          of that plant's external import (CTU) and U4U
+                          increment.  Falls back to raw DB demand if missing.
+        ods_readers:      {plant_id: norms reader} for per-plant enrichment
+        gt_heat_rate_dfs: {plant_id: GT heat rate DataFrame}
+
+    Returns:
+        {
+            "plants": {plant_id: power_result dict (same keys as dispatch_power)
+                       plus "plant_id" and "plug_mwh"},
+            "pool": {
+                "total_demand_mwh", "total_generation_mwh",
+                "surplus_mwh", "deficit_mwh",
+                "plug_by_plant_mwh", "closure_residual_mwh",
+                "transfers", "demand_by_plant",
+            },
+        }
+    """
+    demands_by_plant = demands_by_plant or {}
+    ods_readers = ods_readers or {}
+    gt_heat_rate_dfs = gt_heat_rate_dfs or {}
+
+    # 1. Build the combined asset table — tag each asset with its owning CPP.
+    combined = []
+    for pid in plant_ids:
+        assets = _build_asset_table(pid, month, year)
+        _apply_power_spinning_margin(assets, pid)
+        for a in assets:
+            combined.append({
+                **a,
+                "plant_id": pid,
+                "dispatched_mw": 0.0,
+                "dispatched_mwh": 0.0,
+            })
+
+    # 2. Per-CPP demands (process + fixed + U4U increment − external import).
+    demand_by_plant = {
+        pid: _get_power_demand(pid, month, year, demands=demands_by_plant.get(pid))
+        for pid in plant_ids
+    }
+    total_demand = sum(d["total_mwh"] for d in demand_by_plant.values())
+
+    # 3. Single min-first + priority-ramp allocation across the whole pool.
+    total_gen = _min_first_allocation(combined, total_demand)
+
+    # 4. Split back per CPP and enrich with each plant's own norms/curves.
+    results = {}
+    for pid in plant_ids:
+        plant_dispatch = [d for d in combined if d["plant_id"] == pid]
+        reader = ods_readers.get(pid)
+        if reader is None:
+            reader = get_norms_reader(pid, month, year)
+        excel_norms = reader.get_powergen_norms()
+        gt_lookup = build_gt_heat_rate_lookup(gt_heat_rate_dfs.get(pid))
+        _enrich_power_dispatch(plant_dispatch, excel_norms, gt_lookup)
+        stg_totals = _apply_stg_derived_fields(pid, plant_dispatch)
+
+        gen = round(sum(d["dispatched_mwh"] for d in plant_dispatch), 2)
+        demand = demand_by_plant[pid]
+        demand_mwh = demand["total_mwh"]
+        surplus = round(max(0.0, gen - demand_mwh), 2)
+        deficit = round(max(0.0, demand_mwh - gen), 2)
+        total_free_steam = round(sum(d.get("free_steam_mt", 0.0) for d in plant_dispatch), 2)
+        total_aux = round(sum(d.get("aux_power", 0.0) for d in plant_dispatch), 2)
+
+        results[pid] = {
+            "plant_id": pid,
+            "demand_mwh": demand_mwh,
+            "demand_detail": demand,
+            "total_generation_mwh": gen,
+            "total_free_steam_mt": total_free_steam,
+            "total_aux_power_mwh": total_aux,
+            "total_stg_shp_consumption_mt": round(stg_totals["shp_consumption_mt"], 2),
+            "total_stg_hp_consumption_mt": round(stg_totals["hp_consumption_mt"], 2),
+            "total_stg_hp_for_power_mt": round(stg_totals["hp_for_power_mt"], 2),
+            "total_stg_hp_for_mp_consumption_mt": round(stg_totals["hp_for_mp_consumption_mt"], 2),
+            "total_stg_hp_extraction_mt": round(stg_totals["hp_extraction_mt"], 2),
+            "total_stg_mp_extraction_mt": round(stg_totals["mp_extraction_mt"], 2),
+            "total_stg_condensate_mt": round(stg_totals["condensate_mt"], 2),
+            "spinning_margin_mw": 0.0,
+            "surplus_mwh": surplus,
+            "deficit_mwh": deficit,
+            "plug_mwh": round(demand_mwh - gen, 2),
+            "dispatch_mode": "jmd_pool",
+            "assets": plant_dispatch,
+            "message": (
+                f"EXPORT: {surplus:.2f} MWh to JMD pool" if surplus > 0
+                else f"IMPORT: {deficit:.2f} MWh from JMD pool" if deficit > 0
+                else "Balanced"
+            ),
+        }
+
+    plug_by_plant = {pid: results[pid]["plug_mwh"] for pid in plant_ids}
+    pool = {
+        "total_demand_mwh": round(total_demand, 2),
+        "total_generation_mwh": round(total_gen, 2),
+        "surplus_mwh": round(max(0.0, total_gen - total_demand), 2),
+        "deficit_mwh": round(max(0.0, total_demand - total_gen), 2),
+        "plug_by_plant_mwh": plug_by_plant,
+        "closure_residual_mwh": round(sum(plug_by_plant.values()), 2),
+        "transfers": _match_pool_transfers(plug_by_plant),
+        "demand_by_plant": demand_by_plant,
+    }
+    _log_pool_dispatch(pool, results, plant_ids, month, year)
+
+    return {"plants": results, "pool": pool}
 
 
 def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int, year: int, free_steam: float, spinning_margin: float = 0.0):
@@ -1047,6 +1409,25 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
                     grade, process_fixed, letdown, byprod, net)
     logger.info("")
     logger.info("  Total Free Steam available: %.2f MT", free_steam)
+
+    # PRDS letdown stations (capacity-bounded — DTA only)
+    prds_assets = demand_details.get("_prds_assets") or []
+    if prds_assets:
+        logger.info("")
+        logger.info("  PRDS LETDOWN STATIONS")
+        logger.info("  %-25s  %-14s  %-14s  %8s  %12s  %12s  %12s  %12s  %8s",
+                    "Asset", "Produces", "Consumes", "Hours", "Min MT", "Max MT", "Output MT", "Feed MT", "Load %")
+        for p in prds_assets:
+            load_pct = (p["dispatched_mt"] / p["max_mt"] * 100.0) if p["max_mt"] > 0 else 0.0
+            logger.info("  %-25s  %-14s  %-14s  %8.2f  %12.2f  %12.2f  %12.2f  %12.2f  %7.1f%%",
+                        p["asset_name"], p["produces"], p["consumes"], p["op_hours"],
+                        p["min_mt"], p["max_mt"], p["dispatched_mt"],
+                        p["dispatched_mt"] * p["norm"], load_pct)
+            if p["unmet_mt"] > 0.0:
+                logger.warning("    ⚠ CAPACITY LIMITED: %.2f MT of %s demand unmet (reported as deficit, not routed)",
+                               p["unmet_mt"], p["produces"])
+            if p["surplus_mt"] > 0.0:
+                logger.info("    Note: min-load forced %.2f MT surplus %s", p["surplus_mt"], p["produces"])
     logger.info("")
 
     # Supplementary Firing Dispatch
@@ -1090,6 +1471,24 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
             logger.warning("  !  Assets are dispatched beyond effective max — margin NOT maintained!")
             logger.warning("  " + "!" * 76)
     logger.info("  %s", sep)
+
+
+def _bounded_prds_output(net_mt: float, prds: dict) -> tuple:
+    """Clamp PRDS output to [min_mt, max_mt] for a given net grade demand.
+
+    Returns (prds_out_mt, unmet_mt, surplus_mt):
+      - prds_out_mt: actual lower-grade output from this PRDS
+      - unmet_mt:    demand above max capacity (deficit — reported, not routed)
+      - surplus_mt:  forced output above demand when min load exceeds net
+    """
+    max_mt = prds.get("max_mt", 0.0)
+    min_mt = prds.get("min_mt", 0.0)
+    if prds.get("op_hours", 0.0) <= 0 or max_mt <= 0:
+        return 0.0, max(0.0, net_mt), 0.0
+    out = min(max(0.0, net_mt, min_mt), max_mt)
+    unmet = max(0.0, net_mt - out)
+    surplus = max(0.0, out - max(0.0, net_mt))
+    return out, unmet, surplus
 
 
 def dispatch_steam(
@@ -1245,6 +1644,48 @@ def dispatch_steam(
                 "total_output_mt": 0.0,
             })
 
+    # 3a. PRDS assets (DTA only) — bounded letdown stations.  They are not
+    # dispatched like HRSGs; their output is the net residual of the grade
+    # they produce, clamped to [min_tph, max_tph] x operational hours.  The
+    # parent-grade letdown they consume is bounded accordingly.
+    prds_by_grade = {}
+    if plant_id == _DTA_PLANT_ID:
+        mk = _month_key(month)
+        for asset in steam_assets:
+            if str(asset.get("asset_type", "")).upper() != "PRDS":
+                continue
+            produced_dis = asset.get("steam_type", "")
+            step = next(
+                (s for s in cascade if s.get("produces") == produced_dis),
+                None,
+            )
+            if step is None:
+                continue
+            cap_row = caps_by_id.get(asset["asset_id"], {})
+            min_tph = cap_row.get(f"{mk}_Min")
+            if min_tph is None:
+                min_tph = cap_row.get("fixed_min")
+            max_tph = cap_row.get(f"{mk}_Max")
+            if max_tph is None:
+                max_tph = cap_row.get("fixed_max")
+            op_hours = float(
+                hours_by_id.get(asset["asset_id"], {}).get("operational_hours") or 0.0
+            )
+            grade = produced_dis.replace(" Steam_Dis", "").replace("_Dis", "").lower()
+            prds_by_grade[grade] = {
+                "asset_id": asset["asset_id"],
+                "asset_name": asset.get("asset_name", ""),
+                "produces": produced_dis,
+                "consumes": step["consumes"],
+                "norm": step["norm"],
+                "op_hours": op_hours,
+                "min_mt": float(min_tph or 0.0) * op_hours,
+                "max_mt": float(max_tph or 0.0) * op_hours,
+                "dispatched_mt": 0.0,
+                "unmet_mt": 0.0,
+                "surplus_mt": 0.0,
+            }
+
     # 3b. Apply steam spinning margin — reduces effective_max_tph per asset
     steam_spinning_margin = _apply_spinning_margin(dispatch_assets, plant_id)
 
@@ -1267,6 +1708,8 @@ def dispatch_steam(
     # previous behaviour since their lowest grade is 'lp'.
     lowest_grade = grade_prefixes[0] if grade_prefixes else "lp"
     byproduct_by_grade: dict = {}  # {grade: total byproduct MT (negative)}
+    prds_out_by_grade: dict = {}   # {grade: bounded PRDS output MT}
+    prds_unmet_by_grade: dict = {} # {grade: demand above PRDS capacity MT}
     demand_details = {}
     free_steam = float(power_result.get("total_free_steam_mt", 0.0))
     
@@ -1381,8 +1824,13 @@ def dispatch_steam(
             # ── Linear cascade (original logic for other plants) ───────────
             prev_letdown = 0.0
             for i, g in enumerate(grade_prefixes):
-                if g == top_grade or (plant_id == _DTA_PLANT_ID and g == "hp"):
-                    # Top-grade and DTA HP PRDS consumption is already present in U4U demand.
+                if g == top_grade or plant_id in _U4U_LETDOWN_FEED_PLANTS:
+                    # Top-grade: no higher grade feeds it within the cascade.
+                    # U4U-letdown-feed plants (DTA, C2): every grade's PRDS
+                    # feed reaches it through the U4U path
+                    # (_calculate_steam_cascade_u4u adds the letdown onto the
+                    # parent _Dis producer's demand), so prev_letdown must
+                    # not be added here or the same flow is counted twice.
                     net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0)
                 else:
                     net = raw_demands.get(f"{g}_process", 0.0) + raw_demands.get(f"{g}_fixed", 0.0) + prev_letdown
@@ -1394,7 +1842,17 @@ def dispatch_steam(
                 # Letdown: this grade's net demand drives consumption from the grade above
                 if i < len(cascade):
                     norm = cascade[i]["norm"]
-                    letdown = max(0.0, net) * norm
+                    prds = prds_by_grade.get(g)
+                    if prds is not None:
+                        out, unmet, surplus = _bounded_prds_output(net, prds)
+                        prds["dispatched_mt"] = out
+                        prds["unmet_mt"] = unmet
+                        prds["surplus_mt"] = surplus
+                        prds_out_by_grade[g] = out
+                        prds_unmet_by_grade[g] = unmet
+                        letdown = out * norm
+                    else:
+                        letdown = max(0.0, net) * norm
                 else:
                     letdown = 0.0
                 letdown_by_grade[g] = letdown
@@ -1414,7 +1872,17 @@ def dispatch_steam(
             for i, g in enumerate(grade_prefixes):
                 if i < len(cascade):
                     norm = cascade[i]["norm"]
-                    letdown_by_grade[g] = max(0.0, net_by_grade[g]) * norm
+                    prds = prds_by_grade.get(g)
+                    if prds is not None:
+                        out, unmet, surplus = _bounded_prds_output(net_by_grade[g], prds)
+                        prds["dispatched_mt"] = out
+                        prds["unmet_mt"] = unmet
+                        prds["surplus_mt"] = surplus
+                        prds_out_by_grade[g] = out
+                        prds_unmet_by_grade[g] = unmet
+                        letdown_by_grade[g] = out * norm
+                    else:
+                        letdown_by_grade[g] = max(0.0, net_by_grade[g]) * norm
                 else:
                     letdown_by_grade[g] = 0.0
 
@@ -1424,6 +1892,8 @@ def dispatch_steam(
             f"{lowest_grade}_byproduct": byproduct_by_grade.get(lowest_grade, 0.0),
             **{f"{g}_letdown": letdown_by_grade[g] for g in grade_prefixes},
             **{f"{g}_net": round(net_by_grade[g], 2) for g in grade_prefixes},
+            **{f"{g}_prds_out": prds_out_by_grade[g] for g in grade_prefixes if g in prds_out_by_grade},
+            **{f"{g}_prds_unmet": prds_unmet_by_grade[g] for g in grade_prefixes if g in prds_unmet_by_grade},
             "_cascade_grades": grade_prefixes,
             "_top_grade": top_grade,
             "stg_shp_consumption_mt": stg_totals.get("shp_consumption_mt", 0.0),
@@ -1573,6 +2043,12 @@ def dispatch_steam(
         a["min_tph"] = round(a["min_tph"], 2)
         a["max_tph"] = round(a["max_tph"], 2)
 
+    # PRDS audit rows (DTA) — exposed through demand_details for the U4U
+    # cascade and the dispatch log.
+    prds_assets = sorted(prds_by_grade.values(), key=lambda p: p["produces"])
+    demand_details["_prds_assets"] = prds_assets
+    prds_unmet_mt = round(sum(p["unmet_mt"] for p in prds_assets), 2)
+
     # Log results
     _log_steam_dispatch_result(demand_details, dispatch_assets, month, year, free_steam, steam_spinning_margin)
 
@@ -1581,7 +2057,7 @@ def dispatch_steam(
     net_top = demand_details.get(f"{top_grade}_net", 0.0)
     surplus_mt = round(max(0.0, total_steam_gen - net_top), 2)
     deficit_mt = round(max(0.0, net_top - total_steam_gen), 2)
-    
+
     return {
         "demand_detail": demand_details,
         "total_free_steam_mt": free_steam,
@@ -1589,11 +2065,16 @@ def dispatch_steam(
         "total_generation_mt": total_steam_gen,
         "surplus_mt": surplus_mt,
         "deficit_mt": deficit_mt,
+        "prds_unmet_mt": prds_unmet_mt,
+        "prds_assets": prds_assets,
         "assets": dispatch_assets,
         "message": (
             f"SURPLUS: {surplus_mt:.2f} MT over-generation" if surplus_mt > 0
             else f"DEFICIT: {deficit_mt:.2f} MT under-generation" if deficit_mt > 0
             else "Demand met"
+        ) + (
+            f" | PRDS deficit: {prds_unmet_mt:.2f} MT unmet lower-grade demand"
+            if prds_unmet_mt > 0 else ""
         ),
     }
 

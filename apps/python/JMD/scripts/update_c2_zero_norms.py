@@ -5,6 +5,10 @@ Calculates reverse norms from C2_JMD.ODS (Quantity / Gen Qty) and patches the
 DB for the specific utility-material rows where the ODS/DB norm is zero but the
 quantity is non-zero. Adds traceability remarks and updates timestamps.
 
+Fixed-consumption utilities (CPPNorms.NormType_FK_Id = 10) are SKIPPED: their
+quantity does not scale with generation, so their norms must remain 0/blank —
+the same convention as SEZ / SEZ-PCG (and the engine's FIXED_CONSUMPTION_NORM_TYPE).
+
 Usage:
     py update_c2_zero_norms.py          # dry run (default)
     py update_c2_zero_norms.py --execute
@@ -47,6 +51,10 @@ MONTH_COL_MAP = {
     7: "Jul_Norms", 8: "Aug_Norms", 9: "Sep_Norms",
     10: "Oct_Norms", 11: "Nov_Norms", 12: "Dec_Norms",
 }
+
+# NormType 10 = "Quantity" (fixed consumption). These utilities consume a fixed
+# quantity regardless of generation — norms stay 0; never reverse-calculate them.
+FIXED_CONSUMPTION_NORM_TYPE = 10
 
 
 def _to_float(value):
@@ -157,6 +165,18 @@ def _resolve_db_targets(conn, reverse_rows):
     )
     plant_id_to_name = {r[0]: r[1] for r in cur.fetchall()}
 
+    # NormsHeader ids marked fixed consumption (NormType=10) under this CPP -
+    # their norms must stay 0 (quantity is fixed, not generation-proportional).
+    placeholders = ",".join("?" for _ in sub_plant_ids)
+    cur.execute(
+        f"""SELECT DISTINCT cn.NormsHeader_FK_Id
+            FROM CPPNorms cn WITH (NOLOCK)
+            JOIN NormsHeader nh WITH (NOLOCK) ON nh.Id = cn.NormsHeader_FK_Id
+            WHERE cn.NormType_FK_Id = ? AND nh.Plant_FK_Id IN ({placeholders})""",
+        [FIXED_CONSUMPTION_NORM_TYPE] + list(sub_plant_ids),
+    )
+    fixed_header_ids = {str(r[0]).upper() for r in cur.fetchall()}
+
     # Build (plant_name, utility, material) -> reverse_norm map
     # For utility rows in ODS, plant_name is the ODS Utility Plant column.
     # In DB, NormsHeader maps to Plants.Name via Plant_FK_Id.
@@ -166,6 +186,7 @@ def _resolve_db_targets(conn, reverse_rows):
         reverse_by_key[key] = r
 
     matched = []
+    skipped_fixed = 0
 
     for plant_id, plant_name in plant_id_to_name.items():
         cur.execute(
@@ -182,6 +203,9 @@ def _resolve_db_targets(conn, reverse_rows):
         for header_id, utility_name, material_name, nmd_id, current_norm in cur.fetchall():
             key = (plant_name.strip().lower(), str(utility_name).strip().lower(), str(material_name).strip().lower())
             if key in reverse_by_key:
+                if str(header_id).upper() in fixed_header_ids:
+                    skipped_fixed += 1
+                    continue
                 reverse_row = reverse_by_key[key]
                 # Find CPPNorms row
                 cur2 = conn.cursor()
@@ -205,6 +229,9 @@ def _resolve_db_targets(conn, reverse_rows):
                     "quantity": reverse_row["quantity"],
                     "gen_qty": reverse_row["gen_qty"],
                 })
+
+    if skipped_fixed:
+        print(f"Skipped {skipped_fixed} fixed-consumption (NormType=10) row(s) - norms stay 0 by design.")
 
     return matched
 
