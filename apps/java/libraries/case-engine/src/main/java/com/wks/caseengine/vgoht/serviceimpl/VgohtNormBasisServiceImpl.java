@@ -534,7 +534,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		
 
-		if (!"boolean".equalsIgnoreCase(existing.getType())) continue;
+		if (!"boolean".equalsIgnoreCase(existing.getUOM())) continue;
 
 		if (!((dto.getApr() == null || dto.getApr() == 0.0 || dto.getApr() == 1.0)
 			&& (dto.getMay() == null || dto.getMay() == 0.0 || dto.getMay() == 1.0)

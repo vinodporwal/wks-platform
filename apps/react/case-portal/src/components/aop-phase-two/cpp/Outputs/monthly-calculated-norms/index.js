@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -9,141 +9,15 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-
-// TODO: remove dummy rows once the SP/API is ready
-const DUMMY_ROWS = [
-  {
-    id: 'dummy_1',
-    generatingPlantName: 'CPP Unit 1',
-    utilityName: 'Steam',
-    utilityId: 'UTL-001',
-    uom: 'MT',
-    accountName: 'Fuel Consumption',
-    materialName: 'Coal',
-    materialId: 'SAP-1001',
-    issuingPlantName: 'Plant A',
-    issuingUom: 'KG',
-    normTypeName: 'Fixed',
-    aprNorms: 1.234567,
-    mayNorms: 1.245678,
-    junNorms: 1.256789,
-    julNorms: 1.26789,
-    augNorms: 1.278901,
-    sepNorms: 1.289012,
-    octNorms: 1.290123,
-    novNorms: 1.301234,
-    decNorms: 1.312345,
-    janNorms: 1.323456,
-    febNorms: 1.334567,
-    marNorms: 1.345678,
-  },
-  {
-    id: 'dummy_2',
-    generatingPlantName: 'CPP Unit 1',
-    utilityName: 'Power',
-    utilityId: 'UTL-002',
-    uom: 'KWH',
-    accountName: 'Power Consumption',
-    materialName: 'Diesel',
-    materialId: 'SAP-1002',
-    issuingPlantName: 'Plant A',
-    issuingUom: 'LTR',
-    normTypeName: 'Variable',
-    aprNorms: 2.11,
-    mayNorms: 2.12,
-    junNorms: 2.13,
-    julNorms: 2.14,
-    augNorms: 2.15,
-    sepNorms: 2.16,
-    octNorms: 2.17,
-    novNorms: 2.18,
-    decNorms: 2.19,
-    janNorms: 2.2,
-    febNorms: 2.21,
-    marNorms: 2.22,
-  },
-  {
-    id: 'dummy_3',
-    generatingPlantName: 'CPP Unit 2',
-    utilityName: 'Steam',
-    utilityId: 'UTL-003',
-    uom: 'MT',
-    accountName: 'Fuel Consumption',
-    materialName: 'Natural Gas',
-    materialId: 'SAP-1003',
-    issuingPlantName: 'Plant B',
-    issuingUom: 'SM3',
-    normTypeName: 'Fixed',
-    aprNorms: 0.98,
-    mayNorms: 0.99,
-    junNorms: 1.0,
-    julNorms: 1.01,
-    augNorms: 1.02,
-    sepNorms: 1.03,
-    octNorms: 1.04,
-    novNorms: 1.05,
-    decNorms: 1.06,
-    janNorms: 1.07,
-    febNorms: 1.08,
-    marNorms: 1.09,
-  },
-  {
-    id: 'dummy_4',
-    generatingPlantName: 'CPP Unit 2',
-    utilityName: 'Water',
-    utilityId: 'UTL-004',
-    uom: 'M3',
-    accountName: 'Water Consumption',
-    materialName: 'Raw Water',
-    materialId: 'SAP-1004',
-    issuingPlantName: 'Plant B',
-    issuingUom: 'M3',
-    normTypeName: 'Variable',
-    aprNorms: 3.5,
-    mayNorms: 3.55,
-    junNorms: 3.6,
-    julNorms: 3.65,
-    augNorms: 3.7,
-    sepNorms: 3.75,
-    octNorms: 3.8,
-    novNorms: 3.85,
-    decNorms: 3.9,
-    janNorms: 3.95,
-    febNorms: 4.0,
-    marNorms: 4.05,
-  },
-  {
-    id: 'dummy_5',
-    generatingPlantName: 'CPP Unit 3',
-    utilityName: 'Power',
-    utilityId: 'UTL-005',
-    uom: 'KWH',
-    accountName: 'Power Consumption',
-    materialName: 'Coal',
-    materialId: 'SAP-1001',
-    issuingPlantName: 'Plant C',
-    issuingUom: 'KG',
-    normTypeName: 'Fixed',
-    aprNorms: 1.5,
-    mayNorms: 1.52,
-    junNorms: 1.54,
-    julNorms: 1.56,
-    augNorms: 1.58,
-    sepNorms: 1.6,
-    octNorms: 1.62,
-    novNorms: 1.64,
-    decNorms: 1.66,
-    janNorms: 1.68,
-    febNorms: 1.7,
-    marNorms: 1.72,
-  },
-]
+import useConfigurationDates from 'components/aop-phase-two/common/hooks/useConfigurationDates'
 
 const MonthlyCalculatedNorms = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { siteObject, plantObject, year, screenTitle, jmdSelectedPlants } =
     dataGridStore
+
+  const { startDate, endDate, error: configError } = useConfigurationDates()
 
   const PLANT_ID = plantObject?.id
   const lowerSiteName = siteObject?.name?.toLowerCase()
@@ -173,6 +47,25 @@ const MonthlyCalculatedNorms = () => {
 
   const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [AOP_YEAR])
   const valueFormat = customValueFormatterPhaseTwo(6)
+
+  const formatDate = (date) => {
+    if (!date) return ''
+    const yr = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${yr}-${month}-${day}`
+  }
+
+  // Show error notification if configuration is not set up
+  useEffect(() => {
+    if (configError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: configError,
+        severity: 'warning',
+      })
+    }
+  }, [configError])
 
   // Fiscal-year month order: Apr → Mar (field names match FixedNorms convention)
   const MONTH_TO_INDEX = {
@@ -223,6 +116,15 @@ const MonthlyCalculatedNorms = () => {
   // Base columns (read-only for output grid) — same as FixedNorms
   const baseColumns = useMemo(
     () => [
+      {
+        field: 'cppPlantName',
+        title: 'CPP Plant',
+        widthT: 180,
+        minWidth: 180,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
       {
         field: 'generatingPlantName',
         title: 'Generating Plant',
@@ -317,44 +219,46 @@ const MonthlyCalculatedNorms = () => {
   )
 
   const fetchData = useCallback(async () => {
-    if (!PLANT_ID_LIST?.length || !AOP_YEAR) return
+    if (!PLANT_ID_LIST?.length || !AOP_YEAR || !startDate || !endDate) return
     setLoading(true)
     try {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
       const response = await OutputApiService.getMonthlyCalculatedNorms(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        formattedStartDate,
+        formattedEndDate,
       )
       const data = response?.data || []
       const rowsWithId = data?.map((row, index) => ({
         ...row,
         id: row.id || `row_${index}`,
       }))
-      // TODO: remove dummy fallback once the SP/API is ready
-      setRows(rowsWithId.length ? rowsWithId : DUMMY_ROWS)
+      setRows(rowsWithId)
       if (!rowsWithId.length) {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
       }
     } catch (error) {
       console.error('Error fetching monthly calculated norms data:', error)
-      // TODO: remove dummy fallback once the SP/API is ready
-      setRows(DUMMY_ROWS)
+      setRows([])
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, startDate, endDate])
 
   useDebounce(
     () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+      if (PLANT_ID_LIST?.length && AOP_YEAR && startDate && endDate) {
         fetchData()
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchData],
+    [PLANT_ID_LIST, AOP_YEAR, startDate, endDate, fetchData],
   )
 
   const permissions = {
@@ -373,17 +277,22 @@ const MonthlyCalculatedNorms = () => {
   }
 
   const handleExport = async () => {
+    if (!startDate || !endDate) return
     setSnackbarOpen(true)
     setSnackbarData({
       message: 'Excel download started!',
       severity: 'info',
     })
     try {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
       await OutputApiService.exportMonthlyCalculatedNormsExcel(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
+        formattedStartDate,
+        formattedEndDate,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -412,7 +321,7 @@ const MonthlyCalculatedNorms = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['generatingPlantName']}
+        groupBy={['cppPlantName', 'generatingPlantName']}
         customHeight={65}
         pagable={false}
       />

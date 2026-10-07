@@ -399,7 +399,7 @@ public class PackagingConsumablesServiceImpl implements PackagingConsumablesServ
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -906,6 +906,8 @@ public class PackagingConsumablesServiceImpl implements PackagingConsumablesServ
 	        return aopMessageVM;
 	    }
 	}
+
+
 	@Transactional(readOnly = true)
 	public List<List<Map<String, Object>>> getAllColumnMetadataForPEE(
 	    String plantId, String aopYear, String periodFrom, String periodTo, String type, String storedProcedure) {
