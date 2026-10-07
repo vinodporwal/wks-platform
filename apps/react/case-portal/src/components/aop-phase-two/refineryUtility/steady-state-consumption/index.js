@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -16,10 +16,27 @@ import {
   downloadBlobExcel,
 } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 
+const MONTH_FIELDS = [
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+  'january',
+  'february',
+  'march',
+]
+
+const THREE_DECIMAL_UOMS = ['kw', 'kw/m3', 'kg/km3']
+
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
   const EXCEL_NAME = generateExcelName(
     dataGridStore,
     'Steady_State_Consumption',
@@ -27,6 +44,12 @@ const SteadyStateConsumption = () => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const siteName = (siteObject?.name || '').trim().toUpperCase()
+  const plantName = (plantObject?.name || '').trim()
+  const isDtaCtPlant =
+    siteName === 'DTA' &&
+    (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -41,174 +64,199 @@ const SteadyStateConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = customValueFormatterPhaseTwo(5)
-  const headerMap = generateHeaderNames(AOP_YEAR)
+  const formatValueByUom = useCallback(
+    (val, uom) => {
+      if (val === null || val === undefined || val === '') return ''
+      const num = parseFloat(val)
+      if (isNaN(num)) return val
 
-  const columns = [
-    {
-      field: 'id',
-      title: 'Id',
-      widthT: 250,
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
+      if (isDtaCtPlant) {
+        const cleanUom = String(uom ?? '')
+          .trim()
+          .toLowerCase()
+        const isThreeDecimal = THREE_DECIMAL_UOMS.some(
+          (u) => u.trim().toLowerCase() === cleanUom,
+        )
+        if (isThreeDecimal) {
+          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
+      return Math.trunc(num).toString()
     },
-    {
-      field: 'sapCode',
-      title: 'SAP MAT Code',
-      widthT: 250,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'productName',
-      title: 'Particulars',
-      widthT: 250,
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'normParameterTypeDisplayName',
-      title: 'Type',
-      widthT: 250,
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'april',
-      title: headerMap[4],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'july',
-      title: headerMap[7],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'august',
-      title: headerMap[8],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'september',
-      title: headerMap[9],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'october',
-      title: headerMap[10],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'november',
-      title: headerMap[11],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'december',
-      title: headerMap[12],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'january',
-      title: headerMap[1],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'february',
-      title: headerMap[2],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'march',
-      title: headerMap[3],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: true,
-      format: valueFormat,
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      widthT: 150,
-      minWidth: 120,
-      type: 'textarea',
-      editable: true,
-    },
-  ]
+    [isDtaCtPlant],
+  )
+
+  const columns = useMemo(() => {
+    const valueFormat = undefined
+    const headerMap = generateHeaderNames(AOP_YEAR)
+
+    return [
+      {
+        field: 'id',
+        title: 'Id',
+        widthT: 250,
+        minWidth: 200,
+        type: 'text',
+        editable: false,
+        locked: true,
+        hidden: true,
+      },
+      {
+        field: 'sapCode',
+        title: 'SAP MAT Code',
+        widthT: 250,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'productName',
+        title: 'Particulars',
+        widthT: 250,
+        minWidth: 200,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'normParameterTypeDisplayName',
+        title: 'Type',
+        widthT: 250,
+        minWidth: 200,
+        type: 'text',
+        editable: false,
+        locked: true,
+        hidden: true,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        widthT: 120,
+        minWidth: 120,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'april',
+        title: headerMap[4],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'may',
+        title: headerMap[5],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'june',
+        title: headerMap[6],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'july',
+        title: headerMap[7],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'august',
+        title: headerMap[8],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'september',
+        title: headerMap[9],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'october',
+        title: headerMap[10],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'november',
+        title: headerMap[11],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'december',
+        title: headerMap[12],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'january',
+        title: headerMap[1],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'february',
+        title: headerMap[2],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'march',
+        title: headerMap[3],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: true,
+        format: valueFormat,
+      },
+      {
+        field: 'remarks',
+        title: 'Remark',
+        widthT: 150,
+        minWidth: 120,
+        type: 'textarea',
+        editable: true,
+      },
+    ]
+  }, [isDtaCtPlant, AOP_YEAR])
 
   const dummyRows = []
 
@@ -216,7 +264,7 @@ const SteadyStateConsumption = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant])
 
   const fetchData = async () => {
     setLoading(true)
@@ -228,12 +276,33 @@ const SteadyStateConsumption = () => {
           AOP_YEAR,
         )
       const data = response?.data?.mcuNormsValueDTOList || []
-      const formattedData = data?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
-        id: item?.id || index + 1,
-        isEditable: true,
-      }))
+      const formattedData = data?.map((item, index) => {
+        const row = {
+          ...item,
+          remarks: item.remarks || '',
+          id: item?.id || index + 1,
+          isEditable: true,
+        }
+        const uom = item?.UOM || item?.uom || ''
+        if (isDtaCtPlant) {
+          MONTH_FIELDS.forEach((m) => {
+            if (row[m] !== undefined && row[m] !== null && row[m] !== '') {
+              row[m] = formatValueByUom(row[m], uom)
+            }
+          })
+        } else {
+          // Apart from isDtaCtPlant: show by default no decimal
+          MONTH_FIELDS.forEach((m) => {
+            if (row[m] !== undefined && row[m] !== null && row[m] !== '') {
+              const num = parseFloat(row[m])
+              if (!isNaN(num)) {
+                row[m] = Math.trunc(num).toString()
+              }
+            }
+          })
+        }
+        return row
+      })
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -259,7 +328,38 @@ const SteadyStateConsumption = () => {
       return
     }
 
-    const data = modifiedData.filter((row) => row.inEdit)
+    const data = modifiedData
+      .filter((row) => row.inEdit)
+      .map((row) => {
+        const uom = row?.UOM || row?.uom || ''
+        const updatedRow = { ...row }
+        if (isDtaCtPlant) {
+          MONTH_FIELDS.forEach((m) => {
+            if (
+              updatedRow[m] !== undefined &&
+              updatedRow[m] !== null &&
+              updatedRow[m] !== ''
+            ) {
+              updatedRow[m] = formatValueByUom(updatedRow[m], uom)
+            }
+          })
+        } else {
+          // Apart from isDtaCtPlant: show by default no decimal
+          MONTH_FIELDS.forEach((m) => {
+            if (
+              updatedRow[m] !== undefined &&
+              updatedRow[m] !== null &&
+              updatedRow[m] !== ''
+            ) {
+              const num = parseFloat(updatedRow[m])
+              if (!isNaN(num)) {
+                updatedRow[m] = Math.trunc(num).toString()
+              }
+            }
+          })
+        }
+        return updatedRow
+      })
     if (data.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
