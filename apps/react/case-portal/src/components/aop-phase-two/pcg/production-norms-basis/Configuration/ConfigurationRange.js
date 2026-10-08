@@ -59,22 +59,31 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
-
-  const [state, setState] = useState({
-    rows: [], originalRows: [], modifiedCells: {}, customModifiedCells: {},
-    loading: false, snackbarOpen: false, snackbarData: { message: '', severity: 'info' },
-    remarkDialogOpen: false, currentRemark: '', currentRowId: null
+  const [modifiedCells, setModifiedCells] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
   })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
+  const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
 
-  const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }))
-  const showSnackbar = (message, severity = 'info', autoHide = true) => updateState({ snackbarOpen: true, snackbarData: { message, severity, autoHide } })
+  const showSnackbar = (message, severity = 'info', autoHide = true) => {
+    setSnackbarOpen(true)
+    setSnackbarData({ message, severity, autoHide })
+  }
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) fetchConfigurationData()
   }, [PLANT_ID, AOP_YEAR, refreshData])
 
   const fetchConfigurationData = async () => {
-    updateState({ loading: true })
+    setLoading(true)
     try {
       const apiRes = await ProductionNormsApiService.getConfigurationData(keycloak, PLANT_ID, AOP_YEAR)
       
@@ -92,7 +101,10 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
       if (!res.length) {
         showSnackbar('No data found')
-        return updateState({ rows: [], loading: false })
+        setLoading(false) 
+        setRows([])
+        setOriginalRows([])
+        return 
       }
 
       let formattedData = res.map((item, index) => {
@@ -127,17 +139,17 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         })
       }
 
-      updateState({ rows: formattedData, originalRows: formattedData })
+      setRows(formattedData)
+      setOriginalRows(formattedData)
+      setLoading(false) 
     } catch (error) {
       console.error('Error fetching data:', error)
       showSnackbar('Error fetching data', 'error')
-    } finally {
-      updateState({ loading: false })
+      setLoading(false) 
     }
   }
 
   const saveChanges = async () => {
-    const { modifiedCells, originalRows } = state
     const modifiedData = Object.values(modifiedCells)
     console.log("modifiedData", modifiedData)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
@@ -147,13 +159,13 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     const validationError = validateRowDataWithRemarks(
       dataToSave.filter((item) => item.isEditable),
       originalRows,
-      ['targetValue', 'range'],
+      ['targetValue', 'range', 'selection'],
       'displayName'
     )
 
-    // if (validationError) return showSnackbar(validationError, 'error')
+    if (validationError) return showSnackbar(validationError, 'error')
 
-    updateState({ loading: true })
+    setLoading(true)
     
     const payload = modifiedData.map((rest) => ({
       ...rest,
@@ -161,7 +173,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
     try {
       const response = await ProductionNormsApiService.saveConfigurationData(keycloak, AOP_YEAR, payload, PLANT_ID)
-      updateState({ modifiedCells: {} })
+      setModifiedCells({})
       
       showSnackbar(`Successfully saved ${modifiedData.length} changes!`, 'success')
       if (response?.code === 422) {
@@ -171,13 +183,13 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     } catch (error) {
       console.error('Error saving data:', error)
       showSnackbar('Failed to save changes. Please try again.', 'error')
-      updateState({ loading: false })
+      setLoading(false) 
     }
   }
 
   const handleExcelUpload = async (file) => {
     if (!file) return
-    updateState({ loading: true })
+    setLoading(true)
     try {
       const response = await ProductionNormsApiService.importConfigurationExcel(file, keycloak, PLANT_ID, AOP_YEAR)
       
@@ -194,7 +206,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     } catch (error) {
       showSnackbar(`Failed to import Excel file: ${error.message}`, 'error')
     } finally {
-      updateState({ loading: false })
+      setLoading(false) 
     }
   }
 
@@ -247,32 +259,32 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
   return (
     <Box>
-      <LoaderBackdrop open={state.loading} />
+      <LoaderBackdrop open={loading} />
       <RowBasedKendoTable
         columns={COLUMNS}
-        rows={state.rows}
-        setRows={(rows) => setState((prev) => ({ ...prev, rows: typeof rows === 'function' ? rows(prev.rows) : rows }))}
-        modifiedCells={state.modifiedCells}
-        setModifiedCells={(cells) => setState((prev) => ({ ...prev, modifiedCells: typeof cells === 'function' ? cells(prev.modifiedCells) : cells }))}
+        rows={rows}
+        setRows={setRows}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
         title={PERMISSIONS.showTitle ? PERMISSIONS.titleName : ''}
         permissions={{ ...PERMISSIONS, ExcelName: `${PERMISSIONS.ExcelName}_${AOP_YEAR}` }}
-        handleRemarkCellClick={(row) => updateState({ currentRemark: row.remarks || '', currentRowId: row.id, remarkDialogOpen: true })}
-        remarkDialogOpen={state.remarkDialogOpen}
-        setRemarkDialogOpen={(open) => updateState({ remarkDialogOpen: open })}
-        currentRemark={state.currentRemark}
-        setCurrentRemark={(remark) => updateState({ currentRemark: remark })}
-        currentRowId={state.currentRowId}
-        setCurrentRowId={(id) => updateState({ currentRowId: id })}
+        handleRemarkCellClick={(row) => {setCurrentRemark(row.remarks || ''); setCurrentRowId(row.id); setRemarkDialogOpen(true)}}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
-        snackbarData={state.snackbarData}
-        snackbarOpen={state.snackbarOpen}
-        setSnackbarOpen={(open) => updateState({ snackbarOpen: open })}
-        setSnackbarData={(data) => setState((prev) => ({ ...prev, snackbarData: typeof data === 'function' ? data(prev.snackbarData) : data }))}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
         customItemChange={handleCustomItemChange}
-        externalCustomModifiedCells={state.customModifiedCells}
-        externalSetCustomModifiedCells={(cells) => setState((prev) => ({ ...prev, customModifiedCells: typeof cells === 'function' ? cells(prev.customModifiedCells) : cells }))}
+        externalCustomModifiedCells={customModifiedCells}
+        externalSetCustomModifiedCells={setCustomModifiedCells}
         paginationConfig={{ threshold: 100, buttonCount: 5, pageSizes: [10, 20, 50, 100], defaultPageSize: 100 }}
       />
     </Box>
