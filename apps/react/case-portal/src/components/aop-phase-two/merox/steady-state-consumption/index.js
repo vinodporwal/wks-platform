@@ -11,6 +11,7 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import GetFinancialYear from 'components/Utilities/GetFinancialYear'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -39,6 +40,7 @@ const SteadyStateConsumption = () => {
       dataGridStore,
       'Steady_State_Consumption'
     )
+  const { previousFYFormatted } = GetFinancialYear(AOP_YEAR)
 
   const columns = [
     {
@@ -86,6 +88,15 @@ const SteadyStateConsumption = () => {
       minWidth: 120,
       type: 'text',
       editable: false,
+    },
+    {
+      field: 'lastFy',
+      title: `Last FY ${previousFYFormatted}`,
+      widthT: 120,
+      minWidth: 180,
+      type: 'number1',
+      editable: false,
+      format: valueFormat,
     },
     {
       field: 'april',
