@@ -170,7 +170,7 @@ public class ShutdownActivitiesServiceImpl implements ShutdownActivitiesService 
 					}
 
 					plantMaintenanceTransaction.setMaintEndDateTime(shutdownTaTransactionDTO.getMaintEndDateTime());
-					plantMaintenanceTransaction.setMaintStartDateTime(shutdownTaTransactionDTO.getMaintEndDateTime());
+					plantMaintenanceTransaction.setMaintStartDateTime(shutdownTaTransactionDTO.getMaintStartDateTime());
 					if (shutdownTaTransactionDTO.getMaintStartDateTime() != null) {
 						plantMaintenanceTransaction
 								.setMaintForMonth(shutdownTaTransactionDTO.getMaintStartDateTime().getMonth() + 1);
@@ -179,7 +179,8 @@ public class ShutdownActivitiesServiceImpl implements ShutdownActivitiesService 
 				
 					plantMaintenanceTransaction.setRemarks(shutdownTaTransactionDTO.getRemarks());
 					plantMaintenanceTransaction.setUser(Utility.getUserName());
-					
+					plantMaintenanceTransaction.setVersion(shutdownTaTransactionDTO.getVersion() != null && !shutdownTaTransactionDTO.getVersion().isEmpty() ? shutdownTaTransactionDTO.getVersion() : "V1");
+					plantMaintenanceTransaction.setPlantId(plantId);
 					plantMaintenanceTransaction.setAuditYear(shutdownTaTransactionDTO.getAuditYear());
 					plantMaintenanceTransaction.setCreatedOn(new Date());
                     plantMaintenanceTransaction.setName(shutdownTaTransactionDTO.getName());
