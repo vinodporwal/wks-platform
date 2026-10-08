@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -9,13 +9,32 @@ import { OverallAopConsumptionApiService } from 'components/aop-phase-two/servic
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
+const THREE_DECIMAL_UOMS = ['kw', 'kw/m3', 'kg/km3']
+
 const OverallAopConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Overall_AOP_Consumption')
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const siteName = (siteObject?.name || '').trim().toUpperCase()
+  const plantName = (plantObject?.name || '').trim()
+  const isDtaCtPlant =
+    siteName === 'DTA' &&
+    (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
+
+  const isAsuPlant =
+    (siteName === 'DTA' &&
+      (plantName.toLowerCase() === 'air & asu' ||
+        plantName.toLowerCase() === 'pcg asu')) ||
+    (siteName === 'SEZ' &&
+      (plantName.toLowerCase() === 'air & asu' ||
+        plantName.toLowerCase() === 'pcg asu')) ||
+    (siteName === 'C2' &&
+      (plantName.toLowerCase() === 'air' ||
+        plantName.toLowerCase() === 'c2_asu'))
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -25,162 +44,192 @@ const OverallAopConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = customValueFormatterPhaseTwo(5)
-  const headerMap = generateHeaderNames(AOP_YEAR)
+  const formatValueByUom = useCallback(
+    (val, uom) => {
+      if (val === null || val === undefined || val === '') return ''
+      const num = parseFloat(val)
+      if (isNaN(num)) return val
 
-  const columns = [
-    {
-      field: 'sapCode',
-      title: 'SAP MAT Code',
-      widthT: 250,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      locked: true,
+      if (isDtaCtPlant) {
+        const cleanUom = String(uom ?? '')
+          .trim()
+          .toLowerCase()
+        const isThreeDecimal = THREE_DECIMAL_UOMS.some(
+          (u) => u.trim().toLowerCase() === cleanUom,
+        )
+        if (isThreeDecimal) {
+          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
+
+      if (isAsuPlant) {
+        return (Math.trunc(num * 100000) / 100000).toFixed(5)
+      }
+
+      return Math.trunc(num).toString()
     },
-    {
-      field: 'productName',
-      title: 'Particulars',
-      widthT: 250,
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'normParameterTypeDisplayName',
-      title: 'Type',
-      widthT: 250,
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      locked: true,
-      hidden: true,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-      locked: true,
-    },
-    {
-      field: 'april',
-      title: headerMap[4],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'july',
-      title: headerMap[7],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      widthT: 120,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
-      field: 'march',
-      title: headerMap[3],
-      // widthT: 100,
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-  ]
+    [isDtaCtPlant, isAsuPlant],
+  )
+
+  const columns = useMemo(() => {
+    const valueFormat = undefined
+    const headerMap = generateHeaderNames(AOP_YEAR)
+
+    return [
+      {
+        field: 'sapCode',
+        title: 'SAP MAT Code',
+        widthT: 250,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'productName',
+        title: 'Particulars',
+        widthT: 250,
+        minWidth: 200,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'normParameterTypeDisplayName',
+        title: 'Type',
+        widthT: 250,
+        minWidth: 200,
+        type: 'text',
+        editable: false,
+        locked: true,
+        hidden: true,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        widthT: 120,
+        minWidth: 120,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'april',
+        title: headerMap[4],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'may',
+        title: headerMap[5],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'june',
+        title: headerMap[6],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'july',
+        title: headerMap[7],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'aug',
+        title: headerMap[8],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'sep',
+        title: headerMap[9],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'oct',
+        title: headerMap[10],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'nov',
+        title: headerMap[11],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'dec',
+        title: headerMap[12],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'jan',
+        title: headerMap[1],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'feb',
+        title: headerMap[2],
+        widthT: 120,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+      {
+        field: 'march',
+        title: headerMap[3],
+        // widthT: 100,
+        minWidth: 120,
+        type: 'number1',
+        editable: false,
+        format: valueFormat,
+      },
+    ]
+  }, [AOP_YEAR, isDtaCtPlant, isAsuPlant])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant])
 
   const fetchData = async () => {
     setLoading(true)
@@ -218,11 +267,24 @@ const OverallAopConsumption = () => {
           const sum = monthValues.reduce((acc, val) => acc + val, 0)
           const avgNorms = sum / 12
 
-          return {
+          const uom = item?.UOM || item?.uom || ''
+          const formattedItem = {
             ...item,
             avgNorms,
             isEditable: false,
           }
+
+          monthFields.forEach((field) => {
+            if (
+              formattedItem[field] !== undefined &&
+              formattedItem[field] !== null &&
+              formattedItem[field] !== ''
+            ) {
+              formattedItem[field] = formatValueByUom(formattedItem[field], uom)
+            }
+          })
+
+          return formattedItem
         }) || []
       setRows(data)
     } catch (error) {
