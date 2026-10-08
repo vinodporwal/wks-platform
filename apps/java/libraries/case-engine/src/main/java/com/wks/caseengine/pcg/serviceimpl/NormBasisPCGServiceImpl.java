@@ -29,6 +29,7 @@ import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.StoredProcedureQuery;
 import com.wks.caseengine.dto.NormBasisPCGDTO;
+import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
 
 @Service
 public class NormBasisPCGServiceImpl implements NormBasisPCGService {
@@ -198,6 +199,25 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 		aopMessageVM.setMessage("Norm Calculations Executed Successfully");
 		return aopMessageVM;
 
+	}
+
+	@Override
+	public List<GasifierDropdownAopBasisDTO> getGasifierDropdownAopBasis(UUID plantId, String aopYear) {
+
+		Plants plant = plantsRepository.findById(plantId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName()  + "_GetGasifierDropdownAopBasisFilter";
+
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> GasifierDropdownAopBasisDTO.builder()
+				.name(rs.getString("name"))
+				.displayName(rs.getString("displayName"))
+				.configuration(rs.getString("configuration"))
+				.build(),
+				plantId.toString(), aopYear);
 	}
 
 	private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUID siteId, String periodFrom,

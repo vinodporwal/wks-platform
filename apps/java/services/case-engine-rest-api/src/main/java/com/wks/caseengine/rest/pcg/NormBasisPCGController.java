@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.pcg.service.NormBasisPCGService;
+import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +40,20 @@ public class NormBasisPCGController {
     public ResponseEntity<AOPMessageVM> updateNormBasis(@RequestBody List<NormBasisPCGDTO> normBasisDTOs, @RequestParam String plantId, @RequestParam String aopYear) {
         AOPMessageVM aopMessageVM = normBasisService.saveNormBasis(normBasisDTOs,aopYear, plantId);
         return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @GetMapping("/gasifier-filter-dropdown-aop-basis")
+    public ResponseEntity<List<GasifierDropdownAopBasisDTO>> getGasifierDropdownAopBasis(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<GasifierDropdownAopBasisDTO> result = normBasisService.getGasifierDropdownAopBasis(
+                UUID.fromString(plantId), aopYear);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/load-button-norm-calculation-pcg")
