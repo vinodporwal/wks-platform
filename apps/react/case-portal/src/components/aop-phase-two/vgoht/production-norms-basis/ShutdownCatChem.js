@@ -24,10 +24,7 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
 
-  const [start, end] = AOP_YEAR ? AOP_YEAR.split('-').map(Number) : [0, 0]
-  const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
-
-  const headerMap = generateHeaderNames(prevYearFormatted)
+  const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = customValueFormatterPhaseTwo(5)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
