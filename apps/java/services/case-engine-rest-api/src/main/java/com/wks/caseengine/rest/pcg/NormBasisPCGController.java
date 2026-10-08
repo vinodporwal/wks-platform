@@ -44,7 +44,7 @@ public class NormBasisPCGController {
     }
 
     @GetMapping("/gasifier-filter-dropdown-aop-basis")
-    public ResponseEntity<List<GasifierDropdownAopBasisDTO>> getGasifierDropdownAopBasis(
+    public ResponseEntity<AOPMessageVM> getGasifierDropdownAopBasis(
             @RequestParam String plantId,
             @RequestParam String aopYear) {
 
@@ -54,11 +54,15 @@ public class NormBasisPCGController {
 
         List<GasifierDropdownAopBasisDTO> result = normBasisService.getGasifierDropdownAopBasis(
                 UUID.fromString(plantId), aopYear);
-        return ResponseEntity.ok(result);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setData(result);
+        aopMessageVM.setMessage("Gasifier Dropdown AOP Basis Fetched Successfully");
+        return ResponseEntity.ok(aopMessageVM);
     }
 
     @GetMapping("/target-gasifier-filters")
-    public ResponseEntity<List<TargetGasifierFilterDTO>> getTargetGasifierFilters(
+    public ResponseEntity<AOPMessageVM> getTargetGasifierFilters(
             @RequestParam String plantId,
             @RequestParam String aopYear) {
 
@@ -68,7 +72,12 @@ public class NormBasisPCGController {
 
         List<TargetGasifierFilterDTO> result = normBasisService.getTargetGasifierFilters(
                 UUID.fromString(plantId), aopYear);
-        return ResponseEntity.ok(result);
+       
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setData(result);
+        aopMessageVM.setMessage("Target Gasifier Filters Fetched Successfully");
+        return ResponseEntity.ok(aopMessageVM);
     }
 
 
