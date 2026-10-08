@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.pcg.service.NormBasisPCGService;
 import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TargetActualDafThroughtFilterDTO;
 import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -84,6 +85,31 @@ public class NormBasisPCGController {
     @PostMapping("/target-gasifier-filters")
     public ResponseEntity<AOPMessageVM> saveTargetGasifierFilters(@RequestBody TargetGasifierFilterDTO targetGasifierFilterDTO, @RequestParam String year) {
         AOPMessageVM aopMessageVM = normBasisService.saveTargetGasifierFilters(targetGasifierFilterDTO, year);
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @GetMapping("/gasifier-target-actual-daf-throughput")
+    public ResponseEntity<AOPMessageVM> getTargetActualDafThroughtFilter(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<TargetActualDafThroughtFilterDTO> result = normBasisService.getTargetActualDafThroughtFilter(
+                UUID.fromString(plantId), aopYear);
+
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setData(result);
+        aopMessageVM.setMessage("Target Actual DAF Throught Filter Fetched Successfully");
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @PostMapping("/gasifier-target-actual-daf-throughput")
+    public ResponseEntity<AOPMessageVM> saveTargetActualDafThroughtFilter(@RequestBody List<TargetActualDafThroughtFilterDTO> targetActualDafThroughtFilterDTOList, @RequestParam String year) {
+        AOPMessageVM aopMessageVM = normBasisService.saveTargetActualDafThroughtFilter(targetActualDafThroughtFilterDTOList, year);
         return ResponseEntity.ok(aopMessageVM);
     }
 
