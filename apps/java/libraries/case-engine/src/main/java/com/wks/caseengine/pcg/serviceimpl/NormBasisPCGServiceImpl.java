@@ -96,7 +96,8 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			dto.setRemarks(row[6] != null ? row[6].toString() : "");
 			dto.setUom(row[7] != null ? row[7].toString() : "");
 			dto.setNormParameterTypeDisplayName(row[8] != null ? row[8].toString() : "");
-			dto.setType(row[9] != null ? row[9].toString() : "");
+			dto.setDataType(row[9] != null ? row[9].toString() : "");
+			dto.setDependentAttributeConfig(row[10] != null ? row[10].toString() : "");
 
 			resultList.add(dto);
 		}

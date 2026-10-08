@@ -25,6 +25,7 @@ public class NormBasisPCGDTO {
     private String remarks;
     private String uom;
     private String normParameterTypeDisplayName;
-    private String type;
+    private String dataType;
+    private String dependentAttributeConfig;
 
 }
