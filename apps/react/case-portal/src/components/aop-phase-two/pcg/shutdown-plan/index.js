@@ -233,28 +233,53 @@ const ShutdownPlanPCG = () => {
       const arr = Array.isArray(data) ? data : data?.data || []
 
       const formatted = arr.map((item, index) => {
-        const startDate = item?.maintStartDateTime
-          ? new Date(item.maintStartDateTime)
-          : null
-        const endDate = item?.maintEndDateTime
-          ? new Date(item.maintEndDateTime)
-          : null
+        let startDate = null
+        if (item?.maintStartDateTime) {
+          const parsed = new Date(item.maintStartDateTime)
+          if (!isNaN(parsed.getTime())) startDate = parsed
+        }
+        let endDate = null
+        if (item?.maintEndDateTime) {
+          const parsed = new Date(item.maintEndDateTime)
+          if (!isNaN(parsed.getTime())) endDate = parsed
+        }
+
+        let duration = ''
+        if (
+          item?.durationInHrs !== undefined &&
+          item?.durationInHrs !== null &&
+          item?.durationInHrs !== ''
+        ) {
+          duration = item.durationInHrs
+        } else if (
+          item?.durationInMins !== undefined &&
+          item?.durationInMins !== null &&
+          item?.durationInMins !== ''
+        ) {
+          const h = Math.floor(Number(item.durationInMins) / 60)
+          const m = Number(item.durationInMins) % 60
+          duration = `${h}.${String(m).padStart(2, '0')}`
+        }
+
+        const rawRemark = item?.remarks ?? item?.remark ?? ''
+        const cleanRemark =
+          rawRemark === 'null' || rawRemark === 'NULL' ? '' : rawRemark
 
         return {
           ...item,
           idFromApi: item?.id,
           id: index,
-          gasifier: item?.gasifier || item?.productName || 'G1',
-          discription: item?.discription || '',
+          gasifier: item?.name || item?.gasifier || item?.productName || 'G1',
+          name: item?.name || item?.gasifier || item?.productName || 'G1',
+          discription: item?.description || item?.discription || '',
+          description: item?.description || item?.discription || '',
           maintStartDateTime: startDate,
           maintEndDateTime: endDate,
-          durationInHrs: item?.durationInHrs || '',
-          originalRemark: item?.remark,
+          durationInHrs: duration,
+          originalRemark: cleanRemark,
           inEdit: false,
-          remark:
-            item?.remark === 'null' || item?.remark === 'NULL'
-              ? ''
-              : item?.remark || '',
+          remark: cleanRemark,
+          remarks: cleanRemark,
         }
       })
 
@@ -347,24 +372,29 @@ const ShutdownPlanPCG = () => {
       return
     }
 
-    // Build payload
-    const shutdownDetails = data.map((row) => ({
-      discription: row.discription,
-      gasifier: row.gasifier,
-      productName: row.gasifier,
-      rate: row.rate,
-      maintStartDateTime: addTimeOffset(row.maintStartDateTime),
-      maintEndDateTime: addTimeOffset(row.maintEndDateTime),
-      durationInHrs: (() => {
-        const v = findDuration(row)
-        if (!v) return null
-        const [h = '00', m = '00'] = String(v).split('.')
-        return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
-      })(),
-      audityear: AOP_YEAR,
-      id: row.idFromApi || null,
-      remark: row.remark || 'null',
-    }))
+    // Build payload matching ShutdownTaTransactionDTO field names
+    const shutdownDetails = data.map((row) => {
+      const v = findDuration(row)
+      let durationInHrs = null
+      if (v) {
+        const [h = '0', m = '0'] = String(v).split('.')
+        // backend expects Double e.g. 13.0 not string "13.00"
+        durationInHrs = parseFloat(`${parseInt(h, 10)}.${String(m).padEnd(2, '0').slice(0, 2)}`)
+      }
+
+      return {
+        id: row.idFromApi || null,
+        name: row.gasifier,                             // gasifier goes to 'name'
+        description: row.discription,                   // 'description' not 'discription'
+        maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+        maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+        durationInHrs,                                  // Double, not String
+        auditYear: AOP_YEAR,                            // 'auditYear' not 'audityear'
+        remarks: row.remarks || row.remark || null,     // handle both remarks/remark
+        normParameterFKId: row.normParameterFKId || null,
+        version: row.version || 'V1',
+      }
+    })
 
     setLoading(true)
     try {
@@ -546,10 +576,36 @@ const ShutdownPlanPCG = () => {
   // ─── Remark dialog ────────────────────────────────────────────────────────────
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks ?? row.remark ?? '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
+
+  const customHandleRemarkSave = useCallback(() => {
+    setRows((prevRows) => {
+      let updatedRow = null
+      const updatedRows = prevRows.map((row) => {
+        if (row.id === currentRowId) {
+          updatedRow = {
+            ...row,
+            remark: currentRemark,
+            remarks: currentRemark,
+            inEdit: true,
+          }
+          return updatedRow
+        }
+        return row
+      })
+      if (updatedRow) {
+        setModifiedCells((prev) => ({
+          ...prev,
+          [updatedRow.id]: updatedRow,
+        }))
+      }
+      return updatedRows
+    })
+    setRemarkDialogOpen(false)
+  }, [currentRowId, currentRemark])
 
   // ─── Permissions ──────────────────────────────────────────────────────────────
 
@@ -591,7 +647,8 @@ const ShutdownPlanPCG = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={setCurrentRowId}
+        customHandleRemarkSave={customHandleRemarkSave}
         saveChanges={saveChanges}
         deleteRowData={deleteRowData}
         handleExcelUpload={handleExcelUpload}
