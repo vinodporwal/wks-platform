@@ -30,6 +30,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.StoredProcedureQuery;
 import com.wks.caseengine.dto.NormBasisPCGDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 
 @Service
 public class NormBasisPCGServiceImpl implements NormBasisPCGService {
@@ -220,6 +221,31 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 				plantId.toString(), aopYear);
 	}
 
+	@Override
+	public List<TargetGasifierFilterDTO> getTargetGasifierFilters(UUID plantId, String aopYear) {
+
+		Plants plant = plantsRepository.findById(plantId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName()  + "_GetTargetGasifierFilter";
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			String idStr = rs.getString("Id");
+			String plantIdStr = rs.getString("PlantId");
+			String normParamIdStr = rs.getString("NormParameterId");
+
+			return TargetGasifierFilterDTO.builder()
+					.id(idStr != null && !idStr.isBlank() ? UUID.fromString(idStr) : null)
+					.gOperation(rs.getString("GOperation"))
+					.plantId(plantIdStr != null && !plantIdStr.isBlank() ? UUID.fromString(plantIdStr) : null)
+					.aopYear(rs.getString("AopYear"))
+					.normParameterId(normParamIdStr != null && !normParamIdStr.isBlank() ? UUID.fromString(normParamIdStr) : null)
+					.build();
+		}, plantId.toString(), aopYear);
+	}
+
 	private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUID siteId, String periodFrom,
 			String periodTo, String procedureName) {
 
@@ -266,5 +292,42 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			throw new RuntimeException("Failed to execute procedure", ex);
 		}
 	}
+
+	@Transactional
+	@Override
+	public AOPMessageVM saveTargetGasifierFilters(TargetGasifierFilterDTO targetGasifierFilterDTO, String year) {
+
+		UUID normParameterFKId = targetGasifierFilterDTO.getNormParameterId();
+		String attributeValue = targetGasifierFilterDTO.getGOperation();
+
+	Optional<NormAttributeTransactions> existingRecord = transactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+		
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(4);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "");
+
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	transactionsRepository.save(normAttributeTransactions);
+
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	aopMessageVM.setCode(200);
+	aopMessageVM.setMessage("Target Gasifier Filters Saved Successfully");
+	return aopMessageVM;
+}
 
 }

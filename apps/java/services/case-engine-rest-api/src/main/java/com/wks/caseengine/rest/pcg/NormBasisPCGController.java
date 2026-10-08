@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.pcg.service.NormBasisPCGService;
 import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +55,27 @@ public class NormBasisPCGController {
         List<GasifierDropdownAopBasisDTO> result = normBasisService.getGasifierDropdownAopBasis(
                 UUID.fromString(plantId), aopYear);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/target-gasifier-filters")
+    public ResponseEntity<List<TargetGasifierFilterDTO>> getTargetGasifierFilters(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<TargetGasifierFilterDTO> result = normBasisService.getTargetGasifierFilters(
+                UUID.fromString(plantId), aopYear);
+        return ResponseEntity.ok(result);
+    }
+
+
+    @PostMapping("/target-gasifier-filters")
+    public ResponseEntity<AOPMessageVM> saveTargetGasifierFilters(@RequestBody TargetGasifierFilterDTO targetGasifierFilterDTO, @RequestParam String year) {
+        AOPMessageVM aopMessageVM = normBasisService.saveTargetGasifierFilters(targetGasifierFilterDTO, year);
+        return ResponseEntity.ok(aopMessageVM);
     }
 
     @GetMapping("/load-button-norm-calculation-pcg")
