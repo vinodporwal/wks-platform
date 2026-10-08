@@ -2,18 +2,22 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
+import { getRoleName } from 'services/role-service'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from '../../common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const TargetActualDafThroughput = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, screenTitle } = dataGridStore
-  const PLANT_ID = plantObject?.plantId
-  const AOP_YEAR = year
+  const { plantObject, year, oldYear, isReleased, screenTitle } = dataGridStore
+  const PLANT_ID = plantObject?.id || plantObject?.plantId
+  const AOP_YEAR = year?.selectedYear || year
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, isReleased)
 
   const apiRef = useRef(null)
   const [rows, setRows] = useState([])
@@ -24,7 +28,7 @@ const TargetActualDafThroughput = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
-    severity: 'success',
+    severity: 'info',
   })
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -35,46 +39,48 @@ const TargetActualDafThroughput = () => {
     () => [
       {
         field: 'particulars',
-        header: 'Particulars',
+        title: 'Particulars',
         type: 'text',
-        isEditable: false,
-        flex: 1.5,
+        editable: false,
+        widthT: 220,
         minWidth: 200,
       },
       {
         field: 'uom',
-        header: 'UOM',
+        title: 'UOM',
         type: 'text',
-        isEditable: false,
-        flex: 1,
-        minWidth: 120,
+        editable: false,
+        widthT: 120,
+        minWidth: 100,
       },
       {
         field: 'targetValue',
-        header: 'Target Value',
+        title: 'Target Value',
         type: 'number',
-        isEditable: true,
-        flex: 1.2,
+        format: '{0:0.00}',
+        editable: !READ_ONLY,
+        widthT: 160,
         minWidth: 140,
       },
       {
         field: 'range',
-        header: 'Range',
+        title: 'Range',
         type: 'number',
-        isEditable: true,
-        flex: 1.2,
+        format: '{0:0.00}',
+        editable: !READ_ONLY,
+        widthT: 160,
         minWidth: 140,
       },
       {
-        field: 'remark',
-        header: 'Remarks',
+        field: 'remarks',
+        title: 'Remarks',
         type: 'text',
-        isEditable: true,
-        flex: 1.5,
+        editable: !READ_ONLY,
+        widthT: 200,
         minWidth: 160,
       },
     ],
-    [],
+    [READ_ONLY],
   )
 
   const permissions = useMemo(
@@ -84,7 +90,7 @@ const TargetActualDafThroughput = () => {
       addBtnName: 'Add Item',
       deleteButton: false,
       editButton: false,
-      saveBtn: true,
+      saveBtn: !READ_ONLY,
       allAction: true,
       showExport: false,
       ExcelName: `Target_Actual_DAF_Throughput_${AOP_YEAR || ''}`,
@@ -95,7 +101,7 @@ const TargetActualDafThroughput = () => {
       showCalculate: false,
       calculateDisabled: true,
     }),
-    [AOP_YEAR],
+    [AOP_YEAR, READ_ONLY],
   )
 
   const fetchData = useCallback(async () => {
@@ -103,27 +109,79 @@ const TargetActualDafThroughput = () => {
     setLoading(true)
     setModifiedCells({})
     try {
-      // Mock / initial structure - can be replaced with API service call
-      const defaultData = [
-        {
-          id: 0,
-          particulars: 'DAF Throughput',
-          uom: 'TPH',
-          targetValue: 0,
-          range: 0,
-          remark: '',
-          inEdit: false,
-        },
-      ]
-      setRows(defaultData)
-      setOriginalRows(defaultData)
+      const response =
+        await ProductionNormsApiService.getTargetActualDafThroughtFilter(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      const list = Array.isArray(response)
+        ? response
+        : response?.data || response?.result || []
+
+      if (Array.isArray(list) && list.length > 0) {
+        const formattedRows = list.map((item, index) => {
+          const targetVal =
+            item?.targetValue !== null && item?.targetValue !== undefined
+              ? item.targetValue
+              : 0
+          const rangeVal =
+            item?.range !== null && item?.range !== undefined
+              ? item.range
+              : 0
+          const remarksVal = item?.remarks || item?.remark || ''
+
+          return {
+            ...item,
+            id: item?.id || index + 1,
+            idFromApi: item?.id || null,
+            normParameterId: item?.normParameterId || null,
+            particulars: item?.displayName || 'DAF Throughput',
+            displayName: item?.displayName || 'DAF Throughput',
+            uom: item?.uom || 'TPH',
+            targetValue: targetVal,
+            range: rangeVal,
+            remarks: remarksVal,
+            remark: remarksVal,
+            aopYear: item?.aopYear || AOP_YEAR,
+            plantId: item?.plantId || PLANT_ID,
+            isEditable: !READ_ONLY,
+            inEdit: false,
+          }
+        })
+        setRows(formattedRows)
+        setOriginalRows(formattedRows)
+      } else {
+        const defaultData = [
+          {
+            id: 1,
+            idFromApi: null,
+            normParameterId: null,
+            particulars: 'DAF Throughput',
+            displayName: 'DAF Throughput',
+            uom: 'TPH',
+            targetValue: 0,
+            range: 0,
+            remarks: '',
+            remark: '',
+            aopYear: AOP_YEAR,
+            plantId: PLANT_ID,
+            isEditable: !READ_ONLY,
+            inEdit: false,
+          },
+        ]
+        setRows(defaultData)
+        setOriginalRows(defaultData)
+      }
     } catch (error) {
       console.error('Error fetching Target Actual DAF Throughput data:', error)
       setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, keycloak, READ_ONLY])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -133,24 +191,91 @@ const TargetActualDafThroughput = () => {
 
   const saveChanges = useCallback(async () => {
     const data = Object.values(modifiedCells)
-    const valid = validateRowDataWithRemarks(
+    if (data.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'No changes to save.',
+        severity: 'info',
+      })
+      return
+    }
+
+    const fieldsToCheck = ['targetValue', 'range']
+    const validationError = validateRowDataWithRemarks(
       data,
-      rows,
-      setSnackbarData,
-      setSnackbarOpen,
+      originalRows,
+      fieldsToCheck,
+      'particulars',
+      'remarks',
     )
-    if (!valid) return
+
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      return
+    }
 
     setLoading(true)
     try {
-      setSnackbarData({
-        message: 'Saved successfully',
-        severity: 'success',
+      const payload = (rows || []).map((row) => {
+        const modifiedRow = modifiedCells[row.id] || row
+        return {
+          normParameterId: modifiedRow.normParameterId || null,
+          displayName:
+            modifiedRow.displayName ||
+            modifiedRow.particulars ||
+            'DAF Throughput',
+          targetValue:
+            modifiedRow.targetValue !== '' &&
+            modifiedRow.targetValue !== null &&
+            modifiedRow.targetValue !== undefined
+              ? Number(modifiedRow.targetValue)
+              : 0,
+          range:
+            modifiedRow.range !== '' &&
+            modifiedRow.range !== null &&
+            modifiedRow.range !== undefined
+              ? Number(modifiedRow.range)
+              : 0,
+          remarks: modifiedRow.remarks || modifiedRow.remark || '',
+          aopYear: modifiedRow.aopYear || AOP_YEAR,
+          plantId: modifiedRow.plantId || PLANT_ID,
+        }
       })
-      setSnackbarOpen(true)
-      setModifiedCells({})
-      fetchData()
+
+      const res =
+        await ProductionNormsApiService.saveTargetActualDafThroughtFilter(
+          keycloak,
+          AOP_YEAR,
+          payload,
+        )
+
+      if (
+        res?.code === 200 ||
+        res?.message?.toLowerCase().includes('success') ||
+        res?.status === 200
+      ) {
+        setSnackbarData({
+          message:
+            res?.message || 'Target Actual DAF Throughput saved successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        setModifiedCells({})
+        await fetchData()
+      } else {
+        setSnackbarData({
+          message:
+            res?.message || 'Failed to save Target Actual DAF Throughput.',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      }
     } catch (error) {
+      console.error('Error saving Target Actual DAF Throughput:', error)
       setSnackbarData({
         message: error.message || 'Failed to save changes',
         severity: 'error',
@@ -159,13 +284,22 @@ const TargetActualDafThroughput = () => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, rows, fetchData])
+  }, [modifiedCells, rows, originalRows, keycloak, AOP_YEAR, PLANT_ID, fetchData])
 
-  const handleRemarkCellClick = useCallback((id, remark) => {
-    setCurrentRowId(id)
-    setCurrentRemark(remark || '')
-    setRemarkDialogOpen(true)
-  }, [])
+  const handleRemarkCellClick = useCallback(
+    (param1, param2) => {
+      if (READ_ONLY) return
+      if (typeof param1 === 'object' && param1 !== null) {
+        setCurrentRowId(param1?.id)
+        setCurrentRemark(param1?.remarks || param1?.remark || '')
+      } else {
+        setCurrentRowId(param1)
+        setCurrentRemark(param2 || '')
+      }
+      setRemarkDialogOpen(true)
+    },
+    [READ_ONLY],
+  )
 
   const handleExport = useCallback(() => {
     const excelName = generateExcelName(
@@ -200,6 +334,7 @@ const TargetActualDafThroughput = () => {
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
+          setCurrentRowId={setCurrentRowId}
           permissions={permissions}
           saveChanges={saveChanges}
           title={permissions.showTitle ? permissions.titleName : ''}
@@ -217,3 +352,4 @@ const TargetActualDafThroughput = () => {
 }
 
 export default TargetActualDafThroughput
+

@@ -370,18 +370,19 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
       for (TargetActualDafThroughtFilterDTO targetActualDafThroughtFilterDTO : targetActualDafThroughtFilterDTOList) {
         Double targetValue = targetActualDafThroughtFilterDTO.getTargetValue();
         Double range = targetActualDafThroughtFilterDTO.getRange();
+        String remarks = targetActualDafThroughtFilterDTO.getRemarks();
 
-        saveTargetActualDafThroughtFilterData(targetValue, 4, year, targetActualDafThroughtFilterDTO.getNormParameterId());
-        saveTargetActualDafThroughtFilterData(range, 5, year, targetActualDafThroughtFilterDTO.getNormParameterId());
+        saveTargetActualDafThroughtFilterData(targetValue, 4, year, targetActualDafThroughtFilterDTO.getNormParameterId(), remarks);
+        saveTargetActualDafThroughtFilterData(range, 5, year, targetActualDafThroughtFilterDTO.getNormParameterId(), remarks);
       }
 
 	AOPMessageVM aopMessageVM = new AOPMessageVM();
 	aopMessageVM.setCode(200);
-	aopMessageVM.setMessage("Target Gasifier Filters Saved Successfully");
+	aopMessageVM.setMessage("Target Actual DAF Throughput Saved Successfully");
 	return aopMessageVM;
 }
 
-public AOPMessageVM saveTargetActualDafThroughtFilterData(Double attributeValue, Integer month, String year, UUID normParameterFKId) {
+public AOPMessageVM saveTargetActualDafThroughtFilterData(Double attributeValue, Integer month, String year, UUID normParameterFKId, String remarks) {
 
 	Optional<NormAttributeTransactions> existingRecord = transactionsRepository
 			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
@@ -403,7 +404,7 @@ public AOPMessageVM saveTargetActualDafThroughtFilterData(Double attributeValue,
 
 	normAttributeTransactions
 			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
-
+	normAttributeTransactions.setRemarks(remarks != null ? remarks : "");
 	normAttributeTransactions.setUserName(Utility.getUserName());
 	transactionsRepository.save(normAttributeTransactions);
 

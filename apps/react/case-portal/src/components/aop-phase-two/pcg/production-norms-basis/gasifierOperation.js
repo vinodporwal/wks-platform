@@ -7,8 +7,9 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import TargetActualDafThroughput from './targetActualDafThroughput'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 
-// G-Operation dropdown options
+// Fallback G-Operation dropdown options
 export const G_OPERATION_OPTIONS = [
   { label: '3G Operation', value: '3G Operation' },
   { label: '4G Operation', value: '4G Operation' },
@@ -16,7 +17,7 @@ export const G_OPERATION_OPTIONS = [
   { label: '6G Operation', value: '6G Operation' },
 ]
 
-// G-Configuration mapping based on (M3+M4+M5) combinations all in one line separated by /
+// Fallback G-Configuration mapping based on (M3+M4+M5) combinations all in one line separated by /
 export const G_CONFIGURATION_MAPPING = {
   '6G Operation': '(2+2+2)',
   '5G Operation': '(2+2+1)/(1+2+2)/(2+1+2)',
@@ -39,26 +40,9 @@ export const getGConfigurationString = (gOperation) => {
   return ''
 }
 
-// Helper to get configuration dropdown options dynamically for a given G-Operation
-export const getGConfigurationOptions = (gOperation) => {
-  const configString = getGConfigurationString(gOperation)
-  if (!configString) return []
-  return [{ label: configString, value: configString }]
-}
-
-// Initial dummy data
-const INITIAL_DUMMY_DATA = [
-  {
-    id: 1,
-    particulars: 'Gasifier Operation',
-    gOperation: '4G Operation',
-    gConfiguration: '(1+1+1)/(1+2+1)/(1+1+2)/(2+1+1)/(0+2+2)/(2+0+2)/(2+2+0)',
-    isEditable: true,
-  },
-]
-
 const GasifierOperation = () => {
-  const [rows, setRows] = useState(INITIAL_DUMMY_DATA)
+  const [rows, setRows] = useState([])
+  const [dropdownList, setDropdownList] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -88,6 +72,32 @@ const GasifierOperation = () => {
     setRemarkDialogOpen(true)
   }
 
+  // Get config string for a selected G-Operation
+  const getConfigForOperation = useCallback(
+    (gOp) => {
+      if (!gOp) return ''
+      const found = dropdownList.find(
+        (d) =>
+          (d.name || d.displayName)?.trim().toLowerCase() ===
+          String(gOp).trim().toLowerCase(),
+      )
+      if (found?.configuration) return found.configuration
+      return getGConfigurationString(gOp)
+    },
+    [dropdownList],
+  )
+
+  // Dynamic G-Operation dropdown options from API with fallback
+  const gOperationOptions = useMemo(() => {
+    if (dropdownList.length > 0) {
+      return dropdownList.map((item) => ({
+        label: item.displayName || item.name,
+        value: item.name || item.displayName,
+      }))
+    }
+    return G_OPERATION_OPTIONS
+  }, [dropdownList])
+
   // Column definitions for AdvanceKendoTable
   const columns = useMemo(
     () => [
@@ -105,8 +115,8 @@ const GasifierOperation = () => {
         widthT: 200,
         minWidth: 180,
         type: 'select',
-        editable: true,
-        options: G_OPERATION_OPTIONS,
+        editable: !READ_ONLY,
+        options: gOperationOptions,
         displayMode: 'label',
       },
       {
@@ -114,15 +124,11 @@ const GasifierOperation = () => {
         title: 'G-Configuration',
         widthT: 480,
         minWidth: 380,
-        type: 'select',
-        editable: true,
-        dynamicOptions: true,
-        getOptions: (dataItem) =>
-          getGConfigurationOptions(dataItem?.gOperation),
-        displayMode: 'label',
+        type: 'text',
+        editable: false,
       },
     ],
-    [],
+    [gOperationOptions, READ_ONLY],
   )
 
   // Permissions configuration for the table toolbar and actions
@@ -133,7 +139,7 @@ const GasifierOperation = () => {
       addBtnName: 'Add Item',
       deleteButton: false,
       editButton: false,
-      saveBtn: true,
+      saveBtn: !READ_ONLY,
       allAction: true,
       showExport: false,
       ExcelName: `Gasifier_Operation_${AOP_YEAR || ''}`,
@@ -144,7 +150,7 @@ const GasifierOperation = () => {
       showCalculate: false,
       calculateDisabled: true,
     }),
-    [AOP_YEAR],
+    [AOP_YEAR, READ_ONLY],
   )
 
   // Custom item change handler to sync dependent dropdown
@@ -152,17 +158,16 @@ const GasifierOperation = () => {
     (e, setRowsTable, setModifiedCellsTable) => {
       const { dataItem, field, value } = e
       if (field === 'gOperation') {
-        // Automatically populate the corresponding combined configuration string in one line
-        const nextConfig = getGConfigurationString(value)
+        const nextConfig = getConfigForOperation(value)
 
         setRowsTable((prev) =>
           prev.map((r) =>
             r.id === dataItem.id
               ? {
-                ...r,
-                gOperation: value,
-                gConfiguration: nextConfig,
-              }
+                  ...r,
+                  gOperation: value,
+                  gConfiguration: nextConfig,
+                }
               : r,
           ),
         )
@@ -181,76 +186,163 @@ const GasifierOperation = () => {
         })
       }
     },
-    [],
+    [getConfigForOperation],
   )
 
-  // Handler to add a new row
-  const customAddRow = useCallback(() => {
-    const newId = `row_${Date.now()}`
-    const defaultOp = '3G Operation'
-    const newRow = {
-      id: newId,
-      particulars: `Gasifier Operation ${rows.length + 1}`,
-      gOperation: defaultOp,
-      gConfiguration: getGConfigurationString(defaultOp),
-      isEditable: true,
-      inEdit: true,
+  // Fetch Dropdown and Saved Target Gasifier Filters
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setLoading(true)
+    setModifiedCells({})
+    try {
+      // 1. Fetch dropdown options
+      let currentDropdowns = []
+      try {
+        const ddRes =
+          await ProductionNormsApiService.getGasifierDropdownAopBasis(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        currentDropdowns = Array.isArray(ddRes) ? ddRes : ddRes?.data || []
+        if (Array.isArray(currentDropdowns) && currentDropdowns.length > 0) {
+          setDropdownList(currentDropdowns)
+        }
+      } catch (ddErr) {
+        console.error('Error fetching gasifier dropdown:', ddErr)
+      }
+
+      // 2. Fetch saved target gasifier filter record
+      const response =
+        await ProductionNormsApiService.getTargetGasifierFilters(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      const list = Array.isArray(response) ? response : response?.data || []
+
+      if (Array.isArray(list) && list.length > 0) {
+        const formattedRows = list.map((item, index) => {
+          const opName = item?.gOperation || ''
+          const matchingDd = (currentDropdowns.length > 0
+            ? currentDropdowns
+            : dropdownList
+          ).find(
+            (d) =>
+              (d.name || d.displayName)?.trim().toLowerCase() ===
+              opName.trim().toLowerCase(),
+          )
+          const configStr =
+            matchingDd?.configuration || getGConfigurationString(opName)
+
+          return {
+            ...item,
+            id: item?.id || index + 1,
+            idFromApi: item?.id || null,
+            particulars: 'Gasifier Operation',
+            gOperation: opName,
+            gConfiguration: configStr,
+            plantId: item?.plantId || PLANT_ID,
+            aopYear: item?.aopYear || AOP_YEAR,
+            normParameterId: item?.normParameterId || null,
+            isEditable: !READ_ONLY,
+            inEdit: false,
+          }
+        })
+        setRows(formattedRows)
+      } else {
+        const defaultOp = currentDropdowns[0]?.name || '4G Operation'
+        const defaultConf =
+          currentDropdowns[0]?.configuration ||
+          getGConfigurationString(defaultOp)
+        setRows([
+          {
+            id: 1,
+            idFromApi: null,
+            particulars: 'Gasifier Operation',
+            gOperation: defaultOp,
+            gConfiguration: defaultConf,
+            plantId: PLANT_ID,
+            aopYear: AOP_YEAR,
+            normParameterId: null,
+            isEditable: !READ_ONLY,
+            inEdit: false,
+          },
+        ])
+      }
+    } catch (error) {
+      console.error('Error fetching Target Gasifier Filters:', error)
+      setRows([])
+    } finally {
+      setLoading(false)
     }
-    setRows((prev) => [...prev, newRow])
-    setModifiedCells((prev) => ({
-      ...prev,
-      [newId]: newRow,
-    }))
-  }, [rows.length])
+  }, [PLANT_ID, AOP_YEAR, keycloak, dropdownList, READ_ONLY])
+
+  useEffect(() => {
+    fetchData()
+  }, [PLANT_ID, AOP_YEAR])
 
   // Handler for save button
   const saveChanges = useCallback(async () => {
+    const data = Object.values(modifiedCells)
+    if (data.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'No changes to save.',
+        severity: 'info',
+      })
+      return
+    }
+
+    const targetRow = data[0] || rows[0]
+    if (!targetRow) return
+
     setLoading(true)
     try {
-      if (Object.keys(modifiedCells).length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No changes to save.',
-          severity: 'info',
-        })
-        return
+      const payload = {
+        id: targetRow.idFromApi || null,
+        gOperation: targetRow.gOperation || '',
+        plantId: targetRow.plantId || PLANT_ID,
+        aopYear: AOP_YEAR,
+        normParameterId: targetRow.normParameterId || null,
       }
 
-      const rowsToSave = Object.values(modifiedCells).filter(
-        (row) => row.inEdit,
+      const res = await ProductionNormsApiService.saveTargetGasifierFilters(
+        keycloak,
+        AOP_YEAR,
+        payload,
       )
-      if (rowsToSave.length === 0) {
+
+      if (
+        res?.code === 200 ||
+        res?.message?.toLowerCase().includes('success')
+      ) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'No changes to save.',
-          severity: 'info',
+          message:
+            res?.message || 'Target Gasifier Filters Saved Successfully!',
+          severity: 'success',
         })
-        return
+        setModifiedCells({})
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: res?.message || 'Failed to save Target Gasifier Filters.',
+          severity: 'error',
+        })
       }
-
-      // Simulate saving changes
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Saved Successfully!',
-        severity: 'success',
-      })
-      setModifiedCells({})
     } catch (error) {
-      console.error('Error saving Gasifier Operation data:', error)
+      console.error('Error saving Target Gasifier Filters:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Data save failed!',
+        message: 'Data save failed. Please try again.',
         severity: 'error',
       })
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
-
-  const fetchData = useCallback(async () => {
-    setRows(INITIAL_DUMMY_DATA)
-    setModifiedCells({})
-  }, [])
+  }, [modifiedCells, rows, PLANT_ID, AOP_YEAR, keycloak, fetchData])
 
   const handleExport = useCallback(() => {
     setSnackbarOpen(true)
@@ -287,7 +379,6 @@ const GasifierOperation = () => {
           permissions={permissions}
           saveChanges={saveChanges}
           customItemChange={handleCustomItemChange}
-          customAddRow={customAddRow}
           title={permissions.showTitle ? permissions.titleName : ''}
           handleExport={handleExport}
           paginationConfig={{
