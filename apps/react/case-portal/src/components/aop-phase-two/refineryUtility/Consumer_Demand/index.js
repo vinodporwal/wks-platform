@@ -61,9 +61,9 @@ const ConsumerDemand = () => {
     },
     {
       field: 'actualConsumption',
-      title: '(NM3/hr) Actual consumption',
-      widthT: 200,
-      minWidth: 200,
+      title: 'Yearly Actual Consumption',
+      widthT: 260,
+      minWidth: 230,
       type: 'number1',
       locked: true,
       editable: false,
