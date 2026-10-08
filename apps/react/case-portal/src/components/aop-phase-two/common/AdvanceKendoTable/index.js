@@ -2648,12 +2648,10 @@ const AdvanceKendoTable = ({
                       textAlign: 'center',
                       ...tdProps?.style,
                     }}
-                    // Prevent the row-click from propagating so the grid
-                    // doesn't enter full row-edit mode on checkbox click
-                    onClick={(e) => e.stopPropagation()}
                   >
                     {dataItem?.hideCheckbox ? null : (
-                      <Checkbox
+                      <div style={{ pointerEvents: 'none', display: 'inline-block' }}>
+                        <Checkbox
                         checked={checked}
                         disabled={isCellDisabled}
                         onChange={(e) => {
@@ -2666,6 +2664,7 @@ const AdvanceKendoTable = ({
                         }}
                         size='medium'
                       />
+                      </div>
                     )}
                   </td>
                 )
