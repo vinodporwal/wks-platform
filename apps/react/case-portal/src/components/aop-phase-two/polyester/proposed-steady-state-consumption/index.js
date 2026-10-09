@@ -297,7 +297,8 @@ const ProposedSteadyStateConsumption = () => {
       editable: false,
       type: 'number',
       minWidth: 110,
-      format: valueFormat
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'actualLastFY',
@@ -305,7 +306,8 @@ const ProposedSteadyStateConsumption = () => {
       editable: false,
       type: 'number',
       minWidth: 110,
-      format: valueFormat
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'sysGrn',
@@ -313,15 +315,17 @@ const ProposedSteadyStateConsumption = () => {
       editable: false,
       type: 'number',
       minWidth: 110,
-      format: valueFormat
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'proposed',
       title: 'Proposed',
       editable: true,
-      type: 'numberNonGrey',
+      type: 'number1',
       minWidth: 100,
-      format: valueFormat
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'remarks',

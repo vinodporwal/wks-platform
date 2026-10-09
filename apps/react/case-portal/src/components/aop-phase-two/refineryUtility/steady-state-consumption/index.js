@@ -50,17 +50,17 @@ const SteadyStateConsumption = () => {
   const isDtaCtPlant =
     siteName === 'DTA' &&
     (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
-
-  const isAsuPlant =
-    (siteName === 'DTA' &&
-      (plantName.toLowerCase() === 'air & asu' ||
-        plantName.toLowerCase() === 'pcg asu')) ||
-    (siteName === 'SEZ' &&
-      (plantName.toLowerCase() === 'air & asu' ||
-        plantName.toLowerCase() === 'pcg asu')) ||
-    (siteName === 'C2' &&
-      (plantName.toLowerCase() === 'air' ||
-        plantName.toLowerCase() === 'c2_asu'))
+  const isFCCTame = siteName === 'DTA' && plantName === 'FCC-2_SHP-TAME'
+  // const isAsuPlant =
+  //   (siteName === 'DTA' &&
+  //     (plantName.toLowerCase() === 'air & asu' ||
+  //       plantName.toLowerCase() === 'pcg asu')) ||
+  //   (siteName === 'SEZ' &&
+  //     (plantName.toLowerCase() === 'air & asu' ||
+  //       plantName.toLowerCase() === 'pcg asu')) ||
+  //   (siteName === 'C2' &&
+  //     (plantName.toLowerCase() === 'air' ||
+  //       plantName.toLowerCase() === 'c2_asu'))
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -94,7 +94,7 @@ const SteadyStateConsumption = () => {
         return Math.trunc(num).toString()
       }
 
-      if (isAsuPlant) {
+      if (isAsuPlant || isFCCTame) {
         return (Math.trunc(num * 100000) / 100000).toFixed(5)
       }
 
@@ -272,7 +272,7 @@ const SteadyStateConsumption = () => {
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isAsuPlant, AOP_YEAR])
+  }, [isDtaCtPlant, isAsuPlant, isFCCTame, AOP_YEAR])
 
   const dummyRows = []
 
@@ -280,7 +280,7 @@ const SteadyStateConsumption = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame])
 
   const fetchData = async () => {
     setLoading(true)
@@ -617,7 +617,7 @@ const SteadyStateConsumption = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}

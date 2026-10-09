@@ -68,6 +68,7 @@ const ManualEntry = ({ startDate, endDate }) => {
       headerAlign: 'left',
       type: 'number1',
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'remarks',
