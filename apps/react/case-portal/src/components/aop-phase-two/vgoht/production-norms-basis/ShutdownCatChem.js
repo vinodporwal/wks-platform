@@ -245,7 +245,7 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
     saveBtn: true,
     allAction: true,
     showExport: false,
-    ExcelName: `Production_Norms_Shutdown_Cat_Chem_${prevYearFormatted}`,
+    ExcelName: `Production_Norms_Shutdown_Cat_Chem`,
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,

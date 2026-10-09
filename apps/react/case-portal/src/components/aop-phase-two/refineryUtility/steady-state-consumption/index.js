@@ -50,7 +50,7 @@ const SteadyStateConsumption = () => {
   const isDtaCtPlant =
     siteName === 'DTA' &&
     (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
-
+  const isFCCTame = siteName === 'DTA' && plantName === 'FCC-2_SHP-TAME'
   const isAsuPlant =
     (siteName === 'DTA' &&
       (plantName.toLowerCase() === 'air & asu' ||
@@ -94,13 +94,13 @@ const SteadyStateConsumption = () => {
         return Math.trunc(num).toString()
       }
 
-      if (isAsuPlant) {
+      if (isAsuPlant || isFCCTame) {
         return (Math.trunc(num * 100000) / 100000).toFixed(5)
       }
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isAsuPlant],
+    [isDtaCtPlant, isAsuPlant, isFCCTame],
   )
 
   const columns = useMemo(() => {
@@ -272,7 +272,7 @@ const SteadyStateConsumption = () => {
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isAsuPlant, AOP_YEAR])
+  }, [isDtaCtPlant, isAsuPlant, isFCCTame, AOP_YEAR])
 
   const dummyRows = []
 
@@ -280,7 +280,7 @@ const SteadyStateConsumption = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame])
 
   const fetchData = async () => {
     setLoading(true)

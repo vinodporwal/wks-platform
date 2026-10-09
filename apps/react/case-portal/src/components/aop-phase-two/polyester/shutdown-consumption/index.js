@@ -128,9 +128,10 @@ const ShutdownConsumption = () => {
       field: m.field,
       title: headerMap[m.key] || m.title,
       editable: shutdownMonths.some(month => Number(month) === m.key),
-      type: 'numberNonGrey',
+      type: 'number1',
       format: valueFormat,
       minWidth: 100,
+      allowNegative: true
     })),
     {
       field: 'remarks',
