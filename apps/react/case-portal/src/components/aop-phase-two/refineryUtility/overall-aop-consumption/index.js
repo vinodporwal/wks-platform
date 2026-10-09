@@ -24,7 +24,7 @@ const OverallAopConsumption = () => {
   const isDtaCtPlant =
     siteName === 'DTA' &&
     (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
-
+  const isFCCTame = siteName === 'DTA' && plantName === 'FCC-2_SHP-TAME'
   const isAsuPlant =
     (siteName === 'DTA' &&
       (plantName.toLowerCase() === 'air & asu' ||
@@ -63,13 +63,13 @@ const OverallAopConsumption = () => {
         return Math.trunc(num).toString()
       }
 
-      if (isAsuPlant) {
+      if (isAsuPlant || isFCCTame) {
         return (Math.trunc(num * 100000) / 100000).toFixed(5)
       }
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isAsuPlant],
+    [isDtaCtPlant, isAsuPlant, isFCCTame],
   )
 
   const columns = useMemo(() => {
@@ -223,13 +223,13 @@ const OverallAopConsumption = () => {
         format: valueFormat,
       },
     ]
-  }, [AOP_YEAR, isDtaCtPlant, isAsuPlant])
+  }, [AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame])
 
   const fetchData = async () => {
     setLoading(true)
