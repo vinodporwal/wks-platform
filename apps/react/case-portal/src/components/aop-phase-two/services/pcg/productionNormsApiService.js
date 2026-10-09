@@ -38,6 +38,15 @@ export const ProductionNormsApiService = {
   getTargetGasifierOperationData,
   importTargetGasifierOperationExcel,
   exportTargetGasifierOperationExcel,
+
+  // Gasifier Filter Dropdown and Target Gasifier Filters APIs
+  getGasifierDropdownAopBasis,
+  getTargetGasifierFilters,
+  saveTargetGasifierFilters,
+
+  // Gasifier Target Actual DAF Throughput APIs
+  getTargetActualDafThroughtFilter,
+  saveTargetActualDafThroughtFilter,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -669,4 +678,127 @@ async function exportTargetGasifierOperationExcel(
       fileName || `Production_Norms_Target_Gasifier_Operation_${year}.xlsx`,
     method: 'GET',
   })
+}
+
+/**
+ * Get Gasifier Filter Dropdown AOP Basis
+ * GET /task/gasifier-filter-dropdown-aop-basis?plantId=&aopYear=
+ */
+async function getGasifierDropdownAopBasis(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/gasifier-filter-dropdown-aop-basis?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in getGasifierDropdownAopBasis:', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Get Target Gasifier Filters
+ * GET /task/target-gasifier-filters?plantId=&aopYear=
+ */
+async function getTargetGasifierFilters(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/target-gasifier-filters?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in getTargetGasifierFilters:', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Save Target Gasifier Filters
+ * POST /task/target-gasifier-filters?year=
+ */
+async function saveTargetGasifierFilters(keycloak, year, payload) {
+  const url = `${Config.CaseEngineUrl}/task/target-gasifier-filters?year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in saveTargetGasifierFilters:', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Get Gasifier Target Actual DAF Throughput Filter
+ * GET /task/gasifier-target-actual-daf-throughput?plantId=&aopYear=
+ */
+async function getTargetActualDafThroughtFilter(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/gasifier-target-actual-daf-throughput?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in getTargetActualDafThroughtFilter:', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Save Gasifier Target Actual DAF Throughput Filter
+ * POST /task/gasifier-target-actual-daf-throughput?year=
+ */
+async function saveTargetActualDafThroughtFilter(keycloak, year, payload) {
+  const url = `${Config.CaseEngineUrl}/task/gasifier-target-actual-daf-throughput?year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in saveTargetActualDafThroughtFilter:', e)
+    return Promise.reject(e)
+  }
 }

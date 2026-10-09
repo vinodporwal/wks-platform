@@ -195,6 +195,7 @@ const GradeWiseSteadyStateConsumption = () => {
                 minWidth: 150,
                 editable: col.field === 'WtAvg (YTD)' ? false : true,
                 type: col.type === 'number' ? 'row-based' : 'text',
+                allowNegative: true
               }
               if (col.type === 'number') {
                 colDef.format = valueFormat
@@ -230,6 +231,7 @@ const GradeWiseSteadyStateConsumption = () => {
               : item.IsEditable,
           type: 'number1',
           sapCode: item.SAPMaterialCode,
+          allowNegative: true,
         }))
 
         setRows(formattedData)

@@ -29,6 +29,9 @@ import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.StoredProcedureQuery;
 import com.wks.caseengine.dto.NormBasisPCGDTO;
+import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TargetActualDafThroughtFilterDTO;
+import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 
 @Service
 public class NormBasisPCGServiceImpl implements NormBasisPCGService {
@@ -93,7 +96,8 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			dto.setRemarks(row[6] != null ? row[6].toString() : "");
 			dto.setUom(row[7] != null ? row[7].toString() : "");
 			dto.setNormParameterTypeDisplayName(row[8] != null ? row[8].toString() : "");
-			dto.setType(row[9] != null ? row[9].toString() : "");
+			dto.setDataType(row[9] != null ? row[9].toString() : "");
+			dto.setDependentAttributeConfig(row[10] != null ? row[10].toString() : "");
 
 			resultList.add(dto);
 		}
@@ -200,6 +204,50 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 
 	}
 
+	@Override
+	public List<GasifierDropdownAopBasisDTO> getGasifierDropdownAopBasis(UUID plantId, String aopYear) {
+
+		Plants plant = plantsRepository.findById(plantId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName()  + "_GetGasifierDropdownAopBasisFilter";
+
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> GasifierDropdownAopBasisDTO.builder()
+				.name(rs.getString("name"))
+				.displayName(rs.getString("displayName"))
+				.configuration(rs.getString("configuration"))
+				.build(),
+				plantId.toString(), aopYear);
+	}
+
+	@Override
+	public List<TargetGasifierFilterDTO> getTargetGasifierFilters(UUID plantId, String aopYear) {
+
+		Plants plant = plantsRepository.findById(plantId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName()  + "_GetTargetGasifierFilter";
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			String idStr = rs.getString("Id");
+			String plantIdStr = rs.getString("PlantId");
+			String normParamIdStr = rs.getString("NormParameterId");
+
+			return TargetGasifierFilterDTO.builder()
+					.id(idStr != null && !idStr.isBlank() ? UUID.fromString(idStr) : null)
+					.gOperation(rs.getString("GOperation"))
+					.plantId(plantIdStr != null && !plantIdStr.isBlank() ? UUID.fromString(plantIdStr) : null)
+					.aopYear(rs.getString("AopYear"))
+					.normParameterId(normParamIdStr != null && !normParamIdStr.isBlank() ? UUID.fromString(normParamIdStr) : null)
+					.build();
+		}, plantId.toString(), aopYear);
+	}
+
 	private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUID siteId, String periodFrom,
 			String periodTo, String procedureName) {
 
@@ -245,6 +293,125 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to execute procedure", ex);
 		}
+	}
+
+	@Transactional
+	@Override
+	public AOPMessageVM saveTargetGasifierFilters(TargetGasifierFilterDTO targetGasifierFilterDTO, String year) {
+
+		UUID normParameterFKId = targetGasifierFilterDTO.getNormParameterId();
+		String attributeValue = targetGasifierFilterDTO.getGOperation();
+
+	Optional<NormAttributeTransactions> existingRecord = transactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+		
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(4);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "");
+
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	transactionsRepository.save(normAttributeTransactions);
+
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	aopMessageVM.setCode(200);
+	aopMessageVM.setMessage("Target Gasifier Filters Saved Successfully");
+	return aopMessageVM;
+}
+
+	@Override
+	public List<TargetActualDafThroughtFilterDTO> getTargetActualDafThroughtFilter(UUID plantId, String aopYear) {
+
+		Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_GetTargetActualDafThroughtFilter";
+
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			String normParamIdStr = rs.getString("NormParameterId");
+			String plantIdStr = rs.getString("PlantId");
+
+			return TargetActualDafThroughtFilterDTO.builder()
+					.normParameterId(normParamIdStr != null && !normParamIdStr.isBlank()
+							? UUID.fromString(normParamIdStr) : null)
+					.displayName(rs.getString("DisplayName"))
+					.targetValue(rs.getObject("TargetValue") != null
+							? rs.getDouble("TargetValue") : null)
+					.range(rs.getObject("Range") != null
+							? rs.getDouble("Range") : null)
+					.remarks(rs.getString("Remarks"))
+					.aopYear(rs.getString("aopYear"))
+					.plantId(plantIdStr != null && !plantIdStr.isBlank()
+							? UUID.fromString(plantIdStr) : null)
+					.build();
+		}, plantId.toString(), aopYear);
+	}
+
+	@Transactional
+	@Override
+	public AOPMessageVM saveTargetActualDafThroughtFilter(List<TargetActualDafThroughtFilterDTO> targetActualDafThroughtFilterDTOList, String year) {
+
+      for (TargetActualDafThroughtFilterDTO targetActualDafThroughtFilterDTO : targetActualDafThroughtFilterDTOList) {
+        Double targetValue = targetActualDafThroughtFilterDTO.getTargetValue();
+        Double range = targetActualDafThroughtFilterDTO.getRange();
+        String remarks = targetActualDafThroughtFilterDTO.getRemarks();
+
+        saveTargetActualDafThroughtFilterData(targetValue, 4, year, targetActualDafThroughtFilterDTO.getNormParameterId(), remarks);
+        saveTargetActualDafThroughtFilterData(range, 5, year, targetActualDafThroughtFilterDTO.getNormParameterId(), remarks);
+      }
+
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	aopMessageVM.setCode(200);
+	aopMessageVM.setMessage("Target Actual DAF Throughput Saved Successfully");
+	return aopMessageVM;
+}
+
+public AOPMessageVM saveTargetActualDafThroughtFilterData(Double attributeValue, Integer month, String year, UUID normParameterFKId, String remarks) {
+
+	Optional<NormAttributeTransactions> existingRecord = transactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+		
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(month);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+	normAttributeTransactions.setRemarks(remarks != null ? remarks : "");
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	transactionsRepository.save(normAttributeTransactions);
+
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	aopMessageVM.setCode(200);
+	aopMessageVM.setMessage("Target Actual DAF Throught Filter Data Saved Successfully");
+	return aopMessageVM;
 	}
 
 }
