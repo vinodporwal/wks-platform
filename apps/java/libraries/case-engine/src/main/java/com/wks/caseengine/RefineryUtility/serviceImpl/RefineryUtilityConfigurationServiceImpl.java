@@ -828,13 +828,9 @@ public AOPMessageVM deleteTreatmentVendorData(String normParameterFKId, String y
 
 		UUID normParamUUID = UUID.fromString(normParameterFKId);
 
-		Optional<NormParameters> existingRecord = normParametersRepository
-				.findById(normParamUUID);
+	int count = normParametersRepository.updateIsVisibleToFalse(normParamUUID);
 
-		if (existingRecord.isPresent()) {
-			NormParameters normParameters = existingRecord.get();
-			normParameters.setIsVisible(false);
-			normParametersRepository.save(normParameters);
+	if(count == 1){
 			return new AOPMessageVM(200, "Treatment vendor parameter deleted successfully", null);
 		} else {
 			return new AOPMessageVM(404, "No treatment vendor parameter found for the given parameters", null);
