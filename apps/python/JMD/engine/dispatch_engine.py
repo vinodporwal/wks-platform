@@ -341,16 +341,18 @@ def _stg_extraction_totals_from_power_result(power_result: dict) -> dict:
 
 # ---------------------------------------------------------------------------
 # Steam Spinning Margin (TPH) — per plant
-# Hardcoded for now; will be replaced by DB table lookup per plant.
-# After dispatch, total headroom (orig_max_tph - dispatched_tph) across all
-# running assets must be >= this value.
 # ---------------------------------------------------------------------------
-STEAM_SPINNING_MARGIN_TPH = {
-    "F6D82E68-C3B6-494F-9905-48F19DC611E3": 0.0,  # DTA-PCG-CPP
-    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": 0.0,  # SEZ-CPP
-    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": 0.0,  # SEZ-PCG-CPP
-    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": 0.0,  # DTA-CPP
-    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": 250.0,  # C2-CPP
+# Steam spinning margin (site spec): margin is a measured quantity,
+# not an enforced reserve — available margin = Fixed_Max - dispatched TPH per
+# steam generator. Enabled plants get the C2 merit-order dispatch
+# (mandatory ABs @min -> HRSGs to max -> activate optional ABs -> ramp ABs)
+# plus a per-iteration margin report.
+STEAM_SPINNING_MARGIN_ENABLED = {
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": False,  # DTA-PCG-CPP
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": False,  # SEZ-CPP
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": False,  # SEZ-PCG-CPP
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": False,  # DTA-CPP
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": True,   # C2-CPP
 }
 
 # ---------------------------------------------------------------------------
@@ -1381,7 +1383,7 @@ def dispatch_power_pool(
     return {"plants": results, "pool": pool}
 
 
-def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int, year: int, free_steam: float, spinning_margin: float = 0.0):
+def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int, year: int, free_steam: float, margin_report: bool = False):
     """Print the full steam dispatch result to the log in a structured table format."""
     # Derive grade list dynamically from keys present in demand_details
     top_grade = demand_details.get("_top_grade", "shp")
@@ -1456,20 +1458,30 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
     else:
         logger.info("  ✓ Steam demand met exactly")
 
-    # Spinning margin post-dispatch verification
-    if spinning_margin > 0:
-        working = [d for d in dispatch if d["op_hours"] > 0]
-        total_headroom = sum(d.get("orig_max_tph", d["max_tph"]) - d["dispatched_tph"] for d in working)
-        if total_headroom >= spinning_margin:
-            logger.info("")
-            logger.info("  ✓ STEAM SPINNING MARGIN OK: %.2f TPH reserved (required: %.2f TPH)", total_headroom, spinning_margin)
-        else:
-            logger.warning("")
-            logger.warning("  " + "!" * 76)
-            logger.warning("  !  *** STEAM SPINNING MARGIN VIOLATION ***")
-            logger.warning("  !  Required: %.2f TPH  |  Available headroom: %.2f TPH  |  Shortfall: %.2f TPH", spinning_margin, total_headroom, spinning_margin - total_headroom)
-            logger.warning("  !  Assets are dispatched beyond effective max — margin NOT maintained!")
-            logger.warning("  " + "!" * 76)
+    # Steam spinning margin report (site spec, updated): the available margin
+    # is measured, not enforced — per steam generator:
+    #     available margin = Fixed_Max TPH - dispatched total-output TPH
+    # HRSGs count on TOTAL output (free steam + supplementary firing).
+    if margin_report:
+        logger.info("")
+        logger.info("  STEAM SPINNING MARGIN REPORT  (online assets only: Fixed_Max - dispatched TPH)")
+        logger.info("  %-25s  %14s  %14s  %14s",
+                    "Asset", "Dispatched TPH", "Fixed Max TPH", "Margin TPH")
+        logger.info("  %s  %s  %s  %s", "-" * 25, "-" * 14, "-" * 14, "-" * 14)
+        total_margin = 0.0
+        for d in dispatch:
+            if d["op_hours"] <= 0:
+                continue
+            out_tph = (d["dispatched_mt"] + (d.get("free_steam_mt") or 0.0)) / d["op_hours"]
+            if out_tph <= 0.001:
+                continue  # offline asset — cold standby is not spinning margin
+            fixed_max = d.get("fixed_max_tph", d.get("orig_max_tph", d["max_tph"]))
+            m = fixed_max - out_tph
+            total_margin += m
+            logger.info("  %-25s  %14.2f  %14.2f  %14.2f",
+                        d["asset_name"], out_tph, fixed_max, m)
+        logger.info("  %-25s  %14s  %14s  %14.2f",
+                    "TOTAL AVAILABLE MARGIN", "", "", total_margin)
     logger.info("  %s", sep)
 
 
@@ -1614,6 +1626,9 @@ def dispatch_steam(
                 max_tph = 0.0
             max_tph = float(max_tph)
 
+            fixed_max_tph = cap_row.get("fixed_max")
+            fixed_max_tph = float(fixed_max_tph) if fixed_max_tph is not None else max_tph
+
             # Mandatory load flag (1 = must dispatch at MIN, 0 = optional)
             mandatory = int(cap_row.get(f"{mk}_Man_Load", 0) or 0)
 
@@ -1635,6 +1650,7 @@ def dispatch_steam(
                 "op_hours": op_hours,
                 "min_tph": min_tph,
                 "max_tph": max_tph,
+                "fixed_max_tph": fixed_max_tph,
                 "priority": priority,
                 "mandatory": mandatory,
                 "free_steam_mt": free_steam_mt,
@@ -1686,8 +1702,10 @@ def dispatch_steam(
                 "surplus_mt": 0.0,
             }
 
-    # 3b. Apply steam spinning margin — reduces effective_max_tph per asset
-    steam_spinning_margin = _apply_spinning_margin(dispatch_assets, plant_id)
+    # 3b. Steam spinning margin (site spec, updated): no pre-dispatch reserve —
+    #     the available margin is MEASURED post-dispatch as Fixed_Max minus
+    #     dispatched TPH per steam generator (C2 merit-order dispatch below).
+    steam_margin_report = STEAM_SPINNING_MARGIN_ENABLED.get(plant_id, False)
 
     # 3c. Convert HRSG total-output min/max into supplementary-firing min/max.
     # Free steam from the linked GT already covers part of the HRSG total output,
@@ -1912,7 +1930,12 @@ def dispatch_steam(
             asset["dispatched_tph"] = 0.0
             asset["dispatched_mt"] = 0.0
             
-        if net_shp_to_dispatch > 0:
+        if net_shp_to_dispatch > 0 and steam_margin_report:
+            # ── C2 merit-order dispatch (site spec): mandatory ABs @ min →
+            # HRSG supplementary to max → activate next-priority offline AB
+            # @ min (full redispatch each activation) → ramp ABs by priority.
+            _dispatch_steam_c2(dispatch_assets, net_shp_to_dispatch)
+        elif net_shp_to_dispatch > 0:
             # Step A: Mandatory assets at MIN load first
             total_min_mt = 0.0
             for a in dispatch_assets:
@@ -2050,7 +2073,7 @@ def dispatch_steam(
     prds_unmet_mt = round(sum(p["unmet_mt"] for p in prds_assets), 2)
 
     # Log results
-    _log_steam_dispatch_result(demand_details, dispatch_assets, month, year, free_steam, steam_spinning_margin)
+    _log_steam_dispatch_result(demand_details, dispatch_assets, month, year, free_steam, steam_margin_report)
 
     total_supp_gen = round(sum(a["dispatched_mt"] for a in dispatch_assets), 2)
     total_steam_gen = round(sum(a["total_output_mt"] for a in dispatch_assets), 2)
@@ -2079,98 +2102,102 @@ def dispatch_steam(
     }
 
 
-def _apply_spinning_margin(dispatch_assets: list, plant_id: str) -> float:
+def _dispatch_steam_c2(dispatch_assets: list, net_shp_to_dispatch: float) -> None:
+    """C2 merit-order steam dispatch (site spec).
+
+    Sequence (lower priority number = higher priority):
+      1. Mandatory + already-activated ABs (and mandatory HRSGs) at Apr_Min.
+      2. Remaining demand -> HRSGs ramp to Apr_Max in priority order.
+      3. Still short -> ramp the online ABs by priority, but only up to
+         (Apr_Max - next-offline-AB Apr_Min): once an online AB's headroom
+         falls to the next AB's min load, that AB is brought online at min
+         and everything RE-DISPATCHES from step 1.
+      4. Still short with no more offline ABs -> ramp the online ABs by
+         priority toward full Apr_Max.
+    If the minimum coverage alone exceeds demand the surplus is left for the
+    caller's surplus reporting (mandatory minimums cannot be shed; planning
+    guarantees at least one AB is mandatory every month).
     """
-    Compute effective_max_tph for each working asset by proportionally
-    reducing max_tph to reserve spinning margin headroom.
+    def _reset():
+        for a in dispatch_assets:
+            a["dispatched_tph"] = 0.0
+            a["dispatched_mt"] = 0.0
 
-    Returns the configured margin value (0.0 if none).
+    def _ramp_by_priority(assets, remaining_mt, reserve_tph=0.0):
+        groups = defaultdict(list)
+        for a in assets:
+            if a["op_hours"] > 0:
+                groups[a["priority"]].append(a)
+        for pri in sorted(groups):
+            if remaining_mt <= 0.001:
+                break
+            uncapped = [(a, a["max_tph"] - reserve_tph - a["dispatched_tph"]) for a in groups[pri]]
+            uncapped = [(a, h) for a, h in uncapped if h > 0.001]
+            while uncapped and remaining_mt > 0.001:
+                total_hrs = sum(a["op_hours"] for a, _ in uncapped)
+                if total_hrs <= 0:
+                    break
+                add_tph = remaining_mt / total_hrs
+                saturated = []
+                for a, h in uncapped:
+                    d = min(add_tph, h)
+                    a["dispatched_tph"] += d
+                    a["dispatched_mt"] = a["dispatched_tph"] * a["op_hours"]
+                    remaining_mt -= d * a["op_hours"]
+                    if d >= h - 0.001:
+                        saturated.append(a)
+                if not saturated:
+                    break
+                uncapped = [(a, h) for a, h in uncapped if a not in saturated]
+        return remaining_mt
 
-    Edge cases handled:
-    - effective_max < min_tph → cap at min_tph, redistribute excess to others
-    - total max <= margin → warn, no reduction applied
-    - no working assets → warn
-    """
-    margin = STEAM_SPINNING_MARGIN_TPH.get(plant_id, 0.0)
+    abs_ = [a for a in dispatch_assets if a["asset_type"] == "AUXBOILER"]
+    hrsgs = [a for a in dispatch_assets if a["asset_type"] == "HRSG"]
 
-    for a in dispatch_assets:
-        a["orig_max_tph"] = a["max_tph"]
-        a["effective_max_tph"] = a["max_tph"]
+    def _dispatch_base():
+        """Phases 1-2: online ABs at min load, then HRSGs fill to max."""
+        _reset()
+        for a in dispatch_assets:
+            if a["op_hours"] > 0 and (a["mandatory"] == 1 or a.get("_activated")):
+                a["dispatched_tph"] = a["min_tph"]
+                a["dispatched_mt"] = a["min_tph"] * a["op_hours"]
+        covered = sum(a["dispatched_mt"] for a in dispatch_assets)
+        return _ramp_by_priority(hrsgs, net_shp_to_dispatch - covered)
 
-    if margin <= 0:
-        return 0.0
+    residual = _dispatch_base()
 
-    working = [a for a in dispatch_assets if a["op_hours"] > 0]
-    if not working:
-        logger.warning("")
-        logger.warning("!" * 78)
-        logger.warning("!  SPINNING MARGIN: No working assets — cannot reserve %.2f TPH margin", margin)
-        logger.warning("!" * 78)
-        logger.warning("")
-        return margin
-
-    total_max = sum(a["max_tph"] for a in working)
-    if total_max <= margin:
-        logger.warning("")
-        logger.warning("!" * 78)
-        logger.warning("!  SPINNING MARGIN: Total max capacity (%.2f TPH) <= margin (%.2f TPH) — cannot reserve", total_max, margin)
-        logger.warning("!" * 78)
-        logger.warning("")
-        return margin
-
-    # Iterative proportional reduction with min_tph floor
-    remaining_margin = margin
-    remaining = working[:]
-
-    while remaining_margin > 0.01 and remaining:
-        sub_total = sum(a["max_tph"] for a in remaining)
-        if sub_total <= 0:
+    # Phases 3-4: ramp online ABs by priority. A non-mandatory AB comes
+    # online only when the online ABs' remaining headroom (Apr_Max -
+    # dispatched TPH) falls to that AB's Apr_Min — then redispatch.
+    while residual > 0.001:
+        online_abs = [
+            a for a in abs_
+            if a["op_hours"] > 0 and (a["mandatory"] == 1 or a.get("_activated"))
+        ]
+        candidates = sorted(
+            (a for a in abs_
+             if a["op_hours"] > 0 and a["mandatory"] != 1 and not a.get("_activated")),
+            key=lambda a: a["priority"],
+        )
+        if not candidates:
+            residual = _ramp_by_priority(online_abs, residual)
             break
+        nxt = candidates[0]
+        residual = _ramp_by_priority(online_abs, residual, reserve_tph=nxt["min_tph"])
+        if residual <= 0.001:
+            break
+        nxt["_activated"] = True
+        logger.info(
+            "  [C2 DISPATCH] Online AB headroom <= %.2f TPH (Apr_Min of %s) "
+            "— bringing it online at MIN load and redispatching",
+            nxt["min_tph"], nxt["asset_name"],
+        )
+        residual = _dispatch_base()
 
-        newly_capped = []
-        for a in remaining:
-            share = remaining_margin * a["max_tph"] / sub_total
-            eff = a["max_tph"] - share
-            if eff < a["min_tph"]:
-                a["effective_max_tph"] = a["min_tph"]
-                newly_capped.append(a)
-            else:
-                a["effective_max_tph"] = eff
-
-        if newly_capped:
-            absorbed = sum(a["max_tph"] - a["min_tph"] for a in newly_capped)
-            remaining_margin -= absorbed
-            remaining = [a for a in remaining if a not in newly_capped]
-            for a in remaining:
-                a["effective_max_tph"] = a["max_tph"]  # reset for next iteration
-        else:
-            remaining_margin = 0
-
-    # Log the margin configuration
-    logger.info("")
-    logger.info("  SPINNING MARGIN CONFIG")
-    logger.info("  Required margin: %.2f TPH", margin)
-    logger.info("  %-25s  %10s  %10s  %10s", "Asset", "Max TPH", "Eff Max", "Reserve")
-    logger.info("  %s  %s  %s  %s", "-" * 25, "-" * 10, "-" * 10, "-" * 10)
-    total_reserved = 0.0
-    for a in working:
-        reserve = a["orig_max_tph"] - a["effective_max_tph"]
-        total_reserved += reserve
-        logger.info("  %-25s  %10.2f  %10.2f  %10.2f",
-                     a["asset_name"], a["orig_max_tph"], a["effective_max_tph"], reserve)
-    logger.info("  %-25s  %10s  %10s  %10.2f", "TOTAL RESERVED", "", "", total_reserved)
-
-    if remaining_margin > 0.01:
-        logger.warning("")
-        logger.warning("!" * 78)
-        logger.warning("!  SPINNING MARGIN SHORTFALL: Cannot reserve full %.2f TPH — shortfall of %.2f TPH", margin, remaining_margin)
-        logger.warning("!" * 78)
-        logger.warning("")
-    else:
-        logger.info("  → Margin of %.2f TPH successfully reserved", margin)
-    logger.info("")
-
-    return margin
+    if residual > 0.01:
+        logger.warning(
+            "  [C2 DISPATCH] Steam deficit %.2f MT — all available HRSG/AB "
+            "capacity exhausted", residual)
 
 
 def _apply_power_spinning_margin(dispatch_assets: list, plant_id: str) -> float:
