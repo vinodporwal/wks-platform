@@ -252,6 +252,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					if (chemical || ptaPmdPia) {	
 						mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
 					}
+					if (vertical.getName().equalsIgnoreCase("MEROX")) {
+						mCUNormsValueDTO.setLastFy(row[30] != null ? Double.parseDouble(row[30].toString()) : null);	
+					}
 				}
 				mCUNormsValueDTOList.add(mCUNormsValueDTO);
 			}
