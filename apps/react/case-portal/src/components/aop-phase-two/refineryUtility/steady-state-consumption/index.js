@@ -62,6 +62,17 @@ const SteadyStateConsumption = () => {
       (plantName.toLowerCase() === 'air' ||
         plantName.toLowerCase() === 'c2_asu'))
 
+  const isAsuPlant =
+    (siteName === 'DTA' &&
+      (plantName.toLowerCase() === 'air & asu' ||
+        plantName.toLowerCase() === 'pcg asu')) ||
+    (siteName === 'SEZ' &&
+      (plantName.toLowerCase() === 'air & asu' ||
+        plantName.toLowerCase() === 'pcg asu')) ||
+    (siteName === 'C2' &&
+      (plantName.toLowerCase() === 'air' ||
+        plantName.toLowerCase() === 'c2_asu'))
+
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -100,7 +111,7 @@ const SteadyStateConsumption = () => {
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isAsuPlant, isFCCTame],
+    [isDtaCtPlant, isAsuPlant],
   )
 
   const columns = useMemo(() => {
