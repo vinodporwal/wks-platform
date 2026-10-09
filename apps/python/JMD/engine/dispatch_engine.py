@@ -368,6 +368,18 @@ POWER_SPINNING_MARGIN_ENABLED = {
     "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": False,   # C2-CPP
 }
 
+# Power spinning margin report (site spec): measured, not enforced —
+# per running generator, available margin = Fixed_Max MW - dispatched MW.
+# Reporting-only; capacity reservation stays governed by
+# POWER_SPINNING_MARGIN_ENABLED above.
+POWER_SPINNING_MARGIN_REPORT = {
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": False,  # DTA-PCG-CPP
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": False,  # SEZ-CPP
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": False,  # SEZ-PCG-CPP
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": False,  # DTA-CPP
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": True,   # C2-CPP
+}
+
 _MONTH_NAMES = {
     1: "January", 2: "February", 3: "March", 4: "April",
     5: "May",     6: "June",     7: "July",   8: "August",
@@ -860,7 +872,30 @@ def _dispatch_one_by_one(
 # Logging helpers
 # ---------------------------------------------------------------------------
 
-def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int, spinning_margin: float = 0.0):
+def _log_power_margin_report(dispatch: list, label: str = "") -> None:
+    """Measured power spinning margin (site spec): per running generator,
+    available margin = Fixed_Max MW - dispatched MW.  Units with zero
+    output are excluded — cold standby is not spinning reserve."""
+    tag = f"  [{label}]" if label else ""
+    logger.info("")
+    logger.info("  POWER SPINNING MARGIN REPORT%s  (online assets only: Fixed_Max MW - dispatched MW)", tag)
+    logger.info("  %-25s  %14s  %14s  %14s",
+                "Asset", "Dispatched MW", "Fixed Max MW", "Margin MW")
+    logger.info("  %s  %s  %s  %s", "-" * 25, "-" * 14, "-" * 14, "-" * 14)
+    total_margin = 0.0
+    for d in dispatch:
+        if d["op_hours"] <= 0 or d.get("dispatched_mwh", 0.0) <= 0:
+            continue  # offline — cold standby does not count as margin
+        fixed_max = d.get("fixed_max_mw") or d.get("orig_max_mw") or d["max_mw"]
+        m = fixed_max - d["dispatched_mw"]
+        total_margin += m
+        logger.info("  %-25s  %14.2f  %14.2f  %14.2f",
+                    d["asset_name"], d["dispatched_mw"], fixed_max, m)
+    logger.info("  %-25s  %14s  %14s  %14.2f",
+                "TOTAL AVAILABLE MARGIN", "", "", total_margin)
+
+
+def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int, spinning_margin: float = 0.0, margin_report: bool = False):
     """Print the full dispatch result to the log in a structured table format."""
     total_demand = demand["total_mwh"]
     total_gen = sum(d["dispatched_mwh"] for d in dispatch)
@@ -937,6 +972,8 @@ def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int, sp
             logger.warning("  !  Required: %.2f MW  |  Available headroom: %.2f MW  |  Shortfall: %.2f MW", spinning_margin, total_headroom, spinning_margin - total_headroom)
             logger.warning("  !  Assets are dispatched beyond effective max — margin NOT maintained!")
             logger.warning("  " + "!" * 76)
+    if margin_report:
+        _log_power_margin_report(dispatch)
     logger.info("  %s", sep)
 
 
@@ -1157,7 +1194,8 @@ def dispatch_power(
     deficit = round(max(0.0, total_demand - total_gen), 2)
 
     # 5. Log the result
-    _log_dispatch_result(demand, dispatch, month, year, power_spinning_margin)
+    _log_dispatch_result(demand, dispatch, month, year, power_spinning_margin,
+                         margin_report=POWER_SPINNING_MARGIN_REPORT.get(plant_id, False))
 
     total_free_steam = round(sum(d.get("free_steam_mt", 0) for d in dispatch), 2)
     total_aux = round(sum(d.get("aux_power", 0.0) for d in dispatch), 2)
@@ -1251,6 +1289,13 @@ def _log_pool_dispatch(pool: dict, results: dict, plant_ids: list, month: int, y
         for t in pool["transfers"]:
             logger.info("    %s -> %s: %.2f MWh",
                         t["sender_plant_id"], t["receiver_plant_id"], t["quantity_mwh"])
+
+    # Per-CPP measured power spinning margin (enabled plants only)
+    for pid in plant_ids:
+        if POWER_SPINNING_MARGIN_REPORT.get(pid, False):
+            _log_power_margin_report(results.get(pid, {}).get("assets", []),
+                                     label=str(pid)[:13])
+
     logger.info("  %s", sep)
 
 
