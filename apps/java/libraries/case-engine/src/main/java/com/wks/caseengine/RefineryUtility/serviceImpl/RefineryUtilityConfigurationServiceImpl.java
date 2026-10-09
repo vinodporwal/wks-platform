@@ -36,6 +36,7 @@ import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
@@ -46,6 +47,7 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
 
 @Service
 public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityConfigurationService {
@@ -64,6 +66,9 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 
     @PersistenceContext 
 	private EntityManager entityManager;
+
+	@Autowired
+	private NormParametersRepository normParametersRepository;
     
     @Override
     public AOPMessageVM getMonthWiseConstants(String year, String plantFKId) {
@@ -815,6 +820,22 @@ public List<Object[]> getTreatmentVendorsFromSP(String aopYear, String plantId, 
 	normAttributeTransactions.setRemarks(remark);
 	normAttributeTransactions.setUserName(Utility.getUserName());
 	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+@Transactional
+@Override
+public AOPMessageVM deleteTreatmentVendorData(String normParameterFKId, String year) {
+
+		UUID normParamUUID = UUID.fromString(normParameterFKId);
+
+	int count = normParametersRepository.updateIsVisibleToFalse(normParamUUID);
+
+	if(count == 1){
+			return new AOPMessageVM(200, "Treatment vendor parameter deleted successfully", null);
+		} else {
+			return new AOPMessageVM(404, "No treatment vendor parameter found for the given parameters", null);
+		}
+
 }
 
 @Override
