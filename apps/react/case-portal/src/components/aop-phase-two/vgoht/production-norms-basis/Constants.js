@@ -117,7 +117,9 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         remarks: item.remarks || '',
         normType: item?.type || null,
         id: item?.id || index + 1,
-        type: (item?.UOM?.toLowerCase() || item?.uom?.toLowerCase()) === "boolean" ? "checkbox" : "number"
+        type: (item?.UOM?.toLowerCase() || item?.uom?.toLowerCase()) === "boolean" ? "checkbox" : "number",
+        format: valueFormat,
+        allowNegative: true
       }))
       
       setRows(formattedData)
