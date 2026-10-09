@@ -22,6 +22,7 @@ public interface RefineryUtilityConfigurationService {
     public AOPMessageVM checkIsSummerWinterPlant(String plantId);
     public AOPMessageVM getTreatmentVendorData(String year, String plantFKId);
     public List<TreatmentVendorDTO> saveTreatmentVendorData(String year, String plantFKId, List<TreatmentVendorDTO> treatmentVendorDTOList);
+    public AOPMessageVM deleteTreatmentVendorData(String normParameterFKId, String year);
     public AOPMessageVM getCommodityChemicalsData(String year, String plantFKId);
     public List<CommoditySelectionDTO> saveCommodityChemicalsData(String year, String plantFKId, List<CommoditySelectionDTO> commoditySelectionDTOList);
     public AOPMessageVM getPlantOwnerDropdown(String plantFKId);

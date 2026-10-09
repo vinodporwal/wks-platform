@@ -36,7 +36,11 @@ const TreatmentVendor = () => {
     message: '',
     severity: 'info',
   })
-
+  const siteName = (siteObject?.name || '').trim().toUpperCase()
+  const plantName = (plantObject?.name || '').trim()
+  const isDtaCtPlant =
+    siteName === 'DTA' &&
+    (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
@@ -257,6 +261,48 @@ const TreatmentVendor = () => {
       setSnackbarOpen(true)
     }
   }
+  const deleteRowData = useCallback(
+    async (dataItem) => {
+      const { idFromApi, id } = dataItem
+
+      // New row (not yet persisted) — just remove from local state
+      if (!idFromApi) {
+        setRows((prev) => prev.filter((row) => row.id !== id))
+        setModifiedCells((prev) => {
+          const next = { ...prev }
+          delete next[id]
+          return next
+        })
+        return
+      }
+
+      // Persisted row — call DELETE endpoint
+      setLoading(true)
+      try {
+        await ProductionNormsApiService.deleteTreatmentVendorData(
+          keycloak,
+          idFromApi,
+          AOP_YEAR,
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted Successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } catch (error) {
+        console.error('Error deleting Treatment Vendor data:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error deleting record!',
+          severity: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, fetchData],
+  )
 
   // Simplified: no vertical/site conditions — same permissions apply to everyone.
   // If it's an old year, everything gets locked down via the overrides below.
@@ -265,6 +311,7 @@ const TreatmentVendor = () => {
       showAction: true,
       saveWithRemark: true,
       saveBtn: true,
+      deleteButton: isDtaCtPlant ? true : false,
       allAction: true,
       showTitleNameBusiness: true,
       showExport: false,
@@ -315,6 +362,7 @@ const TreatmentVendor = () => {
         currentRowId={currentRowId}
         handleExcelUpload={handleExcelUpload}
         handleExport={downloadExcelForConfiguration}
+        deleteRowData={deleteRowData}
         plantID={PLANT_ID}
         groupBy='ParticularG'
       />
