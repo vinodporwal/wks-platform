@@ -29,7 +29,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const valueFormat = customValueFormatterPhaseTwo(5)
+  const valueFormat = customValueFormatterPhaseTwo(4)
 
   const site = siteObject?.name?.toLowerCase()?.trim()
   const plant = plantObject?.name?.toLowerCase()?.trim()
