@@ -7,6 +7,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const Constants = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
@@ -29,6 +30,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const valueFormat = customValueFormatterPhaseTwo(5)
+  const ExcelName = generateExcelName(dataGridStore, 'Constants');
   const columns = [
     {
       field: 'productName',
@@ -332,6 +334,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        ExcelName
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

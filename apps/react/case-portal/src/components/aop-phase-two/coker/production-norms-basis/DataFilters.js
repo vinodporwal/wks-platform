@@ -34,7 +34,7 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
   const ExcelName = generateExcelName(dataGridStore, 'Data Filters');
   const columns = [
     {
-      field: 'productName',
+      field: 'displayName',
       title: 'Particulars',
       widthT: 300,
       minWidth: 250,
@@ -136,27 +136,6 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
   const saveChanges = async () => {
     setLoading(true)
 
-    // Validate required parameters
-    if (!startDate || !endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message:
-          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
-
-    if (!SITE_ID) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Site ID is required.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
 
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
@@ -200,17 +179,12 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
 
     const payload = modifiedData
     try {
-      const periodFrom = formatDateForAPI(startDate)
-      const periodTo = formatDateForAPI(endDate)
 
 
       const response = await ProductionNormsApiService.saveDataFiltersData(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
-        SITE_ID,
-        periodFrom,
-        periodTo,
         payload,
       )
 
@@ -235,28 +209,14 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
-    if (!startDate || !endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message:
-          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
-        severity: 'error',
-      })
-      return
-    }
-
     setLoading(true)
     try {
-      const periodFrom = formatDateForAPI(startDate)
-      const periodTo = formatDateForAPI(endDate)
 
       const response = await ProductionNormsApiService.importDataFiltersExcel(
         file,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        periodFrom,
-        periodTo,
       )
 
       if (response?.code === 200) {

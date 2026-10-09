@@ -338,12 +338,12 @@ async function importConstantsExcel(
  * @param {string} year - AOP Year
  * @returns {Promise} Export response
  */
-async function exportConstantsExcel(keycloak, plantId, year) {
+async function exportConstantsExcel(keycloak, plantId, year, fileName) {
   return exportExcelData(
     keycloak,
     'vgoht/norms-basis/constant/export',
     { year: year, plantFKId: plantId },
-    `VGOHT_Production_Norms_Constants_${year}.xlsx`,
+    fileName || `Production_Norms_Constants_${year}.xlsx`,
   )
 }
 
@@ -552,7 +552,7 @@ async function calculateHistoricalMonths(keycloak, plantId, aopYear) {
  * @returns {Promise} Data Filters data
  */
 async function getDataFiltersData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/data-filters?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/configuration-filter?aopYear=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -575,9 +575,6 @@ async function getDataFiltersData(keycloak, plantId, year) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
  * @param {string} plantId - Plant ID
- * @param {string} siteId - Site ID
- * @param {string} periodFrom - Period start date
- * @param {string} periodTo - Period end date
  * @param {Array} payload - Data to save
  * @returns {Promise} Save response
  */
@@ -585,12 +582,9 @@ async function saveDataFiltersData(
   keycloak,
   year,
   plantId,
-  siteId,
-  periodFrom,
-  periodTo,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/data-filters?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const url = `${Config.CaseEngineUrl}/task/configuration-filter?aopYear=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -620,23 +614,17 @@ async function saveDataFiltersData(
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
- * @param {string} periodFrom - Period start date
- * @param {string} periodTo - Period end date
  * @returns {Promise} Import response
  */
 async function importDataFiltersExcel(
   file,
   keycloak,
   plantId,
-  year,
-  periodFrom,
-  periodTo,
+  year
 ) {
-  return saveExcelData(file, keycloak, 'vgoht/norms-basis/data-filters/import', {
+  return saveExcelData(file, keycloak, 'configuration-filter-import', {
     year: year,
-    plantFKId: plantId,
-    periodFrom: periodFrom,
-    periodTo: periodTo,
+    plantId: plantId
   })
 }
 
@@ -650,8 +638,8 @@ async function importDataFiltersExcel(
 async function exportDataFiltersExcel(keycloak, plantId, year, fileName) {
   return exportExcelData(
     keycloak,
-    'vgoht/norms-basis/data-filters/export',
+    'configuration-filter-export',
     { year: year, plantFKId: plantId },
-    fileName || `VGOHT_Production_Norms_DataFilters_${year}.xlsx`,
+    fileName || `Production_Norms_DataFilters_${year}.xlsx`,
   )
 }
