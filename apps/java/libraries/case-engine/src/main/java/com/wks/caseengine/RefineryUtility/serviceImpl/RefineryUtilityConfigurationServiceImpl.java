@@ -36,6 +36,7 @@ import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
@@ -46,6 +47,7 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
 
 @Service
 public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityConfigurationService {
@@ -64,6 +66,9 @@ public class RefineryUtilityConfigurationServiceImpl implements RefineryUtilityC
 
     @PersistenceContext 
 	private EntityManager entityManager;
+
+	@Autowired
+	private NormParametersRepository normParametersRepository;
     
     @Override
     public AOPMessageVM getMonthWiseConstants(String year, String plantFKId) {
@@ -820,23 +825,21 @@ public List<Object[]> getTreatmentVendorsFromSP(String aopYear, String plantId, 
 @Transactional
 @Override
 public AOPMessageVM deleteTreatmentVendorData(String normParameterFKId, String year) {
-	try {
+
 		UUID normParamUUID = UUID.fromString(normParameterFKId);
 
-		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
-				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParamUUID, 4, year);
+		Optional<NormParameters> existingRecord = normParametersRepository
+				.findById(normParamUUID);
 
 		if (existingRecord.isPresent()) {
-			normAttributeTransactionsRepository.delete(existingRecord.get());
-			return new AOPMessageVM(200, "Treatment vendor data deleted successfully", null);
+			NormParameters normParameters = existingRecord.get();
+			normParameters.setIsVisible(false);
+			normParametersRepository.save(normParameters);
+			return new AOPMessageVM(200, "Treatment vendor parameter deleted successfully", null);
 		} else {
-			return new AOPMessageVM(404, "No treatment vendor data found for the given parameters", null);
+			return new AOPMessageVM(404, "No treatment vendor parameter found for the given parameters", null);
 		}
-	} catch (IllegalArgumentException e) {
-		throw new RestInvalidArgumentException("Invalid UUID format for Norm Parameter ID", e);
-	} catch (Exception ex) {
-		throw new RuntimeException("Failed to delete treatment vendor data", ex);
-	}
+
 }
 
 @Override
