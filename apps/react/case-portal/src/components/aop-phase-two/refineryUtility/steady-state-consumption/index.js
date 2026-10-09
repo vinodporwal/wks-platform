@@ -100,7 +100,7 @@ const SteadyStateConsumption = () => {
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isAsuPlant],
+    [isDtaCtPlant, isAsuPlant, isFCCTame],
   )
 
   const columns = useMemo(() => {
