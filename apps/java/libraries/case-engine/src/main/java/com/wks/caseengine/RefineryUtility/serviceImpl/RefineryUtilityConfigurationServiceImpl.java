@@ -817,6 +817,28 @@ public List<Object[]> getTreatmentVendorsFromSP(String aopYear, String plantId, 
 	normAttributeTransactionsRepository.save(normAttributeTransactions);
 }
 
+@Transactional
+@Override
+public AOPMessageVM deleteTreatmentVendorData(String normParameterFKId, String year) {
+	try {
+		UUID normParamUUID = UUID.fromString(normParameterFKId);
+
+		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParamUUID, 4, year);
+
+		if (existingRecord.isPresent()) {
+			normAttributeTransactionsRepository.delete(existingRecord.get());
+			return new AOPMessageVM(200, "Treatment vendor data deleted successfully", null);
+		} else {
+			return new AOPMessageVM(404, "No treatment vendor data found for the given parameters", null);
+		}
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Norm Parameter ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to delete treatment vendor data", ex);
+	}
+}
+
 @Override
 public AOPMessageVM getCommodityChemicalsData(String year, String plantFKId) {
 	try {
