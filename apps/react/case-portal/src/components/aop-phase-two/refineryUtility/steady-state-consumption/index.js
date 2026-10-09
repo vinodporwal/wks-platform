@@ -51,6 +51,17 @@ const SteadyStateConsumption = () => {
     siteName === 'DTA' &&
     (plantName === 'CT4 (734)' || plantName === 'CT6 (736)')
 
+  const isAsuPlant =
+    (siteName === 'DTA' &&
+      (plantName.toLowerCase() === 'air & asu' ||
+        plantName.toLowerCase() === 'pcg asu')) ||
+    (siteName === 'SEZ' &&
+      (plantName.toLowerCase() === 'air & asu' ||
+        plantName.toLowerCase() === 'pcg asu')) ||
+    (siteName === 'C2' &&
+      (plantName.toLowerCase() === 'air' ||
+        plantName.toLowerCase() === 'c2_asu'))
+
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -82,9 +93,14 @@ const SteadyStateConsumption = () => {
         }
         return Math.trunc(num).toString()
       }
+
+      if (isAsuPlant) {
+        return (Math.trunc(num * 100000) / 100000).toFixed(5)
+      }
+
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant],
+    [isDtaCtPlant, isAsuPlant],
   )
 
   const columns = useMemo(() => {
@@ -256,7 +272,7 @@ const SteadyStateConsumption = () => {
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, AOP_YEAR])
+  }, [isDtaCtPlant, isAsuPlant, AOP_YEAR])
 
   const dummyRows = []
 
@@ -264,7 +280,7 @@ const SteadyStateConsumption = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant])
 
   const fetchData = async () => {
     setLoading(true)
@@ -291,13 +307,10 @@ const SteadyStateConsumption = () => {
             }
           })
         } else {
-          // Apart from isDtaCtPlant: show by default no decimal
+          // Apart from isDtaCtPlant: show by default 2 decimals
           MONTH_FIELDS.forEach((m) => {
             if (row[m] !== undefined && row[m] !== null && row[m] !== '') {
-              const num = parseFloat(row[m])
-              if (!isNaN(num)) {
-                row[m] = Math.trunc(num).toString()
-              }
+              row[m] = formatValueByUom(row[m], uom)
             }
           })
         }
@@ -344,17 +357,14 @@ const SteadyStateConsumption = () => {
             }
           })
         } else {
-          // Apart from isDtaCtPlant: show by default no decimal
+          // Apart from isDtaCtPlant: show by default 2 decimals
           MONTH_FIELDS.forEach((m) => {
             if (
               updatedRow[m] !== undefined &&
               updatedRow[m] !== null &&
               updatedRow[m] !== ''
             ) {
-              const num = parseFloat(updatedRow[m])
-              if (!isNaN(num)) {
-                updatedRow[m] = Math.trunc(num).toString()
-              }
+              updatedRow[m] = formatValueByUom(updatedRow[m], uom)
             }
           })
         }
