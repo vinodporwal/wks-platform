@@ -39,6 +39,7 @@ const MxoRegeneration = ({ permissions }) => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+  const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -488,14 +489,12 @@ const MxoRegeneration = ({ permissions }) => {
       const payload = modifiedData.map((row) => ({
         month: row.month ?? row.monthLabel ?? '',
         mXOOpeningStockInMT: Number(row.mxoOpeningStock_MT ?? 0),
-        mXOGeneration: Number(row.mxoGeneration_TPM ?? 0),
-        mXOReprocessing: Number(row.mxoReprocessing_TPM ?? 0),
-        mXOClosingStockInMT: Number(row.mxoClosingStock_MT ?? 0),
-        aopYear: AOP_YEAR,
-        MXOOpeningStockId:
-          row.mxoOpeningStock_Id || row.MXOOpeningStock_Id || null,
-        MXOClosingStockId:
-          row.mxoClosingStock_Id || row.MXOClosingStock_Id || null,
+        mXOOpeningStockId:
+          row.mXOOpeningStockId ||
+          row.mxoOpeningStock_Id ||
+          row.MXOOpeningStock_Id ||
+          row.MXOOpeningStockId ||
+          null,
       }))
 
       const response = await ProductionNormsApiService.saveMxoStockData(
@@ -526,8 +525,8 @@ const MxoRegeneration = ({ permissions }) => {
     }
   }, [modifiedCellsStock, keycloak, PLANT_ID, AOP_YEAR, fetchStockData])
 
-  const getAdjustedPermissions = (perms, isOld) => {
-    if (isOld != 1) return perms
+  const getAdjustedPermissions = (perms, isOldYear) => {
+    if (isOldYear != 1) return perms
     return {
       ...perms,
       showAction: false,
@@ -539,7 +538,7 @@ const MxoRegeneration = ({ permissions }) => {
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
-      isOldYear: isOld,
+      isOldYear: isOldYear,
       allAction: false,
     }
   }
@@ -558,7 +557,7 @@ const MxoRegeneration = ({ permissions }) => {
       uploadExcelBtn: false,
       ...permissions,
     },
-    IS_OLD_YEAR,
+    isOldYear,
   )
 
   const adjustedPermissionsStock = getAdjustedPermissions(
@@ -575,7 +574,7 @@ const MxoRegeneration = ({ permissions }) => {
       ExcelName: `${verticalObject?.name}_${siteObject?.name}_${AOP_YEAR}_Mxo_Stock`,
       ...permissions,
     },
-    IS_OLD_YEAR,
+    isOldYear,
   )
 
   return (

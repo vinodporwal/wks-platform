@@ -14,6 +14,7 @@ import { generateExcelNameWithoutExt } from 'components/aop-phase-two/common/uti
 import MaterialGroupedSelectionDialog, {
   useMaterialGroupedSelectionPopup,
 } from 'components/kendo-data-tables/MaterialGroupedSelectionDialog'
+import GetFinancialYear from 'components/Utilities/GetFinancialYear'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -43,7 +44,7 @@ const OverallAopConsumption = () => {
       dataGridStore,
       'Overall_AOP_Consumption'
     )
-
+  const { previousFYFormatted } = GetFinancialYear(AOP_YEAR)
   const columns = [
     {
       field: 'normParameterTypeDisplayName',
@@ -87,9 +88,18 @@ const OverallAopConsumption = () => {
       field: 'UOM',
       title: 'UOM',
       widthT: 120,
-      minWidth: 120,
+      minWidth: 100,
       type: 'text',
       editable: false,
+    },
+    {
+      field: 'lastFy',
+      title: `Last FY ${previousFYFormatted}`,
+      widthT: 120,
+      minWidth: 180,
+      type: 'number1',
+      editable: false,
+      format: valueFormat,
     },
     {
       field: 'april',

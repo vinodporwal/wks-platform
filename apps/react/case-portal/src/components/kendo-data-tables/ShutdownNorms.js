@@ -957,23 +957,25 @@ const ShutdownNorms = () => {
       dropdownLabel: 'Grade',
       allAction: true,
       downloadExcelBtnFromUI:
-        !IS_PE_HMD ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        lowerVertName === 'vcm' ||
-        lowerVertName === 'pta' ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_CHEMICAL ||
-        IS_AROMATICS_HMD ||
-        IS_AROMATICS_PMD ||
-        lowerVertName === 'meg'
-          ? false
-          : true,
+        lowerVertName === 'cracker'
+          ? true
+          : !IS_PE_HMD ||
+            IS_PE_PP_VERTICAL ||
+            IS_PET_VERTICAL ||
+            IS_ELASTOMER_HMD_SBR ||
+            IS_ELASTOMER_JMD_HIIR ||
+            IS_PVC_VMD ||
+            IS_PVC_DMD ||
+            IS_PVC_HMD ||
+            lowerVertName === 'vcm' ||
+            lowerVertName === 'pta' ||
+            IS_AROMATICS_SEZ_PX4 ||
+            IS_CHEMICAL ||
+            IS_AROMATICS_HMD ||
+            IS_AROMATICS_PMD ||
+            lowerVertName === 'meg'
+            ? false
+            : true,
       downloadExcelBtn:
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||

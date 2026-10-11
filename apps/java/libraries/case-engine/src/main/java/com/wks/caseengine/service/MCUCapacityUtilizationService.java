@@ -10,4 +10,6 @@ public interface MCUCapacityUtilizationService {
     AOPMessageVM getMCUCapacityUtilization(String aopYear, String siteId);
 
     AOPMessageVM updateMCUCapacityUtilization(List<MCUCapacityUtilizationDTO> dtoList);
+    
+	public AOPMessageVM LoadCapacityUtilization(String siteId, String aopYear);
 }

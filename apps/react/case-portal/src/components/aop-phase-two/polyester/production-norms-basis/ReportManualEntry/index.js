@@ -68,6 +68,7 @@ const ManualEntry = ({ startDate, endDate }) => {
       headerAlign: 'left',
       type: 'number1',
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'remarks',
@@ -369,7 +370,7 @@ const ManualEntry = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // groupBy={['type']}
+        groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

@@ -219,8 +219,15 @@ public class NormBasisServiceImpl implements NormBasisService {
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-        // CRUDE_DTA_CDU1_NormCalculation
-     String procedureName = vertical.getName()+"_"+site.getName()+"_"+  plant.getName() +"_"+"NormCalculation";
+        boolean crude = vertical.getName().equalsIgnoreCase("CRUDE");
+
+        String procedureName = null;
+        if(crude) {  
+            procedureName = vertical.getName()+"_"+site.getName() +"_LoadConfiguration";
+        }
+        else {
+            procedureName = vertical.getName()+"_"+site.getName()+"_"+  plant.getName() +"_"+"NormCalculation";
+        }
 
      String errorMessage = executeNormCalculationProcedure(plantId, aopYear, siteId, periodFrom, periodTo, procedureName );
 
@@ -254,8 +261,15 @@ public class NormBasisServiceImpl implements NormBasisService {
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-        // CRUDE_DTA_CDU1_NormCalculation
-     String procedureName = vertical.getName()+"_"+site.getName()+"_"+  plant.getName() +"_"+"NormCalculation";
+       boolean crude = vertical.getName().equalsIgnoreCase("CRUDE");
+
+       String procedureName = null;
+
+       if(crude) { 
+        procedureName = vertical.getName()+"_"+site.getName() +"_LoadConfiguration";
+       }
+     else {
+         procedureName = vertical.getName()+"_"+site.getName()+"_"+  plant.getName() +"_"+"NormCalculation"; }
 
      String errorMessage = executeNormCalculationProcedure(plantId, aopYear, siteId, periodFrom, periodTo, procedureName );
 

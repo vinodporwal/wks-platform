@@ -238,10 +238,28 @@ public class ShutDownPlanController {
               return ResponseEntity.ok(shutDownPlanDTOList);
           }
 
-		  @DeleteMapping("/shutdown/{plantMaintenanceTransactionId}/{plantId}")
+		  	@DeleteMapping("/shutdown/{plantMaintenanceTransactionId}/{plantId}")
 		    public ResponseEntity<String> deletePlant(@PathVariable UUID plantMaintenanceTransactionId,@PathVariable UUID plantId) {	
 			  shutDownPlanService.deleteShutPlanData(plantMaintenanceTransactionId,plantId);
-		        return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
+		      return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
+		    }
+		  
+		  	@DeleteMapping("/delete-shutdown")
+		  	public ResponseEntity<String> deleteShutdown(
+		  	        @RequestParam List<UUID> plantMaintenanceTransactionId,
+		  	        @RequestParam UUID plantId) {
+		  	    
+		  	    for (UUID id : plantMaintenanceTransactionId) {
+		  	        shutDownPlanService.deleteShutdown(id, plantId);
+		  	    }
+		  	    
+		  	    return ResponseEntity.ok("Shutdown records " + plantMaintenanceTransactionId + " deleted successfully for Plant ID " + plantId);
+		  	}
+		  	
+		  	@DeleteMapping("/delete-shutdown/{plantMaintenanceTransactionId}/{plantId}")
+		    public ResponseEntity<String> deleteShutdown(@PathVariable UUID plantMaintenanceTransactionId,@PathVariable UUID plantId) {	
+			  shutDownPlanService.deleteShutdown(plantMaintenanceTransactionId,plantId);
+		      return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
 		    }
 		  
 		  	@DeleteMapping("/shutdown")
@@ -264,6 +282,10 @@ public class ShutDownPlanController {
 			  return shutDownPlanService.getShutdownDescription(plantId);
 		  }
 		  
-		  
+		  @GetMapping("/shutdown-months-staple")
+		    public ResponseEntity<List> getShutdownMonths(@RequestParam UUID plantId,@RequestParam(required=false) String maintenanceName,@RequestParam String year,@RequestParam(required=false) String gradeId){
+		        List data = shutDownPlanService.getShutdownMonths(plantId, maintenanceName,year,gradeId);
+		        return ResponseEntity.ok(data);
+		  }  
 }
 

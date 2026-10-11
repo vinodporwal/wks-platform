@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
-@Table(name = "MCUCapacityUtilization")
+@Table(name = "MCUCapacityUtilizationTransaction", schema = "dbo")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,34 +21,40 @@ public class MCUCapacityUtilization {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "Id", nullable = false, updatable = false)
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "Plant", length = 255)
-    private String plant;
+    @Column(name = "plantId")
+    private UUID plantId;
 
-    @Column(name = "PrevAOP")
-    private Integer prevAop;
+    @Column(name = "siteId")
+    private UUID siteId;
 
-    @Column(name = "PrevActual")
-    private Integer prevActual;
+    @Column(name = "fyPrevAOP")
+    private Double fyPrevAOP;
 
-    @Column(name = "AOP")
-    private Integer aop;
+    @Column(name = "fyPrevActual")
+    private Double fyPrevActual;
 
-    @Column(name = "Remarks", length = 500)
+    @Column(name = "fyCurrentAOP")
+    private Double fyCurrentAOP;
+
+    @Column(name = "Remarks", columnDefinition = "VARCHAR(MAX)")
     private String remarks;
 
-    @Column(name = "AOPYear", length = 7)
+    @Column(name = "ModifiedBy", length = 255)
+    private String modifiedBy;
+
+    @Column(name = "ModifiedOn")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date modifiedOn;
+
+    @Column(name = "aopYear", length = 10)
     private String aopYear;
 
-    @Column(name = "Site_FK_Id")
-    private UUID siteFkId;
+    @Column(name = "isEditable")
+    private Boolean isEditable;
 
-    @Column(name = "UpdatedBy", length = 255)
-    private String updatedBy;
-
-    @Column(name = "UpdatedDateTime")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDateTime;
+    @Column(name = "isVisible")
+    private Boolean isVisible;
 }

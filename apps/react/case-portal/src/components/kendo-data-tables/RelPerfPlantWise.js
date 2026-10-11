@@ -254,15 +254,23 @@ export default function RelPerfPlantWise() {
     fetchData()
   }, [PLANT_ID, oldYear, yearChanged, keycloak, fetchData])
 
+  const parseNumericOrNull = (val) => {
+    if (val === '' || val === null || val === undefined) return null
+    const num = Number(val)
+    return isNaN(num) ? null : num
+  }
+
   const saveReliabilityPerformance = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
-        actual: row?.actuals,
-        aop: row?.aop,
-        bestAchieved: row?.bestAchieved,
+        actual: parseNumericOrNull(
+          row?.actuals !== undefined ? row.actuals : row?.actual,
+        ),
+        aop: parseNumericOrNull(row?.aop),
+        bestAchieved: parseNumericOrNull(row?.bestAchieved),
         id: row?.idFromAPI || null,
-        limit: row?.limit,
-        plann: row?.plann,
+        limit: row?.limit === '' ? null : (row?.limit ?? null),
+        plann: parseNumericOrNull(row?.plann),
         rationale: row?.rationale,
         remarks: row?.remarks,
         reportType: row?.reportType,

@@ -9,6 +9,7 @@ export const ShutdownConsumptionApiService = {
   getGradesForShutdownNorms,
   shutdownNormsExportAllGrade,
   saveShutdownNormsExcel,
+  getShutdownMonths,
 }
 
 // ========================|| Shutdown Consumption APIs ||=====================================//
@@ -154,6 +155,31 @@ async function importShutdownConsumption(keycloak, plantId, year, file) {
  */
 async function getGradesForShutdownNorms(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/unique/grades?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+/**
+ * Get shutdown months staple/POY
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} List of grades
+ */
+async function getShutdownMonths(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-months-staple?plantId=${plantId}&year=${year}&maintenanceName=Shutdown`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

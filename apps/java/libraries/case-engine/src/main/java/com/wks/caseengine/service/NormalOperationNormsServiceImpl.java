@@ -180,7 +180,17 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setNormParameterTypeName(row[25] != null ? row[25].toString() : null);
 					mCUNormsValueDTO.setNormParameterTypeDisplayName(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setUOM(row[27] != null ? row[27].toString() : null);
-					mCUNormsValueDTO.setIsEditable(row[28] != null ? Boolean.valueOf(row[28].toString()) : null);
+					//mCUNormsValueDTO.setIsEditable(row[28] != null ? Boolean.valueOf(row[28].toString()) : null);
+					Boolean isEditable = null;
+					if (row[28] != null) {
+						if (row[28] instanceof Boolean) {
+							isEditable = (Boolean) row[28];
+						} else if (row[28] instanceof Number) {
+							isEditable = ((Number) row[28]).intValue() == 1;
+						}
+					}
+					mCUNormsValueDTO.setIsEditable(isEditable);
+					
 					if(vertical.getName().equalsIgnoreCase("Filament")) {
 						if(mCUNormsValueDTO.getNormParameterTypeName().equalsIgnoreCase("Manual Entry")) {
 							mCUNormsValueDTO.setIsEditable(true);
@@ -218,9 +228,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setNormParameterTypeName(row[24] != null ? row[24].toString() : null);
 					mCUNormsValueDTO.setNormParameterTypeDisplayName(row[25] != null ? row[25].toString() : null);
 					mCUNormsValueDTO.setUOM(row[26] != null ? row[26].toString() : null);
-					mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
+				//	mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
+			     	Boolean isEditable = null;
+                    	if (row[27] != null) {
+					if (row[27] instanceof Boolean) {
+						isEditable = (Boolean) row[27];
+					} else if (row[27] instanceof Number) {
+						isEditable = ((Number) row[27]).intValue() == 1;
+					}
+				}
+				mCUNormsValueDTO.setIsEditable(isEditable);
+				
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
-					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")){
+					if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("RefineryUtility")){
 					mCUNormsValueDTO.setSapCode(row[29] != null ? row[29].toString() : "");
 					}
 					if(vertical.getName().equalsIgnoreCase("CRUDE") || vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") || vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC")) {
@@ -231,6 +251,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					}
 					if (chemical || ptaPmdPia) {	
 						mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
+					}
+					if (vertical.getName().equalsIgnoreCase("MEROX")) {
+						mCUNormsValueDTO.setLastFy(row[30] != null ? Double.parseDouble(row[30].toString()) : null);	
 					}
 				}
 				mCUNormsValueDTOList.add(mCUNormsValueDTO);
@@ -504,9 +527,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                 sapCodeKey = key;
             } else if (sanitizedKey.equalsIgnoreCase("UOM")) {
                 uomKey = key;
-            } else if (sanitizedKey.equalsIgnoreCase("YTD")) {
+            } else if (sanitizedKey.equalsIgnoreCase("YTD") || sanitizedKey.equalsIgnoreCase("OverallAOPWtAvg")) {
                 ytdKey = key;
-            } else if (sanitizedKey.equalsIgnoreCase("WtAvg")) {
+            } else if (sanitizedKey.equalsIgnoreCase("WtAvg") || sanitizedKey.equalsIgnoreCase("WtAvg(YTD)")) {
                 wtAvgKey = key;
             } else if (sanitizedKey.equalsIgnoreCase("Remarks")) {
                 remarksKey = key;
@@ -565,10 +588,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
             } else if (key != null && key.equals(sapCodeKey)) {
                 displayHeader = "SAP MAT Code";
             } else if (key != null && key.equals(ytdKey)) {
-                displayHeader = "YTD Norms";
-            } else if (fieldToTitleMap.containsKey(key)) {
+                displayHeader = "Overall AOP WtAvg";
+            }
+			else if (key != null && key.equals(uomKey)) { 
+                 displayHeader = "UOM / MT";
+			}
+			else if (fieldToTitleMap.containsKey(key)) {
                 displayHeader = fieldToTitleMap.get(key);
-            } else {
+            } 
+	
+			else {
                 displayHeader = formatTitle(key);
             }
 
@@ -862,10 +891,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
                     } else if (sanitized.equalsIgnoreCase("UOM")) {
                         mappedKey = "UOM";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD")) {
+                    } else if (sanitized.equalsIgnoreCase("YTDNorms") || sanitized.equalsIgnoreCase("YTD") || sanitized.equalsIgnoreCase("OverallAOPWtAvg")) {
                         mappedKey = "YTD";
                         value = getStringCellValue(cell);
-                    } else if (sanitized.equalsIgnoreCase("WtAvg")) {
+                    } else if (sanitized.equalsIgnoreCase("WtAvg") || sanitized.equalsIgnoreCase("WtAvg(YTD)")) {
 	                        mappedKey = "WtAvg";
 	                        value = getNumericCellValue(cell);
 	                    } else if (sanitized.equalsIgnoreCase("Remarks")) {
@@ -2291,6 +2320,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                .build();
 	    }
 	}
+	
 	@Override
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData(List<MCUNormsValueDTO> mCUNormsValueDTOList,
 			UUID plantFKId, String year, String gradeId, boolean isFromExcel) {
@@ -2302,13 +2332,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
-			boolean elastomerJMDIIR = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR");
-			boolean aromaticPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
-			boolean aromaticSEZ = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD")
+					|| site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
+			boolean elastomerJMDIIR = vertical.getName().equalsIgnoreCase("Elastomer")
+					&& site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR");
+			boolean aromaticPmd = vertical.getName().equalsIgnoreCase("AROMATICS")
+					&& site.getName().equalsIgnoreCase("PMD");
+			boolean aromaticSEZ = vertical.getName().equalsIgnoreCase("AROMATICS")
+					&& site.getName().equalsIgnoreCase("SEZ");
 			for (MCUNormsValueDTO dto : mCUNormsValueDTOList) {
 				System.out.println(dto.getProductName());
-				Boolean changed = false;
 				if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
 					failedList.add(dto);
 					continue;
@@ -2361,162 +2394,137 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 				} else {
 
-              if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR") ) {   
+					if ((vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")
+							&& plant.getName().equalsIgnoreCase("HIIR")) ||
+							(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD")
+									&& plant.getName().equalsIgnoreCase("SBR"))) {
 
-				Optional<MCUNormsValueGrade> optionalValue = mcuNormsValueGradeRepository
-							.findById(UUID.fromString(dto.getId()));
+						Optional<MCUNormsValueGrade> optionalValue = mcuNormsValueGradeRepository
+								.findById(UUID.fromString(dto.getId()));
 
-					if (optionalValue.isEmpty()) {
-						dto.setErrDescription("No record found with this id" + dto.getId());
-						dto.setSaveStatus("Failed");
-						failedList.add(dto);
-						continue; // or handle accordingly
-					}
-
-					MCUNormsValueGrade value = optionalValue.get();
-					Optional<NormParameters> normParametersOpt = normParametersRepository
-							.findById(value.getMaterialFkId());
-					if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
-						continue;
-					}
-
-					for (int month = 1; month <= 12; month++) {
-						Double oldVal = getMonthlyValue(value, month);
-						Double newVal = getMonthlyValue(dto, month);
-
-						Double normalizedNewVal = Optional.ofNullable(newVal).orElse(0.0);
-						// if (!dto.getProductName().equalsIgnoreCase("Total Fuel")) {
-						// if (newVal != null && !Objects.equals(oldVal, normalizedNewVal)
-						// && Objects.equals(value.getRemarks(), dto.getRemarks())) {
-						// dto.setErrDescription("Please add/update remark");
-						// dto.setSaveStatus("Failed");
-						// failedList.add(dto);
-						// break;
-						// }
-						// }
-
-						if (newVal != null && !Objects.equals(oldVal, newVal)) {
-							NormsTransactions normsTransactions = new NormsTransactions();
-							normsTransactions.setAopMonth(month);
-							normsTransactions.setAopYear(value.getFinancialYear());
-							normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
-							normsTransactions.setNormParameterFkId(value.getMaterialFkId());
-							normsTransactions.setPlantFkId(plantFKId);
-							normsTransactions.setRemark(dto.getRemarks());
-							normsTransactions.setVersion(1);
-							normsTransactions.setCreatedDateTime(new Date());
-
-							normsTransactions.setCreatedBy(Utility.getUserName());
-							normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
-
-							transactionsToSave.add(normsTransactions);
+						if (optionalValue.isEmpty()) {
+							dto.setErrDescription("No record found with this id" + dto.getId());
+							dto.setSaveStatus("Failed");
+							failedList.add(dto);
+							continue; // or handle accordingly
 						}
-					}
 
-
-			  }
-
-			  else if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR") ) { 
-
-            Optional<MCUNormsValue> optionalValue = mcuNormsValueRepository.findById(UUID.fromString(dto.getId()));
-
-
-			if (optionalValue.isEmpty()) {
-				dto.setErrDescription("No record found with this id" + dto.getId());
-				dto.setSaveStatus("Failed");
-				failedList.add(dto);
-				continue; // or handle accordingly
-			}
-
-			MCUNormsValue value = optionalValue.get();
-			Optional<NormParameters> normParametersOpt = normParametersRepository
-					.findById(value.getMaterialFkId());
-			if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
-				continue;
-			}
-
-			for (int month = 1; month <= 12; month++) {
-				Double oldVal = getMonthlyValue(value, month);
-				Double newVal = getMonthlyValue(dto, month);
-
-			
-
-				if (newVal != null && !Objects.equals(oldVal, newVal)) {
-					NormsTransactions normsTransactions = new NormsTransactions();
-					normsTransactions.setAopMonth(month);
-					normsTransactions.setAopYear(value.getFinancialYear());
-					normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
-					normsTransactions.setNormParameterFkId(value.getMaterialFkId());
-					normsTransactions.setPlantFkId(plantFKId);
-					normsTransactions.setRemark(dto.getRemarks());
-					normsTransactions.setVersion(1);
-					normsTransactions.setCreatedDateTime(new Date());
-
-					normsTransactions.setCreatedBy(Utility.getUserName());
-					normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
-
-					transactionsToSave.add(normsTransactions);
-				}
-			}
-
-
-
-
-			  }
-			  else {
-
-					Optional<MCUNormsValue> optionalValue = normalOperationNormsRepository
-							.findById(UUID.fromString(dto.getId()));
-
-					if (optionalValue.isEmpty()) {
-						dto.setErrDescription("No record found with this id" + dto.getId());
-						dto.setSaveStatus("Failed");
-						failedList.add(dto);
-						continue; // or handle accordingly
-					}
-
-					MCUNormsValue value = optionalValue.get();
-					Optional<NormParameters> normParametersOpt = normParametersRepository
-							.findById(value.getMaterialFkId());
-					if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
-						continue;
-					}
-
-					for (int month = 1; month <= 12; month++) {
-						Double oldVal = getMonthlyValue(value, month);
-						Double newVal = getMonthlyValue(dto, month);
-
-						Double normalizedNewVal = Optional.ofNullable(newVal).orElse(0.0);
-						// if (!dto.getProductName().equalsIgnoreCase("Total Fuel")) {
-						// if (newVal != null && !Objects.equals(oldVal, normalizedNewVal)
-						// && Objects.equals(value.getRemarks(), dto.getRemarks())) {
-						// dto.setErrDescription("Please add/update remark");
-						// dto.setSaveStatus("Failed");
-						// failedList.add(dto);
-						// break;
-						// }
-						// }
-
-						if (newVal != null && !Objects.equals(oldVal, newVal)) {
-							NormsTransactions normsTransactions = new NormsTransactions();
-							normsTransactions.setAopMonth(month);
-							normsTransactions.setAopYear(value.getFinancialYear());
-							normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
-							normsTransactions.setNormParameterFkId(value.getMaterialFkId());
-							normsTransactions.setPlantFkId(plantFKId);
-							normsTransactions.setRemark(dto.getRemarks());
-							normsTransactions.setVersion(1);
-							normsTransactions.setCreatedDateTime(new Date());
-
-							normsTransactions.setCreatedBy(Utility.getUserName());
-							normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
-
-							transactionsToSave.add(normsTransactions);
+						MCUNormsValueGrade value = optionalValue.get();
+						Optional<NormParameters> normParametersOpt = normParametersRepository
+								.findById(value.getMaterialFkId());
+						if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+							continue;
 						}
+
+						for (int month = 1; month <= 12; month++) {
+							Double oldVal = getMonthlyValue(value, month);
+							Double newVal = getMonthlyValue(dto, month);
+							
+							if (newVal != null && !Objects.equals(oldVal, newVal)) {
+								NormsTransactions normsTransactions = new NormsTransactions();
+								normsTransactions.setAopMonth(month);
+								normsTransactions.setAopYear(value.getFinancialYear());
+								normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
+								normsTransactions.setNormParameterFkId(value.getMaterialFkId());
+								normsTransactions.setPlantFkId(plantFKId);
+								normsTransactions.setRemark(dto.getRemarks());
+								normsTransactions.setVersion(1);
+								normsTransactions.setCreatedDateTime(new Date());
+
+								normsTransactions.setCreatedBy(Utility.getUserName());
+								normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
+
+								transactionsToSave.add(normsTransactions);
+							}
+						}
+
 					}
 
+					else if (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")
+							&& plant.getName().equalsIgnoreCase("IIR")) {
+
+						Optional<MCUNormsValue> optionalValue = mcuNormsValueRepository
+								.findById(UUID.fromString(dto.getId()));
+
+						if (optionalValue.isEmpty()) {
+							dto.setErrDescription("No record found with this id" + dto.getId());
+							dto.setSaveStatus("Failed");
+							failedList.add(dto);
+							continue; // or handle accordingly
+						}
+
+						MCUNormsValue value = optionalValue.get();
+						Optional<NormParameters> normParametersOpt = normParametersRepository
+								.findById(value.getMaterialFkId());
+						if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+							continue;
+						}
+
+						for (int month = 1; month <= 12; month++) {
+							Double oldVal = getMonthlyValue(value, month);
+							Double newVal = getMonthlyValue(dto, month);
+
+							if (newVal != null && !Objects.equals(oldVal, newVal)) {
+								NormsTransactions normsTransactions = new NormsTransactions();
+								normsTransactions.setAopMonth(month);
+								normsTransactions.setAopYear(value.getFinancialYear());
+								normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
+								normsTransactions.setNormParameterFkId(value.getMaterialFkId());
+								normsTransactions.setPlantFkId(plantFKId);
+								normsTransactions.setRemark(dto.getRemarks());
+								normsTransactions.setVersion(1);
+								normsTransactions.setCreatedDateTime(new Date());
+
+								normsTransactions.setCreatedBy(Utility.getUserName());
+								normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
+
+								transactionsToSave.add(normsTransactions);
+							}
+						}
+
+					} else {
+
+						Optional<MCUNormsValue> optionalValue = normalOperationNormsRepository
+								.findById(UUID.fromString(dto.getId()));
+
+						if (optionalValue.isEmpty()) {
+							dto.setErrDescription("No record found with this id" + dto.getId());
+							dto.setSaveStatus("Failed");
+							failedList.add(dto);
+							continue; // or handle accordingly
+						}
+
+						MCUNormsValue value = optionalValue.get();
+						Optional<NormParameters> normParametersOpt = normParametersRepository
+								.findById(value.getMaterialFkId());
+						if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+							continue;
+						}
+
+						for (int month = 1; month <= 12; month++) {
+							Double oldVal = getMonthlyValue(value, month);
+							Double newVal = getMonthlyValue(dto, month);
+
+							if (newVal != null && !Objects.equals(oldVal, newVal)) {
+								NormsTransactions normsTransactions = new NormsTransactions();
+								normsTransactions.setAopMonth(month);
+								normsTransactions.setAopYear(value.getFinancialYear());
+								normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
+								normsTransactions.setNormParameterFkId(value.getMaterialFkId());
+								normsTransactions.setPlantFkId(plantFKId);
+								normsTransactions.setRemark(dto.getRemarks());
+								normsTransactions.setVersion(1);
+								normsTransactions.setCreatedDateTime(new Date());
+
+								normsTransactions.setCreatedBy(Utility.getUserName());
+								normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
+
+								transactionsToSave.add(normsTransactions);
+							}
+						}
+
+					}
 				}
-			}
 			}
 
 			normsTransactionRepository.saveAll(transactionsToSave);
@@ -2534,10 +2542,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				MCUNormsValueGrade mCUNormsValueGrade = new MCUNormsValueGrade();
 
 				if (mCUNormsValueDTO.getId() != null || !mCUNormsValueDTO.getId().isEmpty()) {
-					
 
 					if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-							|| vertical.getName().equalsIgnoreCase("PET") || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) || pvc ) {
+							|| vertical.getName().equalsIgnoreCase("PET")
+							|| (vertical.getName().equalsIgnoreCase("STAPLE") && gradeId != null
+									&& !gradeId.trim().isEmpty())
+							|| pvc) {
 
 						Optional<MCUNormsValueGrade> optionalNormsValue = mcuNormsValueGradeRepository
 								.findById(UUID.fromString(mCUNormsValueDTO.getId()));
@@ -2699,11 +2709,17 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						}
 
 					} else {
-						if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR") ) {    
+						if (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")
+								&& plant.getName().equalsIgnoreCase("HIIR")) {
 							updateMCUNormsValueGrade(mCUNormsValueDTO, plantFKId, isFromExcel, failedList);
 							continue;
 						}
-						
+						if (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD")
+								&& plant.getName().equalsIgnoreCase("SBR")) {
+							updateMCUNormsValueGrade(mCUNormsValueDTO, plantFKId, isFromExcel, failedList);
+							continue;
+						}
+
 						Optional<MCUNormsValue> normsValue = normalOperationNormsRepository
 								.findById(UUID.fromString(mCUNormsValueDTO.getId()));
 						if (normsValue.isPresent()) {
@@ -2849,7 +2865,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							mCUNormsValue.setRemarks(mCUNormsValueDTO.getRemarks());
 							System.out.println("Data Saved Succussfully" + mCUNormsValue);
 
-							normalOperationNormsRepository.save(mCUNormsValue); 
+							normalOperationNormsRepository.save(mCUNormsValue);
 						} else {
 							if (isFromExcel) {
 								mCUNormsValueDTO.setSaveStatus("Failed");
@@ -2858,8 +2874,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 								continue;
 							}
 						}
-					
-				}
+
+					}
 				}
 			}
 			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
@@ -2872,7 +2888,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
-			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || aromaticPmd || aromaticSEZ) {
+			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")
+					|| aromaticPmd || aromaticSEZ) {
 				String procedure = vertical.getName() + "_" + site.getName() + "_CalculateTotalFuelNorms";
 				executeProcedure(procedure, plantFKId.toString(), year);
 			}
@@ -2882,6 +2899,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
+
 	private List<MCUNormsValueDTO> buildDTOListFromSavedGradeData(
 	        UUID plantFKId, UUID siteId, UUID verticalId, String gradeId, String year) {
 
@@ -3406,10 +3424,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	public AOPMessageVM importExcelSAP(String year, UUID plantFKId, String gradeId, MultipartFile file, String mode) {
 		// TODO Auto-generated method stub
 		try {
+
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
 			
 			List<MCUNormsValueDTO> data = null;
-			
-			data = readConfigurationsSAP(file.getInputStream(), plantFKId, year);
+
+				if (merox) {
+				      data = readConfigurationsSAPMerox(file.getInputStream(), plantFKId, year);
+					} else {
+							data = readConfigurationsSAP(file.getInputStream(), plantFKId, year);
+					}
 			List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -3690,21 +3717,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                || (vertical.getName().equalsIgnoreCase("STAPLE") && gradeId != null && !gradeId.trim().isEmpty())
 	                || pvc) {
 	            data = readSteadyState(file.getInputStream(), plantFKId, year);
+	        }else if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")) {
+	        	data = readConfigurationsSAP(file.getInputStream(), plantFKId, year);
 	        } else {
 	            data = readConfigurations(file.getInputStream(), plantFKId, year);
 	        }
-
-	      
-
 	        boolean hasGradeData = data.stream()
 	                .anyMatch(d -> d.getGradeId() != null && !d.getGradeId().trim().isEmpty());
-
-	      
-
 	 
 	        List<ValidationErrorDTO> gradeValidationErrors =
 	                validateGradeNorms(data, plant, vertical, site, year);
-
 
 	        if (!gradeValidationErrors.isEmpty()) {
 	            System.out.println("[STOP] Grade validation failed on import -> save aborted.");
@@ -3714,7 +3736,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	            aopMessageVM.setData(gradeValidationErrors);
 	            return aopMessageVM;
 	        }
-	      
 
 	        List<MCUNormsValueDTO> failedRecords = saveNormalOperationNormsData(data, plantFKId, year, gradeId, true);
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -3725,7 +3746,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    || (vertical.getName().equalsIgnoreCase("STAPLE") && gradeId != null && !gradeId.trim().isEmpty())
 	                    || pvc) {
 	                fileByteArray = exportSteadyStateNorms(year, plantFKId, true, failedRecords, mode);
-	            } else {
+	            }else if(vertical.getName().equalsIgnoreCase("STAPLE") || vertical.getName().equalsIgnoreCase("Filament")) {
+	            	fileByteArray = createExcelSAP(year, plantFKId, true, failedRecords, mode, gradeId);
+	            }else {
 	                fileByteArray = createExcel(year, plantFKId, true, failedRecords, mode, gradeId);
 	            }
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
@@ -4046,6 +4069,60 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						dto.setSaveStatus("Failed");
 					}
 
+				configList.add(dto);
+			}
+		}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
+		return configList;
+	}
+
+
+	public List<MCUNormsValueDTO> readConfigurationsSAPMerox(InputStream inputStream, UUID plantFKId, String year) {
+		List<MCUNormsValueDTO> configList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
+
+				if (rowIterator.hasNext())
+					rowIterator.next(); // skip header row
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					MCUNormsValueDTO dto = new MCUNormsValueDTO();
+
+					try {
+						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+						dto.setSapCode(getStringCellValue(row.getCell(1), dto));
+						dto.setProductName(getStringCellValue(row.getCell(2), dto));
+						dto.setUOM(getStringCellValue(row.getCell(3), dto));
+						// Col 4 is Last FY — read-only reference data, intentionally skipped
+						dto.setApril(getNumericCellValue(row.getCell(5), dto));
+						dto.setMay(getNumericCellValue(row.getCell(6), dto));
+						dto.setJune(getNumericCellValue(row.getCell(7), dto));
+						dto.setJuly(getNumericCellValue(row.getCell(8), dto));
+						dto.setAugust(getNumericCellValue(row.getCell(9), dto));
+						dto.setSeptember(getNumericCellValue(row.getCell(10), dto));
+						dto.setOctober(getNumericCellValue(row.getCell(11), dto));
+						dto.setNovember(getNumericCellValue(row.getCell(12), dto));
+						dto.setDecember(getNumericCellValue(row.getCell(13), dto));
+						dto.setJanuary(getNumericCellValue(row.getCell(14), dto));
+						dto.setFebruary(getNumericCellValue(row.getCell(15), dto));
+						dto.setMarch(getNumericCellValue(row.getCell(16), dto));
+						dto.setFinancialYear(year);
+						dto.setRemarks(getStringCellValue(row.getCell(17), dto));
+						dto.setId(getStringCellValue(row.getCell(18), dto));
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+
 					configList.add(dto);
 				}
 			}
@@ -4053,8 +4130,21 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	
+
 		return configList;
+	}
+
+
+	private String getPreviousFinancialYear(String year) {
+		try {
+			String[] parts = year.split("-");
+			int startYear = Integer.parseInt(parts[0]);
+			int prevStartYear = startYear - 1;
+			String prevEndYearStr = String.format("%02d", startYear % 100);
+			return prevStartYear + "-" + prevEndYearStr;
+		} catch (Exception e) {
+			return year; // fallback to current year if parsing fails
+		}
 	}
 
 	public List<MCUNormsValueDTO> readSteadyStateChemical(InputStream inputStream, UUID plantFKId, String year) {
@@ -4779,6 +4869,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			AOPMessageVM aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), gradeId, mode);
 			List<Boolean> isEditable = new ArrayList<>();
 			Plants plant = plantsRepository.findById(plantFKId).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean polyester = vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("Staple");
+			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
 			if (!isAfterSave) {
 				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
 				dtoList = (List<MCUNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
@@ -4828,6 +4921,16 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		remarksUnlockedStyle.setBorderLeft(BorderStyle.THIN);
 		remarksUnlockedStyle.setBorderRight(BorderStyle.THIN);
 		remarksUnlockedStyle.setWrapText(true);
+
+		CellStyle lastFyLockedStyle = workbook.createCellStyle();
+		lastFyLockedStyle.setLocked(true);
+		lastFyLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		lastFyLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		lastFyLockedStyle.setBorderTop(BorderStyle.THIN);
+		lastFyLockedStyle.setBorderBottom(BorderStyle.THIN);
+		lastFyLockedStyle.setBorderLeft(BorderStyle.THIN);
+		lastFyLockedStyle.setBorderRight(BorderStyle.THIN);
+
 			// Data rows
 			for (MCUNormsValueDTO dto : dtoList) {
 				// if (isAfterSave) {
@@ -4836,6 +4939,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				list.add(dto.getSapCode());
 				list.add(dto.getProductName());
 				list.add(dto.getUOM());
+				if (merox) {
+					list.add(dto.getLastFy());
+				}
 				list.add(dto.getApril());
 				list.add(dto.getMay());
 				list.add(dto.getJune());
@@ -4862,7 +4968,14 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			innerHeaders.add("Type");
 			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+			if(polyester) {
+				innerHeaders.add("UOM / MT");
+			} else {
+				innerHeaders.add("UOM");
+			}
+			if (merox) {
+				innerHeaders.add("Last FY " + getPreviousFinancialYear(year));
+			}
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			
@@ -4875,6 +4988,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 			int remarksColIndex = innerHeaders.indexOf("Remarks");
 			int idColIndex = innerHeaders.indexOf("Id");
+			int lastFyColIndex = merox ? innerHeaders.indexOf("Last FY " + getPreviousFinancialYear(year)) : -1;
 
 			List<List<String>> headers = new ArrayList<>();
 			headers.add(innerHeaders);
@@ -4909,6 +5023,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					}
 					if (col == remarksColIndex) {
 						cell.setCellStyle(isRowEditable ? remarksUnlockedStyle : remarksLockedStyle);
+					} else if (lastFyColIndex >= 0 && col == lastFyColIndex) {
+						cell.setCellStyle(lastFyLockedStyle);
 					} else if (isRowEditable) {
 						cell.setCellStyle(unlockedStyle);
 					} else {
@@ -4918,7 +5034,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				}
 			}
 			
-				sheet.setColumnHidden(17, true);
+				sheet.setColumnHidden(idColIndex, true);
 
 			int totalCols = innerHeaders.size();
 			for (int col = 0; col < totalCols; col++) {

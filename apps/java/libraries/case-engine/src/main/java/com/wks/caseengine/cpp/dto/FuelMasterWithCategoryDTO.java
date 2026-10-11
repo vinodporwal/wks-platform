@@ -26,6 +26,9 @@ public class FuelMasterWithCategoryDTO {
     @JsonProperty("uom")
     private String uom;
 
+    @JsonProperty("fuelDescription")
+    private String fuelDescription;
+
     @JsonProperty("categoryFkId")
     private UUID categoryFkId;
 

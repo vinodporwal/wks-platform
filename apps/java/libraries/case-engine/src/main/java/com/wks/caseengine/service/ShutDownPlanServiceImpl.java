@@ -3743,7 +3743,67 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			throw new RuntimeException("Failed to delete data", ex);
 		}
 	}
-	
+
+	@Transactional
+	@Override
+	public void deleteShutdown(UUID plantMaintenanceTransactionId, UUID plantId) {
+		try {
+			Optional<PlantMaintenanceTransaction> plantMaintenanceTransactionOpt = plantMaintenanceTransactionRepository
+					.findById(plantMaintenanceTransactionId);
+			List<NormAttributeTransactions> normAttributeTransactionsList = normAttributeTransactionsRepository
+					.findByMaintenanceId(plantMaintenanceTransactionId);
+
+			if (normAttributeTransactionsList != null && !normAttributeTransactionsList.isEmpty()) {
+				for (NormAttributeTransactions normAttr : normAttributeTransactionsList) {
+					if (normAttr != null) {
+						normAttributeTransactionsRepository.delete(normAttr);
+					}
+				}
+				normAttributeTransactionsRepository.flush(); 
+			}
+
+			if (plantMaintenanceTransactionOpt.isEmpty()) {
+				throw new RuntimeException(
+						"PlantMaintenanceTransaction not found for ID: " + plantMaintenanceTransactionId);
+			}
+
+			PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenanceTransactionOpt.get();
+			String year = plantMaintenanceTransaction.getAuditYear();
+
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				if (count == 1) {
+					List<ShutdownNormsValue> shutdownNormsValues = shutdownNormsRepository
+							.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+					for (ShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+						setMonthShutdown(month, shutdownNormsValue);
+					}
+				}
+			
+			plantMaintenanceTransactionRepository.delete(plantMaintenanceTransaction);
+
+			// Add AOP Calculation
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("shutdown-plan");
+			if (screenMappingList != null && !screenMappingList.isEmpty()) {
+				for (ScreenMapping screenMapping : screenMappingList) {
+					if (screenMapping.getCalculationScreen() != null) {
+						AopCalculation aopCalculation = new AopCalculation();
+						aopCalculation.setAopYear(year);
+						aopCalculation.setIsChanged(true);
+						aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+						aopCalculation.setPlantId(plantId);
+						aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+						aopCalculationRepository.save(aopCalculation);
+					}
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to delete data", ex);
+		}
+	}
+
 	public int deleteHistory(String plantId,String aopYear, String month,Double duration,String desc,String remarks) {
 		try {
 
@@ -5003,6 +5063,26 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		}
 	}
 
+	@Override
+	@Transactional
+	public List<String> getShutdownMonths(UUID plantId, String maintenanceName, String year, String gradeId) {
+        String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+        Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new RuntimeException("Plant not found"));
+        Sites site = siteRepository.findById(plant.getSiteFkId())
+                .orElseThrow(() -> new RuntimeException("Site not found"));
+
+        String siteCode = site.getName(); 
+        String spName = String.format("[%s_%s_GetShutDownMonths]", verticalName, siteCode);
+        String sql = String.format("EXEC %s @plantId = :plantId, @aopYear = :aopYear", spName);
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId.toString());
+        query.setParameter("aopYear", year);
+        @SuppressWarnings("unchecked")
+        List<String> resultList = query.getResultList();
+        return resultList != null ? resultList : Collections.emptyList();
+    }
+	
 	private boolean isValidShutdownDescription(String description, List<Map<String, Object>> validDescriptions) {
 		if (description == null || description.trim().isEmpty()) {
 			return false;

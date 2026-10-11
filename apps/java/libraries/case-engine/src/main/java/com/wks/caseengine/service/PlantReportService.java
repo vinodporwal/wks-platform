@@ -44,6 +44,8 @@ public interface PlantReportService {
 
     AOPMessageVM saveConversionVariableCostData(List<ConversionVariableCostDTO> conversionVariableCostDTOs);
 
+    AOPMessageVM getSiteAopReportTabs(String siteId);
+
     byte[] createPlantReportExcel(String plantId, String aopYear, boolean isAfterSave, List<PlantReportDTO> dtoList);
 
     AOPMessageVM importPlantReportExcel(String plantId, String aopYear, MultipartFile file);
@@ -63,4 +65,12 @@ public interface PlantReportService {
     AOPMessageVM loadReliabilityPerformanceData(String plantId, String aopYear);
 
     AOPMessageVM loadPlantSafetyPerformanceData(String plantId, String aopYear);
+
+    AOPMessageVM loadSiteSafetyPerformanceData(String siteId, String aopYear);
+
+    byte[] exportSiteSafetyPerformanceTargets(String siteId, String aopYear, boolean isAfterSave, List<SiteSafetyPerformanceTargetsDTO> dtoList);
+
+    AOPMessageVM importSiteSafetyPerformanceTargetsExcel(String siteId, String aopYear, MultipartFile file);
+	
+	AOPMessageVM loadConversionVariableCostData(String siteId, String aopYear);
 }

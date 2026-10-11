@@ -47,10 +47,12 @@ const OverallAopConsumption = () => {
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [rows, setRows] = useState([])
+  const [originalRows, setOriginalRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
+  const [showToggleAllState, setShowToggleAllState] = useState('Show Less')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [grades, setGrades] = useState([])
   const [gradeId, setGradeId] = useState(null)
@@ -109,9 +111,9 @@ const OverallAopConsumption = () => {
       },
       {
         field: 'UOM',
-        title: 'UOM',
+        title: 'UOM / MT',
         editable: false,
-        minWidth: 100,
+        minWidth: 120,
       },
       ...monthsConfig.map((m) => ({
         field: m.field,
@@ -141,12 +143,12 @@ const OverallAopConsumption = () => {
     if (isFilament || isStaple) {
       defaultColumns.push({
         field: 'ytd',
-        title: 'YTD',
+        title: 'WtAvg (YTD)',
         editable: false,
         type: 'number1',
         hidden: false,
         format: valueFormat,
-        minWidth: 120,
+        minWidth: 150,
       })
     }
 
@@ -273,13 +275,16 @@ const OverallAopConsumption = () => {
               }
             },
           )
-          setRows(formattedData || [])
+          setRows(formattedData?.filter((row) => Number(row?.ytd) > 0) || [])
+          setOriginalRows(formattedData || [])
         } else {
           setRows([])
+          setOriginalRows([])
         }
       } catch (error) {
         console.error('Error fetching overall AOP consumption data:', error)
         setRows([])
+        setOriginalRows([])
       } finally {
         setLoading(false)
       }
@@ -475,6 +480,14 @@ const OverallAopConsumption = () => {
   const handleRelease = () => {
     setOpenReleaseDialogBox(true)
   }
+  const handleToggleShowAll = (val) => {
+    setShowToggleAllState(val)
+    if(val === "Show All"){
+      setRows(originalRows)
+    }else{
+      setRows(originalRows?.filter((row) => Number(row?.ytd) > 0) || [])
+    }
+  }
 
   const closeReleaseDialogBox = () => {
     setOpenReleaseDialogBox(false)
@@ -517,11 +530,13 @@ const OverallAopConsumption = () => {
     ),
     allAction: true,
     showDropdown: false,
-    showExport: true,
+    downloadExcelBtnFromUI: true,
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
+    showToggleAll: true,
     titleName: `${SCREEN_NAME}`,
+    ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${SCREEN_NAME}-${AOP_YEAR}`,
   }
 
   const dropdownConfig = {
@@ -564,6 +579,9 @@ const OverallAopConsumption = () => {
         setSnackbarData={setSnackbarData}
         isReleaseDisabled={isReleaseDisabled}
         handleRelease={handleRelease}
+        showToggleAllOptions={['Show Less','Show All']}
+        showToggleAllState={showToggleAllState}
+        handleToggleShowAll={handleToggleShowAll}
         customHeight={70}
         paginationConfig={{
           threshold: 100,

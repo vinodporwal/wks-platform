@@ -23,6 +23,7 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgo
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
 import HistoricalMonths from './HistoricalMonths'
+import ShutdownCatChem from './ShutdownCatChem'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -272,6 +273,14 @@ const ProductionNormsBasis = () => {
       case 'Historical Months':
         return (
           <HistoricalMonths
+            refreshData={refreshData}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        )
+      case 'Shutdown Cat Chem':
+        return (
+          <ShutdownCatChem
             refreshData={refreshData}
             startDate={startDate}
             endDate={endDate}

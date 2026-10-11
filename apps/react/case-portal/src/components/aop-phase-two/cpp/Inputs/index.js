@@ -203,6 +203,7 @@ const Inputs = () => {
       case 'vmd':
       case 'hmd':
       case 'dmd':
+      case 'pmd':
         return <InputsDMD />
       case 'nmd':
       default:

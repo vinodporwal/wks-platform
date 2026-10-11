@@ -28,6 +28,7 @@ public class ProposedAOPDTO {
     private String aopYear;
     private UUID gradeId;
     private String sapCode;
+    private Boolean isEditable;
     private String saveStatus;
     private String errDescription;
 }

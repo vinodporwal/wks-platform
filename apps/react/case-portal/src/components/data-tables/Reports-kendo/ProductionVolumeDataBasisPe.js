@@ -26,6 +26,7 @@ import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import ProductionVolumeDataBasisPeNew from '../Reports/DataSetNewUI/ProductionVolumeDataBasisPeNew'
 
 const MONTH_MAP = {
   jan: 1, january: 1,
@@ -42,7 +43,7 @@ const MONTH_MAP = {
   dec: 12, december: 12,
 }
 
-const ProductionVolumeDataBasisPe = () => {
+const ProductionVolumeDataBasisPeLegacy = () => {
   const keycloak = useSession()
   const REPORT_TYPE_FOR_ALL = 'ProductionTarget'
   const [dataMap, setDataMap] = useState({})
@@ -543,6 +544,19 @@ const ProductionVolumeDataBasisPe = () => {
       </Box>
     </div>
   )
+}
+
+const ProductionVolumeDataBasisPe = () => {
+  const isNewUi =
+    typeof window !== 'undefined' &&
+    (localStorage.getItem('isNewUi1') == '1' ||
+      localStorage.getItem('isNewUi1') === 'true')
+
+  if (isNewUi) {
+    return <ProductionVolumeDataBasisPeNew />
+  }
+
+  return <ProductionVolumeDataBasisPeLegacy />
 }
 
 export default ProductionVolumeDataBasisPe

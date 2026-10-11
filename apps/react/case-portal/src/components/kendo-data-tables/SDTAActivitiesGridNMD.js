@@ -32,6 +32,8 @@ const SDTAActivitiesGridNMD = ({
   saveChanges,
   setRemarkDialogOpen,
   handleCalculate,
+  summaryEdited,
+  setSummaryEdited,
 }) => {
   return (
     <Box sx={{ mt: 1 }}>
@@ -60,6 +62,8 @@ const SDTAActivitiesGridNMD = ({
         titleName='IBR/SD/HSS Activities'
         rowRender={CustomRow}
         handleCalculate={handleCalculate}
+        summaryEdited={summaryEdited}
+        setSummaryEdited={setSummaryEdited}
       />
     </Box>
   )

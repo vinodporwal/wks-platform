@@ -20,6 +20,8 @@ public interface PowerGenerationAssetRepository extends JpaRepository<PowerGener
     List<PowerGenerationAsset> findByAssetType(String assetType);
     
     List<PowerGenerationAsset> findByCppPlantFkId(UUID cppPlantFkId);
+
+    List<PowerGenerationAsset> findByCppPlantFkIdIn(List<UUID> cppPlantFkIds);
     
     @Query(value = "SELECT * FROM PowerGenerationAssets WHERE CPPPLANT_FK_Id IN (:plantIds) AND AssetType = :assetType", nativeQuery = true)
     List<PowerGenerationAsset> findByPlantIdsAndAssetType(

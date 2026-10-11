@@ -18,7 +18,6 @@ public class SiteSafetyPerformanceTargetsDTO {
     private UUID masterId;
     private String kpiName;
     private String uom;
-    private Double bestAchieved;
     private Double prevAOP;
     private Double prevActual;
     private Double currentPlan;
@@ -31,4 +30,6 @@ public class SiteSafetyPerformanceTargetsDTO {
     private boolean isEditable;
     private boolean isVisible;
     private Integer displayOrder;
+    private String saveStatus;
+    private String errDescription;
 }

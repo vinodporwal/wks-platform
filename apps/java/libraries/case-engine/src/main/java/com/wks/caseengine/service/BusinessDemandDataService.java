@@ -12,6 +12,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface BusinessDemandDataService {
 	public	AOPMessageVM getBusinessDemandData(String year, String plantId);
+	public	AOPMessageVM getNetProductionData(String year, String plantId);
 	public AOPMessageVM calculateBusinessDemand(String year, String plantId);
 	public AOPMessageVM getBusinessDemand(String year, UUID plantFKId);
 	public AOPMessageVM getBusinessDemandLineData(String year, String plantId, String lineId);

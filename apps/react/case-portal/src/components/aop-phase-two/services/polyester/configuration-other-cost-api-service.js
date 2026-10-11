@@ -76,9 +76,10 @@ async function saveConfigurationOtherCostData(
  */
 
 async function handleCalculateConfigurationOtherCost(plantId, year, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/calculate-configuration-other-cost?plantId=${plantId}&aopYear=${year}`
+  const url = `${Config.CaseEngineUrl}/task/calculate-other-cost?plantId=${plantId}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
@@ -89,11 +90,11 @@ async function handleCalculateConfigurationOtherCost(plantId, year, keycloak) {
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
-    const data = await resp.json() // Parse JSON response
-    return data
+    const result = await json(keycloak, resp)
+    return result || { success: true }
   } catch (e) {
-    console.error('Error fetching calculation data:', e)
-    return Promise.reject(e)
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 

@@ -26,4 +26,6 @@ public interface CppSteamGenerationAssetRepository extends JpaRepository<CppStea
 
     List<CppSteamGenerationAsset> findByLinkedPowerAssetFkIdAndCppPlantFkId(
             UUID linkedPowerAssetFkId, UUID cppPlantFkId);
+
+    List<CppSteamGenerationAsset> findByCppPlantFkIdIn(List<UUID> cppPlantFkIds);
 }

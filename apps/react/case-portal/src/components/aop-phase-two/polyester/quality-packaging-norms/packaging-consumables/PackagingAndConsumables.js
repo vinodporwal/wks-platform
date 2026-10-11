@@ -219,6 +219,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         setModifiedCells({})
         fetchPackagingRows()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data Save Failed!',
@@ -226,12 +227,11 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         })
       }
     } catch (err) {
+      setLoading(false)
       console.error('Error while saving packaging data', err)
       setSnackbarOpen(true)
       setSnackbarData({ message: err.message, severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchPackagingRows])
 
   const handleCalculate = async () => {
@@ -248,9 +248,10 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        // Trigger parent refresh to reload Packaging grid and OtherCost grid
-        triggerRefresh()
+        
+        fetchPackagingRows()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data Refresh Failed!',
@@ -258,14 +259,13 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         })
       }
     } catch (error) {
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: error.message || 'An error occurred',
         severity: 'error',
       })
       console.error('Error calculating packaging data:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -312,6 +312,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         })
         fetchPackagingRows()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Upload Failed!',
@@ -319,14 +320,13 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         })
       }
     } catch (error) {
+      setLoading(false)
       console.error('Error uploading excel:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -337,7 +337,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Packagings_Consumables`
+      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Other Cost`
       await QualityPackagingNormsApiService.exportPackagingConsumables(
         keycloak,
         PLANT_ID,
@@ -369,28 +369,18 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
     [READ_ONLY],
   )
 
-  const IS_ELASTOMER_HMD_SBR =
-    lowerVertName === 'elastomer' &&
-    SITE_NAME?.toLowerCase() === 'hmd' &&
-    PLANT_NAME?.toLowerCase() === 'sbr'
-
-  const showCalculate = IS_ELASTOMER_HMD_SBR
-    ? true
-    : lowerVertName === 'elastomer' && !IS_ELASTOMER_HMD_SBR
-      ? false
-      : true
-
+  
   const permissions = {
     allAction: true,
     saveBtn: true,
     showTitleNameBusiness: true,
-    titleName: 'Packagings & Consumables',
+    titleName: 'Other Cost',
     showExport: true,
     showImport: true,
-    ExcelName: `${lowerVertName}_Packagings_Consumables`,
+    ExcelName: `${lowerVertName}_Other Cost`,
     addButton: false,
     deleteButton: false,
-    showCalculate: showCalculate,
+    showCalculate: true,
     calculateDisabled: !(
       calculationObject && Object.keys(calculationObject).length > 0
     ),
@@ -403,7 +393,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='Packagings & Consumables'
+        title='Other Cost'
         loading={loading}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

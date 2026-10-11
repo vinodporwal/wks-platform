@@ -4,6 +4,7 @@ import { json } from 'services/request'
 export const ImportExportApiService = {
   saveExcelData,
   exportExcelData,
+  importExcel,
 }
 
 // ===================== || GENERIC EXCEL IMPORT FUNCTION || ===================== //
@@ -124,6 +125,47 @@ async function exportExcelData(keycloak, params) {
     return { success: true, message: 'Excel exported successfully' }
   } catch (e) {
     console.error(`Error exporting Excel from ${endpoint}:`, e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Generic function to upload Excel file to any Production Norms endpoint
+ * @param {File} file - The Excel file to upload
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} endpoint - The API endpoint base path (e.g., 'vgoht/norms-basis/constant/import')
+ * @param {Object} queryParams - Query parameters (plantFKId, year, etc.) - will be sent as form fields
+ * @returns {Promise} API response
+ */
+async function importExcel(file, keycloak, endpoint, queryParams = {}) {
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  // Append all query parameters as form fields
+  Object.keys(queryParams).forEach((key) => {
+    formData.append(key, queryParams[key])
+  })
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(`Error importing Excel data to ${endpoint}:`, e)
     return Promise.reject(e)
   }
 }

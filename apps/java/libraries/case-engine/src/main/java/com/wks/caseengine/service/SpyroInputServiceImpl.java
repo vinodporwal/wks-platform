@@ -1882,13 +1882,13 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		if ("fuel".equalsIgnoreCase(type)) {
 			return getModesForFuel(plantId);
 		}
+
+		String storedProcedure = "usp_GetCrackerModes";
 		
 		// Handle non-fuel types (original logic)
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-		String viewName = "vw" + verticalName + "Modes";
 		List<Map<String, Object>> modes = new ArrayList<>();
 		try {
-			List<Object[]> obj = findByYearAndPlantId( UUID.fromString(plantId),type, viewName);
+			List<Object[]> obj = findByYearAndPlantId(UUID.fromString(plantId), year, type, storedProcedure);
 			for(Object[] row:obj) {
 				Map<String, Object> map = new HashMap<>();
 				map.put("name", (row[6] != null ? row[6].toString() : ""));
@@ -1909,15 +1909,13 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		return aopMessageVM;
 	}
 	
-	public List<Object[]> findByYearAndPlantId( UUID plantId,String type, String viewName) {
+	public List<Object[]> findByYearAndPlantId(UUID plantId, String year, String type, String storedProcedure) {
 		try {
-			String sql = "SELECT " + "Id,VerticalId, SiteId, PlantId, DisplayOrder, Type, ModeName, DisplayName "
-					 + "FROM " + viewName + " "
-					+ " WHERE  PlantId = :plantId AND Type = :type " 
-					+ " ORDER BY DisplayOrder";
+			String sql = "EXEC " + "[" + storedProcedure + "]" + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
 			query.setParameter("type", type);
 
 			return query.getResultList();

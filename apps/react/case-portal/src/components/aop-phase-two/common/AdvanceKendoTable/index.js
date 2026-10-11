@@ -19,12 +19,14 @@ import RemarkDialog from './components/RemarkDialog'
 import FilterChips from './components/FilterChips'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
+import CalculateConfirmationDialog from './components/CalculateConfirmationDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
 import { ConditionalCellEditor } from '../utilities/ConditionalCellEditor'
 import { ExcelExport } from '../../../../../node_modules/@progress/kendo-react-excel-export/index'
 import { NumberCellEditor } from '../utilities/NumberCellEditor'
+import { UomNumberCellEditor } from '../utilities/UomNumberCellEditor'
 import { SvgIcon } from '../../../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../../../node_modules/@progress/kendo-svg-icons/dist/index'
 import { Tooltip } from '../../../../../node_modules/@progress/kendo-react-tooltip/index'
@@ -71,6 +73,7 @@ import {
   getMonthStartEndDate,
 } from '../utilities/durationHelpers'
 import { convertFromScientificNotation } from '../commonUtilityFunctions'
+import SegmentedSwitch from 'components/kendo-data-tables/components/SegmentedSwitch'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -191,6 +194,7 @@ export const dateFields = [
   'exclusionStartDate',
   'exclusionEndDate',
   'dateOfCommencement',
+  'targetDate',
 ]
 export const monthMap = {
   january: 1,
@@ -238,6 +242,7 @@ const AdvanceKendoTable = ({
   handleRemarkCellClick = () => {},
   handleExport = () => {},
   handleExcelUpload = () => {},
+  handleToggleShowAll = (val) => {},
   showThreeColors = false,
   groupBy = null,
   dropdownConfig = {},
@@ -260,6 +265,8 @@ const AdvanceKendoTable = ({
   screenType = null,
   siteDropdown = [],
   plantDropdown = [],
+  showToggleAllOptions = [],
+  showToggleAllState = null,
   defaultGridExpanded = true,
   showFilters = false,
   convertScientificValue = false,
@@ -287,8 +294,26 @@ const AdvanceKendoTable = ({
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+
+  const openCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(true)
+  }
+
+  const closeCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(false)
+  }
+
+  const handleCalculateConfirmation = async () => {
+    closeCalculateDialogBox()
+    setIsButtonDisabled(true)
+    handleCalculate()
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
   const [edit, setEdit] = useState({})
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
@@ -661,7 +686,7 @@ const AdvanceKendoTable = ({
         const monthDur = calculateMonthDuration(value, AOP_YEAR)
         const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
         if (monthDur) {
-          dataItem.durationInHrs = Number(monthDur)
+          dataItem.durationInHrs = String(monthDur)
         }
         if (start && end) {
           dataItem.maintStartDateTime = start
@@ -678,7 +703,13 @@ const AdvanceKendoTable = ({
       setModifiedCells((prev) => {
         // Merge with previous modified cells to get all accumulated changes
         const previousModified = prev[itemId] || {}
+        // Ensure that the freshly calculated duration and dates from dataItem override previousModified
         const base = { ...dataItem, ...previousModified, [field]: value }
+        if (screenType === 'shutdown' && field === 'monthly') {
+          if (dataItem.durationInHrs) base.durationInHrs = dataItem.durationInHrs
+          if (dataItem.maintStartDateTime) base.maintStartDateTime = dataItem.maintStartDateTime
+          if (dataItem.maintEndDateTime) base.maintEndDateTime = dataItem.maintEndDateTime
+        }
 
         if (field === 'siteName' && isDropdownSiteplant) {
           base.plantName = ''
@@ -1005,11 +1036,15 @@ const AdvanceKendoTable = ({
     }
   }
   const handleCalculateBtn = async () => {
-    setIsButtonDisabled(true)
-    handleCalculate()
-    setTimeout(() => {
-      setIsButtonDisabled(false)
-    }, 500)
+    if (permissions?.showCalulcationPromt) {
+      openCalculateDialogBox()
+    } else {
+      setIsButtonDisabled(true)
+      handleCalculate()
+      setTimeout(() => {
+        setIsButtonDisabled(false)
+      }, 500)
+    }
   }
   const handleRefresh = async () => {
     try {
@@ -1453,6 +1488,10 @@ const AdvanceKendoTable = ({
 
   // Helper to check if a cell is editable based on conditional rules
   const isCellEditableByCondition = (dataItem, col) => {
+    // Check per-cell configuration from code
+    if (dataItem?.nonEditableFields?.includes(col.field)) return false;
+    if (dataItem?.editableFields && !dataItem?.editableFields?.includes(col.field)) return false;
+
     if (!col.conditionalEditable) return true
 
     const { dependsOn, editableValues } = col.conditionalEditable
@@ -1578,13 +1617,16 @@ const AdvanceKendoTable = ({
             locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : undefined}
             cells={{
-              data: (cellProps) => (
-                <RemarkCell
-                  {...cellProps}
-                  showPlaceholder={col.showPlaceholder}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
-                />
-              ),
+              data: (cellProps) => {
+                const cellIsEditable = isEditable && cellProps.dataItem?.isEditable !== false && isCellEditableByCondition(cellProps.dataItem, col);
+                return (
+                  <RemarkCell
+                    {...cellProps}
+                    showPlaceholder={col.showPlaceholder}
+                    onRemarkClick={cellIsEditable ? handleRemarkCellClick : () => {}}
+                  />
+                );
+              },
               headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
@@ -1612,12 +1654,15 @@ const AdvanceKendoTable = ({
             locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : ''}
             cells={{
-              data: (cellProps) => (
-                <RemarkCell
-                  {...cellProps}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
-                />
-              ),
+              data: (cellProps) => {
+                const cellIsEditable = isEditable && cellProps.dataItem?.isEditable !== false && isCellEditableByCondition(cellProps.dataItem, col);
+                return (
+                  <RemarkCell
+                    {...cellProps}
+                    onRemarkClick={cellIsEditable ? handleRemarkCellClick : () => {}}
+                  />
+                );
+              },
               headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
@@ -2046,6 +2091,59 @@ const AdvanceKendoTable = ({
         )
       }
 
+      if (col.type === 'uomWholeNumber' || col.uomWholeNumber) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <UomNumberCellEditor
+                    {...cellProps}
+                    allowNegative={col.allowNegative === true}
+                  />
+                ),
+              },
+              data: (props) =>
+                showThreeColors ? (
+                  <RedHighlightCell2
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                    allRedCell={allRedCell}
+                    allRedCell2={allRedCell2}
+                    disableRedHighlight={disableRedHighlight}
+                    format={col.format}
+                  />
+                ) : (
+                  <RedHighlightCell
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                    allRedCell={allRedCell}
+                    disableRedHighlight={disableRedHighlight}
+                    format={col.format}
+                  />
+                ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
       //New Creted Code for Text Type
       if (col.type == 'text') {
         return (
@@ -2292,6 +2390,29 @@ const AdvanceKendoTable = ({
             cells={{
               edit: {
                 text: (cellProps) => {
+                  // Check if cell is editable based on conditional rules
+                  const cellEditableByCondition = isCellEditableByCondition(
+                    cellProps.dataItem,
+                    col,
+                  )
+                  if (!cellEditableByCondition) {
+                    const resolvedOptions = isDynamic
+                      ? col.getOptions(cellProps.dataItem)
+                      : col.options
+                    return createSelectToolTipRenderer(
+                      resolvedOptions,
+                      toolTipRenderer,
+                    )({
+                      ...cellProps,
+                      displayMode: col.displayMode || 'label',
+                      tdProps: {
+                        ...cellProps.tdProps,
+                        className:
+                          `${cellProps.tdProps?.className || ''} non-editable-cell`.trim(),
+                      },
+                    })
+                  }
+
                   // Resolve options per-row here, where cellProps.dataItem is available
                   const resolvedOptions = isDynamic
                     ? col.getOptions(cellProps.dataItem)
@@ -2315,10 +2436,25 @@ const AdvanceKendoTable = ({
                 const resolvedOptions = isDynamic
                   ? col.getOptions(props.dataItem)
                   : col.options
+                // If conditional rules block editing for this row, add the
+                // non-editable-cell class so the display cell gets gray styling.
+                const blockedByCondition =
+                  col.conditionalEditable &&
+                  !isCellEditableByCondition(props.dataItem, col)
                 return createSelectToolTipRenderer(
                   resolvedOptions,
                   toolTipRenderer,
-                )({ ...props, displayMode: col.displayMode || 'label' })
+                )({
+                  ...props,
+                  displayMode: col.displayMode || 'label',
+                  tdProps: blockedByCondition
+                    ? {
+                        ...props.tdProps,
+                        className:
+                          `${props.tdProps?.className || ''} non-editable-cell`.trim(),
+                      }
+                    : props.tdProps,
+                })
               },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
@@ -2478,22 +2614,24 @@ const AdvanceKendoTable = ({
                   const { dataItem, field, onChange } = cellProps
                   const checked = !!dataItem[field]
                   const isCellDisabled =
-                    !isEditable || dataItem?.isEditable === false
+                    !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
                   return (
                     <td style={{ textAlign: 'center', padding: '6px 2px' }}>
-                      <Checkbox
-                        checked={checked}
-                        disabled={isCellDisabled}
-                        onChange={(e) => {
-                          if (isCellDisabled) return
-                          const newVal =
-                            typeof e.value === 'boolean'
-                              ? e.value
-                              : e.target?.checked ?? !checked
-                          onChange({ dataItem, field, value: newVal })
-                        }}
-                        size='medium'
-                      />
+                      {dataItem?.hideCheckbox ? null : (
+                        <Checkbox
+                          checked={checked}
+                          disabled={isCellDisabled}
+                          onChange={(e) => {
+                            if (isCellDisabled) return
+                            const newVal =
+                              typeof e.value === 'boolean'
+                                ? e.value
+                                : e.target?.checked ?? !checked
+                            onChange({ dataItem, field, value: newVal })
+                          }}
+                          size='medium'
+                        />
+                      )}
                     </td>
                   )
                 },
@@ -2502,7 +2640,7 @@ const AdvanceKendoTable = ({
                 const { dataItem, field, tdProps } = cellProps
                 const checked = !!dataItem[field]
                 const isCellDisabled =
-                  !isEditable || dataItem?.isEditable === false
+                  !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
                 return (
                   <td
                     {...tdProps}
@@ -2510,23 +2648,24 @@ const AdvanceKendoTable = ({
                       textAlign: 'center',
                       ...tdProps?.style,
                     }}
-                    // Prevent the row-click from propagating so the grid
-                    // doesn't enter full row-edit mode on checkbox click
-                    onClick={(e) => e.stopPropagation()}
                   >
-                    <Checkbox
-                      checked={checked}
-                      disabled={isCellDisabled}
-                      onChange={(e) => {
-                        if (isCellDisabled) return
-                        const newVal =
-                          typeof e.value === 'boolean'
-                            ? e.value
-                            : e.target?.checked ?? !checked
-                        itemChange({ dataItem, field, value: newVal })
-                      }}
-                      size='medium'
-                    />
+                    {dataItem?.hideCheckbox ? null : (
+                      <div style={{ pointerEvents: 'none', display: 'inline-block' }}>
+                        <Checkbox
+                        checked={checked}
+                        disabled={isCellDisabled}
+                        onChange={(e) => {
+                          if (isCellDisabled) return
+                          const newVal =
+                            typeof e.value === 'boolean'
+                              ? e.value
+                              : e.target?.checked ?? !checked
+                          itemChange({ dataItem, field, value: newVal })
+                        }}
+                        size='medium'
+                      />
+                      </div>
+                    )}
                   </td>
                 )
               },
@@ -2778,7 +2917,9 @@ const AdvanceKendoTable = ({
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
       typeof value === 'boolean'
-        ? (value ? 'Yes' : 'No')
+        ? value
+          ? 'Yes'
+          : 'No'
         : convertFromScientificNotation(value) ?? value
 
     const cellContent =
@@ -2788,7 +2929,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}.trim()`}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
@@ -3105,6 +3246,14 @@ const AdvanceKendoTable = ({
                   Delete
                 </Button>
               )}
+              {permissions?.showToggleAll && (
+                <SegmentedSwitch
+                  options={showToggleAllOptions}
+                  value={showToggleAllState}
+                  onChange={handleToggleShowAll}
+                  disabled={isButtonDisabled || READ_ONLY}
+                />
+              )}
             </Box>
           </Box>
         </Box>
@@ -3171,6 +3320,7 @@ const AdvanceKendoTable = ({
                 size='small'
                 pageable={pagable && getPaginationConfig()}
                 onRowClick={handleRowClick}
+                lockGroups={true}
               >
                 {permissions?.deleteMultiple &&
                   renderMultipleSelectionCheckbox()}
@@ -3249,6 +3399,12 @@ const AdvanceKendoTable = ({
         openSaveDialogeBox={openSaveDialogeBox}
         closeSaveDialogeBox={closeSaveDialogeBox}
         saveConfirmation={saveConfirmation}
+      />
+      {/* Calculate confirmation */}
+      <CalculateConfirmationDialog
+        openCalculateDialogeBox={openCalculateDialogeBox}
+        closeCalculateDialogBox={closeCalculateDialogBox}
+        handleCalculateConfirmation={handleCalculateConfirmation}
       />
       {/* Delete Selected Dialog */}
       <DeleteSelectedDialog

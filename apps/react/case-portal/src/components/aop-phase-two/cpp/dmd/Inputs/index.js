@@ -9,7 +9,7 @@ import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
-import Prices from '../../Inputs/Prices/index'
+import Prices from '../../common/Prices/index'
 import FuelPriority from './FuelPriority/index'
 import ImportPower from '../../dmd/Inputs/ImportPowerMain/index'
 import InputNorms from './InputNorms/index'
@@ -17,6 +17,7 @@ import SpinningMargin from '../../common/SpinningMargin/index'
 import SRMapping from '../../common/SRMapping/index'
 import useConfigurationTabs from 'components/aop-phase-two/common/hooks/useConfigurationTabs'
 import StandByLoad from './StandByLoad'
+import EfficiencyAndFuelRatio from './EfficiencyAndFuelRatio/index'
 
 const InputsDMD = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -70,6 +71,8 @@ const InputsDMD = () => {
         return <Prices />
       case 'Stand By Load':
         return <StandByLoad />
+      case 'Efficiency & Fuel Ratio':
+        return <EfficiencyAndFuelRatio />
       default:
         return null
     }

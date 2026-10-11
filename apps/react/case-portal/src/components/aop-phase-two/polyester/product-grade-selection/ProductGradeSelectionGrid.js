@@ -55,6 +55,7 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
             }))
             
             originalRemarkRef.current = mappedData[0]?.remark || ''
+            // setRows(mappedData)
             setRows(mappedData.sort((a, b) => (b.status ? 1 : 0) - (a.status ? 1 : 0)))
         } catch (e) {
             console.error('Error fetching data:', e)
@@ -119,7 +120,7 @@ export default function ProductGradeSelectionGrid({ onSaveSuccess }) {
                 remarks: currentRemark,
             }))
             
-            const response = await ProductGradeSelectionApiService.saveGradeSelection(keycloak, payload, AOP_YEAR)
+            const response = await ProductGradeSelectionApiService.saveGradeSelection(keycloak, payload, AOP_YEAR, PLANT_ID)
             
             if (response?.code === 200) {
                 setSnackbarOpen(true)

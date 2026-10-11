@@ -10,6 +10,8 @@ import SRMapping from './sr-mapping'
 import QtyCostReport from './qty-cost-report'
 import Summary from './Summary'
 import AverageAssetLoading from './average-asset-loading'
+import UtilityRate from './utility-rate'
+import MonthlyCalculatedNorms from './monthly-calculated-norms'
 
 const Outputs = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -41,6 +43,11 @@ const Outputs = () => {
         return <AverageAssetLoading />
       case 'Summary':
         return <Summary />
+      case 'Utility Rate':
+        return <UtilityRate />
+      case 'Monthly Calculated Norms':
+        return <MonthlyCalculatedNorms />
+
       default:
         return null
     }

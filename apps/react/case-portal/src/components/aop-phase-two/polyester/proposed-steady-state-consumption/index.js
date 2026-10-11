@@ -101,6 +101,7 @@ const ProposedSteadyStateConsumption = () => {
         setModifiedCells({})
         fetchData()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Save Failed!',
@@ -108,15 +109,14 @@ const ProposedSteadyStateConsumption = () => {
         })
       }
     } catch (error) {
+      setLoading(false)
       console.error('Error saving data!', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const saveChanges = React.useCallback(async () => {
@@ -276,58 +276,62 @@ const ProposedSteadyStateConsumption = () => {
       field: 'sapCode',
       title: 'SAP MAT Code',
       editable: false,
-      fixedWidth: 100,
+      minWidth: 110,
     },
     {
       field: 'productName',
       title: 'Particulars',
       editable: false,
-      fixedWidth: 250,
+      minWidth: 250,
       locked: true,
     },
     {
       field: 'UOM',
-      title: 'UOM',
+      title: 'UOM  / MT',
       editable: false,
-      fixedWidth: 100,
+      minWidth: 100,
     },
     {
       field: 'lastFY',
       title: 'Last FY',
       editable: false,
       type: 'number',
-      fixedWidth: 150,
-      format: valueFormat
+      minWidth: 110,
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'actualLastFY',
       title: 'Actual Last FY',
       editable: false,
       type: 'number',
-      fixedWidth: 150,
-      format: valueFormat
+      minWidth: 110,
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'sysGrn',
       title: 'Sys Gen',
       editable: false,
       type: 'number',
-      fixedWidth: 150,
-      format: valueFormat
+      minWidth: 110,
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'proposed',
       title: 'Proposed',
       editable: true,
-      type: 'numberNonGrey',
-      fixedWidth: 150,
-      format: valueFormat
+      type: 'number1',
+      minWidth: 100,
+      format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
-      fixedWidth: 200,
+      minWidth: 200,
     },
   ]
 
@@ -348,6 +352,7 @@ const ProposedSteadyStateConsumption = () => {
         })
         fetchData()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Data Refresh Failed!',
@@ -355,15 +360,14 @@ const ProposedSteadyStateConsumption = () => {
         })
       }
     } catch (error) {
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: error.message || 'An error occurred during calculation',
         severity: 'error',
       })
       console.error('Calculation Error!', error)
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const EXCEL_EXPORT_TITLE = generateExcelName(
@@ -416,15 +420,15 @@ const ProposedSteadyStateConsumption = () => {
         setModifiedCells({})
         fetchData()
       } else if (response?.code === 400 && response?.data) {
+        setLoading(false)
         downloadBase64Excel(response.data, 'Error File - Proposed AOP.xlsx')
-
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        fetchData()
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Upload Failed!',
@@ -433,14 +437,13 @@ const ProposedSteadyStateConsumption = () => {
       }
     } catch (error) {
       console.error('Error uploading excel:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const permissions = {

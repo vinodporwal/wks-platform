@@ -15,12 +15,14 @@ import lombok.NoArgsConstructor;
 public class SiteTeamTranscationDTO {
 	
 	private String id;
+	private String masterId;
+	private String functions;
     private String jobRole;
     private String name;
     private Integer age;
     private Integer teamSize;
     private String aopYear;
-    private String remark;
+    private String siteId;
     private String saveStatus;
     private String errDescription;
 }

@@ -1780,6 +1780,120 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		}
 	}
 	
+	@Override
+	public AOPMessageVM updateDynamicYieldCracker(String plantId, String year, List<Map<String, Object>> payload) {
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<NormAttributeTransactions> savedList = new ArrayList<>();
+		List<Map<String, Object>> failedList = new ArrayList<>();
+
+		try {
+			for (Map<String, Object> row : payload) {
+
+				// Skip rows that are already flagged as failed by the client
+				Object saveStatus = row.get("saveStatus");
+				if (saveStatus != null && "Failed".equalsIgnoreCase(saveStatus.toString())) {
+					failedList.add(row);
+					continue;
+				}
+
+				// Every row must carry a Particulars identifier
+				Object particularsObj = row.get("Particulars");
+				if (particularsObj == null) {
+					continue;
+				}
+				String particulars = particularsObj.toString();
+
+				// Iterate over all dynamic column key-value pairs in this row
+				for (Map.Entry<String, Object> entry : row.entrySet()) {
+					String columnKey = entry.getKey();
+
+					// Skip reserved / metadata fields
+					if ("Particulars".equals(columnKey)
+							|| "saveStatus".equals(columnKey)
+							|| "errDescription".equals(columnKey)) {
+						continue;
+					}
+
+					Object valueObj = entry.getValue();
+					if (valueObj == null) {
+						continue;
+					}
+
+					// Reverse the OperationType format used by the GET SP:
+					//   OperationType  = {prefix}-{suffix}
+					//   NormParam name = {prefix}_{particulars}_{suffix}
+					int dashIndex = columnKey.indexOf("-");
+					if (dashIndex < 0) {
+						// Not a valid OperationType key — skip
+						continue;
+					}
+					String prefix = columnKey.substring(0, dashIndex);
+					String suffix = columnKey.substring(dashIndex + 1);
+					String normParameterName = prefix + "_" + particulars + "_" + suffix;
+
+					Optional<NormParameters> normParameterOpt = normParametersRepository
+							.findFirstOneByNameAndPlantFkId(normParameterName, UUID.fromString(plantId));
+
+					if (!normParameterOpt.isPresent()) {
+						continue;
+					}
+
+					Double attributeValue;
+					try {
+						attributeValue = Double.parseDouble(valueObj.toString());
+					} catch (NumberFormatException e) {
+						continue;
+					}
+
+					NormParameters normParameters = normParameterOpt.get();
+					NormAttributeTransactions normAttributeTransactions =
+							normAttributeTransactionsRepository
+									.findByNormParameterFKIdAndAuditYear(normParameters.getId(), year);
+
+					if (normAttributeTransactions == null) {
+						normAttributeTransactions = new NormAttributeTransactions();
+						normAttributeTransactions.setAopMonth(4);
+						normAttributeTransactions.setNormParameterFKId(normParameters.getId());
+						normAttributeTransactions.setAttributeValue(attributeValue.toString());
+						normAttributeTransactions.setAuditYear(year);
+						normAttributeTransactions.setCreatedOn(new Date());
+						normAttributeTransactions.setUserName(Utility.getUserName());
+					} else {
+						normAttributeTransactions.setAttributeValue(attributeValue.toString());
+					}
+					savedList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+				}
+			}
+
+			// Trigger downstream recalculation for screens that depend on spyro-output
+			List<ScreenMapping> screenMappingList = screenMappingRepository
+					.findByDependentScreen("spyro-output");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			Map<String, Object> responseMap = new HashMap<>();
+			responseMap.put("Success", savedList);
+			responseMap.put("Failed", failedList);
+			aopMessageVM.setData(responseMap);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update dynamic yield data", ex);
+		}
+	}
+
 	private List<YieldParticularDTO> makeNormParameterName(List<YieldDTO> yieldDTOs) {
 		List<YieldParticularDTO> yieldParticularDTOs = new ArrayList<YieldParticularDTO>();
 		for(YieldDTO dto:yieldDTOs) {
@@ -2806,6 +2920,115 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
 			default:
 				return null;
 		}
+	}
+
+	@Override
+	public AOPMessageVM getDynamicYieldCracker(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+			.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+			.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	Sites site = siteRepository.findById(plant.getSiteFkId())
+			.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+	String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+
+			List<Object[]> results = getDynamicYieldDataCracker(plantId, year, storedProcedure);
+			List<String> columnNames = getDynamicYieldColumnsCracker(plantId, year, storedProcedure);
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("data", resultList);
+			data.put("columns", getDynamicYieldColumnMetadataCracker(plantId, year, storedProcedure));
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch yield data", ex);
+		}
+	}
+
+	private List<Object[]> getDynamicYieldDataCracker(String plantId, String year, String storedProcedure) {
+		try {
+	
+			String sql = "EXEC " + "[" + storedProcedure + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+			
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch yield data", ex);
+		}
+	}
+
+	private List<String> getDynamicYieldColumnsCracker(String plantId, String year, String storedProcedure) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+
+			String sql = "EXEC " + "[" + storedProcedure + "]" + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getDynamicYieldColumnMetadataCracker(String plantId, String year, String storedProcedure) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+
+			String sql = "EXEC " + "[" + storedProcedure + "]" + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+			
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", columnName);
+						columnInfo.put("type", columnType);
+						columnInfo.put("editable", false);
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
 	}
 
 	

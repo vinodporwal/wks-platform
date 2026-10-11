@@ -57,9 +57,22 @@ public class SteadyStateServiceImpl implements SteadyStateService {
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
+		boolean crude = vertical.getName().equalsIgnoreCase("CRUDE");
 		
-    //CRUDE_DTA_CDU1_SteadyStateCalculation
-		String storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"_SteadyStateCalculation";  
+		boolean refineryUtilityDMD = vertical.getName().equalsIgnoreCase("RefineryUtility") && site.getName().equalsIgnoreCase("DMD");
+		boolean siteWiseSp = refineryUtilityDMD;
+
+		String storedProcedure = "";
+
+		if(crude) {  
+			storedProcedure = vertical.getName()+"_"+site.getName() +"_NormsCalculation";
+		}
+       else if(siteWiseSp) { 
+          storedProcedure = vertical.getName() + "_" + site.getName() + "_SteadyStateCalculation";
+	   }
+	   else {
+		 storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"_SteadyStateCalculation"; 
+	   } 
 		
 
 		System.out.println("storedProcedure" + storedProcedure);
@@ -138,11 +151,13 @@ public class SteadyStateServiceImpl implements SteadyStateService {
         
                 query.execute();
         
+                String errorMessage = null;
                 try {
-                    query.getResultList(); // flush any pending result sets
+                    Object outVal = query.getOutputParameterValue("ErrorMessage");
+                    if (outVal != null) {
+                        errorMessage = outVal.toString();
+                    }
                 } catch (Exception ignored) {}
-        
-                String errorMessage = (String) query.getOutputParameterValue("ErrorMessage");
         
                 System.out.println("errorMessage string: " + errorMessage);
         

@@ -96,21 +96,25 @@ async function saveShutdownPlan(keycloak, plantId, shutdownDetails) {
 
 /**
  * Delete a single shutdown activity
- * DELETE /task/shutdown/:maintenanceId/:plantId
+ * DELETE /task/delete-shutdown/:plantMaintenanceTransactionId/:plantId
  *
- * @param {Object} keycloak       - Keycloak session
- * @param {string} maintenanceId  - The idFromApi of the record to delete
- * @param {string} plantId        - Plant UUID
- * @returns {Promise<string>}     - Plain text response
+ * @param {Object} keycloak                      - Keycloak session
+ * @param {string} plantMaintenanceTransactionId - The idFromApi of the record to delete
+ * @param {string} plantId                       - Plant UUID
+ * @returns {Promise<string>}                    - Plain text response
  */
-async function deleteShutdownActivity(keycloak, maintenanceId, plantId) {
+async function deleteShutdownActivity(
+  keycloak,
+  plantMaintenanceTransactionId,
+  plantId,
+) {
   const url =
-    `${Config.CaseEngineUrl}/task/shutdown` +
-    `/${encodeURIComponent(maintenanceId)}` +
+    `${Config.CaseEngineUrl}/task/delete-shutdown` +
+    `/${encodeURIComponent(plantMaintenanceTransactionId)}` +
     `/${encodeURIComponent(plantId)}`
 
   const headers = {
-    Accept: 'application/json',
+    Accept: 'application/json, text/plain, */*',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
@@ -122,6 +126,7 @@ async function deleteShutdownActivity(keycloak, maintenanceId, plantId) {
     return Promise.reject(e)
   }
 }
+
 
 /**
  * Export all shutdown activities for a PE plant as Excel
@@ -203,19 +208,6 @@ async function importShutdownPlan(file, keycloak, plantId, year) {
   }
 }
 
-// ─── Delete Selected ───────────────────────────────────────────────────────────────────
-/**
- * Delete multiple shutdown activities for a PE plant
- * DELETE /task/shutdown?plantMaintenanceTransactionIds={id1,id2,id3...}&plantId={plantId}
- *
- * Response shape:
- *   { message: "Success" }        → success
- *
- * @param {Array}   ids  - Array of IDs to delete
- * @param {Object} keycloak  - Keycloak session
- * @param {string} PLANT_ID   - Plant ID
- * @returns {Promise<string>}
- */
 
 /**
  * Export all shutdown activities for a plant as Excel (non-product)
@@ -291,10 +283,22 @@ async function importShutdownNonProduct(file, keycloak, plantId, year) {
   }
 }
 
+/**
+ * Delete multiple shutdown activities
+ * DELETE /task/delete-shutdown?plantMaintenanceTransactionId={id1,id2...}&plantId={plantId}
+ *
+ * @param {Array<string>} ids       - Array of plantMaintenanceTransactionId to delete
+ * @param {Object}        keycloak  - Keycloak session
+ * @param {string}        PLANT_ID  - Plant UUID
+ * @returns {Promise<string>}       - Plain text response
+ */
 async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`
+  const cleanIds = (Array.isArray(ids) ? ids : [ids]).filter(Boolean)
+  if (cleanIds.length === 0) return Promise.resolve('No records to delete')
+
+  const url = `${Config.CaseEngineUrl}/task/delete-shutdown?plantMaintenanceTransactionId=${cleanIds.map(encodeURIComponent).join(',')}&plantId=${encodeURIComponent(PLANT_ID)}`
   const headers = {
-    Accept: 'application/json',
+    Accept: 'application/json, text/plain, */*',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
@@ -307,7 +311,7 @@ async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
         `Failed to delete data: ${resp.status} ${resp.statusText}`,
       )
     }
-    return json(keycloak, resp) // Handle text response from the backend
+    return resp.text()
   } catch (e) {
     console.error('Error deleting multiple shutdown data:', e)
     return Promise.reject(e)

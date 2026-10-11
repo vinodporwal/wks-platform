@@ -93,15 +93,15 @@ const GradeWiseSteadyStateConsumption = () => {
     },
     {
       field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
+      title: 'UOM / MT',
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
     {
       field: 'YTD',
-      title: 'YTD Norm',
-      minWidth: 100,
+      title: 'Overall AOP WtAvg',
+      minWidth: 200,
       type: 'number',
       editable: false,
       format: valueFormat
@@ -193,8 +193,9 @@ const GradeWiseSteadyStateConsumption = () => {
               let colDef = {
                 ...col,
                 minWidth: 150,
-                editable: col.field === 'WtAvg' ? false : true,
+                editable: col.field === 'WtAvg (YTD)' ? false : true,
                 type: col.type === 'number' ? 'row-based' : 'text',
+                allowNegative: true
               }
               if (col.type === 'number') {
                 colDef.format = valueFormat
@@ -230,6 +231,7 @@ const GradeWiseSteadyStateConsumption = () => {
               : item.IsEditable,
           type: 'number1',
           sapCode: item.SAPMaterialCode,
+          allowNegative: true,
         }))
 
         setRows(formattedData)
@@ -286,10 +288,10 @@ const GradeWiseSteadyStateConsumption = () => {
   }, [PLANT_ID, AOP_YEAR, fetchData])
 
   // Re-fetch data & validate when selectedGradeId changes
-  useEffect(() => {
-      // fetchData(selectedGradeId)
-      if (!isFilament) validateGradeNorms(selectedGradeId)
-  }, [isFilament, validateGradeNorms])
+  // useEffect(() => {
+  //     // fetchData(selectedGradeId)
+  //     if (!isFilament) validateGradeNorms(selectedGradeId)
+  // }, [isFilament, validateGradeNorms])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -428,7 +430,7 @@ const GradeWiseSteadyStateConsumption = () => {
     setSnackbarData({ message: 'Calculating...', severity: 'info' })
     try {
       let data;
-      if (isFilament) {
+      // if (isFilament) {
         data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPolyester(
           PLANT_ID,
           SITE_ID,
@@ -436,15 +438,15 @@ const GradeWiseSteadyStateConsumption = () => {
           AOP_YEAR,
           keycloak,
         )
-      } else {
-        data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
-          PLANT_ID,
-          SITE_ID,
-          VERTICAL_ID,
-          AOP_YEAR,
-          keycloak,
-        )
-      }
+      // } else {
+      //   data = await SteadyStateConsumptionApiService.calculateSteadyStateConsumptionPE(
+      //     PLANT_ID,
+      //     SITE_ID,
+      //     VERTICAL_ID,
+      //     AOP_YEAR,
+      //     keycloak,
+      //   )
+      // }
 
       if (data == 0 || data) {
         setSnackbarOpen(true)

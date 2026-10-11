@@ -97,6 +97,7 @@ const CrackerConfig = () => {
   const [modes, setModes] = useState([])
 
   const [yieldRows, setYieldRows] = useState([])
+  const [dynamicYieldColumns, setDynamicYieldColumns] = useState([])
   const [constantsRows, setConstantsRows] = useState([])
   const [feedTotalRows, setTotalFeedRows] = useState([])
   const [compositionRows, setCompositionRows] = useState([])
@@ -121,6 +122,27 @@ const CrackerConfig = () => {
   }, [tabs, tabIndex, availableTabs])
 
   const productionColumns = useMemo(() => {
+    if (currentTabDisplay === 'Yield' && SITE_NAME === 'NMD' && dynamicYieldColumns.length > 0) {
+      return dynamicYieldColumns.map((col) => {
+        if (col.field === 'Particulars' || col.field === 'particulars') {
+          return {
+            ...col,
+            editable: false,
+            locked: true,
+            align: 'left',
+            minWidth: 170,
+          }
+        }
+        return {
+          ...col,
+          editable: true,
+          type: 'number',
+          format: FORMATE_VALUE,
+          minWidth: 150,
+        }
+      })
+    }
+
     const configType =
       currentTabDisplay === 'Composition'
         ? SITE_NAME === 'C2'
@@ -144,7 +166,7 @@ const CrackerConfig = () => {
       configType,
       FORMATE_VALUE,
     })
-  }, [headerMap, currentTabDisplay])
+  }, [headerMap, currentTabDisplay, SITE_NAME, dynamicYieldColumns, handleRemarkCellClick, FORMATE_VALUE])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -185,11 +207,11 @@ const CrackerConfig = () => {
       allAction: lowerVertName === 'cracker',
       modes: modes,
       uploadExcelBtn:
-        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+        (SITE_NAME === 'VMD' || SITE_NAME === 'NMD') && currentTabDisplay == 'Yield' ? false : true,
       downloadExcelBtn:
-        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+        (SITE_NAME === 'VMD' || SITE_NAME === 'NMD') && currentTabDisplay == 'Yield' ? false : true,
       downloadExcelBtnFromUI:
-        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
+        (SITE_NAME === 'VMD' || SITE_NAME === 'NMD') && currentTabDisplay == 'Yield' ? true : false,
       ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
     },
     isOldYear,
@@ -430,15 +452,17 @@ const CrackerConfig = () => {
         if (IS_CRACKER_HMD || IS_CRACKER_C2) {
           mode = currentTabDisplay
         }
+        let currentDynamicCols = []
         if (currentTabDisplay == 'Yield') {
           if (SITE_NAME == 'NMD') {
-            spyroVMYield1 = await DataService.getSpyroOutputDataYield(
+            const dynamicYieldData = await DataService.getDynamicYieldCracker(
               keycloak,
-              mode,
-              currentTabDisplay,
               PLANT_ID,
               AOP_YEAR,
             )
+            spyroVMYield1 = { data: dynamicYieldData?.data?.data || [] }
+            currentDynamicCols = dynamicYieldData?.data?.columns || []
+            setDynamicYieldColumns(currentDynamicCols)
           } else if (SITE_NAME == 'VMD') {
             var data = await DataService.getSpyroOutputDataYieldVMD(
               keycloak,
@@ -523,22 +547,15 @@ const CrackerConfig = () => {
               'fourF2SC2C3',
             ]
           } else {
-            numericColumns = [
-              'fourFC2C3',
-              'fourFEthane',
-              'fourFPropane',
-              'fourFDC2C3',
-              'fourFDEthane',
-              'fourFDPropane',
-              'fiveFC2C3',
-              'fiveFEthane',
-              'fiveFPropane',
-            ]
+            numericColumns = currentDynamicCols
+              .filter((c) => c.field !== 'Particulars' && c.field !== 'particulars')
+              .map((c) => c.field)
           }
 
           const totalRow = {
             id: 'total_row',
             particulars: 'Total',
+            Particulars: 'Total',
             isTotal: true,
             editable: false,
           }
@@ -693,22 +710,18 @@ const CrackerConfig = () => {
     setLoading(true)
 
     try {
-      const dataToSave = newRows.filter((row) => !row.isTotal)
+      // Merge modified cells into newRows
+      const updatedRows = newRows.map((row) => {
+        if (modifiedCells && modifiedCells[row.id]) {
+          return { ...row, ...modifiedCells[row.id] }
+        }
+        return row
+      })
+      const dataToSave = updatedRows.filter((row) => !row.isTotal)
 
       var SpyroOutputYield = []
       if (SITE_NAME === 'NMD') {
-        SpyroOutputYield = dataToSave.map((row) => ({
-          particulars: row.particulars,
-          fourFPropane: row.fourFPropane || 0,
-          fiveFC2C3: row.fiveFC2C3 || 0,
-          fiveFEthane: row.fiveFEthane || 0,
-          fiveFPropane: row.fiveFPropane || 0,
-          fourFC2C3: row.fourFC2C3 || 0,
-          fourFDC2C3: row.fourFDC2C3 || 0,
-          fourFDEthane: row.fourFDEthane || 0,
-          fourFDPropane: row.fourFDPropane || 0,
-          fourFEthane: row.fourFEthane || 0,
-        }))
+        SpyroOutputYield = dataToSave.map((row) => ({ ...row }))
       } else if (SITE_NAME === 'VMD') {
         SpyroOutputYield = dataToSave.map((row) => ({
           apr: row.Apr || '0',
@@ -769,9 +782,9 @@ const CrackerConfig = () => {
       var response = []
 
       if (SITE_NAME == 'NMD') {
-        response = await DataService.saveSpyroOutputYield(
-          SpyroOutputYield,
+        response = await DataService.updateDynamicYieldCracker(
           keycloak,
+          SpyroOutputYield,
           PLANT_ID,
           AOP_YEAR,
         )

@@ -7,6 +7,7 @@ public interface FuelWithCategoryProjection {
     String getFuelDisplayName();
     String getType();
     String getUom();
+    String getFuelDescription();
     String getCategoryFkId();
     String getCategoryName();
     String getCategoryDisplayName();

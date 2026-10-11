@@ -14,6 +14,11 @@ import Constants from './Constants'
 import PIMSThroughput from './PIMSThroughput'
 import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norms-basis/PIMSMontlyThroughput'
 import ProductionDemands from './ProductionDemand'
+import UtilityConsumption from './UtilityConsumption'
+import CatChemConsumption from './CatChemConsumption'
+import TreatmentVendor from './TreatmentVendor'
+import CommoditySelection from './CommoditySelection'
+import OwnerSelection from './OwnerSelection'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -238,7 +243,17 @@ const ProductionNormsBasis = () => {
       case 'pims-monthly-throughtput':
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Production Demand':
-        return <ProductionDemands/>  
+        return <ProductionDemands />
+      case 'Utility Consumption':
+        return <UtilityConsumption />
+      case 'CAT CHEM Consumption':
+        return <CatChemConsumption />
+      case 'Treatment Vendor':
+        return <TreatmentVendor />
+      case 'Commodity Chemicals':
+        return <CommoditySelection />
+      case 'Plant Owner':
+        return <OwnerSelection />
       default:
         return null
     }

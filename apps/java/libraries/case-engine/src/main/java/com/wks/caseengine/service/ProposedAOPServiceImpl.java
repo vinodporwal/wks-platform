@@ -707,32 +707,45 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 			String procedureName) {
 
 		String sql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
-		return jdbcTemplate.query(sql, (rs, rowNum) -> ProposedAOPDTO.builder()
-				.id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
-				.normParameterId(
-						rs.getString("NormparameterId") != null ? UUID.fromString(rs.getString("NormparameterId"))
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+				Boolean isEditable = null;
+				Object isEditableObj = rs.getObject("IsEditable");
+				if (isEditableObj != null) {
+					if (isEditableObj instanceof Boolean) {
+						isEditable = (Boolean) isEditableObj;
+					} else if (isEditableObj instanceof Number) {
+						isEditable = ((Number) isEditableObj).intValue() == 1;
+					}
+				}
+
+				return ProposedAOPDTO.builder()
+						.id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+						.normParameterId(
+								rs.getString("NormparameterId") != null ? UUID.fromString(rs.getString("NormparameterId"))
+										: null)
+						.normParameterTypeId(rs.getString("NormParameterTypeId") != null
+								? UUID.fromString(rs.getString("NormParameterTypeId"))
 								: null)
-				.normParameterTypeId(rs.getString("NormParameterTypeId") != null
-						? UUID.fromString(rs.getString("NormParameterTypeId"))
-						: null)
-				.normParameterTypeDisplayName(rs.getString("NormParameterTypeDisplayName"))
-				.productName(rs.getString("ProductName"))
-				.uom(rs.getString("UOM"))
-				.lastFY(rs.getDouble("LastFY"))
-				.actualLastFY(rs.getDouble("ActualLastFY"))
-				.sysGrn(rs.getDouble("SysGrn"))
-				.proposed(rs.getDouble("Proposed"))
-				.remarks(rs.getString("Remarks"))
-				.plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
-				.aopYear(rs.getString("AopYear"))
-				.sapCode(rs.getString("SapMaterialCode"))
-				.build(),
+						.normParameterTypeDisplayName(rs.getString("NormParameterTypeDisplayName"))
+						.productName(rs.getString("ProductName"))
+						.uom(rs.getString("UOM"))
+						.lastFY(rs.getDouble("LastFY"))
+						.actualLastFY(rs.getDouble("ActualLastFY"))
+						.sysGrn(rs.getDouble("SysGrn"))
+						.proposed(rs.getDouble("Proposed"))
+						.remarks(rs.getString("Remarks"))
+						.plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
+						.aopYear(rs.getString("AopYear"))
+						.sapCode(rs.getString("SapMaterialCode"))
+						.isEditable(isEditable)
+						.build();
+				},
 				plantId.toString(), aopYear);
 	}
 
 	@Override
 	@Transactional
-	public AOPMessageVM saveProposedSteadyState(List<ProposedAOPDTO> dtoList) {
+	public List<ProposedAOPDTO> saveProposedSteadyState(List<ProposedAOPDTO> dtoList) {
 		try {
 
 			List<ProposedAOPDTO> failedList = new ArrayList<>();
@@ -751,19 +764,54 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 					year = dto.getAopYear();
 				}
 
-				String updateSql = "UPDATE MCUNormsValue_Proposed " +
+				// Remark validation: if Proposed value changed, Remark must also be updated
+				if (!isRemarkValidForProposedChange(dto)) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(
+							"Please update Remark");
+					failedList.add(dto);
+					continue;
+				}
+
+				// update MCUNormsValue_Proposed
+				String update_NormsValue_Proposed = "UPDATE MCUNormsValue_Proposed " +
 						"SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
 						"October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? "
 						+
-						"WHERE Material_FK_Id = ? and FinancialYear = ?";
-				jdbcTemplate.update(updateSql,
+						"WHERE Material_FK_Id = ? and FinancialYear = ? and Plant_FK_Id = ?";
+				jdbcTemplate.update(update_NormsValue_Proposed,
 						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
 						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
 						dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
 						dto.getRemarks(),
-						dto.getNormParameterId(), dto.getAopYear());
+						dto.getNormParameterId(), dto.getAopYear(), dto.getPlantId());
+
+						
+				// update MCUNormsValue
+				String update_NormsValue = "UPDATE MCUNormsValue " +
+						"SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
+						"October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? "
+						+
+						"WHERE Material_FK_Id = ? and FinancialYear = ? and Plant_FK_Id = ?";
+
+						jdbcTemplate.update(update_NormsValue,
+							dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+							dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+							dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+							dto.getRemarks(),
+							dto.getNormParameterId(), dto.getAopYear(), dto.getPlantId());
 
 			}
+
+			// sp call logic 
+
+			Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+			String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+			String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+	
+			String procedureName = verticalName + "_" + siteName + "_CalculateTotalNorms";
+
+			Integer result = executeCalculateSP(String.valueOf(plantId), year, procedureName);
 
 			if (plantId != null && year != null) {
 				List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("proposed-aop");
@@ -778,13 +826,64 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				}
 			}
 
-		AOPMessageVM vm = new AOPMessageVM();
-			vm.setCode(200);
-			vm.setMessage("Proposed AOP saved successfully");
-			vm.setData(failedList);
-			return vm;
+		 return failedList;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to save proposed AOP", e);
+		}
+	}
+
+
+	private boolean isRemarkValidForProposedChange(ProposedAOPDTO dto) {
+		String fetchSql = "SELECT TOP 1 April, Remarks FROM MCUNormsValue_Proposed " +
+				"WHERE Material_FK_Id = ? AND FinancialYear = ? AND Plant_FK_Id = ?";
+
+		List<Map<String, Object>> rows = jdbcTemplate.queryForList(fetchSql,
+				dto.getNormParameterId(), dto.getAopYear(), dto.getPlantId());
+
+		if (rows.isEmpty()) {
+			return true; // No existing record – nothing to compare against
+		}
+
+		Map<String, Object> existing = rows.get(0);
+
+		Double existingProposed = existing.get("April") != null
+				? ((Number) existing.get("April")).doubleValue()
+				: null;
+		String existingRemarks = existing.get("Remarks") != null
+				? existing.get("Remarks").toString().trim()
+				: "";
+
+		Double incomingProposed = dto.getProposed();
+		String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+		// Determine whether the proposed value has changed
+		boolean proposedChanged;
+		if (existingProposed == null && incomingProposed == null) {
+			proposedChanged = false;
+		} else if (existingProposed == null || incomingProposed == null) {
+			proposedChanged = true;
+		} else {
+			proposedChanged = Double.compare(existingProposed, incomingProposed) != 0;
+		}
+
+		if (!proposedChanged) {
+			return true; // Value unchanged – remark update not required
+		}
+
+		// Proposed changed – remark must also have changed
+		return !existingRemarks.equals(incomingRemarks);
+	}
+
+	public Integer executeCalculateSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
 
@@ -833,7 +932,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		// Columns 13-14: isAfterSave only (Status, Error Description)
 		// Col 0: SAP MAT Code | Col 1: Particulars
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
-				"SAP MAT Code", "Particulars", "UOM", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
+				"SAP MAT Code", "Particulars", "UOM / MT", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
@@ -1126,7 +1225,8 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				}
 
 				try {
-					saveProposedSteadyState(Collections.singletonList(dto));
+				List<ProposedAOPDTO> failedToSaveRecords = saveProposedSteadyState(Collections.singletonList(dto));
+				failedRecords.addAll(failedToSaveRecords);
 				} catch (IllegalArgumentException e) {
 					dto.setSaveStatus("Failed");
 					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");

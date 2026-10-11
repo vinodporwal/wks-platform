@@ -75,7 +75,18 @@ public class ProposedAOPController {
 
     @PostMapping(value="/save-proposed-steady-state")
     public AOPMessageVM saveProposedSteadyState(@RequestBody List<ProposedAOPDTO> dtoList) {
-        return proposedAOPService.saveProposedSteadyState(dtoList);
+        List<ProposedAOPDTO> failedList = proposedAOPService.saveProposedSteadyState(dtoList);
+        AOPMessageVM vm = new AOPMessageVM();
+
+        if (failedList.isEmpty()) {
+            vm.setCode(200);
+            vm.setMessage("Proposed steady state saved successfully");
+        } else {
+            vm.setCode(400);
+            vm.setMessage("Partial data saved");
+            vm.setData(failedList);
+        }
+        return vm;
     }
 
     @GetMapping(value = "/proposed-steady-state-export")

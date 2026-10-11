@@ -63,6 +63,13 @@ const SteadyStateConsumption = () => {
       hidden: true,
     },
     {
+      field: 'sapCode',
+      title: 'SAP MAT Code',
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'productName',
       title: 'Particulars',
       minWidth: 200,
@@ -80,16 +87,9 @@ const SteadyStateConsumption = () => {
       hidden: true,
     },
     {
-      field: 'sapCode',
-      title: 'SAP Code',
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-    },
-    {
       field: 'UOM',
-      title: 'UOM',
-      minWidth: 100,
+      title: 'UOM / MT',
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
@@ -100,6 +100,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'may',
@@ -108,6 +109,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'june',
@@ -116,6 +118,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'july',
@@ -124,6 +127,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'august',
@@ -132,6 +136,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'september',
@@ -140,6 +145,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'october',
@@ -148,6 +154,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'november',
@@ -156,6 +163,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'december',
@@ -164,6 +172,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'january',
@@ -172,6 +181,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'february',
@@ -180,6 +190,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'march',
@@ -188,6 +199,7 @@ const SteadyStateConsumption = () => {
       type: 'number1',
       editable: true,
       format: valueFormat,
+      allowNegative: true
     },
     {
       field: 'remarks',
@@ -479,7 +491,7 @@ const SteadyStateConsumption = () => {
     allAction: true,
     showExport: true,
     showImport: true,
-    showCalculate: true,
+    showCalculate: false,
     // Disable Calculate if no calculationObject from API (same as NormalOpNorms showCalculateVisibility)
     calculateDisabled:
       !calculationObject || Object.keys(calculationObject).length === 0,

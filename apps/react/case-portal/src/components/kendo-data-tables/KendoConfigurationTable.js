@@ -419,7 +419,7 @@ const ConfigurationTable = () => {
                   cr.TypeDisplayName === 'Constant' &&
                   cr.UOM === 'Day' &&
                   (cr.productName || '').trim().toLowerCase() ===
-                  constantProductName,
+                    constantProductName,
               )
 
               const totalValue = constantRow ? Number(constantRow.apr) || 0 : 0
@@ -1349,15 +1349,15 @@ const ConfigurationTable = () => {
     const megTabs = IS_CHEMICAL_VMD_BUTADIENE
       ? ['Configuration', 'Constants', 'Report Manual Entry']
       : IS_CHEMICAL_DMD ||
-        (IS_CHEMICAL_VMD &&
-          !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
+          (IS_CHEMICAL_VMD &&
+            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
         ? ['Configuration', 'Constants', 'Report Manual Entry']
         : [
-          'Configuration',
-          'Constants',
-          'Report Manual Entry',
-          'NSR & Material Prices',
-        ]
+            'Configuration',
+            'Constants',
+            'Report Manual Entry',
+            'NSR & Material Prices',
+          ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1911,6 +1911,9 @@ const ConfigurationTable = () => {
                 return <TankNosConfigureTable />
               case getTheId('MaterialSelection'):
                 return <GroupMaterial />
+
+              case getTheId('nsr-and-material-prices'):
+                return <NSRAndMaterialPrices />
               default:
                 return null
             }

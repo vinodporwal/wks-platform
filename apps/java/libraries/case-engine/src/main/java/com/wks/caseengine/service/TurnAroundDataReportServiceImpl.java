@@ -271,7 +271,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 	}
 
 	@Override
-	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	@Transactional(transactionManager = "db2TransactionManager")
 	public AOPMessageVM deleteReportForTurnAroundData(String id) {
 		TurnAroundPlanDB2 turnAroundPlan=null;
 		Optional<TurnAroundPlanDB2> turnAroundPlanOpt=turnAroundPlanReportDB2Repository.findById(UUID.fromString(id));

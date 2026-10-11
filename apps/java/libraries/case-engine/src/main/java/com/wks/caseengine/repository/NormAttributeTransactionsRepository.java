@@ -185,6 +185,14 @@ Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYe
 			@Param("year") String year);
 	
 	Optional<NormAttributeTransactions> findByNormParameterFKId(UUID normParameterFKId);
+
+	@Query(value = "SELECT * FROM NormAttributeTransactions " +
+			"WHERE NormParameter_FK_Id = :normParameterFKId " +
+			"AND AOPMonth = :aopMonth " +
+			"AND PlantMaintenanceTransaction_FK_Id IS NULL", nativeQuery = true)
+	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthOnly(
+			@Param("normParameterFKId") UUID normParameterFKId,
+			@Param("aopMonth") Integer aopMonth);
 	
 	@Query(value = "SELECT * FROM NormAttributeTransactions " +
             "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId " +
@@ -232,6 +240,10 @@ Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYe
 	 @Param("normParamId") UUID normParamId, 
 	 @Param("shutdownTypeId") UUID shutdownTypeId
 	);
-	
+	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAopMonthAndAuditYear(
+            UUID normParameterFKId, 
+            Integer aopMonth, 
+            String auditYear
+    );
 
 }

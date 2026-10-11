@@ -65,4 +65,9 @@ public class ConfigurationOtherCostController {
 			@RequestParam("file") MultipartFile file) {
 		return configurationService.importConfigurationOtherCostExcel(year, plantFKId, file);
 	}
+
+	@GetMapping(value = "/calculate-other-cost")
+	public AOPMessageVM calculateOtherCost(@RequestParam UUID plantId, @RequestParam String aopYear) {
+		return configurationService.calculateOtherCost(plantId, aopYear);
+	}
 }

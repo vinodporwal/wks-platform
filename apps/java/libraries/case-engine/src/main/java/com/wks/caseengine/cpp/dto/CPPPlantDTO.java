@@ -27,4 +27,22 @@ public class CPPPlantDTO {
 
     /** Maps to Plants.SourceName */
     private String sourceName;
+
+    /** Maps to Plants.Site_FK_Id */
+    private UUID siteId;
+
+    /** Maps to Sites.Name */
+    private String siteName;
+
+    /** Maps to Sites.DisplayName */
+    private String siteDisplayName;
+
+    /** Maps to Plants.Vertical_FK_Id */
+    private UUID verticalId;
+
+    /** Maps to Verticals.Name */
+    private String verticalName;
+
+    /** Maps to Verticals.DisplayName */
+    private String verticalDisplayName;
 }

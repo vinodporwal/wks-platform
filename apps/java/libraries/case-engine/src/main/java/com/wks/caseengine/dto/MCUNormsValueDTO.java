@@ -50,6 +50,7 @@ public class MCUNormsValueDTO {
 	private String gradeId;
 	private Double wtAverage;
 	private String sapCode;
+	private Double lastFy;
     //private String normParameterDisplayName;
 }
 

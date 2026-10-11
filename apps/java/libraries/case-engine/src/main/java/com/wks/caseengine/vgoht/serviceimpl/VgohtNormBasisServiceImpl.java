@@ -1,36 +1,42 @@
 package com.wks.caseengine.vgoht.serviceimpl;
 
-import com.wks.caseengine.dto.AOPConsumptionNormDTO;
+
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-
-
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.ManualExclusionDatesDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
+import com.wks.caseengine.vgoht.dto.ShutDownCatChemDTO;
 import com.wks.caseengine.vgoht.dto.VgohtNormConfigurationDTO;
 import com.wks.caseengine.vgoht.service.VgohtHelperService;
 import com.wks.caseengine.vgoht.service.VgohtNormBasisService;
@@ -39,6 +45,7 @@ import jakarta.transaction.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 import org.apache.poi.ss.usermodel.*;
 
@@ -57,8 +64,17 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	@Autowired
 	private VgohtHelperService vgohtHelperService;
 
+    @Autowired
+	private JdbcTemplate jdbcTemplate;
+
     @PersistenceContext
 	private EntityManager entityManager;
+
+	@Autowired
+	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+
+	@Autowired
+	private NormParametersRepository normParametersRepository;
     
 	public AOPMessageVM getConfigurationData(String year, UUID plantFKId,String version) {
 		try {
@@ -343,6 +359,30 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	}
 
 	@Transactional
+	public List<VgohtNormConfigurationDTO> saveConfigurationDataWithThreeValues(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
+
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingConstantDataWithThreeRecords(year, dtoList);
+
+		List<VgohtNormConfigurationDTO> activeInactiveFailedRecords = validateActiveInactiveValues(dtoList, existingMap);
+
+		List<VgohtNormConfigurationDTO> remarkFailedRecords = validateConstantRemarksWithThreeRecords(dtoList, existingMap);
+
+		List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+		failedRecords.addAll(activeInactiveFailedRecords);
+		failedRecords.addAll(remarkFailedRecords);
+
+		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
+	
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				if (failedIds.contains(dto.getNormParameterFKId())) continue;
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getApr()), dto.getRemarks(), 4);
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getMay()), dto.getRemarks(), 5);
+				saveConfigurationData(dto.getNormParameterFKId(), year, String.valueOf(dto.getJun()), dto.getRemarks(), 6);
+			}
+		return failedRecords;
+	}
+	
+	@Transactional
 	public List<VgohtNormConfigurationDTO> saveConfigurationDataWithTwoValues(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
 
 		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingConstantData(year, dtoList);
@@ -359,9 +399,8 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			}
 
 		return failedRecords;
-
-		
 	}
+
 
 	private void saveProductionDemandValues(String normParameterId, String year, String value, String remarks, int month) {
 		String sql = """
@@ -425,16 +464,19 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 			double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
 			double existingOct = (existing != null && existing.getMay() != null) ? existing.getMay() : 0.0;
+			double existingJun = (existing != null && existing.getJun() != null) ? existing.getJun() : 0.0;
 			String existingRemarks = (existing != null && existing.getRemarks() != null) ? existing.getRemarks().trim() : "";
 
 			double incomingApr = dto.getApr() != null ? dto.getApr() : 0.0;
 			double incomingOct = dto.getMay() != null ? dto.getMay() : 0.0;
+			double incomingJun = dto.getJun() != null ? dto.getJun() : 0.0;
 			String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
 
 			boolean aprChanged = Double.compare(incomingApr, existingApr) != 0;
 			boolean octChanged = Double.compare(incomingOct, existingOct) != 0;
+			boolean junChanged = Double.compare(incomingJun, existingJun) != 0;
 
-			if ((aprChanged || octChanged) && incomingRemarks.equals(existingRemarks)) {
+			if ((aprChanged || octChanged || junChanged) && incomingRemarks.equals(existingRemarks)) {
 				dto.setSaveStatus("FAILED");
 				dto.setErrDescription("Please update remarks.");
 				failedRecords.add(dto);
@@ -443,6 +485,104 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 		return failedRecords;
 	}
+	
+	private List<VgohtNormConfigurationDTO> validateConstantRemarksWithThreeRecords(
+			List<VgohtNormConfigurationDTO> dtoList,
+			Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+		List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+		for (VgohtNormConfigurationDTO dto : dtoList) {
+
+			if("FAILED".equalsIgnoreCase(dto.getSaveStatus())) continue;
+
+			VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+			double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
+			double existingOct = (existing != null && existing.getMay() != null) ? existing.getMay() : 0.0;
+			double existingJun = (existing != null && existing.getJun() != null) ? existing.getJun() : 0.0;
+			String existingRemarks = (existing != null && existing.getRemarks() != null) ? existing.getRemarks().trim() : "";
+
+			double incomingApr = dto.getApr() != null ? dto.getApr() : 0.0;
+			double incomingOct = dto.getMay() != null ? dto.getMay() : 0.0;
+			double incomingJun = dto.getJun() != null ? dto.getJun() : 0.0;
+			String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+			boolean aprChanged = Double.compare(incomingApr, existingApr) != 0;
+			boolean octChanged = Double.compare(incomingOct, existingOct) != 0;
+			boolean junChanged = Double.compare(incomingJun, existingJun) != 0;
+
+			if ((aprChanged || octChanged || junChanged) && incomingRemarks.equals(existingRemarks)) {
+				dto.setSaveStatus("FAILED");
+				dto.setErrDescription("Please update remarks.");
+				failedRecords.add(dto);
+			}
+		}
+
+		return failedRecords;
+	}
+
+	private List<VgohtNormConfigurationDTO> validateActiveInactiveValues(
+		List<VgohtNormConfigurationDTO> dtoList,
+		Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+	List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+	for (VgohtNormConfigurationDTO dto : dtoList) {
+
+		if("FAILED".equalsIgnoreCase(dto.getSaveStatus())) continue;
+
+		VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+		
+
+		if (!"boolean".equalsIgnoreCase(existing.getUOM())) continue;
+
+		if (!((dto.getApr() == null || dto.getApr() == 0.0 || dto.getApr() == 1.0)
+			&& (dto.getMay() == null || dto.getMay() == 0.0 || dto.getMay() == 1.0)
+			&& (dto.getJun() == null || dto.getJun() == 0.0 || dto.getJun() == 1.0))) {
+			dto.setSaveStatus("FAILED");
+			dto.setErrDescription("Active/Inactive values must be either 0 or 1");
+			failedRecords.add(dto);
+		}
+	}
+	 
+
+	return failedRecords;
+}
+
+
+	// considered april and oct as summer and winter
+	private List<VgohtNormConfigurationDTO> validateUtilityConsumptionRemarks(
+		List<VgohtNormConfigurationDTO> dtoList,
+		Map<String, VgohtNormConfigurationDTO> existingMap) {
+
+	List<VgohtNormConfigurationDTO> failedRecords = new ArrayList<>();
+
+	for (VgohtNormConfigurationDTO dto : dtoList) {
+
+		VgohtNormConfigurationDTO existing = existingMap.get(dto.getNormParameterFKId());
+
+		double existingApr = (existing != null && existing.getApr() != null) ? existing.getApr() : 0.0;
+		double existingOct = (existing != null && existing.getOct() != null) ? existing.getOct() : 0.0;
+		String existingRemarks = (existing != null && existing.getRemarks() != null) ? existing.getRemarks().trim() : "";
+
+		double incomingApr = dto.getApr() != null ? dto.getApr() : 0.0;
+		double incomingOct = dto.getOct() != null ? dto.getOct() : 0.0;
+		String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+
+		boolean aprChanged = Double.compare(incomingApr, existingApr) != 0;
+		boolean octChanged = Double.compare(incomingOct, existingOct) != 0;
+
+		if ((aprChanged || octChanged) && incomingRemarks.equals(existingRemarks)) {
+			dto.setSaveStatus("FAILED");
+			dto.setErrDescription("Please update remarks.");
+			failedRecords.add(dto);
+		}
+	}
+
+	return failedRecords;
+}
 
 	private Map<String, VgohtNormConfigurationDTO> fetchExistingConstantData(
 			String year,
@@ -464,6 +604,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		String sql = "SELECT NP.Id, " +
 				"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
 				"MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May, " +
+				"MAX(CASE WHEN NAT.AOPMonth = 6 THEN NAT.AttributeValue END) AS Jun, " +
 				"MAX(NAT.Remarks) AS Remarks " +
 				"FROM NormParameters NP " +
 				"LEFT JOIN NormAttributeTransactions NAT " +
@@ -484,12 +625,111 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			existing.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 			existing.setApr(parseDouble(row[1]));
 			existing.setMay(parseDouble(row[2]));
-			existing.setRemarks(row[3] != null ? row[3].toString() : "");
+			existing.setJun(parseDouble(row[3]));
+			existing.setRemarks(row[4] != null ? row[4].toString() : "");
 			existingMap.put(existing.getNormParameterFKId(), existing);
 		}
 
 		return existingMap;
 	}
+
+	private Map<String, VgohtNormConfigurationDTO> fetchExistingConstantDataWithThreeRecords(
+			String year,
+			List<VgohtNormConfigurationDTO> dtoList) {
+
+		List<String> normParameterIds = dtoList.stream()
+				.map(VgohtNormConfigurationDTO::getNormParameterFKId)
+				.filter(id -> id != null && !id.isEmpty())
+				.collect(Collectors.toList());
+
+		if (normParameterIds.isEmpty()) {
+			return new HashMap<>();
+		}
+
+		String inClause = normParameterIds.stream()
+				.map(id -> "'" + id + "'")
+				.collect(Collectors.joining(", "));
+
+		String sql = "SELECT NP.Id, " +
+				"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
+				"MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May, " +
+				"MAX(CASE WHEN NAT.AOPMonth = 6 THEN NAT.AttributeValue END) AS Jun, " +
+				"MAX(NAT.Remarks) AS Remarks, " +
+				"MAX(NP.Type) AS Type " +
+				"FROM NormParameters NP " +
+				"LEFT JOIN NormAttributeTransactions NAT " +
+				"    ON NAT.NormParameter_FK_Id = NP.Id " +
+				"    AND NAT.AuditYear = :year " +
+				"WHERE NP.Id IN (" + inClause + ") " +
+				"GROUP BY NP.Id";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("year", year);
+
+		@SuppressWarnings("unchecked")
+		List<Object[]> results = query.getResultList();
+		Map<String, VgohtNormConfigurationDTO> existingMap = new HashMap<>();
+
+		for (Object[] row : results) {
+			VgohtNormConfigurationDTO existing = new VgohtNormConfigurationDTO();
+			existing.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+			existing.setApr(parseDouble(row[1]));
+			existing.setMay(parseDouble(row[2]));
+			existing.setJun(parseDouble(row[3]));
+			existing.setRemarks(row[4] != null ? row[4].toString() : "");
+			existing.setType(row[5] != null ? row[5].toString() : "");
+			existingMap.put(existing.getNormParameterFKId(), existing);
+		}
+
+		return existingMap;
+	}
+
+	private Map<String, VgohtNormConfigurationDTO> fetchExistingUtilityConsumptionData(
+		String year,
+		List<VgohtNormConfigurationDTO> dtoList) {
+
+	List<String> normParameterIds = dtoList.stream()
+			.map(VgohtNormConfigurationDTO::getNormParameterFKId)
+			.filter(id -> id != null && !id.isEmpty())
+			.collect(Collectors.toList());
+
+	if (normParameterIds.isEmpty()) {
+		return new HashMap<>();
+	}
+
+	String inClause = normParameterIds.stream()
+			.map(id -> "'" + id + "'")
+			.collect(Collectors.joining(", "));
+
+	String sql = "SELECT NP.Id, " +
+			"MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr, " +
+			"MAX(CASE WHEN NAT.AOPMonth = 10 THEN NAT.AttributeValue END) AS Oct, " +
+			"MAX(NAT.Remarks) AS Remarks " +
+			"FROM NormParameters NP " +
+			"LEFT JOIN NormAttributeTransactions NAT " +
+			"    ON NAT.NormParameter_FK_Id = NP.Id " +
+			"    AND NAT.AuditYear = :year " +
+			"WHERE NP.Id IN (" + inClause + ") " +
+			"GROUP BY NP.Id";
+
+	Query query = entityManager.createNativeQuery(sql);
+	query.setParameter("year", year);
+
+	@SuppressWarnings("unchecked")
+	List<Object[]> results = query.getResultList();
+	Map<String, VgohtNormConfigurationDTO> existingMap = new HashMap<>();
+
+	for (Object[] row : results) {
+		VgohtNormConfigurationDTO existing = new VgohtNormConfigurationDTO();
+		existing.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+		existing.setApr(parseDouble(row[1]));
+		existing.setOct(parseDouble(row[2]));
+		existing.setRemarks(row[3] != null ? row[3].toString() : "");
+		existingMap.put(existing.getNormParameterFKId(), existing);
+	}
+
+	return existingMap;
+}
 
 
 	@Transactional
@@ -1017,6 +1257,80 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 
+	public AOPMessageVM getConfigurationDataWithThreeValues(String year, UUID plantFKId) {
+
+		try {
+
+			String sql = """
+				SELECT
+					NP.Id AS NormParameter_FK_Id,
+					NP.DisplayName,
+
+					MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr,
+					MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May,
+					MAX(CASE WHEN NAT.AOPMonth = 6 THEN NAT.AttributeValue END) AS Jun,
+					MAX(NAT.Remarks) AS Remarks,
+					NP.UOM,
+					MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
+					NP.Type
+
+				FROM NormParameters NP
+				JOIN NormParameterType NPT
+					ON NP.NormParameterType_FK_Id = NPT.Id
+
+				LEFT JOIN NormAttributeTransactions NAT
+					ON NAT.NormParameter_FK_Id = NP.Id
+					AND NAT.AuditYear = :year
+
+				WHERE NP.Plant_FK_Id = :plantFKId
+					AND NPT.Name = 'Constant'
+
+				GROUP BY
+					NP.Id,
+					NP.DisplayName,
+					NP.DisplayOrder,
+					NP.UOM,
+					NP.Type
+
+				ORDER BY NP.DisplayOrder
+				""";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("year", year);
+			query.setParameter("plantFKId", plantFKId);
+
+			List<Object[]> resultList = query.getResultList();
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+				dto.setProductName(row[1] != null ? row[1].toString() : "");
+
+				dto.setApr(parseDouble(row[2]));
+				dto.setMay(parseDouble(row[3]));
+				dto.setJun(parseDouble(row[4]));
+				dto.setRemarks(row[5] != null ? row[5].toString() : "");
+				dto.setUOM(row[6] != null ? row[6].toString() : "");
+				dto.setTypeDisplayName(row[7] != null ? row[7].toString() : "");
+				dto.setType(row[8] != null ? row[8].toString() : "");
+
+				dtoList.add(dto);
+			}
+
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setData(dtoList);
+			response.setMessage("Monthly values fetched successfully");
+			return response;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to fetch monthly values", e);
+		}
+	}
+	
 	public AOPMessageVM getConfigurationDataWithTwoValues(String year, UUID plantFKId) {
 
 		try {
@@ -1092,6 +1406,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 
+
 	public Double parseDouble(Object value) {
 
 		if (value == null) {
@@ -1108,54 +1423,90 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	public AOPMessageVM getYearlyValues(String year, UUID plantFKId) {
 
 		try {
-			String sql = """
-				SELECT NP.Id AS NormParameter_FK_Id,
-					NP.DisplayName,
-					MAX(NAT.AttributeValue) AS value,
-					MAX(NAT.Remarks) AS remarks,
-					NP.UOM,
-					MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
-					NP.Type
-				FROM NormParameters NP
-				JOIN NormParameterType NPT on NP.NormParameterType_FK_Id = NPT.Id
-				LEFT JOIN NormAttributeTransactions NAT
-					ON NAT.NormParameter_FK_Id = NP.Id
-					AND NAT.AuditYear = :year
-					AND NAT.AOPMonth = 4
-				WHERE NP.Plant_FK_Id = :plantFKId AND NPT.Name = 'Constant'
-				GROUP BY NP.Id, NP.DisplayName, NP.DisplayOrder, NP.UOM, NP.Type
-				ORDER BY NP.DisplayOrder
-			""";
 
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("year", year);
-			query.setParameter("plantFKId", plantFKId);
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-			List<Object[]> resultList = query.getResultList();
+			String procedureName = vertical.getName()+ "_GetConstantData";
+
 			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
 
-			for (Object[] row : resultList) {
-				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
-				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
-				dto.setProductName(row[1] != null ? row[1].toString() : "");
-					if (row[2] != null) {
-					String rawValue = row[2].toString().trim();
-					try {
-						dto.setValue(new BigDecimal(rawValue).toPlainString());
-					} catch (NumberFormatException e) {
-						dto.setValue(rawValue);
-					}
-				} else {
-					dto.setValue("");
-				}
-				dto.setRemarks(row[3] != null ? row[3].toString() : "");
-				dto.setUOM(row[4] != null ? row[4].toString() : "");
-				dto.setTypeDisplayName(row[5] != null ? row[5].toString() : "");
-				dto.setType(row[6] != null ? row[6].toString() : "");
-				dtoList.add(dto);
-			}
+			// 1. Check whether the stored procedure Crude_GetConstantData exists
+			boolean spExists = checkStoredProcedureExists(procedureName);
 
-			
+			if (spExists) {
+				// 2a. SP path: execute Crude_GetConstantData
+				String spSql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+				dtoList = jdbcTemplate.query(spSql, (rs, rowNum) -> {
+					VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+					dto.setNormParameterFKId(rs.getString("NormParameter_FK_Id") != null ? rs.getString("NormParameter_FK_Id") : null);
+					dto.setProductName(rs.getString("DisplayName") != null ? rs.getString("DisplayName") : null);
+					String rawValue = rs.getString("value");
+					if (rawValue != null && !rawValue.trim().isEmpty()) {
+						try {
+							dto.setValue(new BigDecimal(rawValue.trim()).toPlainString());
+						} catch (NumberFormatException e) {
+							dto.setValue(rawValue.trim());
+						}
+					} else {
+						dto.setValue("");
+					}
+					dto.setRemarks(rs.getString("remarks") != null ? rs.getString("remarks") : null);
+					dto.setUOM(rs.getString("UOM") != null ? rs.getString("UOM") : null);
+					dto.setTypeDisplayName(rs.getString("NormParameterTypeDisplayName") != null ? rs.getString("NormParameterTypeDisplayName") : null);
+					dto.setType(rs.getString("Type") != null ? rs.getString("Type") : null);
+					return dto;
+				}, plantFKId.toString(), year);
+
+			} else {
+				// 2b. Fallback: execute existing Java query (unchanged behavior)
+				String sql = """
+					SELECT NP.Id AS NormParameter_FK_Id,
+						NP.DisplayName,
+						MAX(NAT.AttributeValue) AS value,
+						MAX(NAT.Remarks) AS remarks,
+						NP.UOM,
+						MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
+						NP.Type
+					FROM NormParameters NP
+					JOIN NormParameterType NPT on NP.NormParameterType_FK_Id = NPT.Id
+					LEFT JOIN NormAttributeTransactions NAT
+						ON NAT.NormParameter_FK_Id = NP.Id
+						AND NAT.AuditYear = :year
+						AND NAT.AOPMonth = 4
+					WHERE NP.Plant_FK_Id = :plantFKId AND NPT.Name = 'Constant'
+					GROUP BY NP.Id, NP.DisplayName, NP.DisplayOrder, NP.UOM, NP.Type
+					ORDER BY NP.DisplayOrder
+				""";
+
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("year", year);
+				query.setParameter("plantFKId", plantFKId);
+
+				List<Object[]> resultList = query.getResultList();
+
+				for (Object[] row : resultList) {
+					VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+					dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+					dto.setProductName(row[1] != null ? row[1].toString() : "");
+					if (row[2] != null) {
+						String rawValue = row[2].toString().trim();
+						try {
+							dto.setValue(new BigDecimal(rawValue).toPlainString());
+						} catch (NumberFormatException e) {
+							dto.setValue(rawValue);
+						}
+					} else {
+						dto.setValue("");
+					}
+					dto.setRemarks(row[3] != null ? row[3].toString() : "");
+					dto.setUOM(row[4] != null ? row[4].toString() : "");
+					dto.setTypeDisplayName(row[5] != null ? row[5].toString() : "");
+					dto.setType(row[6] != null ? row[6].toString() : "");
+					dtoList.add(dto);
+				}
+			}
 
 			AOPMessageVM response = new AOPMessageVM();
 			response.setCode(200);
@@ -1168,6 +1519,13 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			// System.out.println(e);
 			throw new RuntimeException("Failed to fetch yearly values", e);
 		}
+	}
+
+
+	private boolean checkStoredProcedureExists(String procedureName) {
+		String checkSql = "SELECT CASE WHEN OBJECT_ID(?, 'P') IS NOT NULL THEN 1 ELSE 0 END";
+		Integer result = jdbcTemplate.queryForObject(checkSql, Integer.class, procedureName);
+		return result != null && result == 1;
 	}
 
 	public byte[] exportMonthlyValues(String year, UUID plantFKId) {
@@ -1471,6 +1829,94 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 
 	// ─── Two-Value Configuration – Export ────────────────────────────────────────
 
+	public byte[] exportConfigurationDataWithThreeValues(
+			String year,
+			UUID plantFKId,
+			boolean isAfterSave,
+			List<VgohtNormConfigurationDTO> dtoList) {
+
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getConfigurationDataWithThreeValues(year, plantFKId);
+				dtoList = (List<VgohtNormConfigurationDTO>) result.getData();
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Norms Basis Constant");
+			int currentRow = 0;
+
+			// ── Header cell style: bold font + grey background + all-sides thin border ──
+			CellStyle headerStyle = workbook.createCellStyle();
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerStyle.setFont(headerFont);
+			headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			headerStyle.setBorderTop(BorderStyle.THIN);
+			headerStyle.setBorderBottom(BorderStyle.THIN);
+			headerStyle.setBorderLeft(BorderStyle.THIN);
+			headerStyle.setBorderRight(BorderStyle.THIN);
+			headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+			// ── Data cell style: all-sides thin border ──
+			CellStyle dataStyle = workbook.createCellStyle();
+			dataStyle.setBorderTop(BorderStyle.THIN);
+			dataStyle.setBorderBottom(BorderStyle.THIN);
+			dataStyle.setBorderLeft(BorderStyle.THIN);
+			dataStyle.setBorderRight(BorderStyle.THIN);
+
+			// Visible columns: Particulars(0), UOM(1), EOR Value(2), SOR Value(3), Remark(4)
+			// Hidden column:   NormParameterFKId(5)
+			// After-save only: Status(6), Error Description(7)
+			List<String> headerNames = new ArrayList<>(Arrays.asList(
+					"Particulars", "UOM", "Normal", "Slow Down", "SOR", "Remark", "NormParameterFKId"));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				Cell headerCell = headerRow.createCell(col);
+				headerCell.setCellValue(headerNames.get(col));
+				headerCell.setCellStyle(headerStyle);
+			}
+
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				Cell c0 = row.createCell(0); c0.setCellValue(dto.getProductName() != null ? dto.getProductName() : "");         c0.setCellStyle(dataStyle);
+				Cell c1 = row.createCell(1); c1.setCellValue(dto.getUOM() != null ? dto.getUOM() : "");                         c1.setCellStyle(dataStyle);
+				Cell c2 = row.createCell(2); c2.setCellValue(dto.getApr() != null ? dto.getApr() : 0.0);                        c2.setCellStyle(dataStyle);
+				Cell c3 = row.createCell(3); c3.setCellValue(dto.getMay() != null ? dto.getMay() : 0.0);                        c3.setCellStyle(dataStyle);
+				Cell c4 = row.createCell(4); c4.setCellValue(dto.getJun() != null ? dto.getJun() : 0.0);                        c4.setCellStyle(dataStyle);
+				Cell c5 = row.createCell(5); c5.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");                 c5.setCellStyle(dataStyle);
+				Cell c6 = row.createCell(6); c6.setCellValue(dto.getNormParameterFKId() != null ? dto.getNormParameterFKId() : ""); c6.setCellStyle(dataStyle);
+
+				if (isAfterSave) {
+					Cell c7 = row.createCell(7); c7.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");       c7.setCellStyle(dataStyle);
+					Cell c8 = row.createCell(8); c8.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : ""); c8.setCellStyle(dataStyle);
+				}
+			}
+
+			int totalCols = isAfterSave ? 9 : 7;
+			for (int col = 0; col < totalCols; col++) {
+				sheet.autoSizeColumn(col);
+			}
+
+			// Hide the NormParameterFKId column from end-users
+			sheet.setColumnHidden(6, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to export configuration data with two values", e);
+		}
+	}
+	
 	public byte[] exportConfigurationDataWithTwoValues(
 			String year,
 			UUID plantFKId,
@@ -1536,8 +1982,85 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 
-	// ─── Two-Value Configuration – Import ────────────────────────────────────────
+	@Transactional
+	public AOPMessageVM importConfigurationDataWithThreeValues(
+			String year,
+			UUID plantFKId,
+			MultipartFile file) {
 
+		if (file.isEmpty() || (file.getOriginalFilename() != null && !file.getOriginalFilename().endsWith(".xlsx"))) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+
+			Sheet sheet = workbook.getSheetAt(0);
+
+			if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+				throw new RuntimeException("Excel sheet is empty");
+			}
+
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			// Start from row 1 to skip the header
+			for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if (row == null) continue;
+
+				String particulars    = getCellString(row.getCell(0));
+				String uom            = getCellString(row.getCell(1));
+				Cell   eorCell        = row.getCell(2);
+				Cell   sorCell        = row.getCell(3);
+				Cell   sdCell        = row.getCell(4);
+				String remark         = getCellString(row.getCell(5));
+				String normParamFKId  = getCellString(row.getCell(6));
+
+				// Ignore completely empty rows
+				if (particulars.isEmpty() && uom.isEmpty()
+						&& getCellString(eorCell).isEmpty() && getCellString(sorCell).isEmpty() && getCellString(sdCell).isEmpty()
+						&& remark.isEmpty() && normParamFKId.isEmpty()) {
+					continue;
+				}
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+				dto.setProductName(particulars);
+				dto.setUOM(uom);
+				dto.setApr(getCellDouble(eorCell));
+				dto.setMay(getCellDouble(sorCell));
+				dto.setJun(getCellDouble(sdCell));
+				dto.setRemarks(remark);
+				dto.setNormParameterFKId(normParamFKId);
+
+				if(dto.getProductName().equalsIgnoreCase("Sulphuric Acid")) { 
+
+				}
+
+				dtoList.add(dto);
+			}
+
+			List<VgohtNormConfigurationDTO> failedRecords =
+					saveConfigurationDataWithThreeValues(year, plantFKId, dtoList);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = exportConfigurationDataWithThreeValues(year, plantFKId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import configuration data with two values", ex);
+		}
+	}
+	
 	@Transactional
 	public AOPMessageVM importConfigurationDataWithTwoValues(
 			String year,
@@ -1610,4 +2133,1053 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			throw new RuntimeException("Failed to import configuration data with two values", ex);
 		}
 	}
+
+	public AOPMessageVM getUtilityConsumption(String year, String plantFKId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetUtilityConsumption";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = getUtilityConsumptionFromSP(year, plantFKId, procedureName);
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+				dto.setProductName(row[1] != null ? row[1].toString() : null);
+				dto.setProductDisplayName(row[2] != null ? row[2].toString() : null);
+				dto.setUOM(row[3] != null ? row[3].toString() : null);
+				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
+				dto.setApr(parseDouble(row[5]));
+				dto.setOct(parseDouble(row[11]));
+				dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+				dto.setRemarks(row[18] != null ? row[18].toString() : null);
+				dto.setProductDisplayOrder(row[19] != null ? row[19].toString() : null);
+				//dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
+				Boolean isEditable = null;
+				if (row[20] != null) {
+					if (row[20] instanceof Boolean) {
+						isEditable = (Boolean) row[20];
+					} else if (row[20] instanceof Number) {
+						isEditable = ((Number) row[20]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
+				
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getUtilityConsumptionFromSP(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional
+	public List<VgohtNormConfigurationDTO> saveUtilityConsumption(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
+
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingUtilityConsumptionData(year, dtoList);
+
+		List<VgohtNormConfigurationDTO> failedRecords = validateUtilityConsumptionRemarks(dtoList, existingMap);
+
+		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
+	
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				if (failedIds.contains(dto.getNormParameterFKId())) continue;
+				saveConfigurationData(dto.getNormParameterFKId(), year, dto.getApr() != null ? String.valueOf(dto.getApr()) : null, dto.getRemarks(), 4);
+				saveConfigurationData(dto.getNormParameterFKId(), year, dto.getOct() != null ? String.valueOf(dto.getOct()) : null, dto.getRemarks(), 10);
+				
+			}
+
+		return failedRecords;
+
+		
+	}
+
+	public AOPMessageVM getCatChemData(String year, String plantFKId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetCatChemConsumption";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = geCatChemDataFromSP(year, plantFKId, procedureName);
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+				dto.setProductName(row[1] != null ? row[1].toString() : null);
+				dto.setProductDisplayName(row[2] != null ? row[2].toString() : null);
+				dto.setUOM(row[3] != null ? row[3].toString() : null);
+				dto.setTypeDisplayName(row[4] != null ? row[4].toString() : null);
+				dto.setApr(parseDouble(row[5]));
+				dto.setOct(parseDouble(row[11]));
+				dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+				dto.setRemarks(row[18] != null ? row[18].toString() : null);
+				dto.setProductDisplayOrder(row[19] != null ? row[19].toString() : null);
+			//	dto.setIsEditable(row[20] != null ? Boolean.parseBoolean(row[20].toString()) : false);
+				Boolean isEditable = null;
+				if (row[20] != null) {
+					if (row[20] instanceof Boolean) {
+						isEditable = (Boolean) row[20];
+					} else if (row[20] instanceof Number) {
+						isEditable = ((Number) row[20]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage(" Cat-Chem Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public byte[] exportCatChemData(String year, String plantId, boolean isAfterSave, List<VgohtNormConfigurationDTO> dtoList, Boolean isSummerWinter) {
+	    try {   
+	        // Handle null flag safely
+	        boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
+
+	        if (!isAfterSave) {
+	            AOPMessageVM aopMessageVM = getCatChemData(year, plantId);
+
+	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                @SuppressWarnings("unchecked")
+	                List<VgohtNormConfigurationDTO> fetchedData = (List<VgohtNormConfigurationDTO>) aopMessageVM.getData();
+	                dtoList = fetchedData;
+	            }
+	        }
+
+	        if (dtoList == null) {
+	            dtoList = new ArrayList<>();
+	        }
+
+	        try (Workbook workbook = new XSSFWorkbook();
+	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+	            Sheet sheet = workbook.createSheet("Sheet1");
+	            int currentRow = 0;
+
+	            List<String> innerHeaders = new ArrayList<>();
+	            innerHeaders.add("Type");         
+	            innerHeaders.add("Particulars");  
+	            innerHeaders.add("UOM");         
+	            
+	            if (summerWinterFlag) {
+	                innerHeaders.add("Summer");  
+	                innerHeaders.add("Winter");   
+	            } else {
+	                innerHeaders.add("Value");    
+	            }
+	            
+	            innerHeaders.add("Remark");           
+	            innerHeaders.add("NormParameterId");  
+
+	            if (isAfterSave) {
+	                innerHeaders.add("Status");
+	                innerHeaders.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRow++);
+	            for (int col = 0; col < innerHeaders.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(innerHeaders.get(col));
+	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            }
+
+	            // Cell Styles matching exportBusinessDemand / exportMonthWiseConstants
+	            CellStyle unlockedBorderedStyle = workbook.createCellStyle();
+	            unlockedBorderedStyle.setLocked(false);
+	            unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            CellStyle lockedBorderedStyle = workbook.createCellStyle();
+	            lockedBorderedStyle.setLocked(true);
+	            lockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            // Determine column indexes dynamically based on flag
+	            int normParamIdIndex = summerWinterFlag ? 6 : 5;
+	            int lastVisibleColIndex = summerWinterFlag ? 5 : 4;
+
+	            for (VgohtNormConfigurationDTO dto : dtoList) {
+	                Row row = sheet.createRow(currentRow++);
+	                List<Object> rowData = new ArrayList<>();
+	                rowData.add(dto.getTypeDisplayName());
+	                rowData.add(dto.getProductDisplayName());
+	                rowData.add(dto.getUOM());
+	                
+	                if (summerWinterFlag) {
+	                    rowData.add(dto.getApr()); // Summer
+	                    rowData.add(dto.getOct()); // Winter
+	                } else {
+	                    rowData.add(dto.getApr()); // Value
+	                }
+	                
+	                rowData.add(dto.getRemarks());
+	                rowData.add(dto.getNormParameterFKId());
+
+	                if (isAfterSave) {
+	                    rowData.add(dto.getSaveStatus());
+	                    rowData.add(dto.getErrDescription());
+	                }
+
+	                for (int col = 0; col < rowData.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object value = rowData.get(col);
+
+	                    if (value instanceof Number) {
+	                        cell.setCellValue(((Number) value).doubleValue());
+	                    } else if (value instanceof Boolean) {
+	                        cell.setCellValue((Boolean) value);
+	                    } else if (value != null) {
+	                        cell.setCellValue(value.toString());
+	                    } else {
+	                        cell.setCellValue("");
+	                    }   
+
+	                    boolean isEditableCol = summerWinterFlag ? (col >= 3 && col <= 5) : (col == 3 || col == 4);
+
+	                    if (isEditableCol) {
+	                        cell.setCellStyle(unlockedBorderedStyle);
+	                    } else {
+	                        cell.setCellStyle(lockedBorderedStyle);
+	                    }
+	                }
+	            }
+
+	            // Protect sheet to enforce locked/unlocked boundaries
+	            sheet.protectSheet("");
+
+	            // Auto-size all visible data columns dynamically
+	            for (int col = 0; col <= lastVisibleColIndex; col++) {
+	                sheet.autoSizeColumn(col);
+	            }
+
+	            // Hide NormParameterId column dynamically
+	            sheet.setColumnHidden(normParamIdIndex, true);
+
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return new byte[0];
+	}
+
+	public byte[] exportUtilityConsumptionData(String year, String plantId, boolean isAfterSave, List<VgohtNormConfigurationDTO> dtoList) {
+	    try {   
+	        // Handle null flag safely
+	    	AOPMessageVM response = checkIsSummerWinterPlant(plantId.toString());
+
+	        boolean isSummerWinter = false;
+	        if (response != null && response.getData() instanceof Map) {
+	            @SuppressWarnings("unchecked")
+	            Map<String, Object> data = (Map<String, Object>) response.getData();
+	            
+	            if (data.containsKey("isSummerWinter") && data.get("isSummerWinter") != null) {
+	                isSummerWinter = (Boolean) data.get("isSummerWinter");
+	            }
+	        }
+
+	        boolean summerWinterFlag = isSummerWinter;
+
+	        if (!isAfterSave) {
+	            AOPMessageVM aopMessageVM = getUtilityConsumption(year, plantId);
+
+	            if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                @SuppressWarnings("unchecked")
+	                List<VgohtNormConfigurationDTO> fetchedData = (List<VgohtNormConfigurationDTO>) aopMessageVM.getData();
+	                dtoList = fetchedData;
+	            }
+	        }
+
+	        if (dtoList == null) {
+	            dtoList = new ArrayList<>();
+	        }
+
+	        try (Workbook workbook = new XSSFWorkbook();
+	             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+	            Sheet sheet = workbook.createSheet("Sheet1");
+	            int currentRow = 0;
+
+	            List<String> innerHeaders = new ArrayList<>();
+	            innerHeaders.add("Type");         
+	            innerHeaders.add("Particulars");  
+	            innerHeaders.add("UOM");         
+	            
+	            if (summerWinterFlag) {
+	                innerHeaders.add("Summer");  
+	                innerHeaders.add("Winter");   
+	            } else {
+	                innerHeaders.add("Value");    
+	            }
+	            
+	            innerHeaders.add("Remark");           
+	            innerHeaders.add("NormParameterId");  
+
+	            if (isAfterSave) {
+	                innerHeaders.add("Status");
+	                innerHeaders.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRow++);
+	            for (int col = 0; col < innerHeaders.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(innerHeaders.get(col));
+	                cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	            }
+
+	            // Cell Styles matching exportBusinessDemand / exportMonthWiseConstants
+	            CellStyle unlockedBorderedStyle = workbook.createCellStyle();
+	            unlockedBorderedStyle.setLocked(false);
+	            unlockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            unlockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            CellStyle lockedBorderedStyle = workbook.createCellStyle();
+	            lockedBorderedStyle.setLocked(true);
+	            lockedBorderedStyle.setBorderBottom(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderTop(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderLeft(BorderStyle.THIN);
+	            lockedBorderedStyle.setBorderRight(BorderStyle.THIN);
+
+	            // Determine column indexes dynamically based on flag
+	            int normParamIdIndex = summerWinterFlag ? 6 : 5;
+	            int lastVisibleColIndex = summerWinterFlag ? 5 : 4;
+
+	            for (VgohtNormConfigurationDTO dto : dtoList) {
+	                Row row = sheet.createRow(currentRow++);
+	                List<Object> rowData = new ArrayList<>();
+	                rowData.add(dto.getTypeDisplayName());
+	                rowData.add(dto.getProductDisplayName());
+	                rowData.add(dto.getUOM());
+	                
+	                if (summerWinterFlag) {
+	                    rowData.add(dto.getApr()); // Summer
+	                    rowData.add(dto.getOct()); // Winter
+	                } else {
+	                    rowData.add(dto.getApr()); // Value
+	                }
+	                
+	                rowData.add(dto.getRemarks());
+	                rowData.add(dto.getNormParameterFKId());
+
+	                if (isAfterSave) {
+	                    rowData.add(dto.getSaveStatus());
+	                    rowData.add(dto.getErrDescription());
+	                }
+
+	                for (int col = 0; col < rowData.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object value = rowData.get(col);
+
+	                    if (value instanceof Number) {
+	                        cell.setCellValue(((Number) value).doubleValue());
+	                    } else if (value instanceof Boolean) {
+	                        cell.setCellValue((Boolean) value);
+	                    } else if (value != null) {
+	                        cell.setCellValue(value.toString());
+	                    } else {
+	                        cell.setCellValue("");
+	                    }   
+
+	                    boolean isEditableCol = summerWinterFlag ? (col >= 3 && col <= 5) : (col == 3 || col == 4);
+
+	                    if (isEditableCol) {
+	                        cell.setCellStyle(unlockedBorderedStyle);
+	                    } else {
+	                        cell.setCellStyle(lockedBorderedStyle);
+	                    }
+	                }
+	            }
+
+	            sheet.protectSheet("");
+
+	            for (int col = 0; col <= lastVisibleColIndex; col++) {
+	                sheet.autoSizeColumn(col);
+	            }
+	            sheet.setColumnHidden(normParamIdIndex, true);
+
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return new byte[0];
+	}
+	@Transactional
+	public AOPMessageVM importUtilityConsumptionData(String year, UUID plantId, MultipartFile file) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	    	AOPMessageVM response = checkIsSummerWinterPlant(plantId.toString());
+
+	        boolean isSummerWinter = false;
+	        if (response != null && response.getData() instanceof Map) {
+	            @SuppressWarnings("unchecked")
+	            Map<String, Object> data = (Map<String, Object>) response.getData();
+	            
+	            if (data.containsKey("isSummerWinter") && data.get("isSummerWinter") != null) {
+	                isSummerWinter = (Boolean) data.get("isSummerWinter");
+	            }
+	        }
+	        List<VgohtNormConfigurationDTO> data = readUtilityConsumptionData(file.getInputStream(), plantId, year, isSummerWinter);
+	        List<VgohtNormConfigurationDTO> failedList = saveUtilityConsumption(year, plantId, data);
+
+	        if (failedList != null && !failedList.isEmpty()) {
+	            byte[] fileByteArray = exportUtilityConsumptionData(year, plantId.toString(), true, failedList);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+	            
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data has been saved");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved successfully");
+	        }
+
+	        return aopMessageVM;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        aopMessageVM.setCode(500);
+	        aopMessageVM.setMessage("Error importing data: " + e.getMessage());
+	        return aopMessageVM;
+	    }
+	}
+	
+	public List<VgohtNormConfigurationDTO> readUtilityConsumptionData(InputStream inputStream, UUID plantFKId, String year, Boolean isSummerWinter) {
+	    List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOs = new ArrayList<>();
+	    
+	    // Handle null flag safely
+	    boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext()) {
+	            rowIterator.next(); // Skip header row
+	        }
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+
+	            if (row == null || isRowEmpty(row)) {
+	                continue;
+	            }
+
+	            VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+	            try {
+	                dto.setTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                dto.setProductDisplayName(getStringCellValue(row.getCell(1), dto));
+	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                
+	                if (summerWinterFlag) {
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setOct(getNumericCellValue(row.getCell(4), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(5), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(6), dto));
+	                } else {
+	                   
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+	                }
+
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+
+	            vgohtNormConfigurationDTOs.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return vgohtNormConfigurationDTOs;
+	}
+	
+	public AOPMessageVM checkIsSummerWinterPlant(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			boolean isSummerWinter = false;
+			try {
+				String sql = "SELECT IsSummerWinter FROM vwScrnRefineryUtilityIsSummerWinter WHERE PlantId = :plantId";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("plantId", plantId);
+				List<?> resultList = query.getResultList();
+
+				if (resultList != null && !resultList.isEmpty()) {
+					Object val = resultList.get(0);
+					if (val instanceof Boolean) {
+						isSummerWinter = (Boolean) val;
+					} else if (val instanceof Number) {
+						isSummerWinter = ((Number) val).intValue() == 1;
+					} else if (val != null) {
+						isSummerWinter = Boolean.parseBoolean(val.toString()) || "1".equals(val.toString().trim()) || "true".equalsIgnoreCase(val.toString().trim());
+					}
+				} else {
+					String countSql = "SELECT COUNT(*) FROM vwScrnRefineryUtilityIsSummerWinter WHERE PlantId = :plantId";
+					Query countQuery = entityManager.createNativeQuery(countSql);
+					countQuery.setParameter("plantId", plantId);
+					Number count = (Number) countQuery.getSingleResult();
+					isSummerWinter = (count != null && count.intValue() > 0);
+				}
+			} catch (Exception ex) {
+				// Try fallback view name or plant name
+				try {
+					String sqlAlt = "SELECT IsSummerWinter FROM vwScrnRefineryUtilityCheckIsSummerWinterPlant WHERE PlantId = :plantId";
+					Query altQuery = entityManager.createNativeQuery(sqlAlt);
+					altQuery.setParameter("plantId", plantId);
+					List<?> altList = altQuery.getResultList();
+					if (altList != null && !altList.isEmpty()) {
+						Object val = altList.get(0);
+						isSummerWinter = Boolean.parseBoolean(val.toString()) || "1".equals(val.toString().trim()) || "true".equalsIgnoreCase(val.toString().trim());
+					}
+				} catch (Exception e1) {
+					try {
+						Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElse(null);
+						if (plant != null && "PCG ASU".equalsIgnoreCase(plant.getName())) {
+							isSummerWinter = true;
+						}
+					} catch (Exception e2) {
+						// ignore
+					}
+				}
+			}
+
+			Map<String, Object> responseData = new HashMap<>();
+			responseData.put("isSummerWinter", isSummerWinter);
+			responseData.put("isTwoColumn", isSummerWinter);
+			responseData.put("plantId", plantId);
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Fetched plant summer/winter configuration successfully");
+			aopMessageVM.setData(responseData);
+			return aopMessageVM;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to check summer/winter plant configuration", e);
+		}
+	}
+
+	@Transactional
+	public AOPMessageVM importCatChemData(String year, UUID plantId, MultipartFile file,Boolean isSummerWinter) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<VgohtNormConfigurationDTO> data = readCatChemData(file.getInputStream(), plantId, year, isSummerWinter);
+	        List<VgohtNormConfigurationDTO> failedList = saveCatChemData(year, plantId, data);
+
+	        if (failedList != null && !failedList.isEmpty()) {
+	            byte[] fileByteArray = exportCatChemData(year, plantId.toString(), true, failedList,isSummerWinter);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+	            
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data has been saved");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved successfully");
+	        }
+
+	        return aopMessageVM;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        aopMessageVM.setCode(500);
+	        aopMessageVM.setMessage("Error importing data: " + e.getMessage());
+	        return aopMessageVM;
+	    }
+	}
+	
+	public List<VgohtNormConfigurationDTO> readCatChemData(InputStream inputStream, UUID plantFKId, String year, Boolean isSummerWinter) {
+	    List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOs = new ArrayList<>();
+	    
+	    // Handle null flag safely
+	    boolean summerWinterFlag = Boolean.TRUE.equals(isSummerWinter);
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext()) {
+	            rowIterator.next(); // Skip header row
+	        }
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+
+	            if (row == null || isRowEmpty(row)) {
+	                continue;
+	            }
+
+	            VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+	            try {
+	                dto.setTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                dto.setProductDisplayName(getStringCellValue(row.getCell(1), dto));
+	                dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                
+	                if (summerWinterFlag) {
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setOct(getNumericCellValue(row.getCell(4), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(5), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(6), dto));
+	                } else {
+	                   
+	                    dto.setApr(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+	                    dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+	                }
+
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+
+	            vgohtNormConfigurationDTOs.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return vgohtNormConfigurationDTOs;
+	}
+	
+	// Helper method to skip empty rows
+	private boolean isRowEmpty(Row row) {
+	    for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
+	        Cell cell = row.getCell(c);
+	        if (cell != null && cell.getCellType() != CellType.BLANK) {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+	private static String getStringCellValue(Cell cell, VgohtNormConfigurationDTO dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	private static Double getNumericCellValue(Cell cell, VgohtNormConfigurationDTO dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
+
+	
+	public List<Object[]> geCatChemDataFromSP(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional
+	public List<VgohtNormConfigurationDTO> saveCatChemData(String year, UUID plantFKId, List<VgohtNormConfigurationDTO> dtoList) { 
+
+		Map<String, VgohtNormConfigurationDTO> existingMap = fetchExistingUtilityConsumptionData(year, dtoList);
+
+		List<VgohtNormConfigurationDTO> failedRecords = validateUtilityConsumptionRemarks(dtoList, existingMap);
+
+		Set<String> failedIds = failedRecords.stream().map(VgohtNormConfigurationDTO::getNormParameterFKId).collect(Collectors.toSet());
+	
+			for (VgohtNormConfigurationDTO dto : dtoList) {
+				if (failedIds.contains(dto.getNormParameterFKId())) continue;
+				saveConfigurationData(dto.getNormParameterFKId(), year, dto.getApr() != null ? String.valueOf(dto.getApr()) : null, dto.getRemarks(), 4);
+				// saveConfigurationData(dto.getNormParameterFKId(), year, dto.getOct() != null ? String.valueOf(dto.getOct()) : null, dto.getRemarks(), 10);
+				
+			}
+
+		return failedRecords;
+
+		
+	}
+
+
+    public AOPMessageVM getManualExclusionDates(String plantFKId, String year) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = "GetManualExclusionDates";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = getManualExclusionDatesFromSP(plantFKId, year,  procedureName);
+			List<ManualExclusionDatesDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				ManualExclusionDatesDTO dto = new ManualExclusionDatesDTO();
+
+				dto.setId(row[0] != null ? row[0].toString() : null);
+				dto.setDate(row[1] != null ? row[1].toString() : null);
+				dto.setRemarks(row[2] != null ? row[2].toString() : null);
+				dto.setAuditYear(row[3] != null ? row[3].toString() : null);
+				dto.setNormParameterFKId(row[4] != null ? row[4].toString() : null);
+				
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getManualExclusionDatesFromSP(String plantFKId, String year, String procedureName) {
+		try {
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantFKId = :plantFKId, @year = :year";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantFKId", plantFKId);
+			query.setParameter("year", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional 
+	public List<ManualExclusionDatesDTO> saveManualExclusionDates(List<ManualExclusionDatesDTO> manualExclusionDatesDTOList, String year) {
+
+		if(year == null || year.isEmpty()) {
+			throw new RestInvalidArgumentException("Year is required", null);
+		}
+
+		List<ManualExclusionDatesDTO> failedRecords = new ArrayList<>();
+
+		List<Object[]> updates = new ArrayList<>();
+		List<Object[]> inserts = new ArrayList<>();
+
+		for (ManualExclusionDatesDTO manualExclusionDatesDTO : manualExclusionDatesDTOList) {
+		UUID normParameterFKId = UUID.fromString(manualExclusionDatesDTO.getNormParameterFKId());
+		String id = manualExclusionDatesDTO.getId();
+		String attributeValue = manualExclusionDatesDTO.getDate();
+		String remark = manualExclusionDatesDTO.getRemarks();
+
+		if(normParameterFKId == null || normParameterFKId.toString().isEmpty()) { 
+			throw new RestInvalidArgumentException("Norm parameter FK ID is required", null);
+		}
+	       NormParameters normParameters = normParametersRepository.findById(normParameterFKId).get();
+
+		   if(normParameters == null) { 
+			throw new RestInvalidArgumentException("Norm parameter not found", null);
+		   }
+
+
+		   if(id == null) {
+			inserts.add(new Object[] { attributeValue, remark, year, 4, normParameterFKId });
+		   }
+		   else {
+			updates.add(new Object[] { attributeValue, remark, id });
+		   }
+
+
+		}
+
+		if (!updates.isEmpty()) {
+            String updateSql = "UPDATE NormAttributeTransactions SET AttributeValue = ?, Remarks = ? WHERE Id = ?";
+            jdbcTemplate.batchUpdate(updateSql, updates);
+        }
+
+		if (!inserts.isEmpty()) {
+            String insertSql = "INSERT INTO NormAttributeTransactions (AttributeValue, Remarks, AuditYear, AOPMonth, NormParameter_FK_Id) VALUES (?, ?, ?, ?, ?)";
+            jdbcTemplate.batchUpdate(insertSql, inserts);
+        }
+
+		return failedRecords;
+	}
+
+	@Transactional 
+	public AOPMessageVM deleteManualExclusionDates(List<ManualExclusionDatesDTO> manualExclusionDatesDTOList) { 
+
+		List<Object[]> deletes = new ArrayList<>();
+
+		for (ManualExclusionDatesDTO manualExclusionDatesDTO : manualExclusionDatesDTOList) {
+
+	   if(manualExclusionDatesDTO.getId() == null || manualExclusionDatesDTO.getId().isEmpty()) {
+		throw new RestInvalidArgumentException("Id is required", null);
+	   }
+		deletes.add(new Object[] { manualExclusionDatesDTO.getId() });
+		}
+
+		if (!deletes.isEmpty()) {
+            String deleteSql = "DELETE FROM NormAttributeTransactions WHERE Id = ?";
+            jdbcTemplate.batchUpdate(deleteSql, deletes);
+        }
+
+		return new AOPMessageVM(200, deletes.size() + " Records deleted successfully", null);
+	}
+
+	public AOPMessageVM getShutDownCatChemData(String year, UUID plantFKId) {
+        try {
+			String procedureName = "Get_ShutDown_CatChem";
+            String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @AOPYear = ?";
+
+            List<ShutDownCatChemDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                return ShutDownCatChemDTO.builder()
+                    .normParameterFKId(rs.getString("NormParameter_FK_Id"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .sapMaterialCode(rs.getString("SapMaterialCode"))
+                    .apr(rs.getDouble("Apr"))
+                    .may(rs.getDouble("May"))
+                    .jun(rs.getDouble("Jun"))
+                    .jul(rs.getDouble("Jul"))
+                    .aug(rs.getDouble("Aug"))
+                    .sep(rs.getDouble("Sep"))
+                    .oct(rs.getDouble("Oct"))
+                    .nov(rs.getDouble("Nov"))
+                    .dec(rs.getDouble("Dec"))
+					.jan(rs.getDouble("Jan"))
+					.feb(rs.getDouble("Feb"))
+					.mar(rs.getDouble("Mar"))
+					.remarks(rs.getString("Remarks"))
+					.type(rs.getString("Type"))
+					.displayOrder(rs.getInt("DisplayOrder"))
+					//.isEditable(rs.getBoolean("IsEditable"))
+                    .build();
+            }, plantFKId, year);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+	@Transactional 
+	public List<ShutDownCatChemDTO> saveShutDownCatChemData(String year, String plantFKId,
+			List<ShutDownCatChemDTO> shutDownCatChemDTOList) {
+		try {
+			List<ShutDownCatChemDTO> failedList = new ArrayList<>();
+	
+			for (ShutDownCatChemDTO shutDownCatChemDTO : shutDownCatChemDTOList) {
+				
+				if (shutDownCatChemDTO.getSaveStatus() != null
+						&& shutDownCatChemDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(shutDownCatChemDTO);
+					continue;
+				}
+
+			for (int i = 1; i <= 12; i++) {
+				
+				saveShutDownCatChemData(shutDownCatChemDTO, i, year);
+				
+			}
+			
+			if("Failed".equalsIgnoreCase(shutDownCatChemDTO.getSaveStatus())) {
+				failedList.add(shutDownCatChemDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save shut down cat chem data", ex);
+		}
+	}
+
+
+	public void saveShutDownCatChemData(ShutDownCatChemDTO shutDownCatChemDTO, Integer i, String year) {
+
+		UUID normParameterFKId = UUID.fromString(shutDownCatChemDTO.getNormParameterFKId());
+		Double attributeValue = getAttributeValueForShutDownCatChem(shutDownCatChemDTO, i);
+		String remark = shutDownCatChemDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+		// Double existingValue = normAttributeTransactions.getAttributeValue() != null ? Double.parseDouble(normAttributeTransactions.getAttributeValue()) : null;
+		// boolean isRemarkValidationPassed = isRemarkValidationPassedForShutDownCatChem(attributeValue, existingValue, remark, normAttributeTransactions.getRemarks());
+		// if(!isRemarkValidationPassed) { 
+		// 	shutDownCatChemDTO.setSaveStatus("Failed");
+		// 	shutDownCatChemDTO.setErrDescription("Please update remark");
+		// 	return;
+		// }
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+private boolean isRemarkValidationPassedForShutDownCatChem(Double newValue, Double existingValue, String newRemark, String existingRemark) {
+  
+	if(existingValue == null || newValue == null) {
+		return true;
+	}
+	// Check if the value has changed (null-safe)
+    boolean valueChanged = !Objects.equals(newValue, existingValue);
+    
+    if (valueChanged) {
+        // If the value changed, the remark must be updated (must not be null/empty and must differ from the existing remark)
+        boolean isRemarkUpdated = newRemark != null 
+                && !newRemark.trim().isEmpty() 
+                && !Objects.equals(newRemark, existingRemark);
+        return isRemarkUpdated;
+    }
+    
+   // return true if values not changed
+    return true;
+}
+
+public Double getAttributeValueForShutDownCatChem(ShutDownCatChemDTO shutDownCatChemDTO, Integer i) {
+	switch (i) {
+		case 1:
+			return shutDownCatChemDTO.getJan();
+		case 2:
+			return shutDownCatChemDTO.getFeb();
+		case 3:
+			return shutDownCatChemDTO.getMar();
+		case 4:
+			return shutDownCatChemDTO.getApr();
+		case 5:
+			return shutDownCatChemDTO.getMay();
+		case 6:
+			return shutDownCatChemDTO.getJun();
+		case 7:
+			return shutDownCatChemDTO.getJul();
+		case 8:
+			return shutDownCatChemDTO.getAug();
+		case 9:
+			return shutDownCatChemDTO.getSep();
+		case 10:
+			return shutDownCatChemDTO.getOct();
+		case 11:
+			return shutDownCatChemDTO.getNov();
+		case 12:
+			return shutDownCatChemDTO.getDec();
+
+	}
+	return shutDownCatChemDTO.getJan();
+}
+
 }

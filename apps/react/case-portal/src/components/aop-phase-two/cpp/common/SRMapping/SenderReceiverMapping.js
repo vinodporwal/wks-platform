@@ -9,9 +9,11 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
 import { useDebounce } from 'hooks/useDebounce'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SR_MAPPING_ROLE = 'sr_mapping'
+const SR_MAPPING_EDIT_ROLE = 'sr_mapping_edit'
 
 // Mandatory fields that must be filled for each row
 const REQUIRED_FIELDS = [
@@ -186,6 +188,12 @@ const SenderReceiverMapping = () => {
     [keycloak?.realmAccess?.roles],
   )
 
+  // sr_mapping_edit role: can update cost centers (and remarks) on existing rows
+  const isSRMappingEditRole = useMemo(
+    () => keycloak?.realmAccess?.roles?.includes(SR_MAPPING_EDIT_ROLE) || false,
+    [keycloak?.realmAccess?.roles],
+  )
+
   const PLANT_ID = plantObject?.id
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const AOP_YEAR = year?.selectedYear
@@ -251,6 +259,12 @@ const SenderReceiverMapping = () => {
         label: plant.plantName || plant.plantCode || 'Unknown Plant',
         code: plant.plantCode || '',
         sourceName: plant.sourceName?.toLowerCase() || '',
+        siteId: plant.siteId || '',
+        siteName: plant.siteName || '',
+        siteDisplayName: plant.siteDisplayName || '',
+        verticalId: plant.verticalId || '',
+        verticalName: plant.verticalName || '',
+        verticalDisplayName: plant.verticalDisplayName || '',
       }))
       setPlantsDropdown(plantsOptions)
 
@@ -303,7 +317,10 @@ const SenderReceiverMapping = () => {
         remarks: item?.remarks || '',
         id: item?.id || index + 1,
         apiId: item?.id,
-        isEditable: false,
+        // Existing rows are only editable by sr_mapping_edit role.
+        // sr_mapping-only users cannot edit any cell on existing rows
+        // (they can still add new rows and delete via the ActionCell).
+        isEditable: isSRMappingEditRole,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -314,7 +331,7 @@ const SenderReceiverMapping = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, isSRMappingEditRole])
 
   useDebounce(
     () => {
@@ -378,8 +395,18 @@ const SenderReceiverMapping = () => {
     [normParameters],
   )
 
-  const getFilteredCostCenters = useCallback(
+  const getFilteredSenderCostCenters = useCallback(
     (dataItem) => {
+      // Sender Cost Center: show all fetched for the selected CPP plants
+      // (no per-row cppPlantId filter)
+      return costCentersDropdown
+    },
+    [costCentersDropdown],
+  )
+
+  const getFilteredReceiverCostCenters = useCallback(
+    (dataItem) => {
+      // Receiver Cost Center: filter by cppPlantFkId matching the row's cppPlantId
       const selectedCppPlantId = dataItem?.cppPlantId
       if (!selectedCppPlantId) return []
 
@@ -387,7 +414,6 @@ const SenderReceiverMapping = () => {
         (cc) =>
           cc.cppPlantFkId?.toLowerCase() === selectedCppPlantId?.toLowerCase(),
       )
-
       return filtered
     },
     [costCentersDropdown],
@@ -395,12 +421,21 @@ const SenderReceiverMapping = () => {
 
   const getFilteredPlants = useCallback(
     (dataItem) => {
+      // Sender Plant: show all plants fetched for the selected CPP plants
+      // (no per-row cppPlantId filter — sender can be any plant in the list)
+      return plantsDropdown
+    },
+    [plantsDropdown],
+  )
+  const getFilteredReceiverPlants = useCallback(
+    (dataItem) => {
       const selectedCppPlantId = dataItem?.cppPlantId
       if (!selectedCppPlantId) return []
 
       const filtered = plantsDropdown.filter(
         (p) =>
-          p.sourceName?.toLowerCase() === selectedCppPlantId?.toLowerCase(),
+          p.sourceName?.toLowerCase() === selectedCppPlantId?.toLowerCase() &&
+          p.verticalName?.toLowerCase() === 'cpp',
       )
       return filtered
     },
@@ -513,21 +548,33 @@ const SenderReceiverMapping = () => {
             item.plantFkId?.toLowerCase() === selectedPlantId?.toLowerCase(),
         )
       } else if (config.group === 'Plant') {
-        // Plants: filter by sourceName matching the row's cppPlantId.
-        const selectedCppPlantId = currentRow.cppPlantId
-        source = dropdownSource.filter(
-          (item) =>
-            item.sourceName?.toLowerCase() ===
-            selectedCppPlantId?.toLowerCase(),
-        )
+        if (config.prefix === 'sender') {
+          // Sender Plant: search across all fetched plants (no cppPlantId filter)
+          source = dropdownSource
+        } else {
+          // Receiver Plant: filter by sourceName matching the row's cppPlantId
+          // and vertical === 'cpp'
+          const selectedCppPlantId = currentRow.cppPlantId
+          source = dropdownSource.filter(
+            (item) =>
+              item.sourceName?.toLowerCase() ===
+                selectedCppPlantId?.toLowerCase() &&
+              item.verticalName?.toLowerCase() === 'cpp',
+          )
+        }
       } else if (config.group === 'CostCenter') {
-        // Cost centers: filter by cppPlantFkId matching the row's cppPlantId.
-        const selectedCppPlantId = currentRow.cppPlantId
-        source = dropdownSource.filter(
-          (item) =>
-            item.cppPlantFkId?.toLowerCase() ===
-            selectedCppPlantId?.toLowerCase(),
-        )
+        if (config.prefix === 'sender') {
+          // Sender Cost Center: search across all fetched cost centers
+          source = dropdownSource
+        } else {
+          // Receiver Cost Center: filter by cppPlantFkId matching the row's cppPlantId
+          const selectedCppPlantId = currentRow.cppPlantId
+          source = dropdownSource.filter(
+            (item) =>
+              item.cppPlantFkId?.toLowerCase() ===
+              selectedCppPlantId?.toLowerCase(),
+          )
+        }
       }
 
       // Find the selected item within the context-filtered source.
@@ -603,6 +650,7 @@ const SenderReceiverMapping = () => {
         widthT: 200,
         minWidth: 200,
         editable: isSRMappingRole,
+        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
         type: 'select',
         searchable: true,
         displayMode: 'label',
@@ -611,51 +659,53 @@ const SenderReceiverMapping = () => {
       {
         field: 'senderCostCenterName',
         title: 'Sender Cost Center',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
-        getOptions: getFilteredCostCenters,
-        editable: isSRMappingRole,
+        getOptions: getFilteredSenderCostCenters,
+        editable: isSRMappingRole || isSRMappingEditRole,
       },
       {
         field: 'senderCostCenterCode',
         title: 'Sender Cost Center Code',
         widthT: 200,
-        minWidth: 200,
+        minWidth: 180,
         type: 'text',
         editable: false,
       },
       {
         field: 'senderPlantName',
         title: 'Sender Plant',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
         getOptions: getFilteredPlants,
         editable: isSRMappingRole,
+        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'senderPlantCode',
         title: 'Sender Plant Code',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 180,
+        minWidth: 180,
         type: 'text',
         editable: false,
       },
       {
         field: 'senderUtilityName',
         title: 'Utility',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
         getOptions: getFilteredSenderUtilities,
         editable: isSRMappingRole,
+        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'senderUtilityCode',
@@ -676,13 +726,13 @@ const SenderReceiverMapping = () => {
       {
         field: 'receiverCostCenterName',
         title: 'Receiver Cost Center',
-        widthT: 180,
-        minWidth: 180,
-        editable: isSRMappingRole,
+        widthT: 220,
+        minWidth: 220,
+        editable: isSRMappingRole || isSRMappingEditRole,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
-        getOptions: getFilteredCostCenters,
+        getOptions: getFilteredReceiverCostCenters,
       },
       {
         field: 'receiverCostCenterCode',
@@ -695,32 +745,34 @@ const SenderReceiverMapping = () => {
       {
         field: 'receiverPlantName',
         title: 'Receiver Plant',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
-        getOptions: getFilteredPlants,
+        getOptions: getFilteredReceiverPlants,
         editable: isSRMappingRole,
+        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
       },
       {
         field: 'receiverPlantCode',
         title: 'Receiver Plant Code',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 180,
+        minWidth: 180,
         type: 'text',
         editable: false,
       },
       {
         field: 'receiverUtilityName',
         title: 'Receiver Utility',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 220,
+        minWidth: 220,
         type: 'select',
         dynamicOptions: true,
         displayMode: 'label',
         getOptions: getFilteredReceiverUtilities,
         editable: isSRMappingRole,
+        conditionalEditable: { dependsOn: 'isNew', editableValues: [true] },
         hidden: false,
       },
       {
@@ -746,7 +798,7 @@ const SenderReceiverMapping = () => {
         widthT: 200,
         minWidth: 200,
         type: 'textarea',
-        editable: isSRMappingRole,
+        editable: isSRMappingRole || isSRMappingEditRole,
       },
       {
         field: 'customActions',
@@ -762,9 +814,12 @@ const SenderReceiverMapping = () => {
     ],
     [
       isSRMappingRole,
+      isSRMappingEditRole,
       cppPlantList,
-      getFilteredCostCenters,
+      getFilteredSenderCostCenters,
+      getFilteredReceiverCostCenters,
       getFilteredPlants,
+      getFilteredReceiverPlants,
       getFilteredSenderUtilities,
       getFilteredReceiverUtilities,
       actionCell,
@@ -819,22 +874,22 @@ const SenderReceiverMapping = () => {
   const permissions = useMemo(
     () => ({
       showAction: true,
-      addButton: true,
+      addButton: isSRMappingRole,
       deleteButton: false,
       editButton: true,
       saveBtn: true,
       allAction: true,
-      disableActionButtons: !isSRMappingRole,
+      disableActionButtons: !(isSRMappingRole || isSRMappingEditRole),
       downloadExcelBtnFromUI: false,
       showExport: true,
-      ExcelName: 'Sender Receiver Mapping',
+      ExcelName: generateExcelName(dataGridStore, 'Sender_Receiver_Mapping'),
       showImport: false,
       showTitleNameBusiness: true,
       showTitle: true,
       titleName:
         screenTitle?.title || 'Sender Receiver Mapping (Utility for Utility)',
     }),
-    [isSRMappingRole, screenTitle],
+    [isSRMappingRole, isSRMappingEditRole, screenTitle, dataGridStore],
   )
 
   // ── Save / Export / Import ───────────────────────────────────────────────
@@ -858,27 +913,55 @@ const SenderReceiverMapping = () => {
       return
     }
 
-    // Mandatory fields validation: every required field must be filled
-    const missingFields = dataToSave.find((row) =>
-      REQUIRED_FIELDS.some(
-        (field) => !row[field] || row[field].toString().trim() === '',
-      ),
-    )
-    if (missingFields) {
-      const emptyField = REQUIRED_FIELDS.find(
-        (field) =>
-          !missingFields[field] ||
-          missingFields[field].toString().trim() === '',
+    // Split into new rows (full multi-table save) and existing rows
+    // (lightweight cost-center-only update).
+    const newRows = dataToSave.filter((row) => row.isNew)
+    const existingRows = dataToSave.filter((row) => !row.isNew)
+
+    // ── Validate new rows: all REQUIRED_FIELDS must be filled ──────────────
+    if (newRows.length > 0) {
+      const missingNew = newRows.find((row) =>
+        REQUIRED_FIELDS.some(
+          (field) => !row[field] || row[field].toString().trim() === '',
+        ),
       )
-      const rowIndex = rows.findIndex((r) => r.id === missingFields.id)
-      const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingFields.id}`
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: `${FIELD_LABELS[emptyField]} is required for: ${rowLabel}`,
-        severity: 'error',
-      })
-      setLoading(false)
-      return
+      if (missingNew) {
+        const emptyField = REQUIRED_FIELDS.find(
+          (field) =>
+            !missingNew[field] || missingNew[field].toString().trim() === '',
+        )
+        const rowIndex = rows.findIndex((r) => r.id === missingNew.id)
+        const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingNew.id}`
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `${FIELD_LABELS[emptyField]} is required for: ${rowLabel}`,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+    }
+
+    // ── Validate existing rows: at least one cost-center field must be filled
+    if (existingRows.length > 0) {
+      const missingBoth = existingRows.find(
+        (row) =>
+          (!row.senderCostCenterName ||
+            row.senderCostCenterName.toString().trim() === '') &&
+          (!row.receiverCostCenterName ||
+            row.receiverCostCenterName.toString().trim() === ''),
+      )
+      if (missingBoth) {
+        const rowIndex = rows.findIndex((r) => r.id === missingBoth.id)
+        const rowLabel = `Row ${rowIndex >= 0 ? rowIndex + 1 : missingBoth.id}`
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `At least one of Sender or Receiver Cost Center is required for: ${rowLabel}`,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
     }
 
     // Remarks validation: if any row data was updated, remarks must be filled
@@ -896,38 +979,89 @@ const SenderReceiverMapping = () => {
       return
     }
 
-    const payload = dataToSave.map((item) => {
-      const { inEdit, isNew, saveStatus, errDescription, ...rest } = item
-      return {
-        ...rest,
-        aopYear: AOP_YEAR,
-        ...(isNew ? { id: null } : {}),
-      }
-    })
-
     try {
-      const response = await UtilityPlantApiServiceV2.updateSRMappingsByPlant(
-        keycloak,
-        payload,
-        AOP_YEAR,
-      )
+      const messages = []
+      let allSuccess = true
 
-      const isSuccess = response?.code === 200
+      // ── Save new rows via the full multi-table API ──────────────────────
+      if (newRows.length > 0) {
+        const newPayload = newRows.map((item) => {
+          const {
+            inEdit,
+            isNew,
+            saveStatus,
+            errDescription,
+            isEditable,
+            apiId,
+            ...rest
+          } = item
+          return {
+            ...rest,
+            aopYear: AOP_YEAR,
+            id: null,
+          }
+        })
+
+        const newResponse =
+          await UtilityPlantApiServiceV2.updateSRMappingsByPlant(
+            keycloak,
+            newPayload,
+            AOP_YEAR,
+          )
+
+        if (newResponse?.code === 200) {
+          messages.push(
+            newResponse?.message || `${newRows.length} new record(s) created.`,
+          )
+        } else {
+          allSuccess = false
+          messages.push(newResponse?.message || 'Failed to save new records.')
+        }
+      }
+
+      // ── Update existing rows via the lightweight cost-center API ────────
+      if (existingRows.length > 0) {
+        const ccPayload = existingRows.map((item) => {
+          const payload = {
+            id: item.apiId || item.id,
+            remarks: item.remarks,
+          }
+          if (item.senderCostCenterId) {
+            payload.senderCostCenterId = item.senderCostCenterId
+          }
+          if (item.receiverCostCenterId) {
+            payload.receiverCostCenterId = item.receiverCostCenterId
+          }
+          return payload
+        })
+
+        const ccResponse =
+          await UtilityPlantApiServiceV2.updateSRMappingCostCenters(
+            keycloak,
+            ccPayload,
+          )
+
+        if (ccResponse?.code === 200) {
+          messages.push(
+            ccResponse?.message ||
+              `${existingRows.length} cost-center record(s) updated.`,
+          )
+        } else {
+          allSuccess = false
+          messages.push(ccResponse?.message || 'Failed to update cost centers.')
+        }
+      }
 
       setSnackbarOpen(true)
       setSnackbarData({
-        message: isSuccess
-          ? response?.message || 'Successfully saved changes!'
-          : response?.message || 'Failed to save changes. Please try again.',
-        severity: isSuccess ? 'success' : 'error',
+        message: messages.join(' '),
+        severity: allSuccess ? 'success' : 'error',
       })
 
-      if (isSuccess) {
+      if (allSuccess) {
         setModifiedCells({})
         await fetchData()
       }
-
-      return response
     } catch (error) {
       console.error('Error saving SR mapping:', error)
       setSnackbarOpen(true)
@@ -1074,7 +1208,7 @@ const SenderReceiverMapping = () => {
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
-          customHeight={80}
+          customHeight={70}
           customItemChange={handleCustomItemChange}
           paginationConfig={{
             threshold: 100,

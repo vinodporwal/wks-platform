@@ -66,6 +66,8 @@ public interface CPPSRMappingService {
      */
     AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList,String financialYear);
 
+    AOPMessageVM updateSRMappingCostCenters(List<SRMappingDTO> dtoList);
+
     /**
      * Deletes the CPP_SR_Mapping_Master record identified by {@code id} and all its
      * dependent child records, in the correct FK order:

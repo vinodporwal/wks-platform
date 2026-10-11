@@ -202,14 +202,18 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   )
 
   useEffect(() => {
-    if (AOP_YEAR && startDate && endDate && selectedPlant) {
-      fetchHeatRateData(
-        selectedPlant,
-        formatDate(startDate),
-        formatDate(endDate),
-      )
+    if (!selectedPlant || !AOP_YEAR || dateLoading) return
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Start Date and End Date are not configured in AOP Design Basis',
+        severity: 'warning',
+      })
+      return
     }
-  }, [selectedPlant, startDate, endDate])
+    fetchHeatRateData(selectedPlant, formatDate(startDate), formatDate(endDate))
+  }, [selectedPlant, startDate, endDate, dateLoading])
 
   const fetchHeatRateData = async (
     assetId,

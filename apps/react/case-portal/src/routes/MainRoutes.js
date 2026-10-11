@@ -53,6 +53,7 @@ import RawDataSet from 'components/data-tables/Reports/RawDataSet'
 import UtilitiesNormsBasis from 'components/data-tables/Reports/UtilitiesNormsBasis'
 import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
 import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
+import SlodownBasis from 'components/data-tables/Reports/SlodownBasis'
 import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
 import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
@@ -173,6 +174,8 @@ import NetProductionHoursPCG from 'components/aop-phase-two/pcg/net-production-h
 import MonthwiseProductionPlanPCG from 'components/aop-phase-two/pcg/monthwise-production-plan/index'
 import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activities/index'
 import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
+import ShutdownPlanPCG from 'components/aop-phase-two/pcg/shutdown-plan/index'
+import AOPProductionNormsPCG from 'components/aop-phase-two/pcg/aop-production-norms/index'
 
 // PCG Ended
 
@@ -204,6 +207,7 @@ import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
 import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
+import ConsumerDemand from 'components/aop-phase-two/refineryUtility/Consumer_Demand/index'
 
 // Naphthasplitter Ended
 
@@ -1243,6 +1247,22 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'shutdown-plan-pcg',
+            element: (
+              <PrivateRoute routeId='shutdown-plan-pcg'>
+                <ShutdownPlanPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'aop-production-norms-pcg',
+            element: (
+              <PrivateRoute routeId='aop-production-norms-pcg'>
+                <AOPProductionNormsPCG />
+              </PrivateRoute>
+            ),
+          },
 
           //Vertical PCG Ended
           //Vertical Refinery utility Started
@@ -1255,7 +1275,6 @@ export const MainRoutes = (
             ),
           },
           {
-
             path: 'shutdown-plan-refinery',
             element: (
               <PrivateRoute routeId='shutdown-plan-refinery'>
@@ -1284,6 +1303,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='overall-aop-consumption-refinery'>
                 <OverallAopConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'consumer-demand-refinery',
+            element: (
+              <PrivateRoute routeId='consumer-demand-refinery'>
+                <ConsumerDemand />
               </PrivateRoute>
             ),
           },
@@ -1373,6 +1400,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='norms-historian-basis'>
                 <NormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-basis',
+            element: (
+              <PrivateRoute routeId='slowdown-basis'>
+                <SlodownBasis />
               </PrivateRoute>
             ),
           },

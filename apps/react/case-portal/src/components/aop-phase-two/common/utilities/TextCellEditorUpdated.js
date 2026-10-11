@@ -12,6 +12,25 @@ export const TextCellEditorUpdated = ({ dataItem, field, onChange }) => {
     setLocalValue(val) // accept any text input
   }
 
+  const valueRef = useRef(localValue)
+  valueRef.current = localValue
+  const initialValueRef = useRef(initialValue)
+  initialValueRef.current = initialValue
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  const dataItemRef = useRef(dataItem)
+  dataItemRef.current = dataItem
+  const fieldRef = useRef(field)
+  fieldRef.current = field
+
+  useEffect(() => {
+    return () => {
+      if (valueRef.current !== initialValueRef.current) {
+        onChangeRef.current({ dataItem: dataItemRef.current, field: fieldRef.current, value: valueRef.current })
+      }
+    }
+  }, [])
+
   const handleBlur = () => {
     if (localValue !== initialValue) {
       onChange({ dataItem, field, value: localValue })

@@ -18,6 +18,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
 import javax.sql.DataSource;
+import java.time.Month;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -37,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.NetProductionDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.BusinessDemand;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -191,7 +196,78 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		}
 	}
 
+	@Override
+	public AOPMessageVM getNetProductionData(String year, String plantId) {
+	    try {
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+	        String procedure = vertical.getName() + "_" + site.getName() + "_GetNetProduction";
+	        List<Object[]> obj = findNetProductionData(year, UUID.fromString(plantId), procedure);
+
+	       List<NetProductionDTO> netProductionDTOs = new ArrayList<NetProductionDTO>();
+
+	        if (obj != null) {
+	            for (Object[] row : obj) {
+	                NetProductionDTO newDto = new NetProductionDTO();
+	                newDto.setSapMATCode(row[0] != null ? row[0].toString() : "");
+	                newDto.setProduct(row[1] != null ? row[1].toString() : "");
+	                newDto.setUom(row[2] != null ? row[2].toString() : "");
+	                newDto.setApr(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+	                newDto.setMay(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+	                newDto.setJun(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+	                newDto.setJul(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+	                newDto.setAug(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+	                newDto.setSep(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+	                newDto.setOct(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+	                newDto.setNov(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+	                newDto.setDec(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+	                newDto.setJan(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+	                newDto.setFeb(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+	                newDto.setMar(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+
+	                netProductionDTOs.add(newDto);
+	            }
+	        }
+
+	        AOPMessageVM aopMessageVM = new AOPMessageVM();
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setData(netProductionDTOs);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+	
+	public List<Object[]> findNetProductionData(String aopYear, UUID plantId, String procedureName) {
+	    try {
+	        String sql = "EXEC " + "[" + procedureName + "]"
+	                + " @plantId = :plantId, @aopYear = :aopYear";
+
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("plantId", plantId);
+	        query.setParameter("aopYear", aopYear);
+
+	        return query.getResultList();
+	    } catch (RestInvalidArgumentException e) {
+	        throw e;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+	
 	@Override
 	public AOPMessageVM getBusinessDemandLineData(String year, String plantId, String lineId) {
 		try {

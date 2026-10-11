@@ -24,6 +24,7 @@ public interface JMDFuelAvailabilityRepository extends JpaRepository<CPPFuelAvai
         "       fm.FuelDisplayName AS fuelDisplayName, " +
         "       fm.[Type] AS type, " +
         "       fm.UOM AS uom, " +
+        "       fm.[Description] AS fuelDescription, " +
         "       CAST(fm.Category_FK_Id AS varchar(36)) AS categoryFkId, " +
         "       cat.FuelName AS categoryName, " +
         "       cat.FuelDisplayName AS categoryDisplayName " +
