@@ -42,7 +42,8 @@ from engine.dispatch_engine import dispatch_power_pool, dispatch_steam
 from engine.norms_reader_factory import get_norms_reader
 from engine.steam_transfer_router import (resolve_steam_transfers,
                                           validate_transfers,
-                                          steam_balance_report)
+                                          steam_balance_report,
+                                          _month_hours)
 from engine.u4u_iteration_loop import (
     U4UIterationLoop,
     MAX_ITERATIONS,
@@ -273,11 +274,82 @@ def _load_cpp_inputs(plant_id: str, month: int, year: int,
     }
 
 
+def _fmt_num(v: float) -> str:
+    return f"{v:,.0f}"
+
+
+def _fmt_pos_detail(d: dict) -> str:
+    """'336,782 sup - 339,665 dem = -2,883 net [dem = 339,665 gross -0 legs +2,883 feeds]'"""
+    s = (f"{_fmt_num(d['supply'])} sup - {_fmt_num(d['demand'])} dem "
+         f"= {_fmt_num(d['net'])} net")
+    comp = []
+    if abs(d.get("legs", 0.0)) > 0.5:
+        comp.append(f"{-d['legs']:+,.0f} legs")
+    if abs(d.get("prds_gap", 0.0)) > 0.5:
+        comp.append(f"{d['prds_gap']:+,.0f} feeds")
+    if abs(d.get("ext_restore", 0.0)) > 0.5:
+        comp.append(f"{d['ext_restore']:+,.0f} restore")
+    if comp:
+        s += (f"  [dem = {_fmt_num(d['gross_demand'])} gross "
+              + " ".join(comp) + "]")
+    return s
+
+
+def _log_steam_transfers(transfers: list, mode: str,
+                         month: int, year: int) -> None:
+    """Per-iteration inter-site steam transfer block.
+
+    Header line per edge (qty, TPH, band, flow rule), then — in solve
+    mode — one line per end showing the position equation that produced
+    the flow (supply - demand = net, with leg-strip / PRDS feed-gap /
+    restored-credit components), plus the ext adjustments applied to
+    the next iteration's dispatch demands.
+    """
+    hours = _month_hours(month, year)
+    logger.info("")
+    logger.info("  [JMD] Inter-site steam transfers this iteration (%s):",
+                mode)
+    if mode == "solve":
+        logger.info("    (order: commit/pull obligations first, then "
+                    "surplus push; pools are debited as edges resolve)")
+    for t in transfers:
+        snd = cpp_name(t["sender"]) if t.get("sender") else "-"
+        rcv = cpp_name(t["receiver"]) if t.get("receiver") else "-"
+        qty = float(t.get("quantity") or 0.0)
+        tr = t.get("trace") or {}
+        band = tr.get("band_tph") or [None, None]
+        lo, hi = band[0], band[1] if len(band) > 1 else None
+        if lo and hi:
+            band_txt = f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}"
+        else:
+            band_txt = "-"
+        from engine.jmd_excel_report import _STEAM_KIND_LABEL
+        rule = _STEAM_KIND_LABEL.get(t.get("kind", ""), t.get("kind", ""))
+        logger.info(
+            "    %s %-11s -> %-11s %-15s %12s MT  %6.1f TPH  "
+            "[band %-9s] %s (%s)",
+            t.get("edge", "-"), snd, rcv, t["material"],
+            f"{qty:,.2f}",
+            qty / hours if hours else 0.0, band_txt, rule,
+            t.get("basis", ""))
+        if tr.get("sender"):
+            logger.info("        send  %s: %s", snd,
+                        _fmt_pos_detail(tr["sender"]))
+        if tr.get("receiver"):
+            logger.info("        recv  %s: %s", rcv,
+                        _fmt_pos_detail(tr["receiver"]))
+        ext = tr.get("ext") or {}
+        if ext:
+            applied = "  ".join(
+                f"{cpp_name(pid)} {v:+,.0f}" for pid, v in ext.items())
+            logger.info("        ext applied next iter: %s", applied)
+
+
 def run_jmd_month(month: int, year: int,
                   include_dynamic_exports: bool = True,
                   max_iterations: int = MAX_ITERATIONS,
                   route_interplant_utilities: bool = True,
-                  steam_transfer_mode: str = "bpc") -> dict:
+                  steam_transfer_mode: str = "solve") -> dict:
     """Run the JMD complex as a single model for one month.
 
     Power is dispatched once per iteration across the combined asset pool of
@@ -299,11 +371,11 @@ def run_jmd_month(month: int, year: int,
                                    is enabled (kept for A/B runs)
         max_iterations:            cap on the coupled loop
         route_interplant_utilities: enable cross-CPP utility demand routing
-        steam_transfer_mode:       'bpc' (default) pins inter-site steam
-                                   transfers to the booked STEAM(<grade>)
-                                   plugs; 'solve' derives them each
-                                   iteration from per-CPP residuals within
-                                   the documented TPH bands; 'off' keeps the
+        steam_transfer_mode:       'solve' (default) derives inter-site
+                                   steam transfers each iteration from
+                                   per-CPP residuals within the documented
+                                   TPH bands; 'bpc' pins them to the booked
+                                   STEAM(<grade>) plugs; 'off' keeps the
                                    legacy plug handling (A/B comparison).
 
     Returns:
@@ -490,16 +562,8 @@ def run_jmd_month(month: int, year: int,
             for w in validate_transfers(steam_transfers):
                 logger.warning("  [STEAM-XFER] %s", w)
             if steam_transfers:
-                logger.info("")
-                logger.info("  [JMD] Inter-site steam transfers this iteration (%s):",
-                            steam_transfer_mode)
-                for t in steam_transfers:
-                    snd = cpp_name(t["sender"]) if t.get("sender") else "-"
-                    logger.info(
-                        "    %s %s -> %s | %-15s %12.2f MT  (%s)",
-                        t.get("edge", "-"), snd, cpp_name(t["receiver"]),
-                        t["material"], t["quantity"], t.get("basis", ""),
-                    )
+                _log_steam_transfers(steam_transfers, steam_transfer_mode,
+                                     month, year)
 
         for pid in prepared:
             loop = loops[pid]
@@ -539,6 +603,10 @@ def run_jmd_month(month: int, year: int,
             loop.final_u4u_demands = dict(new_u4u[pid])
             loop.final_total_demands = dict(total_demands[pid])
             loop.final_detail_records = details[pid]
+            # Applied inter-site steam transfers this iteration — the
+            # *_Steam_Dis supply table reports these applied flows instead
+            # of the booked STEAM(<grade>) plug.
+            loop.steam_transfers = list(steam_transfers or [])
 
         u4u_demands = new_u4u
         prev_total = total_demands
@@ -657,7 +725,7 @@ def run_jmd_year(fy_start_year: int,
                  include_dynamic_exports: bool = True,
                  max_iterations: int = MAX_ITERATIONS,
                  route_interplant_utilities: bool = True,
-                 steam_transfer_mode: str = "bpc") -> dict:
+                 steam_transfer_mode: str = "solve") -> dict:
     """Run the JMD single-model for all 12 months of a financial year."""
     results = {}
     for month, year in _fy_months(fy_start_year):

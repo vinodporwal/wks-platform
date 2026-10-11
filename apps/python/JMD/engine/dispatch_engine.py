@@ -349,9 +349,9 @@ def _stg_extraction_totals_from_power_result(power_result: dict) -> dict:
 # plus a per-iteration margin report.
 STEAM_SPINNING_MARGIN_ENABLED = {
     "F6D82E68-C3B6-494F-9905-48F19DC611E3": False,  # DTA-PCG-CPP
-    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": False,  # SEZ-CPP
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": True,   # SEZ-CPP
     "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": False,  # SEZ-PCG-CPP
-    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": False,  # DTA-CPP
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": True,   # DTA-CPP
     "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": True,   # C2-CPP
 }
 
@@ -1527,6 +1527,50 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
                         d["asset_name"], out_tph, fixed_max, m)
         logger.info("  %-25s  %14s  %14s  %14.2f",
                     "TOTAL AVAILABLE MARGIN", "", "", total_margin)
+
+        # Spec check (site doc): the required spinning margin equals the
+        # month's largest dispatched generator output (trip contingency —
+        # total output incl. free steam), held by the Aux Boilers alone:
+        #     held = sum(AB Fixed_Max - AB dispatched TPH) over online ABs.
+        req_margin = 0.0
+        req_src = "-"
+        ab_held = 0.0
+        ab_held_online = 0.0
+        n_standby = 0
+        for d in dispatch:
+            if d["op_hours"] <= 0:
+                continue
+            out_tph = (d["dispatched_mt"] + (d.get("free_steam_mt") or 0.0)) / d["op_hours"]
+            if out_tph > req_margin:
+                req_margin = out_tph
+                req_src = d["asset_name"]
+            if d["asset_type"] == "AUXBOILER":
+                # Available fleet (op_hours > 0): an undispatched AB counts
+                # at full headroom — it was left off only because demand
+                # did not need it, not because it cannot run.
+                m = max(0.0, d.get("fixed_max_tph", d["max_tph"]) - out_tph)
+                ab_held += m
+                if out_tph > 0.001:
+                    ab_held_online += m
+                else:
+                    n_standby += 1
+        logger.info("")
+        logger.info("  REQUIRED MARGIN (largest dispatched generator): %.2f TPH  (%s)",
+                    req_margin, req_src)
+        if n_standby:
+            logger.info("  HELD MARGIN via Aux Boilers (Fixed_Max - dispatched): %.2f TPH"
+                        "  (%.2f online + %.2f standby, %d ABs available but not dispatched)",
+                        ab_held, ab_held_online, ab_held - ab_held_online, n_standby)
+        else:
+            logger.info("  HELD MARGIN via Aux Boilers (Fixed_Max - dispatched): %.2f TPH",
+                        ab_held)
+        if ab_held >= req_margin - 0.001:
+            logger.info("  ✓ Steam spinning margin maintained (surplus %.2f TPH)",
+                        ab_held - req_margin)
+        else:
+            logger.warning("  ⚠ STEAM MARGIN SHORTFALL: held %.2f TPH < required "
+                           "%.2f TPH (short %.2f TPH)",
+                           ab_held, req_margin, req_margin - ab_held)
     logger.info("  %s", sep)
 
 
@@ -1975,7 +2019,12 @@ def dispatch_steam(
             asset["dispatched_tph"] = 0.0
             asset["dispatched_mt"] = 0.0
             
-        if net_shp_to_dispatch > 0 and steam_margin_report:
+        if net_shp_to_dispatch > 0 and plant_id == _DTA_PLANT_ID:
+            # ── DTA demand-first dispatch (site spec): mandatory mins →
+            # HRSGs to max → ABs ramp → non-mandatory AB (op_hours>0 only)
+            # activation; margin measured, never enforced.
+            _dispatch_steam_dta_margin(dispatch_assets, net_shp_to_dispatch)
+        elif net_shp_to_dispatch > 0 and steam_margin_report:
             # ── C2 merit-order dispatch (site spec): mandatory ABs @ min →
             # HRSG supplementary to max → activate next-priority offline AB
             # @ min (full redispatch each activation) → ramp ABs by priority.
@@ -2126,6 +2175,46 @@ def dispatch_steam(
     surplus_mt = round(max(0.0, total_steam_gen - net_top), 2)
     deficit_mt = round(max(0.0, net_top - total_steam_gen), 2)
 
+    # Measured steam spinning margin (site spec) — required = largest
+    # dispatched generator total-output TPH; held via Aux Boilers =
+    # sum(Fixed_Max - dispatched TPH) over every AB with operational
+    # hours.  An AB that has hours but was not dispatched still counts at
+    # its full headroom — it is available capacity left offline only
+    # because demand did not need it.  HRSGs never hold margin.
+    steam_margin = None
+    if steam_margin_report:
+        req_tph, req_src = 0.0, ""
+        held_tph, held_online_tph = 0.0, 0.0
+        ab_rows = []
+        for a in dispatch_assets:
+            if a["op_hours"] <= 0:
+                continue
+            out_tph = a["total_output_mt"] / a["op_hours"]
+            if out_tph > req_tph:
+                req_tph, req_src = out_tph, a["asset_name"]
+            if a["asset_type"] == "AUXBOILER":
+                fx = a.get("fixed_max_tph", a["max_tph"])
+                online = out_tph > 0.001
+                m = max(0.0, fx - out_tph)
+                held_tph += m
+                if online:
+                    held_online_tph += m
+                ab_rows.append({
+                    "name": a["asset_name"], "online": online,
+                    "dispatched_tph": round(out_tph, 2),
+                    "fixed_max_tph": fx,
+                    "margin_tph": round(m, 2),
+                })
+        steam_margin = {
+            "required_tph": round(req_tph, 2),
+            "required_asset": req_src,
+            "held_tph": round(held_tph, 2),
+            "held_online_tph": round(held_online_tph, 2),
+            "maintained": held_tph >= req_tph - 0.001,
+            "shortfall_tph": round(max(0.0, req_tph - held_tph), 2),
+            "abs": ab_rows,
+        }
+
     return {
         "demand_detail": demand_details,
         "total_free_steam_mt": free_steam,
@@ -2135,6 +2224,7 @@ def dispatch_steam(
         "deficit_mt": deficit_mt,
         "prds_unmet_mt": prds_unmet_mt,
         "prds_assets": prds_assets,
+        "steam_margin": steam_margin,
         "assets": dispatch_assets,
         "message": (
             f"SURPLUS: {surplus_mt:.2f} MT over-generation" if surplus_mt > 0
@@ -2145,6 +2235,43 @@ def dispatch_steam(
             if prds_unmet_mt > 0 else ""
         ),
     }
+
+
+def _ramp_steam_by_priority(assets, remaining_mt, reserve_tph=0.0):
+    """Priority-group equal-split ramp to (max_tph - reserve_tph)."""
+    groups = defaultdict(list)
+    for a in assets:
+        if a["op_hours"] > 0:
+            groups[a["priority"]].append(a)
+    for pri in sorted(groups):
+        if remaining_mt <= 0.001:
+            break
+        while remaining_mt > 0.001:
+            # Recompute each asset's remaining headroom every pass —
+            # dispatched grows inside the loop so a captured headroom
+            # would let later passes overshoot the cap.
+            uncapped = [
+                a for a in groups[pri]
+                if a["max_tph"] - reserve_tph - a["dispatched_tph"] > 0.001
+            ]
+            if not uncapped:
+                break
+            total_hrs = sum(a["op_hours"] for a in uncapped)
+            if total_hrs <= 0:
+                break
+            add_tph = remaining_mt / total_hrs
+            saturated = False
+            for a in uncapped:
+                h = a["max_tph"] - reserve_tph - a["dispatched_tph"]
+                d = min(add_tph, h)
+                a["dispatched_tph"] += d
+                a["dispatched_mt"] = a["dispatched_tph"] * a["op_hours"]
+                remaining_mt -= d * a["op_hours"]
+                if d >= h - 0.001:
+                    saturated = True
+            if not saturated:
+                break
+    return remaining_mt
 
 
 def _dispatch_steam_c2(dispatch_assets: list, net_shp_to_dispatch: float) -> None:
@@ -2168,34 +2295,6 @@ def _dispatch_steam_c2(dispatch_assets: list, net_shp_to_dispatch: float) -> Non
             a["dispatched_tph"] = 0.0
             a["dispatched_mt"] = 0.0
 
-    def _ramp_by_priority(assets, remaining_mt, reserve_tph=0.0):
-        groups = defaultdict(list)
-        for a in assets:
-            if a["op_hours"] > 0:
-                groups[a["priority"]].append(a)
-        for pri in sorted(groups):
-            if remaining_mt <= 0.001:
-                break
-            uncapped = [(a, a["max_tph"] - reserve_tph - a["dispatched_tph"]) for a in groups[pri]]
-            uncapped = [(a, h) for a, h in uncapped if h > 0.001]
-            while uncapped and remaining_mt > 0.001:
-                total_hrs = sum(a["op_hours"] for a, _ in uncapped)
-                if total_hrs <= 0:
-                    break
-                add_tph = remaining_mt / total_hrs
-                saturated = []
-                for a, h in uncapped:
-                    d = min(add_tph, h)
-                    a["dispatched_tph"] += d
-                    a["dispatched_mt"] = a["dispatched_tph"] * a["op_hours"]
-                    remaining_mt -= d * a["op_hours"]
-                    if d >= h - 0.001:
-                        saturated.append(a)
-                if not saturated:
-                    break
-                uncapped = [(a, h) for a, h in uncapped if a not in saturated]
-        return remaining_mt
-
     abs_ = [a for a in dispatch_assets if a["asset_type"] == "AUXBOILER"]
     hrsgs = [a for a in dispatch_assets if a["asset_type"] == "HRSG"]
 
@@ -2207,7 +2306,7 @@ def _dispatch_steam_c2(dispatch_assets: list, net_shp_to_dispatch: float) -> Non
                 a["dispatched_tph"] = a["min_tph"]
                 a["dispatched_mt"] = a["min_tph"] * a["op_hours"]
         covered = sum(a["dispatched_mt"] for a in dispatch_assets)
-        return _ramp_by_priority(hrsgs, net_shp_to_dispatch - covered)
+        return _ramp_steam_by_priority(hrsgs, net_shp_to_dispatch - covered)
 
     residual = _dispatch_base()
 
@@ -2225,10 +2324,10 @@ def _dispatch_steam_c2(dispatch_assets: list, net_shp_to_dispatch: float) -> Non
             key=lambda a: a["priority"],
         )
         if not candidates:
-            residual = _ramp_by_priority(online_abs, residual)
+            residual = _ramp_steam_by_priority(online_abs, residual)
             break
         nxt = candidates[0]
-        residual = _ramp_by_priority(online_abs, residual, reserve_tph=nxt["min_tph"])
+        residual = _ramp_steam_by_priority(online_abs, residual, reserve_tph=nxt["min_tph"])
         if residual <= 0.001:
             break
         nxt["_activated"] = True
@@ -2242,6 +2341,77 @@ def _dispatch_steam_c2(dispatch_assets: list, net_shp_to_dispatch: float) -> Non
     if residual > 0.01:
         logger.warning(
             "  [C2 DISPATCH] Steam deficit %.2f MT — all available HRSG/AB "
+            "capacity exhausted", residual)
+
+
+def _dispatch_steam_dta_margin(dispatch_assets: list, net_shp_to_dispatch: float) -> None:
+    """DTA demand-first steam dispatch (site spec).
+
+    Sequence (lower priority number = higher priority):
+      1. Mandatory assets (HRSGs + ABs) at Min load — free steam from the
+         linked GTs is credited upstream.
+      2. HRSGs ramp to Max in priority order.
+      3. Active ABs (mandatory + activated) ramp by priority for the
+         residual.
+      4. Still short -> bring the next-priority NON-MANDATORY AB online at
+         Min — only when it has operational hours (>0); redispatch.
+         Zero-hour ABs can never be activated.
+    The steam spinning margin is MEASURED, not enforced — the caller's
+    margin report compares the required margin (largest dispatched
+    generator TPH) against the margin held by the active Aux Boilers
+    (sum of Fixed_Max - dispatched TPH).
+    """
+    def _reset():
+        for a in dispatch_assets:
+            a["dispatched_tph"] = 0.0
+            a["dispatched_mt"] = 0.0
+
+    def _active(a):
+        return (a["op_hours"] > 0
+                and (a["mandatory"] == 1 or a.get("_activated")))
+
+    abs_ = [a for a in dispatch_assets if a["asset_type"] == "AUXBOILER"]
+    hrsgs = [a for a in dispatch_assets if a["asset_type"] == "HRSG"]
+
+    def _dispatch_base():
+        """Phases 1-2: actives at min load, then HRSGs fill to max."""
+        _reset()
+        for a in dispatch_assets:
+            if _active(a):
+                a["dispatched_tph"] = a["min_tph"]
+                a["dispatched_mt"] = a["min_tph"] * a["op_hours"]
+        covered = sum(a["dispatched_mt"] for a in dispatch_assets)
+        return _ramp_steam_by_priority(hrsgs, net_shp_to_dispatch - covered)
+
+    residual = _dispatch_base()
+
+    # Phases 3-4: active ABs ramp fully for the residual; only when they
+    # still cannot cover does the next-priority non-mandatory AB (with
+    # operational hours) come online at MIN and everything redispatches.
+    while residual > 0.001:
+        online_abs = [a for a in abs_ if _active(a)]
+        residual = _ramp_steam_by_priority(online_abs, residual)
+        if residual <= 0.001:
+            break
+        candidates = sorted(
+            (a for a in abs_
+             if a["op_hours"] > 0 and a["mandatory"] != 1 and not a.get("_activated")),
+            key=lambda a: a["priority"],
+        )
+        if not candidates:
+            break
+        nxt = candidates[0]
+        nxt["_activated"] = True
+        logger.info(
+            "  [DTA DISPATCH] Demand unmet %.2f MT — bringing non-mandatory "
+            "%s online at MIN (%.2f TPH) and redispatching",
+            residual, nxt["asset_name"], nxt["min_tph"],
+        )
+        residual = _dispatch_base()
+
+    if residual > 0.01:
+        logger.warning(
+            "  [DTA DISPATCH] Steam deficit %.2f MT — all online HRSG/AB "
             "capacity exhausted", residual)
 
 

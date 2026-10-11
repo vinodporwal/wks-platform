@@ -184,6 +184,17 @@ _STATIC_INTERPLANT_EXPORTS = {
         "Utility Water":     5_063.94,  # M3 — DTA-CPP -> DTA-PCG-CPP
         "SWRO WATER":    1_970_149.0,   # M3 — DTA-CPP -> C2-CPP
     },
+    # SEZ-CPP exports HP steam to SEZ-PCG (edge E3) — the demand leg is
+    # booked at the receiver's node (SEZ-PCG's fixed HP row + STEAM(HP)
+    # plug), so the sender's own books carry no trace of it and the
+    # individual run must add the export quantity explicitly.  The E2 leg
+    # (SEZ -> DTA HP) needs no entry — it is already booked inside SEZ's
+    # fixed HP demand row.  Applies only to individual run_month(); the
+    # pooled JMD run routes both edges dynamically.  Quantity = SEZ-PCG's
+    # booked STEAM(HP) plug for May 2026.
+    (_SEZ_PLANT_ID, 5, 2026): {
+        "HP Steam_Dis": 41_577.28,  # MT — SEZ-CPP -> SEZ-PCG-CPP (E3)
+    },
 }
 
 # Recursion guard — prevents infinite loop if target plant also has exports.

@@ -18,18 +18,24 @@ temperatures come from `data/gt_fuel_mmbtu_config.json`.
 
 ---
 
-## 1. C2-CPP — JMD - C2-GTG 2   (+18.6%)
+## 1. C2-CPP — JMD - C2-GTG 2   (-1.84%, was +18.6%)
+
+> **Updated 2026-10-08** — GT-2 April capacity re-rated to max 105 MW and
+> operational hours set to 456. The unit now dispatches at 105 MW x 456 h,
+> essentially matching BPC's booking (~104.5 MW x 456 h = 47,633 MWh).
+> The earlier +18.6% deviation (part-load penalty at 64 MW x 720 h) is
+> resolved by the capacity change, not a formula fix.
 
 ### Inputs
 
 | Input | Value | Source |
 |---|---|---|
-| Dispatched load | 64.00 MW | dispatch engine |
-| Generation | 46,080 MWh = 46,080,000 kWh (720 h) | dispatch engine |
-| Gross heat rate | **3,170.44 kcal/kWh** | DB curve @ 64 MW (exact table row) |
+| Dispatched load | 105.00 MW (at max) | dispatch engine |
+| Generation | 47,880 MWh = 47,880,000 kWh (456 h) | dispatch engine |
+| Gross heat rate | **2,642.70 kcal/kWh** | DB curve `GT-2` @ 105 MW |
 | Scenario | **SHP + LP** | HRSG2_C2_SHP has LP byproduct row (-0.15) |
-| SHP FSF | **1.85** | DB curve @ 64 MW (DB value wins; config 1.60 is fallback only) |
-| LP FSF | 0.38 | config (no DB column for LP) |
+| SHP FSF | **1.57** | DB curve @ 105 MW (DB value wins; config 1.60 is fallback only) |
+| LP FSF | 0.36 | config (no DB column for LP) |
 | T_SHP / T_LP / T_ref | 810 / 640 / 45 deg C | config |
 | Efficiency | 0.92 | config |
 
@@ -37,35 +43,36 @@ temperatures come from `data/gt_fuel_mmbtu_config.json`.
 
 | Step | Expression | MMBTU |
 |---|---|---:|
-| Gross fuel | 46,080,000 x 3,170.44 x 3.96567e-6 | 579,360.10 |
-| SHP allocation | 46,080,000 x 1.85 x (810-45)/0.92 x 3.96567e-6 | 281,108.76 |
-| LP allocation | 46,080,000 x 0.38 x (640-45)/0.92 x 3.96567e-6 | 44,909.87 |
-| **Net fuel** | 579,360.10 - 281,108.76 - 44,909.87 | **253,341.47** |
-| Norm | 3.96567 x (3,170.44 - 1,784.08)/1e6 | 0.005498 MMBTU/kWh |
+| Gross fuel | 47,880,000 x 2,642.70 x 3.96567e-6 | 501,910.4 |
+| SHP allocation | 47,880,000 x 1.57 x (810-45)/0.92 x 3.96567e-6 | 247,889.0 |
+| LP allocation | 47,880,000 x 0.36 x (640-45)/0.92 x 3.96567e-6 | 44,208.5 |
+| **Net fuel** | 501,910.4 - 247,889.0 - 44,208.5 | **209,696.47** (model log) |
+| Norm | net / 47,880,000 | 0.004380 MMBTU/kWh |
 
 ### Comparison
 
 | | Model | BPC | Diff |
 |---|---:|---:|---:|
-| Generation | 46,080,000 kWh | 47,633,034 kWh | -3.26% |
-| SynGas | **253,341.47** | **213,632.32** | **+39,709.15 (+18.6%)** |
-| Implied gross HR | 3,170.44 | ~2,707 (from BPC norm 0.004485) | - |
+| Generation | 47,880,000 kWh | 47,633,034 kWh | +0.52% |
+| SynGas | **209,696.47** | **213,632.32** | **-3,935.85 (-1.84%)** |
+| Implied norm | 0.004380 | 0.004485 | -2.3% |
 
-### Root cause
+### Residual deviation
 
-Not a formula error — the DB curve assigns GT-2 a heavy part-load penalty
-at 64 MW (HR 3,170 vs ~2,643 near rated), while BPC books fuel at a
-near-flat ~2,678-2,707 gross HR for both C2 GTs. Note GT-2's curve spans
-52-114 MW although its April max is 67 MW — worth confirming whether the
-curve or the capacity entry is the anomaly.
+Generation now matches BPC almost exactly (+0.5%); the remaining -1.8%
+fuel gap is the curve-vs-flat-booking norm difference (model gross HR
+2,642.7 + FSF 1.57 + LP 0.36 vs BPC implied norm 0.004485).
 
-To match BPC's flat-booking convention, pin in `gt_fuel_mmbtu_config.json`:
+### Notes / flags
 
-```json
-"asset_overrides": { "JMD - C2-GTG 2": { "heat_rate": 2678.0 } }
-```
-
-=> norm ~0.00437 -> ~203k MMBTU (residual diff then = gen gap only).
+- **Free steam exceeds HRSG2 nameplate:** FSF 1.57 x 105 MW = 164.85 TPH
+  > HRSG2_C2 max 160 TPH. The model books all 75,171.6 MT as HRSG2 output
+  (free steam is must-take) — physically ~2,210 MT/month would exceed the
+  HRSG2 pass; confirm whether excess is vented or the cap is understated.
+- At 105 MW the GT-2 curve's near-rated HR/FSF align well with BPC; the
+  earlier `asset_overrides` heat_rate pin is no longer needed.
+- C2 steam margin (272 TPH on Aux Boilers) is unaffected — GT-2 change
+  only adds free steam to the SHP pool.
 
 ---
 
@@ -124,9 +131,9 @@ difference, not a tier/scenario error (HP-only correctly detected).
 
 | Asset | Tiers | Dispatched MW | HR used | FSF used | Model MMBTU | BPC MMBTU | Diff | Cause |
 |---|---|---:|---:|---|---:|---:|---:|---|
-| C2 GT-2 | SHP+LP | 64.0 | 3,170.44 | 1.85 / 0.38 | 253,341 | 213,632 | +18.6% | DB curve part-load penalty vs BPC flat ~2,707 |
+| C2 GT-2 | SHP+LP | 105.0 | 2,642.70 | 1.57 / 0.36 | 209,696 | 213,632 | -1.84% | RESOLVED — was +18.6% at 64 MW x 720 h; re-rated to 105 MW x 456 h per site plan |
 | SEZ GT-5 | HP | 105.0 | 2,673.28 | 1.90 | 358,761 | 388,675 | -7.7% | Curve HR/FSF below workbook flat 2,729/1.86 |
 
 All other dispatched GTs are within ±5% of BPC (DTA GT-10 -0.83%,
 DTA GT-11 +0.35%, DTA GT PP 3/4/5/8 ~+0.2%, DTA-PCG GT2 +0.70%,
-C2 GT-1 -2.37%, SEZ GT-1 -2.0%, GT-2 +0.3%, GT-4 -3.1%, GT-6 +0.3%).
+C2 GT-1 +0.81%, C2 GT-2 -1.84%, SEZ GT-1 -2.0%, GT-2 +0.3%, GT-4 -3.1%, GT-6 +0.3%).

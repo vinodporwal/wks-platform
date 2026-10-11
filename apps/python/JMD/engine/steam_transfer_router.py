@@ -251,7 +251,8 @@ def _fy_string(month: int, year: int) -> str:
 
 
 def _db_bands(month: int, year: int) -> dict:
-    """{edge_id: (min_tph, max_tph|None)} for the run month's AOP year."""
+    """{edge_id: (min_tph, max_tph|None, transfer_type|None)} for the
+    run month's AOP year."""
     key = (month, year)
     if key in _band_cache:
         return _band_cache[key]
@@ -264,18 +265,20 @@ def _db_bands(month: int, year: int) -> dict:
             cur.execute(
                 f"""
                 SELECT t.Min_{_MONTH_COL[month]}, t.Max_{_MONTH_COL[month]},
-                       t.SenderPlant_FK_Id, t.ReceiverPlant_FK_Id, np.Name
+                       t.SenderPlant_FK_Id, t.ReceiverPlant_FK_Id, np.Name,
+                       t.TransferType
                 FROM dbo.CPP_IntersiteSteamTransfer t
                 JOIN dbo.NormParameters np ON np.Id = t.NormParameter_FK_Id
                 WHERE t.AOP_Year = ?
                 """, _fy_string(month, year))
-            for lo, hi, s, r, gname in cur.fetchall():
+            for lo, hi, s, r, gname, ttype in cur.fetchall():
                 grade = str(gname).split()[0].upper()
                 eid = _EDGE_KEY.get((str(s).upper(), str(r).upper(), grade))
                 if eid is None:
                     continue
                 bands[eid] = (float(lo or 0.0),
-                              float(hi) if hi and float(hi) > 0 else None)
+                              float(hi) if hi and float(hi) > 0 else None,
+                              str(ttype).strip() if ttype else None)
         finally:
             conn.close()
     except Exception as exc:
@@ -287,9 +290,40 @@ def _db_bands(month: int, year: int) -> dict:
 
 def _band_for(edge: dict, month: int, year: int):
     """Effective (min_tph, max_tph|inf) for an edge this month."""
-    lo, hi = _db_bands(month, year).get(
-        edge["id"], (edge.get("min_tph", 0.0), edge.get("max_tph")))
+    lo, hi, _ = _db_bands(month, year).get(
+        edge["id"], (edge.get("min_tph", 0.0), edge.get("max_tph"), None))
     return lo, hi if hi else float("inf")
+
+
+_VALID_XFER_TYPES = {"commit", "pull", "push", "pull_pull", "push_pull",
+                     "one_sided"}
+
+
+def _edge_cfg(edge: dict, month: int, year: int):
+    """Resolved (min_tph, max_tph, kind, one_sided) for an edge this month.
+
+    The CPP_IntersiteSteamTransfer table is authoritative for both the
+    flow band and the route's flow type (TransferType column): 'commit'
+    = fixed minimum obligation, 'push'/'pull' = unidirectional surplus/
+    deficit, 'push_pull'/'pull_pull' = bidirectional links whose
+    direction resolves from positions, 'one_sided' = sender-only
+    commitment.  Missing/invalid values fall back to the edge defaults.
+    """
+    lo, hi, ttype = _db_bands(month, year).get(
+        edge["id"], (edge.get("min_tph", 0.0), edge.get("max_tph"), None))
+    hi = hi if hi else float("inf")
+    kind, one_sided = edge["kind"], bool(edge.get("one_sided"))
+    if ttype:
+        if ttype in _VALID_XFER_TYPES:
+            if ttype == "one_sided":
+                one_sided = True
+            else:
+                kind = ttype
+        else:
+            logger.warning("  [STEAM-XFER] %s unknown TransferType %r — "
+                           "using edge default %r",
+                           edge["id"], ttype, edge["kind"])
+    return lo, hi, kind, one_sided
 
 
 # ---------------------------------------------------------------------------
@@ -460,16 +494,28 @@ def _position(loops, steam_results, total_demands, ext_applied,
     ext_steam only enters dispatch_demands, never total_demands, so this
     basis is a stable map across iterations.
     """
+    return _position_detail(loops, steam_results, total_demands,
+                            ext_applied, pid, material,
+                            u4u_demands=u4u_demands)["net"]
+
+
+def _position_detail(loops, steam_results, total_demands, ext_applied,
+                     pid: str, material: str, u4u_demands: dict = None):
+    """_position decomposed into its components for trace logging."""
+    empty = {"supply": 0.0, "gross_demand": 0.0, "legs": 0.0,
+             "prds_gap": 0.0, "ext_restore": 0.0, "demand": 0.0,
+             "net": 0.0}
     if pid not in loops:
-        return 0.0
+        return empty
     loop = loops[pid]
     td = (total_demands.get(pid) or {})
     applied = float((ext_applied.get(pid) or {}).get(material, 0.0))
 
-    demand = float(td.get(material, 0.0)) \
-        - _legs_at(loops, pid, material) \
-        + _prds_feed_gap(
-            loop, td, (u4u_demands or {}).get(pid), material)
+    gross = float(td.get(material, 0.0))
+    legs = _legs_at(loops, pid, material)
+    gap = _prds_feed_gap(
+        loop, td, (u4u_demands or {}).get(pid), material)
+    demand = gross - legs + gap
 
     if material in (getattr(loop, "consumption_norms", {}) or {}):
         # Header-source decomposition already carries pass-through steam
@@ -479,8 +525,11 @@ def _position(loops, steam_results, total_demands, ext_applied,
     else:
         supply = _local_supply(loop, steam_results.get(pid), material) \
             + _passthrough_supply(loop, material)
-    supply += max(0.0, -applied)
-    return supply - demand
+    restore = max(0.0, -applied)
+    supply += restore
+    return {"supply": supply, "gross_demand": gross, "legs": legs,
+            "prds_gap": gap, "ext_restore": restore, "demand": demand,
+            "net": supply - demand}
 
 
 def _edge_for_receiver_material(pid: str, material: str):
@@ -637,6 +686,11 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
         return _position(loops, steam_results, total_demands, ext_applied,
                          pid, material, u4u_demands=u4u_demands)
 
+    def posd(pid, material):
+        return _position_detail(loops, steam_results, total_demands,
+                                ext_applied, pid, material,
+                                u4u_demands=u4u_demands)
+
     def pull(pid, material):
         return max(0.0, -pos(pid, material))
 
@@ -665,15 +719,14 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
         s, r, m = e["sender"], e["receiver"], e["material"]
         if s not in loops or r not in loops:
             continue
-        min_tph, max_tph = _band_for(e, month, year)
+        min_tph, max_tph, kind, one_sided = _edge_cfg(e, month, year)
         min_mt = min_tph * hours
         cap = max_tph * hours if max_tph != float("inf") else float("inf")
-        kind = e["kind"]
         qty = 0.0
         direction = (s, r)  # resolved sender, receiver
         warn = []
 
-        if e.get("one_sided"):
+        if one_sided:
             # One-sided sender commitment (E6): the desal export is a
             # real obligation on the sender's header — booking it as
             # demand is what makes the LLP->LP->MP PRDS chain dispatch
@@ -695,6 +748,11 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
                 "basis": "solved",
                 "note": f"{e['source']} | one-sided sender commitment",
                 "warnings": warn,
+                "trace": {
+                    "sender": posd(s, m),
+                    "band_tph": [min_tph, max_tph],
+                    "ext": {s: qty},
+                },
             })
             continue
 
@@ -810,6 +868,7 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
             _add(ext, e["transit_plant"], m, -_leg_qty(loops, e))
         # Receiver credit delta vs the plug embedded in its booked gen.
         rcv_loop = loops[rcv]
+        credit = 0.0
         if m in getattr(rcv_loop, "_all_producers", set()) or \
            m in (getattr(rcv_loop, "_initial_steam_mt", {}) or {}):
             embedded = _plug_qty(rcv_loop, m) \
@@ -831,6 +890,15 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
             "note": f"{e['source']} | pos(s)={pos(snd, m):,.0f} "
                     f"pos(r)={pos(rcv, m):,.0f}",
             "warnings": warn,
+            "trace": {
+                "sender": posd(snd, m),
+                "receiver": posd(rcv, m),
+                "band_tph": [min_tph, max_tph],
+                "ext": {pid_: v for pid_, v in
+                        ((ob_node, qty - leg_ob),
+                         (rcv, credit if abs(credit) > 1.0 else 0.0))
+                        if abs(v) > 1e-6},
+            },
         })
 
     # Damping: blend this iteration's adjustments with the applied ones.

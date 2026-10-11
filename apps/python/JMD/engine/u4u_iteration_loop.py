@@ -302,6 +302,12 @@ class U4UIterationLoop:
         # engine/steam_transfer_router.py).
         self.steam_transfer_mode = (steam_transfer_mode or "off").lower()
 
+        # Resolved inter-site steam transfer rows for the reporting path:
+        # the orchestrator assigns the current iteration's rows so the
+        # *_Steam_Dis supply table can report the applied flow instead of
+        # the booked STEAM(<grade>) plug.  Empty for individual-CPP runs.
+        self.steam_transfers: list = []
+
         self.consumption_norms: dict = {}
         self.all_consumption_norms: dict = {}
         self._bpc_gen_quantities: dict = {}
@@ -846,7 +852,14 @@ class U4UIterationLoop:
             elif (
                 self.steam_transfer_mode == "off"
                 and (
-                    (self.plant_id == _DTA_PLANT_ID and grade.upper() == "HP")
+                    # DTA: positive STEAM(<grade>) BPC quantities are actual
+                    # imports satisfying the grade's demand — STEAM(SHP) is
+                    # the booked DTA-PCG -> DTA SHP import (May: ~193k MT),
+                    # STEAM(HP) the SEZ -> DTA HP import.  Individual runs
+                    # must credit them or the grade shows a phantom deficit;
+                    # routed modes leave the flows to the transfer router.
+                    (self.plant_id == _DTA_PLANT_ID
+                     and grade.upper() in ("HP", "SHP"))
                     # DTA-PCG: a positive STEAM(<grade>) BPC quantity is an
                     # actual import that satisfies the grade's demand — e.g.
                     # April IP steam is 100% imported via STEAM(IP) so the IP
@@ -857,6 +870,10 @@ class U4UIterationLoop:
                 and bpc_steam > 0
             ):
                 steam_import_mt = float(bpc_steam)
+                logger.info(
+                    "  [STEAM_DIS %s] Crediting %.2f MT import against demand",
+                    ods_material, steam_import_mt
+                )
             # SEZ-PCG / DTA-PCG: SHP Steam_Dis generation is fixed (BPC gen qty
             # from superheater + STEAM(SHP)), not dispatched by steam assets —
             # both plants get most SHP from the SUPERHEATED STEAM FROM
@@ -1989,6 +2006,21 @@ class U4UIterationLoop:
                 if net_key in dispatch_detail:
                     net_prds_demand = max(0.0, float(dispatch_detail[net_key]))
 
+            # SEZ: same guard as DTA / branching plants.  The dispatch's
+            # {grade}_net already credits the STG MP extraction, so a net of
+            # 0 means the PRDS must not generate.  Without this the U4U
+            # cascade fabricates a full-demand PRDS run that injects phantom
+            # higher-grade demand back into the loop.
+            if self.plant_id.upper() == _SEZ_PLANT_ID:
+                dispatch_detail = (steam_result or {}).get("demand_detail") or {}
+                grade = produces_dis.split()[0].lower()
+                out_key = f"{grade}_prds_out"
+                net_key = f"{grade}_net"
+                if out_key in dispatch_detail:
+                    net_prds_demand = max(0.0, float(dispatch_detail[out_key]))
+                elif net_key in dispatch_detail:
+                    net_prds_demand = max(0.0, float(dispatch_detail[net_key]))
+
             logger.debug(
                 "  [CASCADE] %-25s produces=%-20s gross=%10.2f "
                 "byproduct=%10.2f net=%10.2f -> %-20s consumed=%10.2f",
@@ -2942,14 +2974,46 @@ class U4UIterationLoop:
                 if qty > 0 and material:
                     supplies[material] = supplies.get(material, 0.0) + qty
 
-        # 3. Inter-plant STEAM(<grade>) from ODS BPC (positive = import, negative = export).
+        # 3. Inter-plant STEAM(<grade>) exchange (positive = import,
+        #    negative = export).  Whole-JMD runs stash the resolved transfer
+        #    rows on the loop — report the applied flow actually credited to
+        #    the ledger rather than the booked plug.  The booked value stays
+        #    the fallback for materials with no applied flow (residual plugs
+        #    and edges that resolved to zero keep their booked treatment in
+        #    the ledger too) and for individual-CPP runs with no transfers.
         bpc_other = self._lookup_bpc_qty(utility, other_material)
         bpc_other = float(bpc_other) if bpc_other is not None else 0.0
+        import_mt, export_mt = 0.0, 0.0
+        transfers = getattr(self, "steam_transfers", None) or []
+        if transfers:
+            pid = str(self.plant_id).upper()
+            # Transfer rows carry the utility name as material; match
+            # tolerantly ('LLP Steam Dis' vs 'LLP Steam_Dis').
+            util_key = _normalize_for_match(utility)
+            applied_import = sum(
+                float(t.get("quantity", 0.0) or 0.0)
+                for t in transfers
+                if _normalize_for_match(str(t.get("material") or "")) == util_key
+                and str(t.get("receiver") or "").upper() == pid)
+            applied_export = sum(
+                float(t.get("quantity", 0.0) or 0.0)
+                for t in transfers
+                if _normalize_for_match(str(t.get("material") or "")) == util_key
+                and str(t.get("sender") or "").upper() == pid)
+            import_mt = applied_import if applied_import > 0 else max(0.0, bpc_other)
+            # Export netting keeps the booked convention: only utilities
+            # whose plug is negative deduct the export leg from displayed
+            # generation; the amount becomes the applied flow.
+            if bpc_other < 0:
+                export_mt = -applied_export if applied_export > 0 else bpc_other
+        else:
+            import_mt = max(0.0, bpc_other)
+            export_mt = min(0.0, bpc_other)
         other_plant_mt = 0.0
-        if bpc_other > 0:
-            supplies[other_material] = supplies.get(other_material, 0.0) + bpc_other
-        elif bpc_other < 0:
-            other_plant_mt = bpc_other
+        if import_mt > 0:
+            supplies[other_material] = supplies.get(other_material, 0.0) + import_mt
+        elif export_mt < 0:
+            other_plant_mt = export_mt
 
         # 3.5 Non-dispatchable producer inputs (e.g. SUPERHEATED STEAM FROM
         # SUPERHEATER for SHP Steam_Dis in SEZ-PCG).  These are separate

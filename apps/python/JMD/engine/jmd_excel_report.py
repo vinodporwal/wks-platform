@@ -649,6 +649,97 @@ def _write_steam_transfers(ws, result: dict):
 
 
 # ---------------------------------------------------------------------------
+# Sheet 3c — Steam Spinning Margin (per CPP)
+# ---------------------------------------------------------------------------
+
+# Margin is tracked for the three generation CPPs only — the PCG plants
+# have no Aux Boilers / spinning-reserve concept.
+_MARGIN_CPPS = frozenset((
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A",  # DTA-CPP
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271",  # SEZ-CPP
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF",  # C2-CPP
+))
+
+
+def _write_steam_margin(ws, result: dict):
+    """Measured steam spinning margin per CPP (site spec).
+
+    Required margin = the month's largest dispatched generator total-output
+    TPH (trip contingency).  Held margin = sum(Fixed_Max - dispatched TPH)
+    over every AB that has operational hours — an available-but-undispatched
+    AB still contributes its full headroom.  HRSGs never hold margin.
+    """
+    ws.title = "Steam Margin"
+    month, year = result.get("month", 0), result.get("year", 0)
+
+    _section_title(ws, 1,
+                   f"Steam spinning margin - {month}/{year} "
+                   "(measured, not enforced)", 9)
+    _header_row(ws, 1, 2, [
+        "CPP", "Required margin (TPH)", "Largest dispatched asset",
+        "Held via ABs (TPH)", "of which online (TPH)", "Status",
+        "Shortfall (TPH)", "Reason",
+    ])
+
+    row = 3
+    for pid in CPP_ORDER:
+        if pid.upper() not in _MARGIN_CPPS:
+            continue
+        name = cpp_name(pid)
+        p = (result.get("plants") or {}).get(pid)
+        sm = ((p or {}).get("final_steam_result") or {}).get("steam_margin")
+        if sm is None:
+            continue
+
+        req = sm.get("required_tph", 0.0)
+        held = sm.get("held_tph", 0.0)
+        held_on = sm.get("held_online_tph", held)
+        short = sm.get("shortfall_tph", 0.0)
+        if sm.get("maintained"):
+            status, reason = "Maintained", (
+                f"+{held - req:.2f} TPH reserve above requirement")
+        else:
+            status, reason = "Shortfall", (
+                f"insufficient AB headroom - all available ABs can supply "
+                f"at most {held:.2f} TPH above current dispatch")
+        _data_row(ws, row, [
+            name, req, sm.get("required_asset", ""), held, held_on,
+            status, round(short, 2) if short > 0 else "-", reason,
+        ])
+        row += 1
+
+    # Per-CPP Aux Boiler detail block
+    row += 1
+    _section_title(ws, row, "Aux Boiler detail (dispatched vs Fixed_Max)", 6)
+    row += 1
+    _header_row(ws, 1, row, [
+        "CPP", "Aux Boiler", "Online", "Dispatched TPH",
+        "Fixed Max TPH", "Margin held (TPH)",
+    ])
+    row += 1
+    for pid in CPP_ORDER:
+        if pid.upper() not in _MARGIN_CPPS:
+            continue
+        name = cpp_name(pid)
+        p = (result.get("plants") or {}).get(pid)
+        sm = ((p or {}).get("final_steam_result") or {}).get("steam_margin")
+        if not sm:
+            continue
+        for ab in sm.get("abs", []):
+            _data_row(ws, row, [
+                name, ab.get("name", ""),
+                "Y" if ab.get("online") else "standby",
+                ab.get("dispatched_tph", 0.0) if ab.get("online") else "-",
+                ab.get("fixed_max_tph", 0.0),
+                ab.get("margin_tph", 0.0),
+            ])
+            row += 1
+
+    ws.freeze_panes = "A3"
+    _auto_width(ws, min_w=8, max_w=55)
+
+
+# ---------------------------------------------------------------------------
 # Sheet 4 — U4U Summary (per CPP + producer)
 # ---------------------------------------------------------------------------
 
@@ -914,6 +1005,7 @@ def write_jmd_month_report(result: dict, output_folder: str,
     _write_power_pool(wb.create_sheet(), result, bpc_baseline)
     _write_utility_transfers(wb.create_sheet(), result, bpc_rows)
     _write_steam_transfers(wb.create_sheet(), result)
+    _write_steam_margin(wb.create_sheet(), result)
     _write_u4u_summary(wb.create_sheet(), result, bpc_rows)
     # Per-CPP U4U consumption sheets first, then the combined view.
     for pid in CPP_ORDER:

@@ -15,6 +15,7 @@ Usage:
 import sys
 import os
 import argparse
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"))
@@ -22,10 +23,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "scr
 from plant_mapper import PLANT_REGISTRY
 from engine.jmd_orchestrator import run_jmd_month, run_jmd_year, CPP_ORDER, cpp_name
 from engine.jmd_excel_report import write_jmd_month_report
-from engine.report_logger import setup_logging
+from engine.report_logger import (setup_logging, LogCapture,
+                                  save_text_log, RunRecapHandler)
 
 JMD_ROOT = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(JMD_ROOT, "output", "JMD")
+LOG_DIR = os.path.join(JMD_ROOT, "logs", "JMD_ALL_CPP")
 
 _MONTHS_APR_FIRST = ("Apr", "May", "Jun", "Jul", "Aug", "Sep",
                      "Oct", "Nov", "Dec", "Jan", "Feb", "Mar")
@@ -257,10 +260,10 @@ def main(argv=None) -> int:
     parser.add_argument("--no-routing", action="store_true",
                         help="Disable cross-CPP utility demand routing")
     parser.add_argument("--steam-transfers", choices=["off", "bpc", "solve"],
-                        default="bpc",
-                        help="Inter-site steam transfer mode: 'bpc' pins to "
-                             "booked plugs (default), 'solve' derives flows "
-                             "from residuals within bands, 'off' = legacy")
+                        default="solve",
+                        help="Inter-site steam transfer mode: 'solve' derives "
+                             "flows from residuals within bands (default), "
+                             "'bpc' pins to booked plugs, 'off' = legacy")
     parser.add_argument("--legacy-exports", action="store_true",
                         help="Use the old static/recursive export path instead of "
                              "utility routing (A/B comparison)")
@@ -285,36 +288,63 @@ def main(argv=None) -> int:
             print(f"  [BPC] Utility edge baseline unavailable: {e}")
 
     if args.fy is not None:
-        year_result = run_jmd_year(
-            args.fy, include_dynamic_exports=include_exports,
-            route_interplant_utilities=route,
-            steam_transfer_mode=args.steam_transfers,
-        )
-        for key, month_result in year_result["months"].items():
-            _print_power_pool_summary(month_result, bpc_baseline)
-            _print_utility_transfers(month_result, bpc_edges)
-            _print_steam_transfers(month_result)
-            _print_plant_summary(month_result)
-            path = write_jmd_month_report(month_result, OUTPUT_DIR, bpc_baseline)
-            print(f"  Excel saved: {path}")
-        print(f"\nJMD FY {year_result['fy']} complete — "
-              f"{sum(1 for r in year_result['months'].values() if r.get('converged'))}/12 months converged")
+        recap = RunRecapHandler()
+        logging.getLogger().addHandler(recap)
+        try:
+            with LogCapture() as cap:
+                year_result = run_jmd_year(
+                    args.fy, include_dynamic_exports=include_exports,
+                    route_interplant_utilities=route,
+                    steam_transfer_mode=args.steam_transfers,
+                )
+                for key, month_result in year_result["months"].items():
+                    _print_power_pool_summary(month_result, bpc_baseline)
+                    _print_utility_transfers(month_result, bpc_edges)
+                    _print_steam_transfers(month_result)
+                    _print_plant_summary(month_result)
+                    path = write_jmd_month_report(month_result, OUTPUT_DIR, bpc_baseline)
+                    print(f"  Excel saved: {path}")
+                print(f"\nJMD FY {year_result['fy']} complete — "
+                      f"{sum(1 for r in year_result['months'].values() if r.get('converged'))}/12 months converged")
+                recap.recap_text()
+        finally:
+            logging.getLogger().removeHandler(recap)
+        try:
+            from engine.report_logger import save_full_year_log
+            log_path = save_full_year_log(
+                cap.text, "JMD_ALL_CPP", year_result["fy"], LOG_DIR)
+            print(f"  Log saved: {log_path}")
+        except Exception as e:
+            print(f"  [WARNING] Could not save log: {e}")
         return 0
 
-    result = run_jmd_month(
-        args.month, args.year,
-        include_dynamic_exports=include_exports,
-        route_interplant_utilities=route,
-        steam_transfer_mode=args.steam_transfers,
-    )
-    _print_power_pool_summary(result, bpc_baseline)
-    _print_utility_transfers(result, bpc_edges)
-    _print_steam_transfers(result)
-    _print_plant_summary(result)
-    print(f"  Converged: {result['converged']} in {result['iterations_used']} iterations "
-          f"({result['execution_time_seconds']:.1f}s)")
+    recap = RunRecapHandler()
+    logging.getLogger().addHandler(recap)
+    try:
+        with LogCapture() as cap:
+            result = run_jmd_month(
+                args.month, args.year,
+                include_dynamic_exports=include_exports,
+                route_interplant_utilities=route,
+                steam_transfer_mode=args.steam_transfers,
+            )
+            _print_power_pool_summary(result, bpc_baseline)
+            _print_utility_transfers(result, bpc_edges)
+            _print_steam_transfers(result)
+            _print_plant_summary(result)
+            print(f"  Converged: {result['converged']} in {result['iterations_used']} iterations "
+                  f"({result['execution_time_seconds']:.1f}s)")
+            recap.recap_text()
+    finally:
+        logging.getLogger().removeHandler(recap)
     path = write_jmd_month_report(result, OUTPUT_DIR, bpc_baseline)
     print(f"  Excel saved: {path}")
+    try:
+        log_path = save_text_log(cap.text, "JMD_ALL_CPP",
+                                 args.month, args.year, LOG_DIR)
+        print(f"  Log saved: {log_path}")
+    except Exception as e:
+        print(f"  [WARNING] Could not save log: {e}")
     return 0
 
 
