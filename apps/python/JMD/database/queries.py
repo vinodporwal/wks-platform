@@ -2722,3 +2722,48 @@ def fetch_all_plant_data(plant_id: str, month: int, year: int) -> dict:
         "hrsg_heat_rate":     hrsg_df,
         "gt_heat_rate":       gt_df,
     }
+
+
+def persist_spinning_margin(month: int, year: int, margins: dict) -> int:
+    """Upsert maintained-margin values into CPPMonthlySpinningMarginMaintained.
+
+    One row per (AOPYear, MarginType, Plant_FK_Id); the run month's column is
+    written with the model-computed maintained margin (TPH for steam, MW for
+    power).  CreatedOn is stamped on insert, ModifiedOn on every write.
+
+    Args:
+        margins: {(margin_type 'STEAM'|'POWER', plant_id_or_None): float}
+    Returns:
+        number of rows written.
+    """
+    if not margins:
+        return 0
+    fy = _fy_string(month, year)
+    mcol = _MONTH_COL_TITLE.get(month)
+    written = 0
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        for (mtype, pid), value in margins.items():
+            if value is None:
+                continue
+            cur.execute(
+                f"""
+                UPDATE dbo.CPPMonthlySpinningMarginMaintained
+                SET [{mcol}] = ?, ModifiedOn = GETDATE()
+                WHERE AOPYear = ? AND MarginType = ?
+                  AND ((Plant_FK_Id = ?) OR (? IS NULL AND Plant_FK_Id IS NULL))
+                """, float(value), fy, mtype, pid, pid)
+            if cur.rowcount == 0:
+                cur.execute(
+                    f"""
+                    INSERT INTO dbo.CPPMonthlySpinningMarginMaintained
+                        (AOPYear, MarginType, Plant_FK_Id, [{mcol}],
+                         CreatedOn, ModifiedOn)
+                    VALUES (?, ?, ?, ?, GETDATE(), GETDATE())
+                    """, fy, mtype, pid, float(value))
+            written += cur.rowcount if cur.rowcount > 0 else 1
+        conn.commit()
+    finally:
+        conn.close()
+    return written

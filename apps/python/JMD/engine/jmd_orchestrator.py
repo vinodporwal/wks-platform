@@ -704,7 +704,7 @@ def run_jmd_month(month: int, year: int,
             "ext_steam": dict(ext_steam.get(pid, {})),
         }
 
-    return {
+    result = {
         "month": month,
         "year": year,
         "fy": fy,
@@ -719,6 +719,24 @@ def run_jmd_month(month: int, year: int,
         "steam_transfer_mode": steam_transfer_mode,
         "execution_time_seconds": round(time.time() - start, 2),
     }
+
+    try:
+        from database.queries import persist_spinning_margin
+        margins = {}
+        for pid in CPP_ORDER:
+            sm = ((plants.get(pid) or {}).get("final_steam_result") or {}
+                  ).get("steam_margin")
+            if sm is not None:
+                margins[("STEAM", pid)] = sm.get("held_tph")
+        pm = (pool_summary or {}).get("power_margin")
+        if pm is not None:
+            margins[("POWER", None)] = pm.get("held_configured_mw")
+        persist_spinning_margin(month, year, margins)
+    except Exception as exc:
+        logger.warning("  [MARGIN] maintained-margin persistence failed "
+                       "(%s) — run results unaffected", exc)
+
+    return result
 
 
 def run_jmd_year(fy_start_year: int,

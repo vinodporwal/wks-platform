@@ -37,6 +37,7 @@ from database.queries import (
     fetch_steam_asset_operational_hours,
     fetch_steam_asset_priority,
     fetch_steam_asset_capacity_all_months,
+    fetch_import_power,
 )
 from engine.norms_reader_factory import get_norms_reader
 from engine.balancing_integration_v3 import _apply_power_spinning_margin_v2
@@ -1362,8 +1363,17 @@ def dispatch_power_pool(
     }
     total_demand = sum(d["total_mwh"] for d in demand_by_plant.values())
 
+    # 2b. Pool spinning margin — equal per-class GT headroom caps
+    # (required = max(external import MW, largest dispatched GT MW)).
+    margin_info = _solve_pool_power_margin(
+        combined, total_demand,
+        _pool_import_mw(plant_ids, month, year), month, year)
+
     # 3. Single min-first + priority-ramp allocation across the whole pool.
     total_gen = _min_first_allocation(combined, total_demand)
+
+    if margin_info:
+        _log_pool_power_margin(combined, margin_info)
 
     # 4. Split back per CPP and enrich with each plant's own norms/curves.
     results = {}
@@ -1422,6 +1432,7 @@ def dispatch_power_pool(
         "closure_residual_mwh": round(sum(plug_by_plant.values()), 2),
         "transfers": _match_pool_transfers(plug_by_plant),
         "demand_by_plant": demand_by_plant,
+        "power_margin": margin_info,
     }
     _log_pool_dispatch(pool, results, plant_ids, month, year)
 
@@ -2423,6 +2434,200 @@ def _apply_power_spinning_margin(dispatch_assets: list, plant_id: str) -> float:
     Returns the margin value (0.0 if disabled or no margin needed).
     """
     return _apply_power_spinning_margin_v2(dispatch_assets, plant_id)
+
+
+# ---------------------------------------------------------------------------
+# Pool power spinning margin (site spec)
+# ---------------------------------------------------------------------------
+# Required margin = max(external CTU import MW, largest dispatched GT MW).
+# The margin is enforced by capping every operating GT at
+#     dispatchable = min(month_max, fixed_max - margin_class)
+# where margin_class is EQUAL within each frame class across the whole pool:
+#   Fr9 (fixed_max >= 100 MW): 7-20 MW each
+#   Fr6 (fixed_max <  100 MW): 1-5  MW each
+# Escalation order (site mail): Fr9 margin 7->20 -> Fr6 margin 1->5 ->
+# activate the next-priority GT (op_hours > 0) at min load and rebalance.
+# GTs that are available but not dispatched carry no spinning margin —
+# a cold GT cannot respond to a trip; they are only the activation pool.
+_PWR_MARGIN_FR9 = (7.0, 20.0)
+_PWR_MARGIN_FR6 = (1.0, 5.0)
+_PWR_FR9_MIN_FX = 100.0          # Fr9 units are the ~100-120 MW frame
+_PWR_MARGIN_ACTIVATE_FLOOR = 0.25  # activated GT loads at >= 25% of max
+
+
+def _pwr_margin_class(a) -> str:
+    """'FR9' or 'FR6' for GT assets, None otherwise."""
+    if a.get("asset_type") != "GT":
+        return None
+    fx = a.get("fixed_max_mw") or a.get("max_mw") or 0.0
+    return "FR9" if fx >= _PWR_FR9_MIN_FX else "FR6"
+
+
+def _solve_pool_power_margin(assets: list, total_demand_mwh: float,
+                             import_mw: float, month: int, year: int) -> dict:
+    """Enforce the pool spinning margin on `assets` (mutates max_mw caps and
+    may flag extra GTs online). Returns a margin summary dict for reporting,
+    or None when not applicable.
+    """
+    gts = [a for a in assets if _pwr_margin_class(a) and a["op_hours"] > 0]
+    if len(gts) < 2:
+        return None
+
+    # Baseline dispatch on copies → largest dispatched GT (pre-margin plan)
+    # and the set of GTs the plant intends to run.
+    baseline = [dict(a, dispatched_mw=0.0, dispatched_mwh=0.0) for a in assets]
+    _min_first_allocation(baseline, total_demand_mwh)
+    base_by_id = {a["asset_id"]: a["dispatched_mw"] for a in baseline}
+    largest_gt_mw = max(
+        (base_by_id[a["asset_id"]] for a in baseline
+         if _pwr_margin_class(a)), default=0.0)
+    required_mw = round(max(import_mw, largest_gt_mw), 2)
+
+    online_ids = {a["asset_id"] for a in gts
+                  if base_by_id.get(a["asset_id"], 0.0) > 0
+                  or a.get("mandatory") == 1}
+    activated = []
+    margin9 = _PWR_MARGIN_FR9[0]
+    margin6 = _PWR_MARGIN_FR6[0]
+
+    for _ in range(6):  # bounded escalation: margins, then GT activation
+        on9 = [a for a in gts if a["asset_id"] in online_ids
+               and _pwr_margin_class(a) == "FR9"]
+        on6 = [a for a in gts if a["asset_id"] in online_ids
+               and _pwr_margin_class(a) == "FR6"]
+        n9, n6 = len(on9), len(on6)
+        if not n9 and not n6:
+            break
+
+        # Fr9 first: equal margin across all online Fr9s (Fr6 at min margin)
+        if n9:
+            margin9 = (required_mw - margin6 * n6) / n9
+            margin9 = min(max(margin9, _PWR_MARGIN_FR9[0]),
+                          _PWR_MARGIN_FR9[1])
+        held_cfg = margin9 * n9 + margin6 * n6
+        if held_cfg >= required_mw - 1e-6:
+            break
+
+        # Fr9 maxed → escalate Fr6 equally
+        if n6:
+            margin6 = (required_mw - margin9 * n9) / n6
+            margin6 = min(max(margin6, _PWR_MARGIN_FR6[0]),
+                          _PWR_MARGIN_FR6[1])
+            held_cfg = margin9 * n9 + margin6 * n6
+            if held_cfg >= required_mw - 1e-6:
+                break
+
+        # Still short → activate next-priority GT at min load
+        candidates = sorted(
+            (a for a in gts if a["asset_id"] not in online_ids),
+            key=lambda a: a["priority"])
+        if not candidates:
+            break
+        nxt = candidates[0]
+        floor_mw = max(nxt["min_mw"],
+                       _PWR_MARGIN_ACTIVATE_FLOOR * nxt["max_mw"])
+        nxt["min_mw"] = floor_mw
+        nxt["min_mwh"] = floor_mw * nxt["op_hours"]
+        nxt["mandatory"] = 1
+        online_ids.add(nxt["asset_id"])
+        activated.append(nxt["asset_name"])
+        logger.warning(
+            "  [PWR-MARGIN] margin short — activating %s at %.2f MW min load",
+            nxt["asset_name"], floor_mw)
+
+    # Enforce equal-margin dispatch caps on every online GT.
+    m_by_class = {"FR9": margin9, "FR6": margin6}
+    for a in gts:
+        if a["asset_id"] not in online_ids:
+            continue
+        cls = _pwr_margin_class(a)
+        fx = a.get("fixed_max_mw") or a["max_mw"]
+        cap = min(a["max_mw"], fx - m_by_class[cls])
+        if cap < a["min_mw"]:
+            logger.warning(
+                "  [PWR-MARGIN] %s margin cap %.2f < min %.2f MW — "
+                "holding at min (margin on this unit not achievable)",
+                a["asset_name"], cap, a["min_mw"])
+            cap = a["min_mw"]
+        if "max_mw_uncapped" not in a:
+            a["max_mw_uncapped"] = a["max_mw"]
+        a["max_mw"] = cap
+        a["max_mwh"] = cap * a["op_hours"]
+        a["margin_mw"] = m_by_class[cls]
+
+    return {
+        "required_mw": required_mw,
+        "import_mw": import_mw,
+        "largest_gt_mw": round(largest_gt_mw, 2),
+        "fr9_margin_mw": round(margin9, 2),
+        "fr6_margin_mw": round(margin6, 2),
+        "fr9_units": n9,
+        "fr6_units": n6,
+        "held_configured_mw": round(margin9 * n9 + margin6 * n6, 2),
+        "activated_gts": activated,
+    }
+
+
+def _log_pool_power_margin(assets: list, info: dict) -> None:
+    """Console report: configured vs physically-held pool margin."""
+    if not info:
+        return
+    logger.info("")
+    logger.info("  POOL POWER SPINNING MARGIN  (site spec: equal margin per class)")
+    logger.info("  Required margin: %.2f MW  (CTU import %.2f vs largest GT %.2f)",
+                info["required_mw"], info["import_mw"], info["largest_gt_mw"])
+    logger.info("  Configured: Fr9 %.2f MW each x %d | Fr6 %.2f MW each x %d",
+                info["fr9_margin_mw"], info["fr9_units"],
+                info["fr6_margin_mw"], info["fr6_units"])
+    logger.info("  %-28s  %8s  %8s  %8s  %8s  %8s",
+                "Asset", "Class", "Disp MW", "FixedMax", "Cap MW", "Held MW")
+    logger.info("  %s  %s  %s  %s  %s  %s",
+                "-" * 28, "-" * 8, "-" * 8, "-" * 8, "-" * 8, "-" * 8)
+    held_actual = 0.0
+    for a in assets:
+        cls = _pwr_margin_class(a)
+        if not cls or a.get("margin_mw") is None:
+            continue
+        fx = a.get("fixed_max_mw") or 0.0
+        held = max(0.0, fx - a["dispatched_mw"])
+        held_actual += held
+        logger.info("  %-28s  %8s  %8.2f  %8.2f  %8.2f  %8.2f",
+                    a["asset_name"], cls, a["dispatched_mw"], fx,
+                    a["max_mw"], held)
+    if info["activated_gts"]:
+        logger.info("  Activated for margin: %s", ", ".join(info["activated_gts"]))
+    logger.info("  %s  %8s  %8s  %8s  %8s  %8.2f",
+                "TOTAL HELD", "", "", "", "", held_actual)
+    shortfall = info["required_mw"] - info["held_configured_mw"]
+    if shortfall > 0.01:
+        logger.warning("  ✗ POWER MARGIN SHORTFALL: configured %.2f MW < "
+                       "required %.2f MW (short %.2f)",
+                       info["held_configured_mw"], info["required_mw"],
+                       shortfall)
+    else:
+        logger.info("  ✓ POWER MARGIN MAINTAINED: %.2f MW configured vs "
+                    "required %.2f MW (physical headroom %.2f MW)",
+                    info["held_configured_mw"], info["required_mw"],
+                    held_actual)
+    logger.info("")
+
+
+_pool_import_mw_cache: dict = {}
+
+
+def _pool_import_mw(plant_ids: list, month: int, year: int) -> float:
+    """Pool-wide external import capacity (MW) for the margin contingency —
+    the booked CTU/grid import rate, summed over sources with hours > 0."""
+    key = (tuple(plant_ids), month, year)
+    if key not in _pool_import_mw_cache:
+        total = 0.0
+        for pid in plant_ids:
+            for s in (fetch_import_power(pid, month, year) or {}).get(
+                    "per_source", []):
+                if float(s.get("hours") or 0.0) > 0:
+                    total += float(s.get("capacity_mw") or 0.0)
+        _pool_import_mw_cache[key] = total
+    return _pool_import_mw_cache[key]
 
 
 def _find_linked_gt_asset(hrsg_name: str, power_assets: list) -> dict:

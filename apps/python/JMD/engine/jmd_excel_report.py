@@ -669,7 +669,7 @@ def _write_steam_margin(ws, result: dict):
     over every AB that has operational hours — an available-but-undispatched
     AB still contributes its full headroom.  HRSGs never hold margin.
     """
-    ws.title = "Steam Margin"
+    ws.title = "Steam & Power Margin"
     month, year = result.get("month", 0), result.get("year", 0)
 
     _section_title(ws, 1,
@@ -735,8 +735,83 @@ def _write_steam_margin(ws, result: dict):
             ])
             row += 1
 
+    _write_power_margin_block(ws, row, result, month, year)
+
     ws.freeze_panes = "A3"
     _auto_width(ws, min_w=8, max_w=55)
+
+
+def _write_power_margin_block(ws, row: int, result: dict,
+                              month: int, year: int):
+    """Pool power spinning margin (site spec): required = max(external
+    import MW, largest dispatched GT MW); held = equal per-class margin
+    across every online GT (Fr9 7-20 MW, Fr6 1-5 MW each, enforced as
+    dispatchable = fixed_max - margin)."""
+    pm = ((result.get("power_pool") or {}).get("power_margin")) or {}
+
+    row += 1
+    _section_title(ws, row,
+                   f"Power spinning margin - {month}/{year} "
+                   "(JMD pool, enforced as GT dispatch caps)", 9)
+    row += 1
+    _header_row(ws, 1, row, [
+        "Required margin (MW)", "Basis", "Fr9 margin / unit (MW)",
+        "Fr9 units", "Fr6 margin / unit (MW)", "Fr6 units",
+        "Held configured (MW)", "Status",
+    ])
+    row += 1
+    if pm:
+        held_cfg = pm.get("held_configured_mw", 0.0)
+        req = pm.get("required_mw", 0.0)
+        status = "Maintained" if held_cfg >= req - 0.01 else (
+            f"Shortfall ({req - held_cfg:.2f} MW)")
+        basis = (f"max(CTU import {pm.get('import_mw', 0.0):.2f} MW, "
+                 f"largest dispatched GT {pm.get('largest_gt_mw', 0.0):.2f} MW)")
+        _data_row(ws, row, [
+            req, basis,
+            pm.get("fr9_margin_mw", "-"), pm.get("fr9_units", "-"),
+            pm.get("fr6_margin_mw", "-"), pm.get("fr6_units", "-"),
+            held_cfg, status,
+        ])
+    else:
+        _data_row(ws, row, ["-", "no margin solve (pool GTs < 2)",
+                            "-", "-", "-", "-", "-", "n/a"])
+    row += 2
+
+    _section_title(ws, row, "GT detail (pool-wide, equal margin per class)", 9)
+    row += 1
+    _header_row(ws, 1, row, [
+        "CPP", "GT", "Class", "Status", "Dispatched MW",
+        "Cap MW (max - margin)", "Fixed Max MW", "Margin MW",
+        "Held MW",
+    ])
+    row += 1
+    activated = set(pm.get("activated_gts") or [])
+    for pid in CPP_ORDER:
+        name = cpp_name(pid)
+        p = (result.get("plants") or {}).get(pid) or {}
+        assets = ((p.get("final_power_result") or {}).get("assets")) or []
+        for a in assets:
+            if a.get("asset_type") != "GT":
+                continue
+            m = a.get("margin_mw")
+            fx = a.get("fixed_max_mw") or a.get("max_mw") or 0.0
+            if m is None:
+                status, held = "standby", "-"
+            elif a["asset_name"] in activated:
+                status = "activated"
+                held = round(max(0.0, fx - a["dispatched_mw"]), 2)
+            else:
+                status = "online"
+                held = round(max(0.0, fx - a["dispatched_mw"]), 2)
+            _data_row(ws, row, [
+                name, a["asset_name"],
+                "FR9" if fx >= 100 else "FR6", status,
+                round(a["dispatched_mw"], 2),
+                round(a["max_mw"], 2), fx,
+                round(m, 2) if m is not None else "-", held,
+            ])
+            row += 1
 
 
 # ---------------------------------------------------------------------------
