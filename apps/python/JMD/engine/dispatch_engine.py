@@ -42,8 +42,11 @@ from database.queries import (
 from engine.norms_reader_factory import get_norms_reader
 from engine.balancing_integration_v3 import _apply_power_spinning_margin_v2
 from engine.dta_stg_calc import (
+    calculate_dta_stg_dispatch_point,
     calculate_dta_stg_extraction,
+    dta_stg_condensate_topup,
     get_default_dta_stg_calc,
+    log_dta_stg_dispatch_point,
     log_stg_extraction,
     select_dta_stg_case,
 )
@@ -523,12 +526,18 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
 
         fixed_max_mw = float(cap_row.get("fixed_max", 0) or 0)
 
-        # DTA STG: an extraction STG's MW output is determined by its steam
-        # duty, not the DB nameplate — select the AOP operating case that
-        # covers the required HP/MP extraction and pin the unit at the case
-        # MW (it is a steam-led machine: delivering the required extraction
-        # produces the case's stated power).
+        # DTA STG: a steam-led extraction machine.  The required HP/MP
+        # extraction duty (ODS BPC quantities) fixes the steam side; the
+        # power output is DERIVED from it via the demand-case exergy
+        # baseline (plan §2.4) — it is not pinned to the case's stated MW.
+        #   min_mw = exergy baseline  → unit is mandatory and loaded FIRST,
+        #            before any GT ramp, regardless of its DB priority.
+        #   max_mw = DB nameplate     → remaining headroom is the condensate
+        #            top-up range, exercised LAST (after all GTs are maxed,
+        #            see _min_first_allocation) because condensing steam is
+        #            the most expensive way to make power.
         dta_stg_case = None
+        dta_stg_point = None
         dta_stg_req_hp_tph = 0.0
         dta_stg_req_mp_tph = 0.0
         if plant_id == _DTA_PLANT_ID and atype == "STG":
@@ -537,17 +546,26 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             if req and (req["hp_mt"] > 0 or req["mp_mt"] > 0):
                 dta_stg_req_hp_tph = req["hp_mt"] / op_hours
                 dta_stg_req_mp_tph = req["mp_mt"] / op_hours
+                # Covering case still bounds what the machine can physically
+                # extract (caps the booked extraction below).
                 dta_stg_case = select_dta_stg_case(dta_stg_req_hp_tph, dta_stg_req_mp_tph)
             if dta_stg_case:
-                if abs(max_mw - dta_stg_case["mw"]) / max(max_mw, 1e-9) > 0.05:
+                hp_booked = min(dta_stg_req_hp_tph, dta_stg_case["hp_extraction_tph"])
+                mp_booked = min(dta_stg_req_mp_tph, dta_stg_case["mp_extraction_tph"])
+                dta_stg_point = calculate_dta_stg_dispatch_point(hp_booked, mp_booked)
+                log_dta_stg_dispatch_point(
+                    aname, dta_stg_req_hp_tph, dta_stg_req_mp_tph, dta_stg_point)
+                base_mw = dta_stg_point["baseline_power_mw"]
+                if base_mw > max_mw:
                     logger.warning(
-                        "  [DTA STG] %s: DB max %.2f MW differs from selected Case %s "
-                        "output %.2f MW (req HP %.1f / MP %.1f TPH) — verify DB capacity",
-                        aname, max_mw, dta_stg_case["case_id"], dta_stg_case["mw"],
+                        "  [DTA STG] %s: exergy baseline %.2f MW exceeds DB max "
+                        "%.2f MW (req HP %.1f / MP %.1f TPH) — raising max to "
+                        "baseline; verify DB capacity",
+                        aname, base_mw, max_mw,
                         dta_stg_req_hp_tph, dta_stg_req_mp_tph,
                     )
-                min_mw = dta_stg_case["mw"]
-                max_mw = dta_stg_case["mw"]
+                    max_mw = base_mw
+                min_mw = base_mw
                 mandatory = 1
             elif dta_stg_mw is not None:
                 max_mw = dta_stg_mw
@@ -568,8 +586,12 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             "min_mwh": min_mw * op_hours,
             "max_mwh": max_mwh,
             "dta_stg_case": dta_stg_case,
+            "dta_stg_point": dta_stg_point,
             "dta_stg_req_hp_tph": dta_stg_req_hp_tph,
             "dta_stg_req_mp_tph": dta_stg_req_mp_tph,
+            # Extraction-driven STG: steam-led, mandatory at exergy baseline,
+            # flexes via condensate only after all GTs are exhausted.
+            "stg_extraction_driven": dta_stg_point is not None,
         })
 
     return result
@@ -655,19 +677,32 @@ def _min_first_allocation(dispatch: list, demand_mwh: float) -> float:
                 total_gen += d["dispatched_mwh"]
         remaining = max(0.0, demand_mwh - total_gen)
 
-    # Step 3: Ramp up by priority across all running assets
+    # Step 3: Ramp up by priority across all running assets.
+    # Extraction-driven STGs are steam-led: they already sit at their exergy
+    # baseline from step 1 and their headroom is only available as condensing
+    # top-up.  Per the agreed dispatch order they are exercised LAST — every
+    # non-STG asset ramps by priority first; only the residual after all GTs
+    # are maxed is picked up by raising STG condensate flow.
     if remaining > 0:
         priority_groups = defaultdict(list)
+        stg_flex_groups = defaultdict(list)
         for i, d in enumerate(dispatch):
             if d["dispatched_mwh"] > 0 or d["mandatory"] == 1:
-                priority_groups[d["priority"]].append(i)
+                if d.get("stg_extraction_driven"):
+                    stg_flex_groups[d["priority"]].append(i)
+                else:
+                    priority_groups[d["priority"]].append(i)
 
-        # Ramp up in priority order (ascending = highest priority first)
-        for pri in sorted(priority_groups.keys()):
+        ordered_groups = (
+            [priority_groups[pri] for pri in sorted(priority_groups.keys())]
+            + [stg_flex_groups[pri] for pri in sorted(stg_flex_groups.keys())]
+        )
+
+        # Ramp up in priority order (ascending = highest priority first),
+        # extraction-STG condensate headroom deferred to the end.
+        for group_indices in ordered_groups:
             if remaining <= 0:
                 break
-
-            group_indices = priority_groups[pri]
 
             # Calculate headroom per asset (how much MW each can still add)
             group_headroom = []
@@ -1026,10 +1061,66 @@ def _apply_stg_derived_fields(plant_id: str, dispatch: list) -> dict:
                 d["stg_condensate_mt"] = 0.0
                 continue
             case = d.get("dta_stg_case")
-            if case:
+            point = d.get("dta_stg_point")
+            if point and case:
                 hp_tph = min(d.get("dta_stg_req_hp_tph", 0.0), case["hp_extraction_tph"])
                 mp_tph = min(d.get("dta_stg_req_mp_tph", 0.0), case["mp_extraction_tph"])
+                hp_f = case["hp_to_hhp_factor"]
+                mp_f = case["mp_to_hhp_factor"]
+                load_mw = mwh / hours
+                base_mw = point["baseline_power_mw"]
+                # Condensate top-up: power above the exergy baseline is
+                # produced by extra condensing steam  dS = dP * SSC.
+                topup = dta_stg_condensate_topup(
+                    point, max(0.0, load_mw - base_mw))
+                cond_tph = topup["updated_condensate_tph"]
+                hhp_tph = hp_tph + mp_tph + cond_tph
+                net_hhp = (hhp_tph - hp_tph * hp_f - mp_tph * mp_f)
+                ext = {
+                    "shp_inlet_tph": hhp_tph,
+                    "hp_extraction_tph": hp_tph,
+                    "mp_extraction_tph": mp_tph,
+                    "condensate_tph": cond_tph,
+                    "hp_hhp_equivalent_tph": hp_tph * hp_f,
+                    "mp_hhp_equivalent_tph": mp_tph * mp_f,
+                    "net_hhp_tph": net_hhp,
+                    "ssc_kg_kwh": net_hhp / load_mw if load_mw > 0 else point["ssc_kg_kwh"],
+                    "mw": load_mw,
+                    "heat_rate_kcal_kwh": case["heat_rate_kcal_kwh"],
+                    "case_id": point["case_id"],
+                }
+                d["stg_case_id"] = point["case_id"]
+                d["stg_baseline_mw"] = round(base_mw, 4)
+                d["stg_topup_mw"] = round(topup["extra_power_mw"], 4)
+                d["stg_topup_steam_tph"] = round(topup["additional_steam_tph"], 4)
+                d["stg_recalc_power_mw"] = round(topup["recalculated_power_mw"], 4)
+                d["stg_recalc_diff_mw"] = round(
+                    topup["recalculated_power_mw"] - topup["target_power_mw"], 4)
+                if topup["extra_power_mw"] > 0.001:
+                    logger.info(
+                        "  DTA STG %s dispatch: %.4f MW = baseline %.4f + "
+                        "top-up %.4f MW", d["asset_name"], load_mw, base_mw,
+                        topup["extra_power_mw"])
+                    logger.info(
+                        "    Top-up steam: %.4f MW × Case %s SSC %.4f "
+                        "kg/kWh = %.4f TPH extra condensing steam",
+                        topup["extra_power_mw"], point["case_id"],
+                        point["ssc_kg_kwh"], topup["additional_steam_tph"])
+                    logger.info(
+                        "    Condensate %.2f → %.2f TPH; exergy recalc "
+                        "%.4f MW vs target %.4f MW (diff %+.4f MW)",
+                        point["condensate_tph"], cond_tph,
+                        topup["recalculated_power_mw"],
+                        topup["target_power_mw"], d["stg_recalc_diff_mw"])
+                else:
+                    logger.info(
+                        "  DTA STG %s dispatch: %.4f MW at exergy baseline "
+                        "%.4f MW — no condensate top-up",
+                        d["asset_name"], load_mw, base_mw)
+            elif case:
                 cond_tph = case["condensate_tph"]
+                hp_tph = min(d.get("dta_stg_req_hp_tph", 0.0), case["hp_extraction_tph"])
+                mp_tph = min(d.get("dta_stg_req_mp_tph", 0.0), case["mp_extraction_tph"])
                 hp_f = case["hp_to_hhp_factor"]
                 mp_f = case["mp_to_hhp_factor"]
                 ext = {

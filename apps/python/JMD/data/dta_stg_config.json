@@ -19,6 +19,13 @@
   "heat_rate_mp_factor": 718.0,
   "heat_rate_condensate_factor": 45.0,
 
+  "case_selection": {
+    "_note": "Demand-driven case selection (STG_Extraction_Implementation_and_May_Validation_Plan §2.1): case chosen by required HP/MP extraction thresholds; efficiency applied to the exergy baseline; reference SSC used for condensate top-up steam. Boundary: HP exactly 100 is LOW, MP exactly 70 is HIGH.",
+    "hp_high_threshold_tph": 100.0,
+    "mp_high_threshold_tph": 70.0,
+    "efficiency": {"I": 0.85, "II": 0.80, "III": 0.80, "IV": 0.75}
+  },
+
   "_cases_note": "Four operating cases from 'All STG's Norm calculation - Digital AOP.ods' > DTA STG. MW is the stated output for the case; SSC is derived as Net HHP / MW (workbook semantics).",
   "cases": [
     {"id": "I",   "hp_extraction_tph": 145.0, "mp_extraction_tph": 75.0, "condensate_tph": 25.0, "hhp_tph": 245.0, "power_generation_mw": 20.0},
