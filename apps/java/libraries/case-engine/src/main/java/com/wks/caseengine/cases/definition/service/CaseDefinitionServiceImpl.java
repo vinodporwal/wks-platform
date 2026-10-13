@@ -952,9 +952,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		String geCreationDate = outputFormat.format(creationDate);
 
 			// Create request body
+		String normalizedCurrentUserEmail = authenticatedCurrentUserName == null
+				? ""
+				: authenticatedCurrentUserName.replaceFirst("(?i)@in\\.", "@");
          Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("RECOMMENDATION_Des", "EED Headline");
-		requestBody.put("Auther_Domain_Id", authenticatedCurrentUserName);
+		requestBody.put("Auther_Domain_Id", normalizedCurrentUserEmail);
 		requestBody.put("CC_GENRECOM_SEND_TO_ASM_CHR", "NO");
 		requestBody.put("MI_REC_AUTHO_NM_CHR", dataGridEntry.path("recommendationAuthor").asText());
 		requestBody.put("Pending_Approval_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
