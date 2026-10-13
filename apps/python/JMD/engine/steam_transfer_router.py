@@ -351,14 +351,40 @@ def _leg_qty(loops: dict, edge: dict) -> float:
 
 
 def _legs_at(loops: dict, pid: str, material: str) -> float:
-    """Total booked leg volume sitting inside pid's demand for material."""
+    """Booked leg volume genuinely sitting inside pid's demand for material.
+
+    A leg can only offset demand that actually contains it — legs are fused
+    into shared fixed/process demand rows, so the strip is capped by the
+    node's positive initial demand for the material.  Where no such booking
+    exists (e.g. DTA SHP carries no E1/E4 leg rows in May), nothing is
+    stripped and the ledger demand stands on its own.
+    """
     total = 0.0
     for e in STEAM_EDGES:
         if e.get("audit_only") or e["material"] != material:
             continue
         if _leg_node(e) == pid:
             total += _leg_qty(loops, e)
-    return total
+    loop = loops.get(pid)
+    init = 0.0
+    if loop is not None:
+        init = float(
+            (getattr(loop, "_initial_utility_demands", {}) or {})
+            .get(material, 0.0) or 0.0)
+    return min(total, max(0.0, init))
+
+
+def _leg_in_demand(loops: dict, edge: dict) -> float:
+    """This edge's booked leg volume that genuinely sits inside the leg
+    node's demand — the leg quantity bounded by that node's positive
+    initial demand for the edge's material."""
+    loop = loops.get(_leg_node(edge))
+    init = 0.0
+    if loop is not None:
+        init = float(
+            (getattr(loop, "_initial_utility_demands", {}) or {})
+            .get(edge["material"], 0.0) or 0.0)
+    return min(_leg_qty(loops, edge), max(0.0, init))
 
 
 def _is_plug_mat(material: str) -> bool:
@@ -662,15 +688,16 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
                    month: int, year: int, u4u_demands: dict = None):
     """Resolve transfers from this iteration's intrinsic net positions.
 
-    Solve mode = BPC baseline + delta: booked legs stay inside
-    total_demands, so every ext adjustment is (solved − booked):
+    Solve mode is purely residual-driven — quantities come from each
+    node's own demand ledger, not from BPC plug quantities:
 
       obligation node (sender, or transit node for E4's forward flow):
-          ext += qty − leg booked there
+          ext += qty − leg genuinely inside that node's demand
+          (_leg_in_demand bounds the booked leg by the node's positive
+          initial demand; where no leg is booked in the demand rows the
+          full solved qty is applied — no phantom credits)
       receiver:
-          ext += embedded_plug − qty   (negative = import credit;
-          positive = the booked plug over-states the solved import and
-          the receiver must generate the difference)
+          ext += −qty   (the solved import covers that much local demand)
 
     commit edges always run at >= min; pull edges cover receiver deficit;
     push edges evacuate sender surplus; bidirectional links pick direction
@@ -699,19 +726,26 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
 
     # Surplus pool accounting: obligations already committed on the same
     # (node, material) reduce the surplus available to later edges — two
-    # links drawing on the same pool must not double-count it.
+    # links drawing on the same pool must not double-count it.  Inflows
+    # resolved earlier on the same material add to the receiving node's
+    # pool (E1's delivery into the DTA hub is what E4's transit leg then
+    # draws on).
     committed = {}
+    received = {}
 
     def avail_surplus(pid, material):
         return max(0.0, pos(pid, material)
+                   + received.get((pid, material), 0.0)
                    - committed.get((pid, material), 0.0))
 
     def commit_to(pid, material, qty):
         committed[(pid, material)] = \
             committed.get((pid, material), 0.0) + qty
 
-    _priority = {"commit": 0, "pull": 0, "pull_pull": 0,
-                 "push": 1, "push_pull": 1}
+    # Commit/pull obligations first; push_pull links (E1) then feed the
+    # transit pools that pull_pull links (E4) draw on; plain push last.
+    _priority = {"commit": 0, "pull": 0, "push_pull": 1,
+                 "pull_pull": 2, "push": 2}
     ordered = sorted(STEAM_EDGES,
                      key=lambda x: _priority.get(x["kind"], 0))
 
@@ -820,13 +854,17 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
                     f"{min_tph:g} — sending available (site rule)")
         elif kind == "pull_pull":
             # Deficit-matched link (E4): receiver pull floored at min when
-            # the link is active, capped by the supplying pool's surplus
-            # and the link capacity.  Below-min sender supply sends what
-            # is available + warns (site rule).
+            # the link is active, capped by the supplying pool's available
+            # surplus (raw position plus inflows already resolved this
+            # round — the transit hub's own position may be negative while
+            # its pipeline inflow still covers the forward draw) and the
+            # link capacity.  Below-min supply sends what is available +
+            # warns (site rule).
             s_pos, r_pos = pos(pool_node, m), pos(r, m)
-            if r_pos < 0 and s_pos > 0:
+            s_avail = avail_surplus(pool_node, m)
+            if r_pos < 0 and s_avail > 0:
                 want = max(-r_pos, min_mt)
-                qty = min(want, avail_surplus(pool_node, m), cap)
+                qty = min(want, s_avail, cap)
                 if qty < min_mt:
                     warn.append(
                         f"{e['id']} supplying pool surplus {qty/hours:.1f} "
@@ -841,7 +879,7 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
                     warn.append(
                         f"{e['id']} reversed-flow surplus {qty/hours:.1f} "
                         f"TPH < min {min_tph:g} — sending available")
-            elif r_pos < 0 and s_pos <= 0:
+            elif r_pos < 0 and s_avail <= 0:
                 warn.append(
                     f"{e['id']} receiver deficit {-r_pos/hours:.1f} TPH "
                     f"but supplying pool has no surplus — no transfer; "
@@ -856,31 +894,29 @@ def _resolve_solve(loops: dict, prepared: list, steam_results: dict,
         commit_to(pool_node, m, qty)
 
         snd, rcv = direction
+        received[(rcv, m)] = received.get((rcv, m), 0.0) + qty
         fwd = direction == (e["sender"], e["receiver"])
-        # Obligation node carries the export volume as a demand adjustment:
-        # solved qty minus the leg already booked there (delta vs booked).
+        # Obligation node carries the solved export volume as a demand
+        # adjustment, net of the booked leg that genuinely sits inside
+        # its demand inputs (_leg_in_demand is bounded by that node's
+        # positive initial demand — phantom booked legs never credit).
         ob_node = pool_node if fwd else snd
-        leg_ob = _leg_qty(loops, e) if _leg_node(e) == ob_node else 0.0
+        leg_ob = _leg_in_demand(loops, e) if _leg_node(e) == ob_node else 0.0
         _add(ext, ob_node, m, qty - leg_ob)
         # Reversed flow on a transit edge: strip the stale booked leg at
-        # the transit node (it booked the forward direction's volume).
+        # the transit node (same demand-bounded rule).
         if e.get("transit_plant") and not fwd:
-            _add(ext, e["transit_plant"], m, -_leg_qty(loops, e))
-        # Receiver credit delta vs the plug embedded in its booked gen.
-        rcv_loop = loops[rcv]
+            _add(ext, e["transit_plant"], m, -_leg_in_demand(loops, e))
+        # Receiver import credit = the solved flow itself.  Solve mode is
+        # residual-driven: no booked-plug delta is applied here (the plug
+        # is kept only as booked_mt below for BPC comparison reporting).
         credit = 0.0
+        rcv_loop = loops[rcv]
         if m in getattr(rcv_loop, "_all_producers", set()) or \
            m in (getattr(rcv_loop, "_initial_steam_mt", {}) or {}):
-            embedded = _plug_qty(rcv_loop, m) \
-                if e.get("gen_embodies_plug") else 0.0
-            credit = embedded - qty
+            credit = -qty
             if abs(credit) > 1.0:
                 _add(ext, rcv, m, credit)
-                if credit > 0.1 * hours:
-                    warn.append(
-                        f"{e['id']} solved {qty/hours:.1f} TPH < booked "
-                        f"plug {embedded/hours:.1f} — receiver must "
-                        f"generate {credit/hours:.1f} TPH more")
         booked = _leg_qty(loops, e)
         rows.append({
             "edge": e["id"], "kind": kind, "sender": snd, "receiver": rcv,
