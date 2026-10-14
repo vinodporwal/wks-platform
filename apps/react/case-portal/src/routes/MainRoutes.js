@@ -176,6 +176,7 @@ import ShutdownActivitiesPCG from 'components/aop-phase-two/pcg/shutdown-activit
 import ShutdownConsumptionPCG from 'components/aop-phase-two/pcg/shutdown-consumption/index'
 import ShutdownPlanPCG from 'components/aop-phase-two/pcg/shutdown-plan/index'
 import AOPProductionNormsPCG from 'components/aop-phase-two/pcg/aop-production-norms/index'
+import MonthlyProductionNormsPCG from 'components/aop-phase-two/pcg/monthly-production-norms/index'
 
 // PCG Ended
 
@@ -210,6 +211,9 @@ import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget
 import ConsumerDemand from 'components/aop-phase-two/refineryUtility/Consumer_Demand/index'
 
 // Naphthasplitter Ended
+
+// SignOffReport
+import SignOffReport from 'components/aop-phase-two/SignOffReport/index'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -1264,6 +1268,15 @@ export const MainRoutes = (
             ),
           },
 
+          {
+            path: 'production-aop-pcg',
+            element: (
+              <PrivateRoute routeId='production-aop-pcg'>
+                <MonthlyProductionNormsPCG />
+              </PrivateRoute>
+            ),
+          },
+
           //Vertical PCG Ended
           //Vertical Refinery utility Started
           {
@@ -1731,6 +1744,14 @@ export const MainRoutes = (
         element: (
           <PrivateRoute routeId='plant-team'>
             <PlantTeam />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'sign-off-report',
+        element: (
+          <PrivateRoute routeId='sign-off-report'>
+            <SignOffReport />
           </PrivateRoute>
         ),
       },
