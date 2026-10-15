@@ -66,6 +66,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
 import javax.sql.DataSource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Service
@@ -76,6 +77,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	@PersistenceContext
 	private EntityManager entityManager;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
 	@Autowired
 	PlantsRepository plantsRepository;
 	@Autowired
