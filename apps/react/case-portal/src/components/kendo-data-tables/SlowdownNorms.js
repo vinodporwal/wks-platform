@@ -292,7 +292,7 @@ const SlowdownNorms = () => {
 
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `Shutdown Norms Saved Successfully!`,
+          message: `Slowdown Norms Saved Successfully!`,
           severity: 'success',
         })
         unsavedChangesRef.current = {
@@ -310,13 +310,13 @@ const SlowdownNorms = () => {
         setSnackbarOpen(true)
         setLoading(false)
         setSnackbarData({
-          message: `Shutdown Norms not saved!`,
+          message: `Slowdown Norms not saved!`,
           severity: 'error',
         })
         setCalculatebtnClicked(false)
       }
     } catch (error) {
-      console.error(`Error saving Shutdown Norms`, error)
+      console.error(`Error saving Slowdown Norms`, error)
       setLoading(false)
     } finally {
       fetchData(gradeId)
