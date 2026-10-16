@@ -2226,7 +2226,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    headers.add("MeridiumToken", geAPMAcsessToken);
 
 	    Map<String, Object> requestBody = Map.of(
-	        "QueryPath", "Public\\Meridium\\Client\\APIs\\Recommendation_Status_EED",
+	        "QueryPath", "Public\\Meridium\\Client\\APIs\\RecommendationstatusEED",
 	        "Page", 0,
 	        "PageSize", 1000,
 	        "InputsingleParams", Map.of("ID", recommendationNo)
