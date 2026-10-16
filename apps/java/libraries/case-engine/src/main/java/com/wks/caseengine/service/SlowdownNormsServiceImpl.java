@@ -137,7 +137,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER")  && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+			Boolean elastomerJmdHiiR = vertical.getName().equalsIgnoreCase("ELASTOMER")  && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
 			if (vertical.getName().equalsIgnoreCase("MEG")) {
 				String storedProcedure = vertical.getName() + "_" + site.getName() + "_SlowdownNormCalculation";
@@ -154,13 +154,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				String storedProcedure = "vwScrn" + vertical.getName() + "SlowdownNorms";
 
 				objList = getSlowdownNorms(year, plant.getId(), storedProcedure);
-			}else if(elastomer) {
-				String viewName = "vwScrn" + vertical.getName()+site.getName() + "SlowdownNorms";
-				
-				if(gradeId!=null) {
-					 grade=UUID.fromString(gradeId);
-				}
-				objList = getSlowdownNormsWithGrades(year, plant.getId(), viewName,grade);
+			}else if(elastomerJmdHiiR) {
+				String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetSlowdownnorms";
+				return getGradeWiseSlowdownConsumptionDataFromSP(plant.getId().toString(),year, gradeId, storedProcedure);
+
 			} else if (vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("ELASTOMER")
 					|| vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) {
 				String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetSlowdownnorms";
@@ -243,6 +240,73 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			query.setParameter("aopYear", aopYear);
 
 			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public AOPMessageVM getGradeWiseSlowdownConsumptionDataFromSP(String plantId, String aopYear,String gradeId,String storedProcedure) {
+		try {
+			
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @FinYear = :aopYear, @GradeId = :gradeId";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("gradeId", gradeId);
+
+			List<Object[]> objList =  query.getResultList();
+
+			List<SlowdownNormsValueDTO> slowdownNormsValueDTOList = new ArrayList<>();
+			for (Object[] row : objList) {
+				SlowdownNormsValueDTO slowdownNormsValueDTO = new SlowdownNormsValueDTO();
+				slowdownNormsValueDTO.setId(row[0] != null ? row[0].toString() : null);
+				slowdownNormsValueDTO.setSiteFkId(row[1] != null ? row[1].toString() : null);
+				slowdownNormsValueDTO.setPlantFkId(row[2] != null ? row[2].toString() : null);
+				slowdownNormsValueDTO.setVerticalFkId(row[3] != null ? row[3].toString() : null);
+				slowdownNormsValueDTO.setMaterialFkId(row[4] != null ? row[4].toString() : null);
+				slowdownNormsValueDTO.setGradeId(row[5] != null ? row[5].toString() : null);
+				slowdownNormsValueDTO.setApril(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+				slowdownNormsValueDTO.setMay(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+				slowdownNormsValueDTO.setJune(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+				slowdownNormsValueDTO.setJuly(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+				slowdownNormsValueDTO.setAugust(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+				slowdownNormsValueDTO.setSeptember(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+				slowdownNormsValueDTO.setOctober(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+				slowdownNormsValueDTO.setNovember(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+				slowdownNormsValueDTO.setDecember(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+				slowdownNormsValueDTO.setJanuary(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+				slowdownNormsValueDTO.setFebruary(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
+				slowdownNormsValueDTO.setMarch(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
+				slowdownNormsValueDTO.setFinancialYear(row[18] != null ? row[18].toString() : null);
+				slowdownNormsValueDTO.setRemarks(row[19] != null ? row[19].toString() : " ");
+				slowdownNormsValueDTO.setCreatedOn(row[20] != null ? (Date) row[20] : null);
+				slowdownNormsValueDTO.setModifiedOn(row[21] != null ? (Date) row[21] : null);
+				slowdownNormsValueDTO.setMcuVersion(row[22] != null ? row[22].toString() : null);
+				slowdownNormsValueDTO.setUpdatedBy(row[23] != null ? row[23].toString() : null);
+				slowdownNormsValueDTO.setNormParameterTypeId(row[24] != null ? row[24].toString() : null);
+				slowdownNormsValueDTO.setNormParameterTypeName(row[25] != null ? row[25].toString() : null);
+				slowdownNormsValueDTO.setNormParameterTypeDisplayName(row[26] != null ? row[26].toString() : null);
+				slowdownNormsValueDTO.setUOM(row[29] != null ? row[29].toString() : null);
+				slowdownNormsValueDTO.setIsEditable(row[30] != null ? Boolean.valueOf(row[30].toString()) : null);
+				slowdownNormsValueDTO.setProductName(row[31] != null ? row[31].toString() : null);
+
+				slowdownNormsValueDTOList.add(slowdownNormsValueDTO);
+			}
+			Map<String, Object> map = new HashMap<>();
+           AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "slowdown-norms");
+			map.put("slowdownNormsValueDTO", slowdownNormsValueDTOList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
@@ -1378,7 +1442,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
 					boolean cellEditable;
 					if (col == 3) {
-						// Sap Code is always locked — read-only display column
+						// Sap Code is always locked â€” read-only display column
 						cellEditable = false;
 					} else if (colToMonth.containsKey(col)) {
 						cellEditable = isRowEditable && allowedMonths.contains(colToMonth.get(col));
@@ -1540,7 +1604,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
 	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
-	                    // col 3 is Sap Code — read-only display column, not imported
+	                    // col 3 is Sap Code â€” read-only display column, not imported
 	                    dto.setFinancialYear(year);
 	                    if (activeMonths.contains(4))  dto.setApril(getNumericCellValue(row.getCell(4), dto));
 	                    if (activeMonths.contains(5))  dto.setMay(getNumericCellValue(row.getCell(5), dto));
