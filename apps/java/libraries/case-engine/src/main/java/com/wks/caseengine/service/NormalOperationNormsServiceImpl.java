@@ -1598,6 +1598,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	       if (!mcuNormsValueGrades.isEmpty()) {
 	           mcuNormsValueGradeRepository.saveAll(mcuNormsValueGrades);
 
+			   // sp call logic 
+			String procedureName = vertical.getName() + "_" + site.getName() + "_CalculateTotalNorms";
+
+			Integer result = executeCalculateSP(String.valueOf(plantId), year, procedureName);
+
 	           List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
 	           for (ScreenMapping screenMapping : screenMappingList) {
 	               AopCalculation aopCalculation = new AopCalculation();
@@ -1706,6 +1711,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	               newEntity.setPlantFkId(UUID.fromString(plantId));
 	               newEntity.setSiteFkId(site.getId());
 	               newEntity.setVerticalFkId(vertical.getId());
+				   newEntity.setAopCaseId(year + "Proposed Norms");
+				   newEntity.setAopStatus("Saved");
 
 	               aopConsumptionNormGrades.add(newEntity);
 	           }
