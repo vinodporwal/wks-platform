@@ -1656,7 +1656,10 @@ data.put("assignedToLabel", assignedToLabel);
 		StringBuilder query = new StringBuilder(
 			"SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
 			"WHERE c.caseDefinitionId = :caseDefinitionId " +
-			"AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+			"AND (" +
+				"c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+				"OR c.path LIKE CONCAT('%', :assetName, '%') " +
+				"OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
 				"SELECT hn.HierarchyNode_PK_ID " +
 				"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
 				"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
@@ -1703,7 +1706,10 @@ data.put("assignedToLabel", assignedToLabel);
 		StringBuilder query = new StringBuilder(
 			"SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
 			"WHERE c.caseDefinitionId = :caseDefinitionId " +
-			"AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+			"AND (" +
+				"c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+				"OR c.path LIKE CONCAT('%', :assetName, '%') " +
+				"OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
 				"SELECT hn.HierarchyNode_PK_ID " +
 				"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
 				"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
@@ -1904,7 +1910,10 @@ private byte[] generateExcel(List<Case> cases) {
 public List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName) {
 	String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
                     "WHERE c.caseDefinitionId = :caseDefinitionId " +
-                    "AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                    "AND (" +
+				"c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+				"OR c.path LIKE CONCAT('%', :assetName, '%') " +
+				"OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
                     	"SELECT hn.HierarchyNode_PK_ID " +
                     	"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
                     	"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
