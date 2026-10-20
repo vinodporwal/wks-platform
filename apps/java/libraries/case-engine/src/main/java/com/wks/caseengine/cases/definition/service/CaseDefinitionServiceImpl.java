@@ -594,17 +594,53 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
         LocalDateTime now = LocalDateTime.now();
         String currentDate = now.format(formatter);
         OwnerDetails owner = caseData.getOwner();
-        String assetName = "%"+caseData.getAssetName();
+
+    // Resolve asset name using event IDs
+    String assetName = null;
+    List<Long> eventIds = new ArrayList<>();
+
+    if (caseData.getEventIds() != null) {
+        for (String eventId : caseData.getEventIds()) {
+            eventIds.add(Long.parseLong(eventId));
+        }
+    }
+
+    if (!eventIds.isEmpty()) {
+        List<FaultHistoryModel> faultHistories =
+                fetchRecords.getFaultHistories(eventIds);
+
+        if (faultHistories != null && !faultHistories.isEmpty()) {
+            FaultHistoryModel faultHistory = faultHistories.get(0);
+
+            List<EquipmentModel> equipments =
+                    fetchRecords.getEquipmentName(
+                            faultHistory.getEquipmentPkId());
+
+            if (equipments != null && !equipments.isEmpty()) {
+                EquipmentModel equipment = equipments.get(0);
+                assetName = equipment.getName();
+
+                System.out.println("Resolved asset name: " + assetName);
+                System.out.println("Asset display name: "
+                        + equipment.getDisplayName());
+            }
+        }
+    }
+
         String hierarchyNodePKID = "";
-        List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
-        if(hierarychyNodes.size()>=1) {
-            hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
-        }
-        if(assetName!=null) {
 
+    if (assetName != null && !assetName.isBlank()) {
+        List<HierarchyNodesModel> hierarchyNodes =
+                fetchRecords.gethierarchyNodePKID(assetName);
 
-            System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
+        if (hierarchyNodes != null && !hierarchyNodes.isEmpty()) {
+            hierarchyNodePKID =
+                    hierarchyNodes.get(0).getHierarchyNodePkId();
         }
+    } else {
+        System.out.println("Could not resolve asset name for event IDs: " + eventIds);
+    }
+
         caseData.setHierarchyNodePKID(hierarchyNodePKID);
         if (caseData.getAssignedTo() != null) {
             List<com.wks.caseengine.rest.db2.entity.Users> users = new ArrayList<>();
@@ -685,13 +721,6 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
             caseDetails  = caseRepository.save(caseData);
           //  eventEnrichmentLinksService.createEventEnrichmentLinks("", caseDetails.getCaseUrl(), caseData.getEventIds().toString());
 
-
-            List<Long> eventIds = new ArrayList<Long>();
-            for(String eventId: caseData.getEventIds()) {
-                eventIds.add(Long.parseLong(eventId));
-            }
-            System.out.println(eventIds);
-            HashMap<String, String> map = new HashMap<String, String>();
             for(String eventId: caseData.getEventIds()) {
                 CasesAndEventsMapping mapping = new CasesAndEventsMapping();
                 mapping.setCaseNo(caseDetails.getCaseNo());
