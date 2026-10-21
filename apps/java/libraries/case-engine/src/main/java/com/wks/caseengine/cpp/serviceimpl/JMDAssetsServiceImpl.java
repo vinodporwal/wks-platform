@@ -4,9 +4,14 @@ import com.wks.caseengine.dto.JMDOperationalHoursRequestDTO;
 import com.wks.caseengine.cpp.dto.CPPAssetOperationalHoursProjection;
 import com.wks.caseengine.cpp.dto.CPPAssetOperationalHoursResponseDto;
 import com.wks.caseengine.cpp.entity.CPPAssetOperationalHours;
+import com.wks.caseengine.cpp.entity.CPPImportPower;
+import com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours;
 import com.wks.caseengine.cpp.entity.CPPSteamAssetsOperationalHours;
 import com.wks.caseengine.cpp.entity.CppSteamGenerationAsset;
 import com.wks.caseengine.cpp.repository.CPPAssetOperationalHoursRepository;
+import com.wks.caseengine.cpp.repository.CPPImportPowerRepository;
+import com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository;
+import com.wks.caseengine.cpp.repository.CPPSteamAssetsOperationalHoursRepository;
 import com.wks.caseengine.cpp.repository.CppSteamGenerationAssetRepository;
 import com.wks.caseengine.cpp.service.JMDAssetsService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -34,6 +39,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -48,10 +54,13 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     private CPPAssetOperationalHoursRepository repository;
 
     @Autowired
-    private com.wks.caseengine.cpp.repository.CPPSteamAssetsOperationalHoursRepository steamRepository;
+    private CPPSteamAssetsOperationalHoursRepository steamRepository;
 
     @Autowired
-    private com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository importRepository;
+    private CPPPowerSourceOperationHoursRepository importRepository;
+
+    @Autowired
+    private CPPImportPowerRepository importPowerRepository;
 
     @Autowired
     private CppSteamGenerationAssetRepository cppSteamGenerationAssetRepository;
@@ -152,16 +161,59 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                             logger.info("[GET Service] Saved {} carry-forward steam records for plantId: {}", steamClones.size(), plantId);
                         }
 
-                        // Carry-forward Import power source operational hours
-                        List<com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours> prevImportRecords =
+
+                        List<CPPPowerSourceOperationHours> prevImportRecords =
                                 importRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
                         if (!prevImportRecords.isEmpty()) {
                             logger.info("[GET Service] Carrying forward {} import records for plantId: {} from {}", prevImportRecords.size(), plantId, previousYear);
-                            List<com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours> importClones = new ArrayList<>();
-                            for (com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours src : prevImportRecords) {
-                                com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours clone = new com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours();
+
+                            Map<UUID, CPPImportPower> prevSourceById = importPowerRepository
+                                    .findByCppPlantFkIdInAndAopYear(List.of(plantId), previousYear)
+                                    .stream()
+                                    .collect(Collectors.toMap(CPPImportPower::getId, s -> s, (a, b) -> a));
+
+                            // Carried-forward (or manually added) target-year sources keyed by (cppPlantFkId, normParameterFkId)
+                            Map<String, CPPImportPower> targetSourceByKey = importPowerRepository
+                                    .findByCppPlantFkIdInAndAopYear(List.of(plantId), financialYear)
+                                    .stream()
+                                    .collect(Collectors.toMap(
+                                            s -> s.getCppPlantFkId() + "|" + s.getNormParameterFkId(),
+                                            s -> s, (a, b) -> a));
+
+                            // (PowerSource_FK_Id, AOPYear) must stay unique
+                            Set<UUID> existingOpHourTargets = importRepository
+                                    .findByPlantFkIdAndAopYear(plantId, financialYear)
+                                    .stream()
+                                    .map(CPPPowerSourceOperationHours::getAssetFkId)
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toSet());
+
+                            List<CPPPowerSourceOperationHours> importClones = new ArrayList<>();
+                            for (CPPPowerSourceOperationHours src : prevImportRecords) {
+                                CPPImportPower prevSource = prevSourceById.get(src.getAssetFkId());
+                                if (prevSource == null) {
+                                    logger.warn("[GET Service] Skipping orphan import op-hour {} - no CPPImportPower source for PowerSource_FK_Id {}",
+                                            src.getId(), src.getAssetFkId());
+                                    continue;
+                                }
+
+                                String key = prevSource.getCppPlantFkId() + "|" + prevSource.getNormParameterFkId();
+                                CPPImportPower target = targetSourceByKey.get(key);
+                                if (target == null) {
+                                    // Source was not carried forward into this year — its
+                                    // op-hours are not carried forward either
+                                    logger.info("[GET Service] Skipping import op-hour {} - source {} has no {} record",
+                                            src.getId(), src.getAssetFkId(), financialYear);
+                                    continue;
+                                }
+
+                                if (!existingOpHourTargets.add(target.getId())) {
+                                    continue; // op-hours already exist for this source+year
+                                }
+
+                                CPPPowerSourceOperationHours clone = new CPPPowerSourceOperationHours();
                                 clone.setId(UUID.randomUUID());
-                                clone.setAssetFkId(src.getAssetFkId());
+                                clone.setAssetFkId(target.getId());
                                 clone.setApr(src.getApr());
                                 clone.setMay(src.getMay());
                                 clone.setJun(src.getJun());
@@ -183,7 +235,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                                 clone.setModifiedDate(LocalDateTime.now());
                                 importClones.add(clone);
                             }
-                            importRepository.saveAll(importClones);
+                            if (!importClones.isEmpty()) {
+                                importRepository.saveAll(importClones);
+                            }
                             logger.info("[GET Service] Saved {} carry-forward import records for plantId: {}", importClones.size(), plantId);
                         }
                     }
@@ -202,7 +256,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 logger.info("[GET Service] No carry-forward data found. Seeding zero operational hours from asset tables for {}.", financialYear);
 
                 List<CPPAssetOperationalHoursProjection> assetProjections = repository.findAllAssetsForPlants(plantIds);
-                List<CPPAssetOperationalHoursProjection> importAssetProjections = importRepository.findAllImportAssetsForPlants(plantIds);
+                List<CPPAssetOperationalHoursProjection> importAssetProjections = importRepository.findAllImportAssetsForPlants(plantIds, financialYear);
                 logger.info("[GET Service] Found {} power/steam assets, {} import assets to zero-seed.", assetProjections.size(), importAssetProjections.size());
 
                 if (!assetProjections.isEmpty()) {
@@ -254,10 +308,21 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                         logger.info("[GET Service] Inserted {} zero-seeded steam records for {}.", steamSeeds.size(), financialYear);
                     }
 
-                    // Zero-seed Import power source operational hours
-                    List<com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours> importSeeds = new ArrayList<>();
+                    // Zero-seed Import power source operational hours — skip sources
+                    // that already have a row for this year (unique per source+year)
+                    Set<UUID> existingImportOpHours = importRepository
+                            .findByPlantFkIdInAndAopYear(plantIds, financialYear)
+                            .stream()
+                            .map(CPPPowerSourceOperationHours::getAssetFkId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    List<CPPPowerSourceOperationHours> importSeeds = new ArrayList<>();
                     for (CPPAssetOperationalHoursProjection asset : importAssetProjections) {
-                        com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours seed = new com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours();
+                        if (!existingImportOpHours.add(asset.getAssetFkId())) {
+                            continue;
+                        }
+                        CPPPowerSourceOperationHours seed = new CPPPowerSourceOperationHours();
                         seed.setId(UUID.randomUUID());
                         seed.setAssetFkId(asset.getAssetFkId());
                         seed.setApr(0.0);  seed.setMay(0.0);  seed.setJun(0.0);
@@ -628,7 +693,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             return false;
         }
         
-        com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours entity = optionalEntity.get();
+        CPPPowerSourceOperationHours entity = optionalEntity.get();
         entity.setModifiedDate(LocalDateTime.now());
 
         entity.setApr(dto.getApr());
@@ -1512,7 +1577,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 if (optionalEntity.isEmpty()) {
                     return true;
                 }
-                com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours dbEntity = optionalEntity.get();
+                CPPPowerSourceOperationHours dbEntity = optionalEntity.get();
                 dbApr = dbEntity.getApr();
                 dbMay = dbEntity.getMay();
                 dbJun = dbEntity.getJun();

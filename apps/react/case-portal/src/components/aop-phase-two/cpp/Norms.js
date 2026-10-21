@@ -1055,6 +1055,7 @@ const Norms = () => {
       case 'dmd':
       case 'hmd':
       case 'vmd':
+      case 'pmd':
         return <NormsDMD />
       case 'nmd':
       default:
