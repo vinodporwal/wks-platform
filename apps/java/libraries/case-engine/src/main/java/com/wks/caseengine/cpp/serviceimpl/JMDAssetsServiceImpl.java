@@ -23,7 +23,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,8 +64,6 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     @Autowired
     private CppSteamGenerationAssetRepository cppSteamGenerationAssetRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Override
     public AOPMessageVM getOperationalHoursForPlants(
@@ -84,161 +81,41 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     importRepository.findImportOperationalHoursByPlantsAndYear(plantIds, financialYear);
             logger.info("[GET Service] Query returned {} power/steam records, {} import records", projections.size(), importProjections.size());
 
-            // ── TIER 2: CARRY-FORWARD – clone from previous FY if requested FY is empty ──
-            if (projections.isEmpty() && importProjections.isEmpty()) {
-                logger.info("[GET Service] No records found for {}. Attempting carry-forward from previous financial year.", financialYear);
+            // Per-plant coverage — carry-forward only fills missing plants/categories,
+            // never duplicates rows a plant already has for the requested year
+            Set<UUID> plantsWithPower = projections.stream()
+                    .filter(p -> "Power".equals(p.getAssetCategory()))
+                    .map(CPPAssetOperationalHoursProjection::getPlantFkId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Set<UUID> plantsWithSteam = projections.stream()
+                    .filter(p -> "Steam".equals(p.getAssetCategory()))
+                    .map(CPPAssetOperationalHoursProjection::getPlantFkId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Set<UUID> plantsWithImport = importProjections.stream()
+                    .map(CPPAssetOperationalHoursProjection::getPlantFkId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            // ── TIER 2: CARRY-FORWARD – clone from previous FY for missing plants/categories ──
+            if (plantIds.stream().anyMatch(p -> !plantsWithPower.contains(p)
+                    || !plantsWithSteam.contains(p) || !plantsWithImport.contains(p))) {
+                logger.info("[GET Service] Missing records for {}. Attempting carry-forward from previous financial year.", financialYear);
                 String previousYear = derivePreviousFinancialYear(financialYear);
 
                 if (previousYear != null) {
                     logger.info("[GET Service] Looking for carry-forward source in financialYear: {}", previousYear);
 
-                    // Carry-forward Power assets
                     for (UUID plantId : plantIds) {
-                        List<CPPAssetOperationalHours> prevPowerRecords = repository.findByPlantFkIdAndAopYear(plantId, previousYear);
-                        if (!prevPowerRecords.isEmpty()) {
-                            logger.info("[GET Service] Carrying forward {} power records for plantId: {} from {}", prevPowerRecords.size(), plantId, previousYear);
-                            List<CPPAssetOperationalHours> clones = new ArrayList<>();
-                            for (CPPAssetOperationalHours src : prevPowerRecords) {
-                                CPPAssetOperationalHours clone = new CPPAssetOperationalHours();
-                                clone.setId(UUID.randomUUID());
-                                clone.setAssetFkId(src.getAssetFkId());
-                                clone.setApr(src.getApr());
-                                clone.setMay(src.getMay());
-                                clone.setJun(src.getJun());
-                                clone.setJul(src.getJul());
-                                clone.setAug(src.getAug());
-                                clone.setSep(src.getSep());
-                                clone.setOct(src.getOct());
-                                clone.setNov(src.getNov());
-                                clone.setDec(src.getDec());
-                                clone.setJan(src.getJan());
-                                clone.setFeb(src.getFeb());
-                                clone.setMar(src.getMar());
-                                clone.setAopYear(financialYear);
-                                clone.setRemarks(src.getRemarks());
-                                clone.setSiteFkId(src.getSiteFkId());
-                                clone.setVerticalFkId(src.getVerticalFkId());
-                                clone.setPlantFkId(src.getPlantFkId());
-                                clone.setCreatedDate(LocalDateTime.now());
-                                clone.setModifiedDate(LocalDateTime.now());
-                                clones.add(clone);
-                            }
-                            repository.saveAll(clones);
-                            logger.info("[GET Service] Saved {} carry-forward power records for plantId: {}", clones.size(), plantId);
+                        if (!plantsWithPower.contains(plantId)) {
+                            carryForwardPowerOpHours(plantId, previousYear, financialYear);
                         }
-
-                        // Carry-forward Steam assets
-                        List<CPPSteamAssetsOperationalHours> prevSteamRecords = steamRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
-                        if (!prevSteamRecords.isEmpty()) {
-                            logger.info("[GET Service] Carrying forward {} steam records for plantId: {} from {}", prevSteamRecords.size(), plantId, previousYear);
-                            List<CPPSteamAssetsOperationalHours> steamClones = new ArrayList<>();
-                            for (CPPSteamAssetsOperationalHours src : prevSteamRecords) {
-                                CPPSteamAssetsOperationalHours clone = new CPPSteamAssetsOperationalHours();
-                                clone.setId(UUID.randomUUID());
-                                clone.setSteamAssetFkId(src.getSteamAssetFkId());
-                                clone.setApr(src.getApr());
-                                clone.setMay(src.getMay());
-                                clone.setJun(src.getJun());
-                                clone.setJul(src.getJul());
-                                clone.setAug(src.getAug());
-                                clone.setSep(src.getSep());
-                                clone.setOct(src.getOct());
-                                clone.setNov(src.getNov());
-                                clone.setDec(src.getDec());
-                                clone.setJan(src.getJan());
-                                clone.setFeb(src.getFeb());
-                                clone.setMar(src.getMar());
-                                clone.setAopYear(financialYear);
-                                clone.setRemarks(src.getRemarks());
-                                clone.setSiteFkId(src.getSiteFkId());
-                                clone.setVerticalFkId(src.getVerticalFkId());
-                                clone.setPlantFkId(src.getPlantFkId());
-                                clone.setCreatedDate(LocalDateTime.now());
-                                clone.setUpdatedDate(LocalDateTime.now());
-                                steamClones.add(clone);
-                            }
-                            steamRepository.saveAll(steamClones);
-                            logger.info("[GET Service] Saved {} carry-forward steam records for plantId: {}", steamClones.size(), plantId);
+                        if (!plantsWithSteam.contains(plantId)) {
+                            carryForwardSteamOpHours(plantId, previousYear, financialYear);
                         }
-
-
-                        List<CPPPowerSourceOperationHours> prevImportRecords =
-                                importRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
-                        if (!prevImportRecords.isEmpty()) {
-                            logger.info("[GET Service] Carrying forward {} import records for plantId: {} from {}", prevImportRecords.size(), plantId, previousYear);
-
-                            Map<UUID, CPPImportPower> prevSourceById = importPowerRepository
-                                    .findByCppPlantFkIdInAndAopYear(List.of(plantId), previousYear)
-                                    .stream()
-                                    .collect(Collectors.toMap(CPPImportPower::getId, s -> s, (a, b) -> a));
-
-                            // Carried-forward (or manually added) target-year sources keyed by (cppPlantFkId, normParameterFkId)
-                            Map<String, CPPImportPower> targetSourceByKey = importPowerRepository
-                                    .findByCppPlantFkIdInAndAopYear(List.of(plantId), financialYear)
-                                    .stream()
-                                    .collect(Collectors.toMap(
-                                            s -> s.getCppPlantFkId() + "|" + s.getNormParameterFkId(),
-                                            s -> s, (a, b) -> a));
-
-                            // (PowerSource_FK_Id, AOPYear) must stay unique
-                            Set<UUID> existingOpHourTargets = importRepository
-                                    .findByPlantFkIdAndAopYear(plantId, financialYear)
-                                    .stream()
-                                    .map(CPPPowerSourceOperationHours::getAssetFkId)
-                                    .filter(Objects::nonNull)
-                                    .collect(Collectors.toSet());
-
-                            List<CPPPowerSourceOperationHours> importClones = new ArrayList<>();
-                            for (CPPPowerSourceOperationHours src : prevImportRecords) {
-                                CPPImportPower prevSource = prevSourceById.get(src.getAssetFkId());
-                                if (prevSource == null) {
-                                    logger.warn("[GET Service] Skipping orphan import op-hour {} - no CPPImportPower source for PowerSource_FK_Id {}",
-                                            src.getId(), src.getAssetFkId());
-                                    continue;
-                                }
-
-                                String key = prevSource.getCppPlantFkId() + "|" + prevSource.getNormParameterFkId();
-                                CPPImportPower target = targetSourceByKey.get(key);
-                                if (target == null) {
-                                    // Source was not carried forward into this year — its
-                                    // op-hours are not carried forward either
-                                    logger.info("[GET Service] Skipping import op-hour {} - source {} has no {} record",
-                                            src.getId(), src.getAssetFkId(), financialYear);
-                                    continue;
-                                }
-
-                                if (!existingOpHourTargets.add(target.getId())) {
-                                    continue; // op-hours already exist for this source+year
-                                }
-
-                                CPPPowerSourceOperationHours clone = new CPPPowerSourceOperationHours();
-                                clone.setId(UUID.randomUUID());
-                                clone.setAssetFkId(target.getId());
-                                clone.setApr(src.getApr());
-                                clone.setMay(src.getMay());
-                                clone.setJun(src.getJun());
-                                clone.setJul(src.getJul());
-                                clone.setAug(src.getAug());
-                                clone.setSep(src.getSep());
-                                clone.setOct(src.getOct());
-                                clone.setNov(src.getNov());
-                                clone.setDec(src.getDec());
-                                clone.setJan(src.getJan());
-                                clone.setFeb(src.getFeb());
-                                clone.setMar(src.getMar());
-                                clone.setAopYear(financialYear);
-                                clone.setRemarks(src.getRemarks());
-                                clone.setSiteFkId(src.getSiteFkId());
-                                clone.setVerticalFkId(src.getVerticalFkId());
-                                clone.setPlantFkId(src.getPlantFkId());
-                                clone.setCreatedDate(LocalDateTime.now());
-                                clone.setModifiedDate(LocalDateTime.now());
-                                importClones.add(clone);
-                            }
-                            if (!importClones.isEmpty()) {
-                                importRepository.saveAll(importClones);
-                            }
-                            logger.info("[GET Service] Saved {} carry-forward import records for plantId: {}", importClones.size(), plantId);
+                        if (!plantsWithImport.contains(plantId)) {
+                            carryForwardImportOpHours(plantId, previousYear, financialYear);
                         }
                     }
 
@@ -251,20 +128,40 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 }
             }
 
-            // ── TIER 3: ZERO-SEED – both FY and previous FY have no data → seed from asset tables ──
-            if (projections.isEmpty() && importProjections.isEmpty()) {
-                logger.info("[GET Service] No carry-forward data found. Seeding zero operational hours from asset tables for {}.", financialYear);
+            // ── TIER 3: ZERO-SEED – plants still missing a category → seed from asset tables ──
+            // (projections/importProjections were re-queried after carry-forward)
+            Set<UUID> coveredPower = projections.stream()
+                    .filter(p -> "Power".equals(p.getAssetCategory()))
+                    .map(CPPAssetOperationalHoursProjection::getPlantFkId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Set<UUID> coveredSteam = projections.stream()
+                    .filter(p -> "Steam".equals(p.getAssetCategory()))
+                    .map(CPPAssetOperationalHoursProjection::getPlantFkId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Set<UUID> coveredImport = importProjections.stream()
+                    .map(CPPAssetOperationalHoursProjection::getPlantFkId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            List<UUID> missingPowerPlants = plantIds.stream().filter(p -> !coveredPower.contains(p)).collect(Collectors.toList());
+            List<UUID> missingSteamPlants = plantIds.stream().filter(p -> !coveredSteam.contains(p)).collect(Collectors.toList());
+            List<UUID> missingImportPlants = plantIds.stream().filter(p -> !coveredImport.contains(p)).collect(Collectors.toList());
+
+            if (!missingPowerPlants.isEmpty() || !missingSteamPlants.isEmpty() || !missingImportPlants.isEmpty()) {
+                logger.info("[GET Service] No carry-forward data for some plants/categories. Seeding zero operational hours for {}.", financialYear);
 
                 List<CPPAssetOperationalHoursProjection> assetProjections = repository.findAllAssetsForPlants(plantIds);
                 List<CPPAssetOperationalHoursProjection> importAssetProjections = importRepository.findAllImportAssetsForPlants(plantIds, financialYear);
                 logger.info("[GET Service] Found {} power/steam assets, {} import assets to zero-seed.", assetProjections.size(), importAssetProjections.size());
 
-                if (!assetProjections.isEmpty()) {
+                {
                     List<CPPAssetOperationalHours>          powerSeeds = new ArrayList<>();
                     List<CPPSteamAssetsOperationalHours>    steamSeeds = new ArrayList<>();
 
                     for (CPPAssetOperationalHoursProjection asset : assetProjections) {
-                        if ("Power".equals(asset.getAssetCategory())) {
+                        if ("Power".equals(asset.getAssetCategory())
+                                && missingPowerPlants.contains(asset.getPlantFkId())) {
                             CPPAssetOperationalHours seed = new CPPAssetOperationalHours();
                             seed.setId(UUID.randomUUID());
                             seed.setAssetFkId(asset.getAssetFkId());
@@ -280,7 +177,8 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                             seed.setCreatedDate(LocalDateTime.now());
                             seed.setModifiedDate(LocalDateTime.now());
                             powerSeeds.add(seed);
-                        } else if ("Steam".equals(asset.getAssetCategory())) {
+                        } else if ("Steam".equals(asset.getAssetCategory())
+                                && missingSteamPlants.contains(asset.getPlantFkId())) {
                             CPPSteamAssetsOperationalHours seed = new CPPSteamAssetsOperationalHours();
                             seed.setId(UUID.randomUUID());
                             seed.setSteamAssetFkId(asset.getAssetFkId());
@@ -319,6 +217,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
                     List<CPPPowerSourceOperationHours> importSeeds = new ArrayList<>();
                     for (CPPAssetOperationalHoursProjection asset : importAssetProjections) {
+                        if (!missingImportPlants.contains(asset.getPlantFkId())) {
+                            continue;
+                        }
                         if (!existingImportOpHours.add(asset.getAssetFkId())) {
                             continue;
                         }
@@ -347,8 +248,6 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     projections = repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
                     importProjections = importRepository.findImportOperationalHoursByPlantsAndYear(plantIds, financialYear);
                     logger.info("[GET Service] After zero-seed, re-query returned {} power/steam records, {} import records for {}.", projections.size(), importProjections.size(), financialYear);
-                } else {
-                    logger.warn("[GET Service] No assets found in asset tables for plantIds: {}. Returning empty response.", plantIds);
                 }
             }
 
@@ -416,6 +315,165 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             logger.warn("[GET Service] Could not parse financial year '{}': {}", financialYear, e.getMessage());
             return null;
         }
+    }
+
+    /** Clones previous-FY power asset operational hours into the target FY for one plant. */
+    private void carryForwardPowerOpHours(UUID plantId, String previousYear, String financialYear) {
+        List<CPPAssetOperationalHours> prevPowerRecords = repository.findByPlantFkIdAndAopYear(plantId, previousYear);
+        if (prevPowerRecords.isEmpty()) return;
+
+        logger.info("[GET Service] Carrying forward {} power records for plantId: {} from {}", prevPowerRecords.size(), plantId, previousYear);
+        List<CPPAssetOperationalHours> clones = new ArrayList<>();
+        for (CPPAssetOperationalHours src : prevPowerRecords) {
+            CPPAssetOperationalHours clone = new CPPAssetOperationalHours();
+            clone.setId(UUID.randomUUID());
+            clone.setAssetFkId(src.getAssetFkId());
+            clone.setApr(src.getApr());
+            clone.setMay(src.getMay());
+            clone.setJun(src.getJun());
+            clone.setJul(src.getJul());
+            clone.setAug(src.getAug());
+            clone.setSep(src.getSep());
+            clone.setOct(src.getOct());
+            clone.setNov(src.getNov());
+            clone.setDec(src.getDec());
+            clone.setJan(src.getJan());
+            clone.setFeb(src.getFeb());
+            clone.setMar(src.getMar());
+            clone.setAopYear(financialYear);
+            clone.setRemarks(src.getRemarks());
+            clone.setSiteFkId(src.getSiteFkId());
+            clone.setVerticalFkId(src.getVerticalFkId());
+            clone.setPlantFkId(src.getPlantFkId());
+            clone.setCreatedDate(LocalDateTime.now());
+            clone.setModifiedDate(LocalDateTime.now());
+            clones.add(clone);
+        }
+        repository.saveAll(clones);
+        logger.info("[GET Service] Saved {} carry-forward power records for plantId: {}", clones.size(), plantId);
+    }
+
+    /** Clones previous-FY steam asset operational hours into the target FY for one plant. */
+    private void carryForwardSteamOpHours(UUID plantId, String previousYear, String financialYear) {
+        List<CPPSteamAssetsOperationalHours> prevSteamRecords = steamRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
+        if (prevSteamRecords.isEmpty()) return;
+
+        logger.info("[GET Service] Carrying forward {} steam records for plantId: {} from {}", prevSteamRecords.size(), plantId, previousYear);
+        List<CPPSteamAssetsOperationalHours> steamClones = new ArrayList<>();
+        for (CPPSteamAssetsOperationalHours src : prevSteamRecords) {
+            CPPSteamAssetsOperationalHours clone = new CPPSteamAssetsOperationalHours();
+            clone.setId(UUID.randomUUID());
+            clone.setSteamAssetFkId(src.getSteamAssetFkId());
+            clone.setApr(src.getApr());
+            clone.setMay(src.getMay());
+            clone.setJun(src.getJun());
+            clone.setJul(src.getJul());
+            clone.setAug(src.getAug());
+            clone.setSep(src.getSep());
+            clone.setOct(src.getOct());
+            clone.setNov(src.getNov());
+            clone.setDec(src.getDec());
+            clone.setJan(src.getJan());
+            clone.setFeb(src.getFeb());
+            clone.setMar(src.getMar());
+            clone.setAopYear(financialYear);
+            clone.setRemarks(src.getRemarks());
+            clone.setSiteFkId(src.getSiteFkId());
+            clone.setVerticalFkId(src.getVerticalFkId());
+            clone.setPlantFkId(src.getPlantFkId());
+            clone.setCreatedDate(LocalDateTime.now());
+            clone.setUpdatedDate(LocalDateTime.now());
+            steamClones.add(clone);
+        }
+        steamRepository.saveAll(steamClones);
+        logger.info("[GET Service] Saved {} carry-forward steam records for plantId: {}", steamClones.size(), plantId);
+    }
+
+    /**
+     * Clones previous-FY import op-hours into the target FY for one plant, re-pointing
+     * each row at the same-year CPPImportPower source (matched by cppPlantFkId +
+     * normParameterFkId). Op-hours join on (PowerSource_FK_Id, AOPYear), so a row is
+     * only carried forward when its source exists in the target year — orphan FKs are
+     * never created.
+     */
+    private void carryForwardImportOpHours(UUID plantId, String previousYear, String financialYear) {
+        List<CPPPowerSourceOperationHours> prevImportRecords =
+                importRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
+        if (prevImportRecords.isEmpty()) return;
+
+        logger.info("[GET Service] Carrying forward {} import records for plantId: {} from {}", prevImportRecords.size(), plantId, previousYear);
+
+        Map<UUID, CPPImportPower> prevSourceById = importPowerRepository
+                .findByCppPlantFkIdInAndAopYear(List.of(plantId), previousYear)
+                .stream()
+                .collect(Collectors.toMap(CPPImportPower::getId, s -> s, (a, b) -> a));
+
+        // Carried-forward (or manually added) target-year sources keyed by (cppPlantFkId, normParameterFkId)
+        Map<String, CPPImportPower> targetSourceByKey = importPowerRepository
+                .findByCppPlantFkIdInAndAopYear(List.of(plantId), financialYear)
+                .stream()
+                .collect(Collectors.toMap(
+                        s -> s.getCppPlantFkId() + "|" + s.getNormParameterFkId(),
+                        s -> s, (a, b) -> a));
+
+        // (PowerSource_FK_Id, AOPYear) must stay unique
+        Set<UUID> existingOpHourTargets = importRepository
+                .findByPlantFkIdAndAopYear(plantId, financialYear)
+                .stream()
+                .map(CPPPowerSourceOperationHours::getAssetFkId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<CPPPowerSourceOperationHours> importClones = new ArrayList<>();
+        for (CPPPowerSourceOperationHours src : prevImportRecords) {
+            CPPImportPower prevSource = prevSourceById.get(src.getAssetFkId());
+            if (prevSource == null) {
+                logger.warn("[GET Service] Skipping orphan import op-hour {} - no CPPImportPower source for PowerSource_FK_Id {}",
+                        src.getId(), src.getAssetFkId());
+                continue;
+            }
+
+            String key = prevSource.getCppPlantFkId() + "|" + prevSource.getNormParameterFkId();
+            CPPImportPower target = targetSourceByKey.get(key);
+            if (target == null) {
+                // Source was not carried forward into this year — its op-hours are not either
+                logger.info("[GET Service] Skipping import op-hour {} - source {} has no {} record",
+                        src.getId(), src.getAssetFkId(), financialYear);
+                continue;
+            }
+
+            if (!existingOpHourTargets.add(target.getId())) {
+                continue; // op-hours already exist for this source+year
+            }
+
+            CPPPowerSourceOperationHours clone = new CPPPowerSourceOperationHours();
+            clone.setId(UUID.randomUUID());
+            clone.setAssetFkId(target.getId());
+            clone.setApr(src.getApr());
+            clone.setMay(src.getMay());
+            clone.setJun(src.getJun());
+            clone.setJul(src.getJul());
+            clone.setAug(src.getAug());
+            clone.setSep(src.getSep());
+            clone.setOct(src.getOct());
+            clone.setNov(src.getNov());
+            clone.setDec(src.getDec());
+            clone.setJan(src.getJan());
+            clone.setFeb(src.getFeb());
+            clone.setMar(src.getMar());
+            clone.setAopYear(financialYear);
+            clone.setRemarks(src.getRemarks());
+            clone.setSiteFkId(src.getSiteFkId());
+            clone.setVerticalFkId(src.getVerticalFkId());
+            clone.setPlantFkId(src.getPlantFkId());
+            clone.setCreatedDate(LocalDateTime.now());
+            clone.setModifiedDate(LocalDateTime.now());
+            importClones.add(clone);
+        }
+        if (!importClones.isEmpty()) {
+            importRepository.saveAll(importClones);
+        }
+        logger.info("[GET Service] Saved {} carry-forward import records for plantId: {}", importClones.size(), plantId);
     }
 
     private CPPAssetOperationalHoursResponseDto mapToDto(CPPAssetOperationalHoursProjection projection) {
@@ -1391,16 +1449,6 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     private void createCell(Row row, int col, String value, CellStyle style) {
         Cell cell = row.createCell(col);
         cell.setCellValue(value != null ? value : "");
-        cell.setCellStyle(style);
-    }
-
-    private void setNumericCell(Row row, int col, Double value, CellStyle style) {
-        Cell cell = row.createCell(col);
-        if (value != null) {
-            cell.setCellValue(value);
-        } else {
-            cell.setCellValue("");
-        }
         cell.setCellStyle(style);
     }
 
