@@ -15,6 +15,8 @@ public interface CPPPowerSourceOperationHoursRepository extends JpaRepository<CP
 
     List<CPPPowerSourceOperationHours> findByPlantFkIdAndAopYear(UUID plantFkId, String aopYear);
 
+    List<CPPPowerSourceOperationHours> findByPlantFkIdInAndAopYear(List<UUID> plantFkIds, String aopYear);
+
     @Query(value = """
         SELECT
             psoh.Id AS id,
@@ -131,11 +133,13 @@ public interface CPPPowerSourceOperationHoursRepository extends JpaRepository<CP
         LEFT JOIN NormParameters np3 WITH(NOLOCK) ON np3.Id = ip.NormParameter_FK_Id
         LEFT JOIN NormParameters unp3 WITH(NOLOCK) ON unp3.Id = ip.Utility_NormParameter_FK_Id
         WHERE ip.CPPPlant_FK_ID IN :plantIds
+        AND ip.AOPYear = :aopYear
 
         ORDER BY plantName, namePrefix, nameNumber, sortDisplayName;
         """, nativeQuery = true)
     List<CPPAssetOperationalHoursProjection> findAllImportAssetsForPlants(
-            @Param("plantIds") List<UUID> plantIds);
+            @Param("plantIds") List<UUID> plantIds,
+            @Param("aopYear") String aopYear);
 
     void deleteByAssetFkId(UUID assetFkId);
 }
