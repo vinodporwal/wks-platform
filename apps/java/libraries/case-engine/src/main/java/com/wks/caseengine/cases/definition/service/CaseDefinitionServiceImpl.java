@@ -619,6 +619,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
             if (equipments != null && !equipments.isEmpty()) {
                 EquipmentModel equipment = equipments.get(0);
                 assetName = equipment.getName();
+                caseData.setAssetName(assetName);
 
                 System.out.println("Resolved asset name: " + assetName);
                 System.out.println("Asset display name: "
@@ -631,7 +632,7 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
     if (assetName != null && !assetName.isBlank()) {
         List<HierarchyNodesModel> hierarchyNodes =
-                fetchRecords.gethierarchyNodePKID(assetName);
+                fetchRecords.gethierarchyNodePKID("%" + assetName + "%");
 
         if (hierarchyNodes != null && !hierarchyNodes.isEmpty()) {
             hierarchyNodePKID =
