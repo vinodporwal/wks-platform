@@ -477,7 +477,7 @@ const PowerGrid = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!loading || dataLoading} />
       <Stack>
         <NestedKendoTable
           columns={nestedColumns}
