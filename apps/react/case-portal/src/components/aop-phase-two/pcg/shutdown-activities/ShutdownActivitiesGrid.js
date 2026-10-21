@@ -321,9 +321,19 @@ const ShutdownActivitiesGrid = () => {
       const end = new Date(row.maintEndDateTime)
       if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
 
+      const effectiveEnd =
+        end > start &&
+        end.getDate() === 1 &&
+        end.getHours() === 0 &&
+        end.getMinutes() === 0 &&
+        end.getSeconds() === 0 &&
+        end.getMilliseconds() === 0
+          ? new Date(end.getTime() - 1)
+          : end
+
       const isSameMonth =
-        start.getMonth() === end.getMonth() &&
-        start.getFullYear() === end.getFullYear()
+        start.getMonth() === effectiveEnd.getMonth() &&
+        start.getFullYear() === effectiveEnd.getFullYear()
 
       if (!isSameMonth) {
         row.isError = true
@@ -418,7 +428,8 @@ const ShutdownActivitiesGrid = () => {
       durationInHrs: (() => {
         const v = findDuration(row)
         if (!v) return null
-        const [h = '00', m = '00'] = String(v).split('.')
+        const delimiter = String(v).includes(':') ? ':' : '.'
+        const [h = '00', m = '00'] = String(v).split(delimiter)
         return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
       })(),
       audityear: AOP_YEAR,
