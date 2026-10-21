@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.coker.dto.CokerConfigurationFilterDto;
+import com.wks.caseengine.coker.dto.ManualEntryFactorsDTO;
 import com.wks.caseengine.coker.service.CokerConfigurationService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -92,5 +93,21 @@ public class CokerConfigurationController {
             @RequestParam String aopYear,
             @RequestParam("file") MultipartFile file) {
         return configurationService.importConfigurationFilterExcel(plantId, aopYear, file);
+    }
+
+    @GetMapping(value = "/manual-entry-factors")
+    public AOPMessageVM getManualEntryFactorsData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return configurationService.getManualEntryFactorsData(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/manual-entry-factors")
+    public AOPMessageVM saveManualEntryFactors(@RequestParam String plantId, @RequestParam String aopYear,
+            @RequestBody List<ManualEntryFactorsDTO> payload, @RequestParam String periodFrom, @RequestParam String periodTo) {
+        List<ManualEntryFactorsDTO> failedList = configurationService.saveManualEntryFactors(plantId, aopYear, payload, periodFrom, periodTo);
+        if(failedList.isEmpty()) {
+            return new AOPMessageVM(200, "Manual entry factors data saved successfully", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data saved", failedList);
+        }
     }
 }
