@@ -772,7 +772,15 @@ private boolean isRemarkValidationPassed(String newValue, String existingValue, 
                 dto.setNormParameterTypeName(row.get("NormParameterTypeDisplayName") != null ? row.get("NormParameterTypeDisplayName").toString() : null);
                 dto.setType(row.get("Type") != null ? row.get("Type").toString() : null);
                 dto.setDisplayOrder(row.get("DisplayOrder") != null ? ((Number) row.get("DisplayOrder")).intValue() : null);
-                dto.setIsEditable(row.get("IsEditable") != null ? ((Number) row.get("IsEditable")).intValue() == 1 : null);
+                boolean isEditable = false;
+                if(row.get("IsEditable") != null) {
+                    if(row.get("IsEditable") instanceof Boolean) {
+                        isEditable = (Boolean) row.get("IsEditable");
+                    } else if(row.get("IsEditable") instanceof Number) {
+                        isEditable = ((Number) row.get("IsEditable")).intValue() == 1;
+                    }
+                }
+                dto.setIsEditable(isEditable);
                 result.add(dto);
             }
 
