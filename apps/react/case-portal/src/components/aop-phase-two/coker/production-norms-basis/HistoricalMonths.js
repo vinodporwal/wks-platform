@@ -111,16 +111,28 @@ const HistoricalMonths = ({ refreshData }) => {
           'Remarks',
           'inEdit',
           'productName',
+          'PiggingStatus',
         ]
         const monthKeys = Object.keys(manualEntryData[0]).filter(
           (key) => !EXCLUDED_KEYS.includes(key),
         )
+        const piggingOptions = (() => {
+          try {
+            const raw = manualEntryData[0]?.PiggingStatus
+            const list = typeof raw === 'string' ? JSON.parse(raw) : raw
+            return Array.isArray(list) && list.length
+              ? list.map((v) => (typeof v === 'object' && v ? v : { value: v, label: v }))
+              : selectOptions
+          } catch {
+            return selectOptions
+          }
+        })()
         const generatedMonthCols = monthKeys.map((key) => ({
           field: key,
           title: key,
           minWidth: 120,
           type: 'select',
-          options: selectOptions,
+          options: piggingOptions,
           displayMode: 'label',
           editable: true,
           format: valueFormat,
