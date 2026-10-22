@@ -104,6 +104,14 @@ const ResinConsumption = () => {
         widthT: 300,
       },
       {
+        field: 'uom',
+        title: 'UOM',
+        editable: false,
+        width: 60,
+        minWidth: 60,
+        widthT: 60,
+      },
+      {
         field: 'value',
         title: 'Value',
         width: 150,
