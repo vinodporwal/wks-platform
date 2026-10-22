@@ -9,11 +9,6 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 
-const UNIT_OPTIONS = [
-  { id: 'MT/Month', displayName: 'MT/Month' },
-  { id: 'TPH', displayName: 'TPH' },
-]
-
 const monthFields = [
   { key: 'april', monthNum: 4 },
   { key: 'may', monthNum: 5 },
@@ -28,42 +23,6 @@ const monthFields = [
   { key: 'feb', monthNum: 2 },
   { key: 'march', monthNum: 3 },
 ]
-
-const getMonthDaysMap = (yearStr) => {
-  if (!yearStr) {
-    return {
-      4: 30,
-      5: 31,
-      6: 30,
-      7: 31,
-      8: 31,
-      9: 30,
-      10: 31,
-      11: 30,
-      12: 31,
-      1: 31,
-      2: 28,
-      3: 31,
-    }
-  }
-  const startYear = parseInt(yearStr.split('-')[0], 10)
-  const nextYear = startYear + 1
-  const isLeap = new Date(nextYear, 1, 29).getDate() === 29
-  return {
-    4: 30,
-    5: 31,
-    6: 30,
-    7: 31,
-    8: 31,
-    9: 30,
-    10: 31,
-    11: 30,
-    12: 31,
-    1: 31,
-    2: isLeap ? 29 : 28,
-    3: 31,
-  }
-}
 
 const MonthlyProductionNormsPCG = () => {
   const keycloak = useSession()
@@ -81,8 +40,6 @@ const MonthlyProductionNormsPCG = () => {
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
-  const [rawRows, setRawRows] = useState([])
-  const [selectedUnit, setSelectedUnit] = useState('MT/Month')
   const [calculationObject, setCalculationObject] = useState([])
 
   const [snackbarData, setSnackbarData] = useState({
@@ -93,87 +50,76 @@ const MonthlyProductionNormsPCG = () => {
 
   const valueFormat = customValueFormatterPhaseTwo(2)
   const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [AOP_YEAR])
-  const monthDays = useMemo(() => getMonthDaysMap(AOP_YEAR), [AOP_YEAR])
 
   // ========================|| Data Transformation (Read-Only) ||======================== //
-  const transformRows = useCallback(
-    (dataList, unit) => {
-      const isTPH = unit === 'TPH'
-      const formattedData = dataList.map((item, index) => {
-        const transformed = {
-          ...item,
-          id: item.id !== undefined && item.id !== null ? item.id : index,
-          idFromApi: item.idFromApi !== undefined ? item.idFromApi : item.id,
-          uom: unit || 'MT/Month',
-          UOM: unit || 'MT/Month',
-          displayName: item.displayName || '',
-          Particulars: item.Particulars || item.displayName || '',
-          normParametersFKId: (
-            item.normParametersFKId ||
-            item.materialFKId ||
-            ''
-          )
-            ?.toString()
-            ?.toLowerCase(),
-          aopRemarks: item.aopRemarks || item.remarks || '',
-          remarks: item.aopRemarks || item.remarks || '',
-          isEditable: false,
-        }
-
-        monthFields.forEach(({ key, monthNum }) => {
-          const rawVal = item[key]
-          if (rawVal !== undefined && rawVal !== null && rawVal !== '') {
-            const num = parseFloat(rawVal)
-            if (isTPH) {
-              const days = monthDays[monthNum] || 30
-              transformed[key] = num ? num / 24 / days : 0
-            } else {
-              transformed[key] = num
-            }
-          } else {
-            transformed[key] = isTPH ? 0 : '0.00'
-          }
-        })
-
-        const total = monthFields.reduce(
-          (sum, { key }) => sum + (parseFloat(transformed[key]) || 0),
-          0,
+  const transformRows = useCallback((dataList) => {
+    const formattedData = dataList.map((item, index) => {
+      const transformed = {
+        ...item,
+        id: item.id !== undefined && item.id !== null ? item.id : index,
+        idFromApi: item.idFromApi !== undefined ? item.idFromApi : item.id,
+        uom: 'MMSCMD',
+        UOM: 'MMSCMD',
+        displayName: item.displayName || '',
+        Particulars: item.Particulars || item.displayName || '',
+        normParametersFKId: (
+          item.normParametersFKId ||
+          item.materialFKId ||
+          ''
         )
-        transformed.averageTPH = total
-
-        return transformed
-      })
-
-      // Add Total Row
-      if (formattedData.length > 0) {
-        const totalsRow = {
-          id: 'total',
-          displayName: 'Total',
-          Particulars: 'Total',
-          uom: unit || 'MT/Month',
-          UOM: unit || 'MT/Month',
-          isEditable: false,
-        }
-
-        monthFields.forEach(({ key }) => {
-          totalsRow[key] = formattedData.reduce(
-            (sum, row) => sum + (parseFloat(row[key]) || 0),
-            0,
-          )
-        })
-
-        totalsRow.averageTPH = monthFields.reduce(
-          (sum, { key }) => sum + (parseFloat(totalsRow[key]) || 0),
-          0,
-        )
-
-        return [...formattedData, totalsRow]
+          ?.toString()
+          ?.toLowerCase(),
+        aopRemarks: item.aopRemarks || item.remarks || '',
+        remarks: item.aopRemarks || item.remarks || '',
+        isEditable: false,
       }
 
-      return formattedData
-    },
-    [monthDays],
-  )
+      monthFields.forEach(({ key }) => {
+        const rawVal = item[key]
+        if (rawVal !== undefined && rawVal !== null && rawVal !== '') {
+          transformed[key] = parseFloat(rawVal)
+        } else {
+          transformed[key] = 0
+        }
+      })
+
+      const total = monthFields.reduce(
+        (sum, { key }) => sum + (parseFloat(transformed[key]) || 0),
+        0,
+      )
+      transformed.averageTPH = total
+
+      return transformed
+    })
+
+    // Add Total Row
+    if (formattedData.length > 0) {
+      const totalsRow = {
+        id: 'total',
+        displayName: 'Total',
+        Particulars: 'Total',
+        uom: 'MMSCMD',
+        UOM: 'MMSCMD',
+        isEditable: false,
+      }
+
+      monthFields.forEach(({ key }) => {
+        totalsRow[key] = formattedData.reduce(
+          (sum, row) => sum + (parseFloat(row[key]) || 0),
+          0,
+        )
+      })
+
+      totalsRow.averageTPH = monthFields.reduce(
+        (sum, { key }) => sum + (parseFloat(totalsRow[key]) || 0),
+        0,
+      )
+
+      return [...formattedData, totalsRow]
+    }
+
+    return formattedData
+  }, [])
 
   // ========================|| Data Fetching ||======================== //
   const fetchData = useCallback(async () => {
@@ -190,7 +136,6 @@ const MonthlyProductionNormsPCG = () => {
       setCalculationObject(response?.data?.aopCalculation || [])
       if (response?.code !== 200 && response?.status !== 200) {
         setRows([])
-        setRawRows([])
         setSnackbarData({
           message: 'Error fetching data. Please try again.',
           severity: 'error',
@@ -224,12 +169,11 @@ const MonthlyProductionNormsPCG = () => {
         Particulars: product.displayName || product.Particulars || product.normParameterDisplayName || '',
         aopRemarks: product.aopRemarks || '',
         remarks: product.aopRemarks || '',
-        uom: selectedUnit || 'MT/Month',
-        UOM: selectedUnit || 'MT/Month',
+        uom: 'MMSCMD',
+        UOM: 'MMSCMD',
       }))
 
-      setRawRows(raw)
-      setRows(transformRows(raw, selectedUnit))
+      setRows(transformRows(raw))
     } catch (error) {
       console.error('Error fetching Production AOP data:', error)
       setSnackbarData({
@@ -240,17 +184,11 @@ const MonthlyProductionNormsPCG = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, selectedUnit, transformRows])
+  }, [PLANT_ID, AOP_YEAR, keycloak, transformRows])
 
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
-
-  useEffect(() => {
-    if (rawRows.length > 0) {
-      setRows(transformRows(rawRows, selectedUnit))
-    }
-  }, [selectedUnit, rawRows, transformRows])
 
   // ========================|| Calculate Handler ||======================== //
   const handleCalculate = useCallback(async () => {
@@ -312,7 +250,7 @@ const MonthlyProductionNormsPCG = () => {
       })),
       {
         field: 'averageTPH',
-        title: `Total (${selectedUnit})`,
+        title: 'Total',
         widthT: 120,
         minWidth: 110,
         type: 'number1',
@@ -320,7 +258,7 @@ const MonthlyProductionNormsPCG = () => {
         format: valueFormat,
       },
     ],
-    [headerMap, valueFormat, selectedUnit],
+    [headerMap, valueFormat],
   )
 
   // ========================|| Permissions (Read-Only) ||======================== //
@@ -339,23 +277,12 @@ const MonthlyProductionNormsPCG = () => {
       showTitleNameBusiness: true,
       showTitle: true,
       titleName: 'Month wise Production plan',
-      showDropdown: true,
+      showDropdown: false,
       showExport: false,
       downloadExcelBtnFromUI: true,
       ExcelName: EXCEL_NAME,
     }),
     [EXCEL_NAME],
-  )
-
-  const dropdownConfig = useMemo(
-    () => ({
-      options: UNIT_OPTIONS,
-      label: 'Unit',
-      placeholder: 'Select Unit',
-      valueKey: 'id',
-      labelKey: 'displayName',
-    }),
-    [],
   )
 
   return (
@@ -369,10 +296,6 @@ const MonthlyProductionNormsPCG = () => {
         title={permissions.titleName}
         permissions={permissions}
         handleCalculate={handleCalculate}
-        dropdownConfig={dropdownConfig}
-        selectedDropdownValue={selectedUnit}
-        setSelectedDropdownValue={setSelectedUnit}
-        handleUnitChange={setSelectedUnit}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
