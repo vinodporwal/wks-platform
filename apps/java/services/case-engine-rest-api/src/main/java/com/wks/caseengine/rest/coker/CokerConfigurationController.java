@@ -32,8 +32,9 @@ public class CokerConfigurationController {
 
     @GetMapping(value = "/production-norms-by-type")
     public AOPMessageVM getConfigurationData(@RequestParam String year, @RequestParam UUID plantFKId,
-            @RequestParam String type, @RequestParam(required = false) String version) {
-        return configurationService.getConfigurationData(year, plantFKId, type, version);
+            @RequestParam String type, @RequestParam(required = false) String version,
+            @RequestParam(required = false) String periodFrom, @RequestParam(required = false) String periodTo) {
+        return configurationService.getConfigurationData(year, plantFKId, type, version, periodFrom, periodTo);
     }
 
     @GetMapping(value = "/historical-pigging-status")

@@ -77,12 +77,37 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
     @Autowired
     private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
-    public AOPMessageVM getConfigurationData(String year, UUID plantFKId, String type, String version) {
+    public AOPMessageVM getConfigurationData(String year, UUID plantFKId, String type, String version,
+            String periodFrom, String periodTo) {
         try {
             String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
             Plants plant = plantsRepository.findById((plantFKId))
                     .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
+          Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+          String storedProcedureName = verticalName + "_" + site.getName()  + "_GetNextAOPPiggingStatus";
+
+            // Attempt stored procedure first (requires periodFrom/periodTo); on any
+            // problem fall back to the existing Java query below.
+            if (periodFrom != null && !periodFrom.isBlank() && periodTo != null && !periodTo.isBlank()
+                    && storedProcedureExists(storedProcedureName)) {
+               
+                    List<Map<String, Object>> spRows = executeStoredProcedure(storedProcedureName,
+                            plantFKId.toString(), year, periodFrom, periodTo);
+                    List<CokerConfigurationDto> spDtoList = new ArrayList<>();
+                    for (Map<String, Object> spRow : spRows) {
+                        spDtoList.add(mapSpRowToDto(spRow));
+                    }
+                    AOPMessageVM spResponse = new AOPMessageVM();
+                    spResponse.setCode(200);
+                    spResponse.setData(spDtoList);
+                    spResponse.setMessage("Data fetched successfully");
+                    return spResponse;
+               
+            }
+
+            // fallback to java query if SP does not exist
             List<Object[]> obj = new ArrayList<>();
             obj = findManualEntryByYearAndPlantFkId(year, plantFKId);
 
@@ -259,15 +284,15 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
                     int yy = Integer.parseInt(parts[1]);
                      fullYear = (yy >= 50) ? (1900 + yy) : (2000 + yy);
 
-                     String sql = "UPDATE HistoricalPigging SET Pigging_Status = ? WHERE Year = ? AND MonthName = ?";
-                     int updated = jdbcTemplate.update(sql, piggingStatus, fullYear, monthName);
+                     String sql = "UPDATE HistoricalPigging SET Pigging_Status = ? WHERE Year = ? AND MonthName = ? And Plant_FK_Id = ? And aopYear = ?";
+                     int updated = jdbcTemplate.update(sql, piggingStatus, fullYear, monthName, plantId, aopYear);
                      totalUpdated += updated;
                 }
                    // update remarks for all entries
                  else if("Remarks".equalsIgnoreCase(key))  {
-                      String sql = "UPDATE HistoricalPigging SET Remarks = ?";
+                      String sql = "UPDATE HistoricalPigging SET Remarks = ? WHERE Plant_FK_Id = ? And aopYear = ?";
 
-                      int updated = jdbcTemplate.update(sql, entry.getValue());
+                      int updated = jdbcTemplate.update(sql, entry.getValue(), plantId, aopYear);
                  }
                   
                 }
@@ -294,6 +319,49 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
         String placeholders = String.join(", ", Collections.nCopies(params.length, "?"));
         String sql = "EXEC " + spName + " " + placeholders;
         return jdbcTemplate.queryForList(sql, params);
+    }
+
+    private boolean storedProcedureExists(String spName) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM sys.procedures WHERE name = ? AND schema_id = SCHEMA_ID('dbo')",
+                    Integer.class, spName);
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private CokerConfigurationDto mapSpRowToDto(Map<String, Object> row) {
+        Map<String, Object> r = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        r.putAll(row);
+
+        CokerConfigurationDto dto = new CokerConfigurationDto();
+        dto.setNormParameterFKId(str(r.get("NormParameter_FK_Id")));
+        dto.setProductName(str(r.get("DisplayName")));
+        dto.setJan(str(r.get("Jan")));
+        dto.setFeb(str(r.get("Feb")));
+        dto.setMar(str(r.get("Mar")));
+        dto.setApr(str(r.get("Apr")));
+        dto.setMay(str(r.get("May")));
+        dto.setJun(str(r.get("Jun")));
+        dto.setJul(str(r.get("Jul")));
+        dto.setAug(str(r.get("Aug")));
+        dto.setSep(str(r.get("Sep")));
+        dto.setOct(str(r.get("Oct")));
+        dto.setNov(str(r.get("Nov")));
+        dto.setDec(str(r.get("Dec")));
+        dto.setRemarks(str(r.get("Remarks")));
+        dto.setAuditYear(str(r.get("AuditYear")));
+        dto.setUOM(str(r.get("UOM")));
+        dto.setNormParameterTypeDisplayName(str(r.get("NormParameterTypeDisplayName")));
+        dto.setType(str(r.get("Type")));
+        dto.setPiggingStatus(str(r.get("PiggingStatus")));
+        return dto;
+    }
+
+    private String str(Object o) {
+        return o != null ? o.toString() : "";
     }
 
     private CokerConfigurationDto mapRowToDto(Object[] row) {
