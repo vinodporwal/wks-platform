@@ -1542,12 +1542,12 @@ return {
       <section class="print-section print-section--compact">
         <h2 class="print-section-title">Value Realization</h2>
         <div class="print-fields">
-          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
+          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory || ''}</p>
           <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss || ''}</p>
           <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost || ''}</p>
           <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost || ''}</p>
-          <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured}</p>
-          <p class="print-field--full"><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
+          <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured || ''}</p>
+          <p class="print-field--full"><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion || ''}</p>
         </div>
       </section>
   `
@@ -2045,18 +2045,18 @@ return {
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged} >
                   <Tab
                     label={t('pages.caseform.tabs.details')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o'}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' }
                     {...a11yProps(0)}
                   />
                   <Tab
                     label={t('pages.caseform.tabs.attachments')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o'}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' }
                     {...a11yProps(1)}
                    
                   />
                   <Tab
                     label={t('pages.caseform.tabs.comments')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o'}
+                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' }
                     {...a11yProps(2)}
                   
                   />
@@ -2136,12 +2136,12 @@ return {
 {console.log('***** formData at render', formData)}
                     
                     {isFormData && (
-                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o' ? 'case-closed' : ''}`}>
+                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${aCase?.status?.name === 'Closed' ? 'case-closed' : ''}`}>
                       <Form
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
                         options={{
-                          readOnly: isCaseViewer || aCase?.status?.name === 'Closed' || isOverdue || aCase?.isDraft === 'o',
+                          readOnly: isCaseViewer || aCase?.status?.name === 'Closed',
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {
