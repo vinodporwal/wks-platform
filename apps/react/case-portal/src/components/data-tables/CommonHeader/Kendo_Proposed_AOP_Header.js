@@ -1,3 +1,5 @@
+import ProposedNumericEditor from 'components/kendo-data-tables/Utilities-Kendo/ProposedNumericEditor'
+
 const normalizeCol = (col, valueFormat) => {
   const isNumeric = col.type === 'number' || col.type === 'numberNonGrey'
 
@@ -47,6 +49,8 @@ const getEnhancedColDefsProposedAOP = ({ valueFormat }) => {
       title: 'Proposed',
       editable: true,
       type: 'numberNonGrey',
+      editor: ProposedNumericEditor,
+      allowNegative: true,
       fixedWidth: 150,
     },
     {
