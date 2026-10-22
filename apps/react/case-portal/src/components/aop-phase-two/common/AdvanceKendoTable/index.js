@@ -1870,6 +1870,8 @@ const AdvanceKendoTable = ({
           { value: '4', label: 'P-4' },
           { value: '5', label: 'P-5' },
           { value: '1', label: 'NP' },
+          { value: '2', label: 'P' },
+          { value: '0', label: 'NR' },
         ]
 
         return (

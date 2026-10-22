@@ -64,8 +64,9 @@ const ManualEntry = ({startDate, endDate, refreshData }) => {
       return Array.isArray(list) && list.length
         ? list.map((v) => {
             const label = typeof v === 'object' && v ? v.label : v
+            const value = typeof v === 'object' && v ? v.value : v
             const matched = selectOptions.find((opt) => opt.label === label)
-            return { value: matched ? matched.value : (v?.value ?? v), label }
+            return { value: value || matched ? matched.value : (v?.value ?? v), label }
           })
         : selectOptions
     } catch {
