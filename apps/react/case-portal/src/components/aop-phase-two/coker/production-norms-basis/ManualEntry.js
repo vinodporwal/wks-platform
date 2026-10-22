@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -10,8 +10,9 @@ import ValueFormatterPhaseTwo, {
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { formatDateForAPI } from 'components/aop-phase-two/common/utilities/helper'
 
-const ManualEntry = ({ refreshData }) => {
+const ManualEntry = ({startDate, endDate, refreshData }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -56,12 +57,29 @@ const ManualEntry = ({ refreshData }) => {
     { field: 'mar', headerIndex: 3 },
   ]
 
-  const columns = [
-    {
-      field: 'id',
-      title: 'Id',
-      // widthT: 250,
-      minWidth: 200,
+  const piggingOptions = useMemo(() => {
+    try {
+      const raw = rows[0]?.piggingStatus || rows[0]?.PiggingStatus
+      const list = typeof raw === 'string' ? JSON.parse(raw) : raw
+      return Array.isArray(list) && list.length
+        ? list.map((v) => {
+            const label = typeof v === 'object' && v ? v.label : v
+            const matched = selectOptions.find((opt) => opt.label === label)
+            return { value: matched ? matched.value : (v?.value ?? v), label }
+          })
+        : selectOptions
+    } catch {
+      return selectOptions
+    }
+  }, [rows])
+
+  const columns = useMemo(() =>
+    [
+      {
+        field: 'id',
+        title: 'Id',
+        // widthT: 250,
+        minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
@@ -100,12 +118,12 @@ const ManualEntry = ({ refreshData }) => {
       // widthT: 100,
       minWidth: 120,
       type: 'select',
-      options: selectOptions,
+      options: piggingOptions,
       displayMode: 'label',
       editable: true,
       format: valueFormat,
     })),
-  ]
+  ], [piggingOptions, headerMap, valueFormat])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -116,12 +134,16 @@ const ManualEntry = ({ refreshData }) => {
   const fetchData = async () => {
     setLoading(true)
     try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
       // Fetch manual entry data from backend API
       const response = await ProductionNormsApiService.getManualEntry(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
         'Manual Entry', // type parameter
+        periodFrom,
+        periodTo,
       )
 
       // Extract data from response - API returns { data: [...], code: 200, message: '...' }

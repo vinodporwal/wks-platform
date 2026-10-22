@@ -400,10 +400,12 @@ async function loadButtonNormCalculation(
  * @param {string} plantFKId - Plant ID
  * @param {string} type - Configuration type
  * @param {string} version - Version (optional)
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
  * @returns {Promise} Manual entry data
  */
-async function getManualEntry(keycloak, year, plantFKId, type, version = '') {
-  const url = `${Config.CaseEngineUrl}/task/production-norms-by-type?year=${year}&plantFKId=${plantFKId}&type=${type}${version ? `&version=${version}` : ''}`
+async function getManualEntry(keycloak, year, plantFKId, type, periodFrom, periodTo, version = '') {
+  const url = `${Config.CaseEngineUrl}/task/production-norms-by-type?year=${year}&plantFKId=${plantFKId}&type=${type}&periodFrom=${periodFrom}&periodTo=${periodTo}${version ? `&version=${version}` : ''}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
