@@ -246,140 +246,162 @@ const SignOffReport = () => {
    * Fetch configuration execution details for StartDate & EndDate,
    * then retrieve the Sign Off Report grid data.
    */
-  const fetchSignOffReport = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) {
-      setColumns([])
-      setRows([])
-      return
-    }
+  const fetchSignOffReport = useCallback(
+    async (isCalculate = false) => {
+      if (!PLANT_ID || !AOP_YEAR) {
+        setColumns([])
+        setRows([])
+        return
+      }
 
-    setLoading(true)
-    try {
-      // 1. Use configuration execution API to get StartDate and EndDate
-      let periodFrom = null
-      let periodTo = null
+      setLoading(true)
+      if (isCalculate) {
+        setSnackbarData({
+          message: 'Calculating...',
+          severity: 'info',
+        })
+        setSnackbarOpen(true)
+      }
 
       try {
-        const configResponse =
-          await HistoricPeriodBasisApiService.getConfigurationExecutionDetails(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
+        // 1. Use configuration execution API to get StartDate and EndDate
+        let periodFrom = null
+        let periodTo = null
+
+        try {
+          const configResponse =
+            await HistoricPeriodBasisApiService.getConfigurationExecutionDetails(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+
+          const configDetails = Array.isArray(configResponse?.data)
+            ? configResponse.data
+            : Array.isArray(configResponse?.data?.data)
+              ? configResponse.data.data
+              : []
+
+          const startDateObj = configDetails.find((d) => d.Name === 'StartDate')
+          const endDateObj = configDetails.find((d) => d.Name === 'EndDate')
+
+          const rawStartDate =
+            startDateObj?.AttributeValue ||
+            startDateObj?.Value ||
+            startDateObj?.apr
+          const rawEndDate =
+            endDateObj?.AttributeValue || endDateObj?.Value || endDateObj?.apr
+
+          periodFrom = formatDateForAPI(rawStartDate)
+          periodTo = formatDateForAPI(rawEndDate)
+        } catch (configErr) {
+          console.warn(
+            'Could not fetch configuration execution details, falling back to AOP year calculation:',
+            configErr,
           )
+        }
 
-        const configDetails = Array.isArray(configResponse?.data)
-          ? configResponse.data
-          : Array.isArray(configResponse?.data?.data)
-            ? configResponse.data.data
-            : []
+        // Fallback to computed dates from AOP year if configuration execution has no records
+        if (!periodFrom || !periodTo) {
+          const fallbackDates = getDatesFromAopYear(AOP_YEAR)
+          if (!periodFrom) periodFrom = fallbackDates.startDate
+          if (!periodTo) periodTo = fallbackDates.endDate
+        }
 
-        const startDateObj = configDetails.find((d) => d.Name === 'StartDate')
-        const endDateObj = configDetails.find((d) => d.Name === 'EndDate')
-
-        const rawStartDate =
-          startDateObj?.AttributeValue ||
-          startDateObj?.Value ||
-          startDateObj?.apr
-        const rawEndDate =
-          endDateObj?.AttributeValue || endDateObj?.Value || endDateObj?.apr
-
-        periodFrom = formatDateForAPI(rawStartDate)
-        periodTo = formatDateForAPI(rawEndDate)
-      } catch (configErr) {
-        console.warn(
-          'Could not fetch configuration execution details, falling back to AOP year calculation:',
-          configErr,
+        // 2. Fetch Sign Off Report with plantId, year, periodFrom, periodTo
+        const response = await SignOffReportApiService.getSignOffReport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          periodFrom,
+          periodTo,
         )
-      }
 
-      // Fallback to computed dates from AOP year if configuration execution has no records
-      if (!periodFrom || !periodTo) {
-        const fallbackDates = getDatesFromAopYear(AOP_YEAR)
-        if (!periodFrom) periodFrom = fallbackDates.startDate
-        if (!periodTo) periodTo = fallbackDates.endDate
-      }
+        const statusCode = response?.code || (response?.status ?? 200)
+        const responseData = response?.data
 
-      // 2. Fetch Sign Off Report with plantId, year, periodFrom, periodTo
-      const response = await SignOffReportApiService.getSignOffReport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        periodFrom,
-        periodTo,
-      )
+        if (statusCode === 200 && responseData) {
+          // Extract the single grid (whether returned directly as object or as first element of array)
+          const singleGrid = Array.isArray(responseData)
+            ? responseData[0]
+            : Array.isArray(responseData?.data)
+              ? responseData.data[0]
+              : responseData
 
-      const statusCode = response?.code || (response?.status ?? 200)
-      const responseData = response?.data
+          if (!singleGrid) {
+            setColumns([])
+            setRows([])
+            setSnackbarData({
+              message:
+                response?.message ||
+                'No records returned for the selected criteria.',
+              severity: 'info',
+            })
+            setSnackbarOpen(true)
+            return
+          }
 
-      if (statusCode === 200 && responseData) {
-        // Extract the single grid (whether returned directly as object or as first element of array)
-        const singleGrid = Array.isArray(responseData)
-          ? responseData[0]
-          : Array.isArray(responseData?.data)
-            ? responseData.data[0]
-            : responseData
+          const rawCols = Array.isArray(singleGrid.columns)
+            ? singleGrid.columns
+            : []
+          const rawRows = Array.isArray(singleGrid.data) ? singleGrid.data : []
 
-        if (!singleGrid) {
+          const enrichedCols = enrichColumns(rawCols)
+          const enrichedRows = normalizeRows(rawRows, enrichedCols)
+          setColumns(enrichedCols)
+          setRows(enrichedRows)
+          setOriginalRows(JSON.parse(JSON.stringify(enrichedRows)))
+          setModifiedCells({})
+
+          if (isCalculate) {
+            setSnackbarData({
+              message: 'Data calculated successfully!',
+              severity: 'success',
+            })
+            setSnackbarOpen(true)
+          }
+        } else {
           setColumns([])
           setRows([])
+          setOriginalRows([])
+          setModifiedCells({})
           setSnackbarData({
             message:
               response?.message ||
-              'No records returned for the selected criteria.',
-            severity: 'info',
+              (isCalculate
+                ? 'Failed to calculate Sign Off Report. Please try again.'
+                : 'Failed to fetch Sign Off Report. Please try again.'),
+            severity: 'error',
           })
           setSnackbarOpen(true)
-          return
         }
-
-        const rawCols = Array.isArray(singleGrid.columns)
-          ? singleGrid.columns
-          : []
-        const rawRows = Array.isArray(singleGrid.data) ? singleGrid.data : []
-
-        const enrichedCols = enrichColumns(rawCols)
-        const enrichedRows = normalizeRows(rawRows, enrichedCols)
-        setColumns(enrichedCols)
-        setRows(enrichedRows)
-        setOriginalRows(JSON.parse(JSON.stringify(enrichedRows)))
-        setModifiedCells({})
-      } else {
+      } catch (error) {
+        console.error('Error fetching Sign Off Report:', error)
         setColumns([])
         setRows([])
         setOriginalRows([])
         setModifiedCells({})
         setSnackbarData({
-          message:
-            response?.message ||
-            'Failed to fetch Sign Off Report. Please try again.',
+          message: isCalculate
+            ? 'Error calculating Sign Off Report data. Please try again.'
+            : 'Error fetching Sign Off Report data. Please verify your connection.',
           severity: 'error',
         })
         setSnackbarOpen(true)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching Sign Off Report:', error)
-      setColumns([])
-      setRows([])
-      setOriginalRows([])
-      setModifiedCells({})
-      setSnackbarData({
-        message:
-          'Error fetching Sign Off Report data. Please verify your connection.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    keycloak,
-    PLANT_ID,
-    AOP_YEAR,
-    formatDateForAPI,
-    getDatesFromAopYear,
-    enrichColumns,
-    normalizeRows,
-  ])
+    },
+    [
+      keycloak,
+      PLANT_ID,
+      AOP_YEAR,
+      formatDateForAPI,
+      getDatesFromAopYear,
+      enrichColumns,
+      normalizeRows,
+    ],
+  )
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remarks ?? '')
@@ -537,6 +559,20 @@ const SignOffReport = () => {
     fetchSignOffReport,
   ])
 
+  /**
+   * Handle Calculate action:
+   * Deletes old rows and calls GET API again to set new calculated data
+   */
+  const handleCalculate = useCallback(async () => {
+    // Delete the old rows
+    setRows([])
+    setOriginalRows([])
+    setModifiedCells({})
+
+    // Call the GET api again to set new data
+    await fetchSignOffReport(true)
+  }, [fetchSignOffReport])
+
   // Fetch report whenever plant or year changes
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -554,6 +590,8 @@ const SignOffReport = () => {
       showAction: true,
       allAction: true,
       saveBtn: true,
+      showCalculate: true,
+      calculateDisabled: !PLANT_ID || !AOP_YEAR || loading,
       showExport: false,
       downloadExcelBtnFromUI: true,
       ExcelName: excelFileName,
@@ -563,7 +601,7 @@ const SignOffReport = () => {
       showNote: Boolean(unitNo),
       note: unitNo ? `(${unitNo})` : '',
     }
-  }, [excelFileName, gridTitle, unitNo])
+  }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading])
 
   return (
     <div>
@@ -595,6 +633,7 @@ const SignOffReport = () => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         saveChanges={saveChanges}
+        handleCalculate={handleCalculate}
         permissions={permissions}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
