@@ -21,12 +21,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 
+import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
+import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 
@@ -201,4 +203,33 @@ public class RefineryUtilityConfigurationController {
 		}
 	}
 
+	@GetMapping("/treatment-vendor-consumption-monthly")
+	public ResponseEntity<AOPMessageVM> getTreatmentVendorConsumptionMonthly(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getTreatmentVendorConsumptionMonthly(year, plantFKId));
+	}
+
+	@PostMapping("/treatment-vendor-consumption-monthly")
+	public ResponseEntity<AOPMessageVM> saveTreatmentVendorConsumptionMonthly(@RequestBody List<TreatmentVendorConsumptionMonthlyDTO> treatmentVendorConsumptionMonthlyDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<TreatmentVendorConsumptionMonthlyDTO> failedList = refineryUtilityConfigurationService.saveTreatmentVendorConsumptionMonthly(year, plantFKId, treatmentVendorConsumptionMonthlyDTOList);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
+
+	@GetMapping("/commodity-chemicals-consumption-monthly")
+	public ResponseEntity<AOPMessageVM> getCommodityChemicalsConsumptionMonthly(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getCommodityChemicalsConsumptionMonthly(year, plantFKId));
+	}
+
+	@PostMapping("/commodity-chemicals-consumption-monthly")
+	public ResponseEntity<AOPMessageVM> saveCommodityChemicalsConsumptionMonthly(@RequestBody List<CommodityChemicalsConsumptionMonthlyDTO> commodityChemicalsConsumptionMonthlyDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<CommodityChemicalsConsumptionMonthlyDTO> failedList = refineryUtilityConfigurationService.saveCommodityChemicalsConsumptionMonthly(year, plantFKId, commodityChemicalsConsumptionMonthlyDTOList);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
 }
