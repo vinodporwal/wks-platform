@@ -43,5 +43,6 @@ public class CokerConfigurationDto {
     private String version;
     private String vertical;
     private String normParamId;
+    private String piggingStatus;
 
 }

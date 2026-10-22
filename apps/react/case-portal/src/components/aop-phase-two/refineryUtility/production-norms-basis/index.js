@@ -21,6 +21,8 @@ import CommoditySelection from './CommoditySelection'
 import OwnerSelection from './OwnerSelection'
 import VendorConsumption from './Vendorconsumption'
 import CommodityConsumption from './CommodityConsumption'
+import ResinConsumption from './ResinConsumption'
+
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -260,6 +262,8 @@ const ProductionNormsBasis = () => {
         return <CommodityConsumption />
       case 'Plant Owner':
         return <OwnerSelection />
+      case 'Resin Consumption':
+        return <ResinConsumption />
       default:
         return null
     }

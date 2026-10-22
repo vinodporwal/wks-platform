@@ -35,7 +35,9 @@ import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
+import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionDTO;
+import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
 import com.wks.caseengine.RefineryUtility.service.RefineryUtilityConfigurationService;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -1445,10 +1447,11 @@ public AOPMessageVM getResinConsumptions(String year, String plantFKId) {
 			ResinConsumptionDTO dto = new ResinConsumptionDTO();
 			dto.setNormParameterId(row[0] != null ? row[0].toString() : null);
 			dto.setDisplayName(row[1] != null ? row[1].toString() : null);
-			dto.setValue(row[2] != null ? parseDouble(row[2]) : null);
-			dto.setRemarks(row[3] != null ? row[3].toString() : null);
-			dto.setAopYear(row[4] != null ? row[4].toString() : null);
-			dto.setPlantId(row[5] != null ? row[5].toString() : null);
+			dto.setUom(row[2] != null ? row[2].toString() : null);
+			dto.setValue(row[3] != null ? parseDouble(row[3]) : null);
+			dto.setRemarks(row[4] != null ? row[4].toString() : null);
+			dto.setAopYear(row[5] != null ? row[5].toString() : null);
+			dto.setPlantId(row[6] != null ? row[6].toString() : null);
 			dtoList.add(dto);
 		}
 
@@ -1517,6 +1520,325 @@ public AOPMessageVM getResinConsumptions(String year, String plantFKId) {
 	}
 
 
+	@Override
+public AOPMessageVM getTreatmentVendorConsumptionMonthly(String year, String plantFKId) {
+	try {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetTreatmentVendorConsumption";
+
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantFKId);
+		query.setParameter("aopYear", year);
+
+		List<Object[]> resultList = query.getResultList();
+		List<TreatmentVendorConsumptionMonthlyDTO> dtoList = new ArrayList<>();
+
+		for (Object[] row : resultList) {
+			TreatmentVendorConsumptionMonthlyDTO dto = new TreatmentVendorConsumptionMonthlyDTO();
+			dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+			dto.setName(row[1] != null ? row[1].toString() : null);
+			dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+			dto.setUom(row[3] != null ? row[3].toString() : null);
+			dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
+			dto.setApril(row[5] != null ? parseDouble(row[5]) : null);
+			dto.setMay(row[6] != null ? parseDouble(row[6]) : null);
+			dto.setJune(row[7] != null ? parseDouble(row[7]) : null);
+			dto.setJuly(row[8] != null ? parseDouble(row[8]) : null);
+			dto.setAugust(row[9] != null ? parseDouble(row[9]) : null);
+			dto.setSeptember(row[10] != null ? parseDouble(row[10]) : null);
+			dto.setOctober(row[11] != null ? parseDouble(row[11]) : null);
+			dto.setNovember(row[12] != null ? parseDouble(row[12]) : null);
+			dto.setDecember(row[13] != null ? parseDouble(row[13]) : null);
+			dto.setJanuary(row[14] != null ? parseDouble(row[14]) : null);
+			dto.setFebruary(row[15] != null ? parseDouble(row[15]) : null);
+			dto.setMarch(row[16] != null ? parseDouble(row[16]) : null);
+			dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+			dto.setRemarks(row[18] != null ? row[18].toString() : null);
+			dto.setDisplayOrder(row[19] != null ? Integer.parseInt(row[19].toString()) : null);
+			Boolean isEditable = null;
+			if (row[20] != null) {
+				if (row[20] instanceof Boolean) {
+					isEditable = (Boolean) row[20];
+				} else if (row[20] instanceof Number) {
+					isEditable = ((Number) row[20]).intValue() == 1;
+				}
+			}
+			dto.setIsEditable(isEditable);
+
+			dtoList.add(dto);
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch treatment vendor consumption data", ex);
+	}
+}
+
+@Transactional 
+@Override
+	public List<TreatmentVendorConsumptionMonthlyDTO> saveTreatmentVendorConsumptionMonthly(String year, String plantFKId,
+			List<TreatmentVendorConsumptionMonthlyDTO> treatmentVendorConsumptionMonthlyDTOList) {
+		try {
+			List<TreatmentVendorConsumptionMonthlyDTO> failedList = new ArrayList<>();
+	
+			for (TreatmentVendorConsumptionMonthlyDTO treatmentVendorConsumptionMonthlyDTO : treatmentVendorConsumptionMonthlyDTOList) {
+				
+				if (treatmentVendorConsumptionMonthlyDTO.getSaveStatus() != null
+						&& treatmentVendorConsumptionMonthlyDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(treatmentVendorConsumptionMonthlyDTO);
+					continue;
+				}
+
+			for(int i = 1; i <= 12; i++) {
+				String attributeValue = getTreatmentVendorConsumptionMonthlyAttributeValue(treatmentVendorConsumptionMonthlyDTO, i);
+				saveTreatmentVendorConsumptionMonthlyInDB(treatmentVendorConsumptionMonthlyDTO, i, year, attributeValue);
+			}
+				
+			
+			if("Failed".equalsIgnoreCase(treatmentVendorConsumptionMonthlyDTO.getSaveStatus())) {
+				failedList.add(treatmentVendorConsumptionMonthlyDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save month wise constants", ex);
+		}
+	}
+
+	public void saveTreatmentVendorConsumptionMonthlyInDB(TreatmentVendorConsumptionMonthlyDTO treatmentVendorConsumptionMonthlyDTO, Integer i, String year, String attributeValue) {
+
+		UUID normParameterFKId = UUID.fromString(treatmentVendorConsumptionMonthlyDTO.getNormParameterFKId());
+		String remark = treatmentVendorConsumptionMonthlyDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue);
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+public String getTreatmentVendorConsumptionMonthlyAttributeValue(TreatmentVendorConsumptionMonthlyDTO treatmentVendorConsumptionMonthlyDTO, Integer i) {
+	switch(i) {
+		case 1:
+			return treatmentVendorConsumptionMonthlyDTO.getJanuary() != null ? treatmentVendorConsumptionMonthlyDTO.getJanuary().toString() : "0.0";
+		case 2:
+			return treatmentVendorConsumptionMonthlyDTO.getFebruary() != null ? treatmentVendorConsumptionMonthlyDTO.getFebruary().toString() : "0.0";
+		case 3:
+			return treatmentVendorConsumptionMonthlyDTO.getMarch() != null ? treatmentVendorConsumptionMonthlyDTO.getMarch().toString() : "0.0";
+		case 4:
+			return treatmentVendorConsumptionMonthlyDTO.getApril() != null ? treatmentVendorConsumptionMonthlyDTO.getApril().toString() : "0.0";
+		case 5:
+			return treatmentVendorConsumptionMonthlyDTO.getMay() != null ? treatmentVendorConsumptionMonthlyDTO.getMay().toString() : "0.0";
+		case 6:
+			return treatmentVendorConsumptionMonthlyDTO.getJune() != null ? treatmentVendorConsumptionMonthlyDTO.getJune().toString() : "0.0";
+		case 7:
+			return treatmentVendorConsumptionMonthlyDTO.getJuly() != null ? treatmentVendorConsumptionMonthlyDTO.getJuly().toString() : "0.0";
+		case 8:
+			return treatmentVendorConsumptionMonthlyDTO.getAugust() != null ? treatmentVendorConsumptionMonthlyDTO.getAugust().toString() : "0.0";
+		case 9:
+			return treatmentVendorConsumptionMonthlyDTO.getSeptember() != null ? treatmentVendorConsumptionMonthlyDTO.getSeptember().toString() : "0.0";
+		case 10:
+			return treatmentVendorConsumptionMonthlyDTO.getOctober() != null ? treatmentVendorConsumptionMonthlyDTO.getOctober().toString() : "0.0";
+		case 11:
+			return treatmentVendorConsumptionMonthlyDTO.getNovember() != null ? treatmentVendorConsumptionMonthlyDTO.getNovember().toString() : "0.0";
+		case 12:
+			return treatmentVendorConsumptionMonthlyDTO.getDecember() != null ? treatmentVendorConsumptionMonthlyDTO.getDecember().toString() : "0.0";
+		default:
+			throw new RuntimeException("Invalid month");
+	}
+}
+
+@Override
+public AOPMessageVM getCommodityChemicalsConsumptionMonthly(String year, String plantFKId) {
+	try {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetCommodityChemicalsConsumption";
+
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantFKId);
+		query.setParameter("aopYear", year);
+
+		List<Object[]> resultList = query.getResultList();
+		List<CommodityChemicalsConsumptionMonthlyDTO> dtoList = new ArrayList<>();
+
+		for (Object[] row : resultList) {
+			CommodityChemicalsConsumptionMonthlyDTO dto = new CommodityChemicalsConsumptionMonthlyDTO();
+			dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+			dto.setName(row[1] != null ? row[1].toString() : null);
+			dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+			dto.setUom(row[3] != null ? row[3].toString() : null);
+			dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
+			dto.setApril(row[5] != null ? parseDouble(row[5]) : null);
+			dto.setMay(row[6] != null ? parseDouble(row[6]) : null);
+			dto.setJune(row[7] != null ? parseDouble(row[7]) : null);
+			dto.setJuly(row[8] != null ? parseDouble(row[8]) : null);
+			dto.setAugust(row[9] != null ? parseDouble(row[9]) : null);
+			dto.setSeptember(row[10] != null ? parseDouble(row[10]) : null);
+			dto.setOctober(row[11] != null ? parseDouble(row[11]) : null);
+			dto.setNovember(row[12] != null ? parseDouble(row[12]) : null);
+			dto.setDecember(row[13] != null ? parseDouble(row[13]) : null);
+			dto.setJanuary(row[14] != null ? parseDouble(row[14]) : null);
+			dto.setFebruary(row[15] != null ? parseDouble(row[15]) : null);
+			dto.setMarch(row[16] != null ? parseDouble(row[16]) : null);
+			dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+			dto.setRemarks(row[18] != null ? row[18].toString() : null);
+			dto.setDisplayOrder(row[19] != null ? Integer.parseInt(row[19].toString()) : null);
+
+			Boolean isEditable = null;
+			if (row[20] != null) {
+				if (row[20] instanceof Boolean) {
+					isEditable = (Boolean) row[20];
+				} else if (row[20] instanceof Number) {
+					isEditable = ((Number) row[20]).intValue() == 1;
+				}
+			}
+			dto.setIsEditable(isEditable);
+			dtoList.add(dto);
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch commodity chemicals consumption data", ex);
+	}
+}
+
+@Transactional 
+@Override
+	public List<CommodityChemicalsConsumptionMonthlyDTO> saveCommodityChemicalsConsumptionMonthly(String year, String plantFKId,
+			List<CommodityChemicalsConsumptionMonthlyDTO> commodityChemicalsConsumptionMonthlyDTOList) {
+		try {
+			List<CommodityChemicalsConsumptionMonthlyDTO> failedList = new ArrayList<>();
+	
+			for (CommodityChemicalsConsumptionMonthlyDTO commodityChemicalsConsumptionMonthlyDTO : commodityChemicalsConsumptionMonthlyDTOList) {
+				
+				if (commodityChemicalsConsumptionMonthlyDTO.getSaveStatus() != null
+						&& commodityChemicalsConsumptionMonthlyDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(commodityChemicalsConsumptionMonthlyDTO);
+					continue;
+				}
+
+			for(int i = 1; i <= 12; i++) {
+				String attributeValue = getCommodityChemicalsConsumptionMonthlyAttributeValue(commodityChemicalsConsumptionMonthlyDTO, i);
+				saveCommodityChemicalsConsumptionMonthlyInDB(commodityChemicalsConsumptionMonthlyDTO, i, year, attributeValue);
+			}
+				
+			
+			if("Failed".equalsIgnoreCase(commodityChemicalsConsumptionMonthlyDTO.getSaveStatus())) {
+				failedList.add(commodityChemicalsConsumptionMonthlyDTO);
+			}
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save month wise constants", ex);
+		}
+	}
+
+	public void saveCommodityChemicalsConsumptionMonthlyInDB(CommodityChemicalsConsumptionMonthlyDTO commodityChemicalsConsumptionMonthlyDTO, Integer i, String year, String attributeValue) {
+
+		UUID normParameterFKId = UUID.fromString(commodityChemicalsConsumptionMonthlyDTO.getNormParameterFKId());
+		String remark = commodityChemicalsConsumptionMonthlyDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(i);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue);
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
+public String getCommodityChemicalsConsumptionMonthlyAttributeValue(CommodityChemicalsConsumptionMonthlyDTO commodityChemicalsConsumptionMonthlyDTO, Integer i) {
+	switch(i) {
+		case 1:
+			return commodityChemicalsConsumptionMonthlyDTO.getJanuary() != null ? commodityChemicalsConsumptionMonthlyDTO.getJanuary().toString() : "0.0";
+		case 2:
+			return commodityChemicalsConsumptionMonthlyDTO.getFebruary() != null ? commodityChemicalsConsumptionMonthlyDTO.getFebruary().toString() : "0.0";
+		case 3:
+			return commodityChemicalsConsumptionMonthlyDTO.getMarch() != null ? commodityChemicalsConsumptionMonthlyDTO.getMarch().toString() : "0.0";
+		case 4:
+			return commodityChemicalsConsumptionMonthlyDTO.getApril() != null ? commodityChemicalsConsumptionMonthlyDTO.getApril().toString() : "0.0";
+		case 5:
+			return commodityChemicalsConsumptionMonthlyDTO.getMay() != null ? commodityChemicalsConsumptionMonthlyDTO.getMay().toString() : "0.0";
+		case 6:
+			return commodityChemicalsConsumptionMonthlyDTO.getJune() != null ? commodityChemicalsConsumptionMonthlyDTO.getJune().toString() : "0.0";
+		case 7:
+			return commodityChemicalsConsumptionMonthlyDTO.getJuly() != null ? commodityChemicalsConsumptionMonthlyDTO.getJuly().toString() : "0.0";
+		case 8:
+			return commodityChemicalsConsumptionMonthlyDTO.getAugust() != null ? commodityChemicalsConsumptionMonthlyDTO.getAugust().toString() : "0.0";
+		case 9:
+			return commodityChemicalsConsumptionMonthlyDTO.getSeptember() != null ? commodityChemicalsConsumptionMonthlyDTO.getSeptember().toString() : "0.0";
+		case 10:
+			return commodityChemicalsConsumptionMonthlyDTO.getOctober() != null ? commodityChemicalsConsumptionMonthlyDTO.getOctober().toString() : "0.0";
+		case 11:
+			return commodityChemicalsConsumptionMonthlyDTO.getNovember() != null ? commodityChemicalsConsumptionMonthlyDTO.getNovember().toString() : "0.0";
+		case 12:
+			return commodityChemicalsConsumptionMonthlyDTO.getDecember() != null ? commodityChemicalsConsumptionMonthlyDTO.getDecember().toString() : "0.0";
+		default:
+			throw new RuntimeException("Invalid month");
+	}
+}
 
 
 }
