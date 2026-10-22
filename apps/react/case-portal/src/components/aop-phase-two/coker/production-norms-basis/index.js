@@ -289,7 +289,13 @@ const ProductionNormsBasisCoker = () => {
       case 'Job Work Avg Norms':
         return <JWAvgNorms />
       case 'Manual Entry':
-        return <ManualEntry refreshData={refreshData} />
+        return (
+          <ManualEntry
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       case 'Manual Entry - Factors':
       case 'Factors':
       case 'Manual Entry Factors':
