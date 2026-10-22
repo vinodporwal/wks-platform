@@ -712,7 +712,7 @@ const KendoDataTablesReports = ({
             editable={col?.editable ? true : false}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: { text: col.editor || NoSpinnerNumericEditor },
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
