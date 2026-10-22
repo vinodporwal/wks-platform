@@ -32,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.coker.dto.CokerConfigurationDto;
 import com.wks.caseengine.coker.dto.CokerConfigurationFilterDto;
+import com.wks.caseengine.coker.dto.ManualEntryFactorsDTO;
 import com.wks.caseengine.coker.service.CokerConfigurationService;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
@@ -47,8 +48,10 @@ import com.wks.caseengine.service.ConfigurationService;
 import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import jakarta.persistence.StoredProcedureQuery;
 
 @Service
 public class CokerConfigurationServiceImpl implements CokerConfigurationService {
@@ -743,4 +746,144 @@ private boolean isRemarkValidationPassed(String newValue, String existingValue, 
             throw new RuntimeException("Failed to import Configuration Filter data", ex);
         }
     }
+
+    @Override
+    public AOPMessageVM getManualEntryFactorsData(String plantId, String aopYear) {
+        try {
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+            String procedureName = vertical.getName() +  "_GetConfigurationFactorsData";
+
+            String sql = "EXEC [" + procedureName + "] ?, ?";
+
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, plantId, aopYear);
+
+            List<ManualEntryFactorsDTO> result = new ArrayList<>();
+            for (Map<String, Object> row : rows) {
+                ManualEntryFactorsDTO dto = new ManualEntryFactorsDTO();
+                dto.setNormParameterFKId(row.get("NormParameter_FK_Id") != null ? row.get("NormParameter_FK_Id").toString() : null);
+                dto.setDisplayName(row.get("DisplayName") != null ? row.get("DisplayName").toString() : null);
+                dto.setApr(row.get("Apr") != null ? row.get("Apr").toString() : null);
+                dto.setMay(row.get("May") != null ? row.get("May").toString() : null);
+                dto.setJun(row.get("Jun") != null ? row.get("Jun").toString() : null);
+                dto.setRemarks(row.get("Remarks") != null ? row.get("Remarks").toString() : null);
+                dto.setUom(row.get("UOM") != null ? row.get("UOM").toString() : null);
+                dto.setNormParameterTypeName(row.get("NormParameterTypeDisplayName") != null ? row.get("NormParameterTypeDisplayName").toString() : null);
+                dto.setType(row.get("Type") != null ? row.get("Type").toString() : null);
+                dto.setDisplayOrder(row.get("DisplayOrder") != null ? ((Number) row.get("DisplayOrder")).intValue() : null);
+                boolean isEditable = false;
+                if(row.get("IsEditable") != null) {
+                    if(row.get("IsEditable") instanceof Boolean) {
+                        isEditable = (Boolean) row.get("IsEditable");
+                    } else if(row.get("IsEditable") instanceof Number) {
+                        isEditable = ((Number) row.get("IsEditable")).intValue() == 1;
+                    }
+                }
+                dto.setIsEditable(isEditable);
+                result.add(dto);
+            }
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Data fetched successfully");
+            response.setData(result);
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid argument for configuration filter data", e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch configuration filter data", ex);
+        }
+    }
+
+    @Override
+    @Transactional 
+    public List<ManualEntryFactorsDTO> saveManualEntryFactors(String plantId, String aopYear, List<ManualEntryFactorsDTO> dtos, String periodFrom, String periodTo) {
+
+        List<ManualEntryFactorsDTO> failedList = new ArrayList<>();
+
+        for(ManualEntryFactorsDTO dto : dtos) {
+		
+         saveManualEntryFactorsInDB(dto, dto.getApr(), aopYear, 4);
+         saveManualEntryFactorsInDB(dto, dto.getMay(), aopYear, 5);
+         saveManualEntryFactorsInDB(dto, dto.getJun(), aopYear, 6);
+}
+
+   // sp call
+   Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+   Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+   Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+   String siteId = site.getId().toString();
+
+   String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadFactors";
+
+   executeCokerSezLoadFactors(storedProcedure, plantId, siteId, periodFrom, periodTo, aopYear);
+
+   return failedList;
+}
+
+private void executeCokerSezLoadFactors(String storedProcedure, String plantId, String siteId,
+        String periodFrom, String periodTo, String aopYear) {
+    try {
+        StoredProcedureQuery query = entityManager
+                .createStoredProcedureQuery("[" + storedProcedure + "]");
+
+        query.registerStoredProcedureParameter("plantId",      String.class,       ParameterMode.IN);
+        query.registerStoredProcedureParameter("siteid",       String.class,       ParameterMode.IN);
+        query.registerStoredProcedureParameter("PeriodFrom",   String.class,       ParameterMode.IN);
+        query.registerStoredProcedureParameter("PeriodTo",     String.class,       ParameterMode.IN);
+        query.registerStoredProcedureParameter("AOPYear",      String.class,       ParameterMode.IN);
+        query.registerStoredProcedureParameter("ErrorMessage", String.class,       ParameterMode.OUT);
+
+        query.setParameter("plantId",    plantId);
+        query.setParameter("siteid",     siteId);
+        query.setParameter("PeriodFrom", periodFrom);
+        query.setParameter("PeriodTo",   periodTo);
+        query.setParameter("AOPYear",    aopYear);
+
+        query.execute();
+
+        try {
+            Object outVal = query.getOutputParameterValue("ErrorMessage");
+            if (outVal != null) {
+                System.out.println(storedProcedure + " ErrorMessage: " + outVal);
+            }
+        } catch (Exception ignored) {}
+
+    } catch (Exception ex) {
+        throw new RuntimeException("Failed to execute " + storedProcedure, ex);
+    }
+}
+
+public void saveManualEntryFactorsInDB(ManualEntryFactorsDTO dto, String attributeValue, String aopYear, int month) { 
+
+        UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKId());
+        String remark = dto.getRemarks();
+
+        Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+        .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, aopYear);
+
+    NormAttributeTransactions normAttributeTransactions;
+
+    if (existingRecord.isPresent()) {
+    normAttributeTransactions = existingRecord.get();
+    normAttributeTransactions.setModifiedOn(new Date());
+    } else {
+
+    normAttributeTransactions = new NormAttributeTransactions();
+    normAttributeTransactions.setCreatedOn(new Date());
+    normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+    normAttributeTransactions.setAopMonth(month);
+    normAttributeTransactions.setAuditYear(aopYear);
+    }
+
+    normAttributeTransactions
+        .setAttributeValue(attributeValue != null ? attributeValue : "0.0");
+    normAttributeTransactions.setRemarks(remark);
+    normAttributeTransactions.setUserName(Utility.getUserName());
+    normAttributeTransactionsRepository.save(normAttributeTransactions);
+}
+
 }

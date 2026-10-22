@@ -1,8 +1,10 @@
 package com.wks.caseengine.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import jakarta.persistence.StoredProcedureQuery;
 import jakarta.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
 
@@ -3059,6 +3061,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					}
 				}
 			}
+
+			// sp call for refinery sites
+			boolean refineryUtility = vertical.getName().equalsIgnoreCase("RefineryUtility");
+			boolean refineryUtilityDta = refineryUtility && site.getName().equalsIgnoreCase("DTA");
+			boolean refineryUtilityDta_Pcg = refineryUtility && site.getName().equalsIgnoreCase("DTA_PCG");
+			boolean refineryUtilitySez_Pcg = refineryUtility && site.getName().equalsIgnoreCase("SEZ_PCG");
+
+			if(refineryUtilityDta || refineryUtilityDta_Pcg || refineryUtilitySez_Pcg) { 
+				String calculatestoredProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"_SteadyStateCalculation";
+				executeSteadyStateCalculateSP(calculatestoredProcedure, plantFKId.toString(), site.getId().toString(), vertical.getId().toString(), year);
+			}
+
+
 			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
 			for (ScreenMapping screenMapping : screenMappingList) {
 				AopCalculation aopCalculation = new AopCalculation();
@@ -3080,6 +3095,54 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
+
+	public String executeSteadyStateCalculateSP(String procedureName, String plantId, String siteId, String verticalId,
+        String finYear) {
+      
+            try {
+                // Safeguard procedure name by wrapping it in square brackets if it isn't already
+                String sanitizedProcedureName = procedureName;
+                if (!sanitizedProcedureName.startsWith("[") && !sanitizedProcedureName.endsWith("]")) {
+                    sanitizedProcedureName = "[" + sanitizedProcedureName + "]";
+                }
+
+                StoredProcedureQuery query = entityManager
+                        .createStoredProcedureQuery(sanitizedProcedureName);
+        
+                // Input parameters
+                query.registerStoredProcedureParameter("plantId", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("siteid", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("verticalId", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("finYear", String.class, ParameterMode.IN);
+
+                // OUTPUT parameter
+                query.registerStoredProcedureParameter("ErrorMessage", String.class, ParameterMode.OUT);
+        
+                query.setParameter("plantId", plantId.toString());
+                query.setParameter("siteid", siteId.toString());
+                query.setParameter("verticalId", verticalId.toString());
+                query.setParameter("finYear", finYear);
+        
+                query.execute();
+        
+                String errorMessage = null;
+                try {
+                    Object outVal = query.getOutputParameterValue("ErrorMessage");
+                    if (outVal != null) {
+                        errorMessage = outVal.toString();
+                    }
+                } catch (Exception ignored) {}
+        
+                System.out.println("errorMessage string: " + errorMessage);
+        
+                return errorMessage;
+        
+            } catch (IllegalArgumentException e) {
+                throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to execute procedure", ex);
+            }
+}
 
 	private List<MCUNormsValueDTO> buildDTOListFromSavedGradeData(
 	        UUID plantFKId, UUID siteId, UUID verticalId, String gradeId, String year) {

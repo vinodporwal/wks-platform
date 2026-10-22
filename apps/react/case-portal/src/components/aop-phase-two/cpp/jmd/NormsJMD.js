@@ -229,10 +229,11 @@ const NormsJMD = () => {
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
+  const [fetchLoading, setFetchLoading] = useState(false)
   const [calculationLoading, setCaculationLoading] = useState(false)
 
   const fetchNormsData = useCallback(async () => {
-    setLoading(true)
+    setFetchLoading(true)
     try {
       const res = await UtilityPlantApiServiceV2.getNormBasedUtilityBudget(
         keycloak,
@@ -244,7 +245,7 @@ const NormsJMD = () => {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
+        setFetchLoading(false)
         return
       }
       let tempRes = res?.data?.list?.map((item, index) => {
@@ -279,7 +280,7 @@ const NormsJMD = () => {
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
-      setLoading(false)
+      setFetchLoading(false)
     }
   }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
 
@@ -612,7 +613,7 @@ const NormsJMD = () => {
   return (
     <Box>
       <LoaderBackdrop
-        open={!!loading || calculationLoading}
+        open={fetchLoading || calculationLoading || !!loading}
         showMessage={calculationLoading}
         message='Your data is being processed. This may take a few moments—thank you for your patience.'
       />

@@ -33,6 +33,7 @@ import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
+import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
@@ -1421,6 +1422,100 @@ public AOPMessageVM getCommodityChemicalsConsumption(String year, String plantFK
 			throw new RuntimeException("Failed to save month wise constants", ex);
 		}
 	}
+
+@Override
+public AOPMessageVM getResinConsumptions(String year, String plantFKId) {
+	try {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetResinConsumptions";
+
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantFKId);
+		query.setParameter("aopYear", year);
+
+		List<Object[]> resultList = query.getResultList();
+		List<ResinConsumptionDTO> dtoList = new ArrayList<>();
+
+		for (Object[] row : resultList) {
+			ResinConsumptionDTO dto = new ResinConsumptionDTO();
+			dto.setNormParameterId(row[0] != null ? row[0].toString() : null);
+			dto.setDisplayName(row[1] != null ? row[1].toString() : null);
+			dto.setValue(row[2] != null ? parseDouble(row[2]) : null);
+			dto.setRemarks(row[3] != null ? row[3].toString() : null);
+			dto.setAopYear(row[4] != null ? row[4].toString() : null);
+			dto.setPlantId(row[5] != null ? row[5].toString() : null);
+			dtoList.add(dto);
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch resin consumptions data", ex);
+	}
+}
+
+@Transactional 
+@Override
+	public List<ResinConsumptionDTO> saveResinConsumptionTransaction(String year, String plantFKId,
+			List<ResinConsumptionDTO> resinConsumptionDTOList) {
+		try {
+			List<ResinConsumptionDTO> failedList = new ArrayList<>();
+	
+			for (ResinConsumptionDTO resinConsumptionDTO : resinConsumptionDTOList) {
+				
+				if (resinConsumptionDTO.getSaveStatus() != null
+						&& resinConsumptionDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(resinConsumptionDTO);
+					continue;
+				}
+
+				UUID normParameterFKId = UUID.fromString(resinConsumptionDTO.getNormParameterId());
+				String remark = resinConsumptionDTO.getRemarks();
+		
+			Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+					.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, year);
+		
+			NormAttributeTransactions normAttributeTransactions;
+		
+			if (existingRecord.isPresent()) {
+				normAttributeTransactions = existingRecord.get();
+				normAttributeTransactions.setModifiedOn(new Date());
+		
+			} else {
+		
+				normAttributeTransactions = new NormAttributeTransactions();
+				normAttributeTransactions.setCreatedOn(new Date());
+				normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+				normAttributeTransactions.setAopMonth(4);
+				normAttributeTransactions.setAuditYear(year);
+			}
+		
+			normAttributeTransactions
+					.setAttributeValue(resinConsumptionDTO.getValue() != null ? resinConsumptionDTO.getValue().toString() : "0.0");
+			normAttributeTransactions.setRemarks(remark);
+			normAttributeTransactions.setUserName(Utility.getUserName());
+			normAttributeTransactionsRepository.save(normAttributeTransactions);
+				
+			
+		}
+
+
+		return failedList;
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save resin consumption transaction", ex);
+		}
+	}
+
 
 
 

@@ -133,4 +133,10 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             @Param("cppPlantId") UUID cppPlantId);
 
     CPPImportPower findByNormParameterFkId(UUID normParameterFkId);
+
+    /**
+     * Fetches all CPPImportPower entities for the given CPP plant IDs and AOP year.
+     * Used by the carry-forward logic to locate previous-year records to clone.
+     */
+    List<CPPImportPower> findByCppPlantFkIdInAndAopYear(List<UUID> cppPlantFkIds, String aopYear);
 }

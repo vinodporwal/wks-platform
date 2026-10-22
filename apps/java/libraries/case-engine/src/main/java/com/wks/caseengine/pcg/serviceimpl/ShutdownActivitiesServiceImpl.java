@@ -463,8 +463,23 @@ public class ShutdownActivitiesServiceImpl implements ShutdownActivitiesService 
         start.setTime(startDate);
         Calendar end = Calendar.getInstance();
         end.setTime(endDate);
-        return start.get(Calendar.YEAR) == end.get(Calendar.YEAR)
-                && start.get(Calendar.MONTH) == end.get(Calendar.MONTH);
+        if (start.get(Calendar.YEAR) == end.get(Calendar.YEAR)
+                && start.get(Calendar.MONTH) == end.get(Calendar.MONTH)) {
+            return true;
+        }
+        // Edge case: start is exactly 1st of month at 00:00:00.000 -> allow end at
+        // exactly the beginning of the next month (full-month duration).
+        boolean startsAtMonthBeginning = start.get(Calendar.DAY_OF_MONTH) == 1
+                && start.get(Calendar.HOUR_OF_DAY) == 0
+                && start.get(Calendar.MINUTE) == 0
+                && start.get(Calendar.SECOND) == 0
+                && start.get(Calendar.MILLISECOND) == 0;
+        if (startsAtMonthBeginning) {
+            Calendar nextMonthStart = (Calendar) start.clone();
+            nextMonthStart.add(Calendar.MONTH, 1);
+            return end.getTimeInMillis() == nextMonthStart.getTimeInMillis();
+        }
+        return false;
     }
 
     private List<ShutdownTaTransactionDTO> readShutdownTaTransactions(InputStream inputStream, String aopYear) {

@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.coker.dto.CokerConfigurationFilterDto;
+import com.wks.caseengine.coker.dto.ManualEntryFactorsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface CokerConfigurationService {
@@ -25,4 +26,8 @@ public interface CokerConfigurationService {
     public byte[] createConfigurationFilterExcel(String plantId, String aopYear, boolean isAfterSave, List<CokerConfigurationFilterDto> dtoList);
 
     public AOPMessageVM importConfigurationFilterExcel(String plantId, String aopYear, MultipartFile file);
+
+    public AOPMessageVM getManualEntryFactorsData(String plantId, String aopYear);
+
+    public List<ManualEntryFactorsDTO> saveManualEntryFactors(String plantId, String aopYear, List<ManualEntryFactorsDTO> dtos, String periodFrom, String periodTo);
 }

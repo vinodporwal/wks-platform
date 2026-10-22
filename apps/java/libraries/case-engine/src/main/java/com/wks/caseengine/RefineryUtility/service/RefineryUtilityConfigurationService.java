@@ -10,6 +10,7 @@ import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
 import com.wks.caseengine.RefineryUtility.dto.PlantOwnerDTO;
+import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
@@ -35,4 +36,6 @@ public interface RefineryUtilityConfigurationService {
     public AOPMessageVM getTreatmentVendorConsumption(String year, String plantFKId);
     public AOPMessageVM getCommodityChemicalsConsumption(String year, String plantFKId);
     public List<TreatmentVendorConsumptionDTO> saveRefinaryConsumptionTransaction(String year, String plantFKId, List<TreatmentVendorConsumptionDTO> treatmentVendorConsumptionDTOList);
+    public AOPMessageVM getResinConsumptions(String year, String plantFKId);
+    public List<ResinConsumptionDTO> saveResinConsumptionTransaction(String year, String plantFKId, List<ResinConsumptionDTO> resinConsumptionDTOList);
 }
