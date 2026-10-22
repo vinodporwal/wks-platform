@@ -65,6 +65,9 @@ export const ProductionNormsApiService = {
   // commodity consumption APIs
   getCommodityConsumptionData,
   saveCommodityConsumptionData,
+ //Resin Consumption
+  getResinConsumptionData,
+  saveResinConsumption,
 
 }
 
@@ -1049,5 +1052,46 @@ async function saveCommodityConsumptionData(
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+async function getResinConsumptionData(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/resin-consumptions?plantFKId=${plantId}&year=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in getResinConsumptionData:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveResinConsumption(keycloak, year, payload) {
+  const url = `${Config.CaseEngineUrl}/task/resin-consumptions?plantFKId=${plantId}&year=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in saveResinConsumption:', e)
+    return Promise.reject(e)
   }
 }
