@@ -13,6 +13,7 @@ public class ResinConsumptionDTO {
 
     private String normParameterId;
     private String displayName;
+    private String uom;
     private Double value;
     private String remarks;
     private String aopYear;

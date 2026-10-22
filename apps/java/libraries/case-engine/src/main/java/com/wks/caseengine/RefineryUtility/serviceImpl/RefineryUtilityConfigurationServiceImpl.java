@@ -1445,10 +1445,11 @@ public AOPMessageVM getResinConsumptions(String year, String plantFKId) {
 			ResinConsumptionDTO dto = new ResinConsumptionDTO();
 			dto.setNormParameterId(row[0] != null ? row[0].toString() : null);
 			dto.setDisplayName(row[1] != null ? row[1].toString() : null);
-			dto.setValue(row[2] != null ? parseDouble(row[2]) : null);
-			dto.setRemarks(row[3] != null ? row[3].toString() : null);
-			dto.setAopYear(row[4] != null ? row[4].toString() : null);
-			dto.setPlantId(row[5] != null ? row[5].toString() : null);
+			dto.setUom(row[2] != null ? row[2].toString() : null);
+			dto.setValue(row[3] != null ? parseDouble(row[3]) : null);
+			dto.setRemarks(row[4] != null ? row[4].toString() : null);
+			dto.setAopYear(row[5] != null ? row[5].toString() : null);
+			dto.setPlantId(row[6] != null ? row[6].toString() : null);
 			dtoList.add(dto);
 		}
 
