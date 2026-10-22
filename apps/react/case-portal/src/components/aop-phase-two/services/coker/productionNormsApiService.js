@@ -36,7 +36,11 @@ export const ProductionNormsApiService = {
   getDataFiltersData,
   saveDataFiltersData,
   importDataFiltersExcel,
-  exportDataFiltersExcel
+  exportDataFiltersExcel,
+
+  // Manual Entry Factors
+  getManualEntryFactors,
+  saveManualEntryFactors,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -642,4 +646,100 @@ async function exportDataFiltersExcel(keycloak, plantId, year, fileName) {
     { aopYear: year, plantId: plantId },
     fileName || `Production_Norms_DataFilters_${year}.xlsx`,
   )
+}
+
+// ========================|| Manual Entry Factors API ||=====================================//
+/**
+ * Get Manual Entry Factors data for Production Norms
+ * Endpoint: GET /task/manual-entry-factors?plantId={plantId}&aopYear={aopYear}
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @returns {Promise} Manual entry Factors data (AOPMessageVM)
+ */
+async function getManualEntryFactors(keycloak, plantId, aopYear) {
+  // Robust argument order handling: (keycloak, plantId, aopYear) or (keycloak, aopYear, plantId)
+  let pId = plantId
+  let yr = aopYear
+  if (
+    typeof plantId === 'string' &&
+    plantId.includes('-') &&
+    (!aopYear || (!aopYear.includes('-') && aopYear.length > 10))
+  ) {
+    pId = aopYear
+    yr = plantId
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/manual-entry-factors?plantId=${pId}&aopYear=${yr}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Manual Entry Factors data for Production Norms
+ * Endpoint: POST /task/manual-entry-factors?plantId={plantId}&aopYear={aopYear}&periodFrom={periodFrom}&periodTo={periodTo}
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {Array} payload - Data to save (list of ManualEntryFactorsDTO)
+ * @param {string} periodFrom - Period from date string (YYYY-MM-DD)
+ * @param {string} periodTo - Period to date string (YYYY-MM-DD)
+ * @returns {Promise} Save response (AOPMessageVM)
+ */
+async function saveManualEntryFactors(
+  keycloak,
+  plantId,
+  aopYear,
+  payload,
+  periodFrom = '',
+  periodTo = '',
+) {
+  let pId = plantId
+  let yr = aopYear
+  if (
+    typeof plantId === 'string' &&
+    plantId.includes('-') &&
+    (!aopYear || (!aopYear.includes('-') && aopYear.length > 10))
+  ) {
+    pId = aopYear
+    yr = plantId
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/manual-entry-factors?plantId=${pId}&aopYear=${yr}&periodFrom=${encodeURIComponent(
+    periodFrom || '',
+  )}&periodTo=${encodeURIComponent(periodTo || '')}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
 }

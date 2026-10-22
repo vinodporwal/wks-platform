@@ -24,6 +24,7 @@ import org.springframework.http.ContentDisposition;
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
@@ -173,6 +174,7 @@ public class RefineryUtilityConfigurationController {
 		return ResponseEntity.ok(refineryUtilityConfigurationService.getCommodityChemicalsConsumption(year, plantFKId));
 	}
 
+
 	// Comman API to save treatment-vendor-consumption and commodity-chemicals-consumption tabs
 	@PostMapping("/refinary-consumption-transactions")
     public ResponseEntity<AOPMessageVM> saveRefinaryConsumptionTransactions(@RequestBody List<TreatmentVendorConsumptionDTO> treatmentVendorConsumptionDTOList, @RequestParam String year, @RequestParam String plantFKId) {
@@ -183,5 +185,20 @@ public class RefineryUtilityConfigurationController {
             return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
         }
     }
+
+	@GetMapping("/resin-consumptions")
+	public ResponseEntity<AOPMessageVM> getResinConsumptions(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getResinConsumptions(year, plantFKId));
+	}
+
+	@PostMapping("/resin-consumptions")
+	public ResponseEntity<AOPMessageVM> saveResinConsumptionTransaction(@RequestBody List<ResinConsumptionDTO> resinConsumptionDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<ResinConsumptionDTO> failedList = refineryUtilityConfigurationService.saveResinConsumptionTransaction(year, plantFKId, resinConsumptionDTOList);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
 
 }

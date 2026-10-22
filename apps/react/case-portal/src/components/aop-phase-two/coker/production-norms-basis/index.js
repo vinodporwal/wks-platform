@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Box, Stack } from '../../../../../node_modules/@mui/material/index'
 import TabSection from 'components/aop-phase-two/common/utilities/Tabs'
 import ConfigurationAccordian from '../../common/components/ConfigurationAccordian'
@@ -13,6 +13,7 @@ import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norm
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/coker/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import ManualEntryFactors from './ManualEntryFactors'
 import HistoricalMonths from './HistoricalMonths'
 import JWAvgNorms from 'components/aop-phase-two/crude/production-norms-basis/JWAvgNorms'
 import DataFilters from './DataFilters'
@@ -222,6 +223,16 @@ const ProductionNormsBasisCoker = () => {
           name: 'Historical Months - Pigging Status',
         }
       }
+      if (
+        name === 'Manual Entry - Factors' ||
+        name === 'Factors' ||
+        name === 'Manual Entry Factors'
+      ) {
+        return {
+          id: tabId,
+          name: 'Manual Entry - Factors',
+        }
+      }
 
       return {
         id: tabId,
@@ -279,6 +290,16 @@ const ProductionNormsBasisCoker = () => {
         return <JWAvgNorms />
       case 'Manual Entry':
         return <ManualEntry refreshData={refreshData} />
+      case 'Manual Entry - Factors':
+      case 'Factors':
+      case 'Manual Entry Factors':
+        return (
+          <ManualEntryFactors
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       case 'Historical Months':
         return (
           <HistoricalMonths

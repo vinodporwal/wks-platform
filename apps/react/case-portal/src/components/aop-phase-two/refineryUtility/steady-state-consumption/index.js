@@ -48,6 +48,7 @@ const SIX_DECIMAL_NORM_TYPES=[
 'Cooling Water Norms',
 ].map(normalizeKey)
 
+const THREE_DECIMAL_NORM_TYPESDMD=['Utility consumption']
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -96,6 +97,7 @@ const SteadyStateConsumption = () => {
   plantName.toLowerCase() === 'ct9 (739)' ||
   plantName.toLowerCase() === 'ct10 (740)' 
 )
+const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -151,10 +153,23 @@ const SteadyStateConsumption = () => {
         }
         return (Math.trunc(num * 100000) / 100000).toFixed(5)
       }
+      if(ISDMD_Plants){
+        const typeKeys = [
+          normalizeKey(row?.normParameterTypeName),
+          normalizeKey(row?.normParameterTypeDisplayName),
+        ]
+        const isThreeDecimal = typeKeys.some((k) =>
+          THREE_DECIMAL_NORM_TYPESDMD.includes(k),
+        )
+        if (isThreeDecimal) {
+          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame],
+    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame,ISDMD_Plants],
   )
 
   const columns = useMemo(() => {
@@ -326,13 +341,13 @@ const SteadyStateConsumption = () => {
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR])
+  }, [isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR,ISDMD_Plants])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame,ISDMD_Plants])
 
   const fetchData = async () => {
     setLoading(true)

@@ -4,7 +4,9 @@ import com.wks.caseengine.cpp.dto.CPPImportPowerProjection;
 import com.wks.caseengine.cpp.dto.CPPImportPowerResponseDTO;
 import com.wks.caseengine.cpp.dto.ImportProcurementPlantProjection;
 import com.wks.caseengine.cpp.entity.CPPImportPower;
+import com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours;
 import com.wks.caseengine.cpp.repository.CPPImportPowerRepository;
+import com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository;
 import com.wks.caseengine.cpp.service.CPPImportPowerService;
 import com.wks.caseengine.dto.AddImportPowerSourceRequestDTO;
 import com.wks.caseengine.dto.ImportPowerProcurementPlantDTO;
@@ -32,7 +34,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -49,7 +53,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
     private CPPImportPowerRepository repository;
 
     @Autowired
-    private com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository powerSourceOperationHoursRepository;
+    private CPPPowerSourceOperationHoursRepository powerSourceOperationHoursRepository;
 
     @Autowired
     private NormParametersRepository normParametersRepository;
@@ -84,6 +88,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
     }
 
     @Override
+    @Transactional
     public AOPMessageVM getImportedPowerPlans(List<UUID> plantIds, String aopYear) {
         logger.info("[GET Service] Fetching imported power plans for plantIds: {}, aopYear: {}", plantIds, aopYear);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -91,6 +96,41 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         try {
             List<CPPImportPowerProjection> projections = repository.findImportedPowerPlans(plantIds, aopYear);
             logger.info("[GET Service] Query returned {} records", projections.size());
+
+            // ── TIER 2: CARRY-FORWARD – per plant, clone from previous FY where the requested FY is missing ──
+            List<UUID> missingPlantIds = findPlantsWithoutData(plantIds, projections);
+            if (!missingPlantIds.isEmpty()) {
+                logger.info("[GET Service] No records found for {} for plantIds: {}. Attempting carry-forward from previous financial year.",
+                        aopYear, missingPlantIds);
+                String previousYear = derivePreviousFinancialYear(aopYear);
+
+                if (previousYear != null) {
+                    logger.info("[GET Service] Looking for carry-forward source in financialYear: {}", previousYear);
+                    carryForwardImportedPowerPlans(missingPlantIds, previousYear, aopYear);
+
+                    // Re-query after carry-forward attempt
+                    projections = repository.findImportedPowerPlans(plantIds, aopYear);
+                    logger.info("[GET Service] After carry-forward, re-query returned {} records for {}", projections.size(), aopYear);
+                } else {
+                    logger.warn("[GET Service] Could not derive previous financial year from '{}'. Skipping carry-forward.", aopYear);
+                }
+            }
+
+            // ── TIER 3: ZERO-SEED – plants still missing after carry-forward → seed from configured sources ──
+            missingPlantIds = findPlantsWithoutData(plantIds, projections);
+            if (!missingPlantIds.isEmpty()) {
+                logger.info("[GET Service] No carry-forward data found for plantIds: {}. Seeding zero import power plans from configured sources for {}.",
+                        missingPlantIds, aopYear);
+                seedImportedPowerPlans(missingPlantIds, aopYear);
+
+                // Final re-query to return the seeded data with real IDs
+                projections = repository.findImportedPowerPlans(plantIds, aopYear);
+                logger.info("[GET Service] After zero-seed, re-query returned {} records for {}", projections.size(), aopYear);
+            }
+
+            // Ensure every target-year source has a matching op-hours row — repairs
+            // sources whose op-hours are missing (e.g. orphans from older data)
+            ensureOpHoursForSources(plantIds, aopYear);
 
             List<CPPImportPowerResponseDTO> results = projections.stream()
                     .map(this::mapToDto)
@@ -153,6 +193,386 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         dto.setUtilityNormParameterFkId(projection.getUtilityNormParameterFkId());
 
         return dto;
+    }
+
+    /**
+     * Returns the subset of plantIds that have no imported power plan rows in
+     * the given projection result — these plants are candidates for
+     * carry-forward / zero-seed.
+     */
+    private List<UUID> findPlantsWithoutData(List<UUID> plantIds, List<CPPImportPowerProjection> projections) {
+        Set<UUID> plantsWithData = projections.stream()
+                .map(CPPImportPowerProjection::getCppPlantFkId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        return plantIds.stream()
+                .filter(plantId -> !plantsWithData.contains(plantId))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Derives the previous financial year string.
+     * Expected format: "YYYY-YY" (e.g. "2026-27" → "2025-26", "2025-26" → "2024-25").
+     * Returns null if the format is unrecognised.
+     */
+    private String derivePreviousFinancialYear(String financialYear) {
+        try {
+            String[] parts = financialYear.split("-");
+            if (parts.length != 2) return null;
+            int startYear = Integer.parseInt(parts[0]);
+            int prevStart = startYear - 1;
+            int prevEnd = prevStart + 1;
+            String prevEndSuffix = String.format("%02d", prevEnd % 100);
+            return prevStart + "-" + prevEndSuffix;
+        } catch (Exception e) {
+            logger.warn("[GET Service] Could not parse financial year '{}': {}", financialYear, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Clones all previous-FY CPPImportPower records (and their linked
+     * CPPPowerSourceOperationHours rows) into the requested FY.
+     * Records whose NormParameter source has been soft-deleted (isVisible = 0)
+     * are skipped so hidden sources are not resurrected.
+     */
+    private void carryForwardImportedPowerPlans(List<UUID> plantIds, String previousYear, String aopYear) {
+        List<CPPImportPower> prevRecords = repository.findByCppPlantFkIdInAndAopYear(plantIds, previousYear);
+        if (prevRecords.isEmpty()) {
+            logger.info("[GET Service] No previous-year records found in {} for plantIds: {}", previousYear, plantIds);
+            return;
+        }
+
+        // Only carry forward sources that are still visible
+        Set<UUID> visibleNormIds = normParametersRepository.findAllById(
+                        prevRecords.stream()
+                                .map(CPPImportPower::getNormParameterFkId)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toSet()))
+                .stream()
+                .filter(norm -> !Boolean.FALSE.equals(norm.getIsVisible()))
+                .map(NormParameters::getId)
+                .collect(Collectors.toSet());
+
+        // Records that already exist for the target year — a row with the same
+        // (cppPlantFkId, normParameterFkId, aopYear) is a duplicate, so skip it.
+        Map<String, CPPImportPower> existingByKey = repository
+                .findByCppPlantFkIdInAndAopYear(plantIds, aopYear)
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> r.getCppPlantFkId() + "|" + r.getNormParameterFkId(),
+                        r -> r,
+                        (a, b) -> a));
+
+        for (UUID plantId : plantIds) {
+            List<CPPImportPower> plantPrevRecords = prevRecords.stream()
+                    .filter(r -> plantId.equals(r.getCppPlantFkId()))
+                    .filter(r -> r.getNormParameterFkId() == null || visibleNormIds.contains(r.getNormParameterFkId()))
+                    .collect(Collectors.toList());
+            if (plantPrevRecords.isEmpty()) continue;
+
+            logger.info("[GET Service] Carrying forward {} import power records for plantId: {} from {}",
+                    plantPrevRecords.size(), plantId, previousYear);
+
+            // Previous-FY operational hours keyed by their PowerSource_FK_Id (CPPImportPower.Id)
+            Map<UUID, List<CPPPowerSourceOperationHours>> prevOpHoursBySource =
+                    powerSourceOperationHoursRepository.findByPlantFkIdAndAopYear(plantId, previousYear)
+                            .stream()
+                            .filter(o -> o.getAssetFkId() != null)
+                            .collect(Collectors.groupingBy(
+                                    CPPPowerSourceOperationHours::getAssetFkId));
+
+            // Op-hours already present for the target year — never add a second row per source+year
+            Set<UUID> existingOpHourTargets =
+                    powerSourceOperationHoursRepository.findByPlantFkIdAndAopYear(plantId, aopYear)
+                            .stream()
+                            .map(CPPPowerSourceOperationHours::getAssetFkId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+            List<CPPImportPower> clones = new ArrayList<>();
+            List<UUID> clonePrevSourceIds = new ArrayList<>();
+            List<CPPImportPower> backfillSources = new ArrayList<>();
+            List<UUID> backfillPrevSourceIds = new ArrayList<>();
+
+            for (CPPImportPower src : plantPrevRecords) {
+                String key = src.getCppPlantFkId() + "|" + src.getNormParameterFkId();
+                CPPImportPower existing = existingByKey.get(key);
+                if (existing != null) {
+                    // Same source + year already exists — don't duplicate the plan row,
+                    // only backfill op-hours if the target year is missing them
+                    if (existingOpHourTargets.add(existing.getId())) {
+                        backfillSources.add(existing);
+                        backfillPrevSourceIds.add(src.getId());
+                    }
+                    continue;
+                }
+
+                CPPImportPower clone = new CPPImportPower();
+               
+                clone.setImportPlantFkId(src.getImportPlantFkId());
+                clone.setNormParameterFkId(src.getNormParameterFkId());
+                clone.setUtilityNormParameterFkId(src.getUtilityNormParameterFkId());
+                clone.setCppPlantFkId(src.getCppPlantFkId());
+                clone.setApr(src.getApr());
+                clone.setMay(src.getMay());
+                clone.setJun(src.getJun());
+                clone.setJul(src.getJul());
+                clone.setAug(src.getAug());
+                clone.setSep(src.getSep());
+                clone.setOct(src.getOct());
+                clone.setNov(src.getNov());
+                clone.setDec(src.getDec());
+                clone.setJan(src.getJan());
+                clone.setFeb(src.getFeb());
+                clone.setMar(src.getMar());
+                clone.setAopYear(aopYear);
+                clone.setRemarks(src.getRemarks());
+                clone.setSiteFkId(src.getSiteFkId());
+                clone.setVerticalFkId(src.getVerticalFkId());
+                clone.setCreatedDate(LocalDateTime.now());
+                clone.setUpdatedDate(LocalDateTime.now());
+                clones.add(clone);
+                clonePrevSourceIds.add(src.getId());
+                existingByKey.put(key, clone);
+            }
+
+            // Persist the sources first so the generated ids are known before
+            // building the linked op-hours rows (PowerSource_FK_Id)
+            List<CPPImportPower> savedClones = clones.isEmpty() ? new ArrayList<>() : repository.saveAll(clones);
+
+            List<CPPPowerSourceOperationHours> opHourWrites = new ArrayList<>();
+            for (int i = 0; i < savedClones.size(); i++) {
+                UUID prevSourceId = clonePrevSourceIds.get(i);
+                List<CPPPowerSourceOperationHours> srcOpHours = prevOpHoursBySource.get(prevSourceId);
+                if (srcOpHours != null && !srcOpHours.isEmpty()) {
+                    // (PowerSource_FK_Id, AOPYear) must stay unique — clone only one row per source
+                    if (srcOpHours.size() > 1) {
+                        logger.warn("[GET Service] {} duplicate op-hours found for source {} in {} — cloning only one",
+                                srcOpHours.size(), prevSourceId, previousYear);
+                    }
+                    opHourWrites.add(cloneImportPowerOpHours(srcOpHours.get(0), savedClones.get(i).getId(), aopYear));
+                } else {
+                    // addImportPowerSource always creates a matching op-hours row — keep the invariant
+                    opHourWrites.add(buildImportPowerOpHoursSeed(savedClones.get(i)));
+                }
+            }
+            for (int i = 0; i < backfillSources.size(); i++) {
+                UUID prevSourceId = backfillPrevSourceIds.get(i);
+                List<CPPPowerSourceOperationHours> srcOpHours = prevOpHoursBySource.get(prevSourceId);
+                if (srcOpHours != null && !srcOpHours.isEmpty()) {
+                    if (srcOpHours.size() > 1) {
+                        logger.warn("[GET Service] {} duplicate op-hours found for source {} in {} — cloning only one",
+                                srcOpHours.size(), prevSourceId, previousYear);
+                    }
+                    opHourWrites.add(cloneImportPowerOpHours(srcOpHours.get(0), backfillSources.get(i).getId(), aopYear));
+                } else {
+                    opHourWrites.add(buildImportPowerOpHoursSeed(backfillSources.get(i)));
+                }
+            }
+
+            if (!opHourWrites.isEmpty()) {
+                powerSourceOperationHoursRepository.saveAll(opHourWrites);
+            }
+            logger.info("[GET Service] Saved {} carry-forward import power records (+ {} op-hours) for plantId: {}",
+                    clones.size(), opHourWrites.size(), plantId);
+        }
+    }
+
+    /**
+     * Seeds zero-value CPPImportPower records from the configured procurement
+     * plants and their visible NormParameter sources (same shape that
+     * addImportPowerSource creates), plus the linked zero op-hours row.
+     */
+    private void seedImportedPowerPlans(List<UUID> plantIds, String aopYear) {
+        // Records that already exist for the target year — a row with the same
+        // (cppPlantFkId, normParameterFkId, aopYear) is a duplicate, so skip it.
+        Map<String, CPPImportPower> existingByKey = repository
+                .findByCppPlantFkIdInAndAopYear(plantIds, aopYear)
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> r.getCppPlantFkId() + "|" + r.getNormParameterFkId(),
+                        r -> r,
+                        (a, b) -> a));
+
+        for (UUID plantId : plantIds) {
+            List<ImportProcurementPlantProjection> sourceRows = repository.getProcurementPlantsWithSources(plantId)
+                    .stream()
+                    .filter(r -> r.getNormParameterId() != null)
+                    .collect(Collectors.toList());
+            if (sourceRows.isEmpty()) {
+                logger.warn("[GET Service] No configured import sources found for plantId: {}. Skipping zero-seed.", plantId);
+                continue;
+            }
+
+            // Op-hours already present for the target year — never add a second row per source+year
+            Set<UUID> existingOpHourTargets =
+                    powerSourceOperationHoursRepository.findByPlantFkIdAndAopYear(plantId, aopYear)
+                            .stream()
+                            .map(CPPPowerSourceOperationHours::getAssetFkId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+            Optional<Plants> cppPlantOpt = plantsRepository.findById(plantId);
+            UUID siteFkId = cppPlantOpt.map(Plants::getSiteFkId).orElse(null);
+            UUID verticalFkId = cppPlantOpt.map(Plants::getVerticalFKId).orElse(null);
+            UUID utilityNormId = resolveUtilityNormParameterId(plantId);
+
+            List<CPPImportPower> seeds = new ArrayList<>();
+            List<CPPPowerSourceOperationHours> opHourSeeds = new ArrayList<>();
+            for (ImportProcurementPlantProjection row : sourceRows) {
+                String key = plantId + "|" + row.getNormParameterId();
+                CPPImportPower existing = existingByKey.get(key);
+                if (existing != null) {
+                    // Same source + year already exists — only backfill op-hours if missing
+                    if (!existingOpHourTargets.contains(existing.getId())) {
+                        opHourSeeds.add(buildImportPowerOpHoursSeed(existing));
+                        existingOpHourTargets.add(existing.getId());
+                    }
+                    continue;
+                }
+
+                CPPImportPower seed = new CPPImportPower();
+                // NOTE: no manual id — see carryForwardImportedPowerPlans; a pre-set id
+                // makes save() merge() and replace it with a different generated value
+                seed.setImportPlantFkId(row.getProcurementPlantId());
+                seed.setNormParameterFkId(row.getNormParameterId());
+                seed.setUtilityNormParameterFkId(utilityNormId);
+                seed.setCppPlantFkId(plantId);
+                seed.setSiteFkId(siteFkId);
+                seed.setVerticalFkId(verticalFkId);
+                seed.setAopYear(aopYear);
+                seed.setRemarks(null);
+                seed.setCreatedDate(LocalDateTime.now());
+                seed.setUpdatedDate(LocalDateTime.now());
+                BigDecimal zero = BigDecimal.ZERO;
+                seed.setApr(zero);  seed.setMay(zero);  seed.setJun(zero);
+                seed.setJul(zero);  seed.setAug(zero);  seed.setSep(zero);
+                seed.setOct(zero);  seed.setNov(zero);  seed.setDec(zero);
+                seed.setJan(zero);  seed.setFeb(zero);  seed.setMar(zero);
+                seeds.add(seed);
+                existingByKey.put(key, seed);
+            }
+
+            // Persist first so generated ids are known, then build op-hours rows
+            // pointing at the real persisted ids
+            List<CPPImportPower> savedSeeds = seeds.isEmpty() ? new ArrayList<>() : repository.saveAll(seeds);
+            for (CPPImportPower savedSeed : savedSeeds) {
+                opHourSeeds.add(buildImportPowerOpHoursSeed(savedSeed));
+            }
+            if (!opHourSeeds.isEmpty()) {
+                powerSourceOperationHoursRepository.saveAll(opHourSeeds);
+            }
+            logger.info("[GET Service] Inserted {} zero-seeded import power records (+ {} op-hours) for plantId: {} in {}",
+                    seeds.size(), opHourSeeds.size(), plantId, aopYear);
+        }
+    }
+
+    /**
+     * Ensures every target-year CPPImportPower source has a linked
+     * CPPPowerSourceOperationHours row for the same year. For uncovered sources
+     * the row is cloned from the previous year's op-hours (matched by
+     * cppPlantFkId + normParameterFkId); if none exists, a zero row is seeded.
+     */
+    private void ensureOpHoursForSources(List<UUID> plantIds, String aopYear) {
+        List<CPPImportPower> targetSources = repository.findByCppPlantFkIdInAndAopYear(plantIds, aopYear);
+        if (targetSources.isEmpty()) return;
+
+        Set<UUID> covered = powerSourceOperationHoursRepository
+                .findByPlantFkIdInAndAopYear(plantIds, aopYear)
+                .stream()
+                .map(CPPPowerSourceOperationHours::getAssetFkId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<CPPImportPower> uncovered = targetSources.stream()
+                .filter(s -> !covered.contains(s.getId()))
+                .collect(Collectors.toList());
+        if (uncovered.isEmpty()) return;
+
+        logger.info("[GET Service] {} source(s) missing op-hours for {} — backfilling", uncovered.size(), aopYear);
+
+        String previousYear = derivePreviousFinancialYear(aopYear);
+        Map<String, CPPImportPower> prevSourceByKey = new HashMap<>();
+        Map<UUID, List<CPPPowerSourceOperationHours>> prevOpHoursBySource = new HashMap<>();
+        if (previousYear != null) {
+            prevSourceByKey = repository
+                    .findByCppPlantFkIdInAndAopYear(plantIds, previousYear)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            s -> s.getCppPlantFkId() + "|" + s.getNormParameterFkId(),
+                            s -> s, (a, b) -> a));
+            prevOpHoursBySource = powerSourceOperationHoursRepository
+                    .findByPlantFkIdInAndAopYear(plantIds, previousYear)
+                    .stream()
+                    .filter(o -> o.getAssetFkId() != null)
+                    .collect(Collectors.groupingBy(CPPPowerSourceOperationHours::getAssetFkId));
+        }
+
+        List<CPPPowerSourceOperationHours> backfill = new ArrayList<>();
+        for (CPPImportPower source : uncovered) {
+            String key = source.getCppPlantFkId() + "|" + source.getNormParameterFkId();
+            CPPImportPower prevSource = prevSourceByKey.get(key);
+            List<CPPPowerSourceOperationHours> prevOpHours =
+                    prevSource == null ? null : prevOpHoursBySource.get(prevSource.getId());
+            if (prevOpHours != null && !prevOpHours.isEmpty()) {
+                backfill.add(cloneImportPowerOpHours(prevOpHours.get(0), source.getId(), aopYear));
+            } else {
+                backfill.add(buildImportPowerOpHoursSeed(source));
+            }
+        }
+
+        powerSourceOperationHoursRepository.saveAll(backfill);
+        logger.info("[GET Service] Backfilled {} op-hours rows for {}", backfill.size(), aopYear);
+    }
+
+    /** Clones a previous-FY op-hours row, re-pointing it at the new CPPImportPower id. */
+    private CPPPowerSourceOperationHours cloneImportPowerOpHours(
+            CPPPowerSourceOperationHours src, UUID newPowerSourceId, String aopYear) {
+        CPPPowerSourceOperationHours clone =
+                new CPPPowerSourceOperationHours();
+        clone.setId(UUID.randomUUID());
+        clone.setAssetFkId(newPowerSourceId);
+        clone.setApr(src.getApr());
+        clone.setMay(src.getMay());
+        clone.setJun(src.getJun());
+        clone.setJul(src.getJul());
+        clone.setAug(src.getAug());
+        clone.setSep(src.getSep());
+        clone.setOct(src.getOct());
+        clone.setNov(src.getNov());
+        clone.setDec(src.getDec());
+        clone.setJan(src.getJan());
+        clone.setFeb(src.getFeb());
+        clone.setMar(src.getMar());
+        clone.setAopYear(aopYear);
+        clone.setRemarks(src.getRemarks());
+        clone.setSiteFkId(src.getSiteFkId());
+        clone.setVerticalFkId(src.getVerticalFkId());
+        clone.setPlantFkId(src.getPlantFkId());
+        clone.setCreatedDate(LocalDateTime.now());
+        clone.setModifiedDate(LocalDateTime.now());
+        return clone;
+    }
+
+    /** Builds a zero-value op-hours row linked to the given CPPImportPower record. */
+    private CPPPowerSourceOperationHours buildImportPowerOpHoursSeed(CPPImportPower importPower) {
+        CPPPowerSourceOperationHours opHours =
+                new CPPPowerSourceOperationHours();
+        opHours.setId(UUID.randomUUID());
+        opHours.setAssetFkId(importPower.getId());
+        opHours.setApr(0.0);  opHours.setMay(0.0);  opHours.setJun(0.0);
+        opHours.setJul(0.0);  opHours.setAug(0.0);  opHours.setSep(0.0);
+        opHours.setOct(0.0);  opHours.setNov(0.0);  opHours.setDec(0.0);
+        opHours.setJan(0.0);  opHours.setFeb(0.0);  opHours.setMar(0.0);
+        opHours.setAopYear(importPower.getAopYear());
+        opHours.setRemarks(null);
+        opHours.setSiteFkId(importPower.getSiteFkId());
+        opHours.setVerticalFkId(importPower.getVerticalFkId());
+        opHours.setPlantFkId(importPower.getCppPlantFkId());
+        opHours.setCreatedDate(LocalDateTime.now());
+        opHours.setModifiedDate(LocalDateTime.now());
+        return opHours;
     }
 
     @Override
@@ -1049,7 +1469,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             logger.info("[ADD Source] CPPImportPower created with Id: {}", savedImportPower.getId());
 
             // --- Step 4: Create CPPPowerSourceOperationHours entry with zero values ---
-            com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours opHours = new com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours();
+            CPPPowerSourceOperationHours opHours = new CPPPowerSourceOperationHours();
             opHours.setId(UUID.randomUUID());
             opHours.setAssetFkId(savedImportPower.getId());
             opHours.setApr(0.0);  opHours.setMay(0.0);  opHours.setJun(0.0);
