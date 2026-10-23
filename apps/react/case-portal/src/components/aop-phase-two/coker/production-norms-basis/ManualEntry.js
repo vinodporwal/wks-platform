@@ -59,20 +59,30 @@ const ManualEntry = ({startDate, endDate, refreshData }) => {
 
   const piggingOptions = useMemo(() => {
     try {
-      const raw = rows[0]?.piggingStatus || rows[0]?.PiggingStatus
-      const list = typeof raw === 'string' ? JSON.parse(raw) : raw
+      const targetRow = rows.find((r) => r?.piggingStatus || r?.PiggingStatus) || rows[0]
+      const raw = targetRow?.piggingStatus || targetRow?.PiggingStatus
+      let list = raw
+      if (typeof raw === 'string') {
+        try {
+          list = JSON.parse(raw)
+        } catch {
+          list = new Function(`return ${raw}`)()
+        }
+      }
       return Array.isArray(list) && list.length
         ? list.map((v) => {
             const label = typeof v === 'object' && v ? v.label : v
-            const value = typeof v === 'object' && v ? v.value : v
-            const matched = selectOptions.find((opt) => opt.label === label)
-            return { value: value || matched ? matched.value : (v?.value ?? v), label }
+            const rawVal = typeof v === 'object' && v ? v.value : v
+            const matched = selectOptions.find((opt) => opt.label === label || opt.value === rawVal)
+            const value = rawVal ?? (matched ? matched.value : label)
+            return { value: String(value), label: String(label) }
           })
         : selectOptions
     } catch {
       return selectOptions
     }
   }, [rows])
+
 
   const columns = useMemo(() =>
     [
@@ -126,6 +136,7 @@ const ManualEntry = ({startDate, endDate, refreshData }) => {
     })),
   ], [piggingOptions, headerMap, valueFormat])
 
+
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
@@ -147,10 +158,9 @@ const ManualEntry = ({startDate, endDate, refreshData }) => {
         periodTo,
       )
 
-      // Extract data from response - API returns { data: [...], code: 200, message: '...' }
+      // Extract data from response - API returns { data: [...], code: 200, message: '...' } or array
       const manualEntryData =
-        // dummyManualEntryObject
-        response?.data || []
+        Array.isArray(response) ? response : (response?.data || [])
 
       // Add inEdit flag to each row for edit tracking
       const dataWithEditFlag = manualEntryData.map((row) => ({
