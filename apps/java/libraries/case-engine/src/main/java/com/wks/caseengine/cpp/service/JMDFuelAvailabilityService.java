@@ -19,9 +19,21 @@ public interface JMDFuelAvailabilityService {
     AOPMessageVM saveFuelAvailability(List<UUID> plantIds, String financialYear,
                                       List<FuelAvailabilityTransactionDTO> dtoList);
 
-    byte[] exportFuelAvailability(List<UUID> plantIds, String financialYear, String type) throws IOException;
+    byte[] exportFuelAvailability(UUID siteId, List<UUID> plantIds, String financialYear, String type, boolean minimal) throws IOException;
 
-    AOPMessageVM importFuelAvailability(List<UUID> plantIds, String financialYear, MultipartFile file) throws IOException;
+    AOPMessageVM importFuelAvailability(List<UUID> plantIds, String financialYear, MultipartFile file,
+                                        boolean minimal, String type) throws IOException;
 
     AOPMessageVM deleteFuelAvailability(UUID id);
+
+    AOPMessageVM getFuelAvailabilityCost(UUID siteId, List<UUID> plantIds, String financialYear, String type);
+
+    AOPMessageVM getMappedFuelAvailability(List<UUID> plantIds, String financialYear, String type);
+
+    AOPMessageVM saveFuelAvailabilityCost(List<UUID> plantIds, String financialYear,
+                                          List<FuelAvailabilityTransactionDTO> dtoList);
+    byte[] exportFuelAvailabilityCost(UUID siteId, List<UUID> plantIds, String financialYear, String type) throws IOException;
+
+    AOPMessageVM importFuelAvailabilityCost(List<UUID> plantIds, String financialYear, MultipartFile file,
+                                            String type) throws IOException;
 }

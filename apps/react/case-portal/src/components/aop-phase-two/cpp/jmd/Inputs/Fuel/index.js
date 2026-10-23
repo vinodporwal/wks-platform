@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import NetCalorificValue from './NetCalorificValue'
 import FuelAvailability from './FuelAvailability'
+import FuelAvailabilityCost from './FuelAvailabilityCost'
 import { Stack } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
@@ -9,6 +10,10 @@ const Fuel = () => {
   const keycloak = useSession()
   const [allFuels, setAllFuels] = useState([])
   const [allCategories, setAllCategories] = useState([])
+  // Bump to make FuelAvailabilityCost refetch when the quantity grid
+  // adds/saves/deletes a fuel row.
+  const [costRefreshKey, setCostRefreshKey] = useState(0)
+  const refreshCostGrid = useCallback(() => setCostRefreshKey((k) => k + 1), [])
 
   // Fetch fuel master data (categories + fuels) once on mount.
   // Both child grids (FuelAvailability + NetCalorificValue) share the
@@ -50,15 +55,19 @@ const Fuel = () => {
           allFuels={allFuels}
           allCategories={allCategories}
           categoryOptions={categoryOptions}
+          onDataChange={refreshCostGrid}
         />
       </Stack>
-      <Stack>
+      <Stack sx={{ mt: 2, mb: 2 }}>
+        <FuelAvailabilityCost refreshTrigger={costRefreshKey} />
+      </Stack>
+      {/* <Stack>
         <NetCalorificValue
           allFuels={allFuels}
           allCategories={allCategories}
           categoryOptions={categoryOptions}
         />
-      </Stack>
+      </Stack> */}
     </Stack>
   )
 }
