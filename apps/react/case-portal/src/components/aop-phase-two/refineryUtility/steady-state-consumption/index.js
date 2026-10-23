@@ -97,6 +97,16 @@ const SteadyStateConsumption = () => {
   plantName.toLowerCase() === 'ct9 (739)' ||
   plantName.toLowerCase() === 'ct10 (740)' 
 )
+
+const isSezCtPlant=siteName === 'SEZ' &&
+      (
+  plantName.toLowerCase() === 'ct1 (z731)' ||
+  plantName.toLowerCase() === 'ct5 (z735)' ||
+  plantName.toLowerCase() === 'ct4 (z734)' ||
+  plantName.toLowerCase() === 'ct8 (z761)' ||
+  plantName.toLowerCase() === 'ct3 (z733)' ||
+  plantName.toLowerCase() === 'ct2 (z732)' 
+)
 const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
 
   const [loading, setLoading] = useState(false)
@@ -118,7 +128,7 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
       const num = parseFloat(val)
       if (isNaN(num)) return val
 
-      if (isDtapcgCtPlant || isSezpcgCtPlant || isDtaCtPlant) {
+      if (isDtapcgCtPlant || isSezpcgCtPlant || isDtaCtPlant || isSezCtPlant) {
         // Decide by normParameterTypeName (or display name), not by UOM
         const cleanUom = String(uom ?? '')
           .trim()
@@ -169,7 +179,7 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame,ISDMD_Plants],
+    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame,ISDMD_Plants, isSezCtPlant],
   )
 
   const columns = useMemo(() => {
@@ -341,13 +351,13 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR,ISDMD_Plants])
+  }, [isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR,ISDMD_Plants, isSezCtPlant])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame,ISDMD_Plants])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant,isSezpcgCtPlant, isAsuPlant, isFCCTame,ISDMD_Plants, isSezCtPlant])
 
   const fetchData = async () => {
     setLoading(true)
@@ -367,7 +377,7 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
           isEditable: true,
         }
         const uom = item?.UOM || item?.uom || ''
-        if (isDtaCtPlant) {
+        if (isDtaCtPlant || isSezCtPlant) {
           MONTH_FIELDS.forEach((m) => {
             if (row[m] !== undefined && row[m] !== null && row[m] !== '') {
               row[m] = formatValueByUom(row[m], uom, row)
@@ -413,7 +423,7 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
       .map((row) => {
         const uom = row?.UOM || row?.uom || ''
         const updatedRow = { ...row }
-        if (isDtaCtPlant) {
+        if (isDtaCtPlant || isSezCtPlant) {
           MONTH_FIELDS.forEach((m) => {
             if (
               updatedRow[m] !== undefined &&

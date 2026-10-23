@@ -45,8 +45,7 @@ const VendorConsumption = () => {
   const isDtaCtPlant =
     siteName === 'DTA' &&
     (plantName.toLowerCase() === 'ct8 (738)' ||
-      plantName.toLowerCase() === 'ct9 (739)' ||
-      plantName.toLowerCase() === 'ct4 (734)')
+      plantName.toLowerCase() === 'ct9 (739)')
 
   const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [AOP_YEAR])
 
