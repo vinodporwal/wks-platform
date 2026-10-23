@@ -91,7 +91,7 @@ function getFuelAvailabilityCost(
 }
 
 // GET {base}/mapped?plantIds=...&financialYear=...&type=...
-// Fuel availability expanded through CPPPlantFuelSourceMapping � rows declared
+// Fuel availability expanded through CPPPlantFuelSourceMapping â€” rows declared
 // under source plants (e.g. C2-CPP, DTA-PCG-CPP) come back attributed to the
 // consuming CPP plant (e.g. DTA-CPP). Used by the Fuel Priority screen.
 async function getMappedFuelAvailability(
