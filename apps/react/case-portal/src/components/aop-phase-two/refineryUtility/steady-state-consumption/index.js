@@ -48,7 +48,7 @@ const SIX_DECIMAL_NORM_TYPES=[
 'Cooling Water Norms',
 ].map(normalizeKey)
 
-const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption']
+const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -90,7 +90,7 @@ const SteadyStateConsumption = () => {
   plantName.toLowerCase() === 'ct2 (732)' ||
   plantName.toLowerCase() === 'ct3 (733)' ||
   plantName.toLowerCase() === 'ct4 (734)' ||
-  plantName.toLowerCase() === 'ct5 (735)' ||
+  plantName.toLowerCase() === 'ct5 (735)' ||  
   plantName.toLowerCase() === 'ct6 (736)' ||
   plantName.toLowerCase() === 'ct7 (737)' ||
   plantName.toLowerCase() === 'ct8 (738)' ||
