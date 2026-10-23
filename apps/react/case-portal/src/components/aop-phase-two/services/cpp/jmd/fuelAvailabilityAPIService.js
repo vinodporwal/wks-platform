@@ -1,6 +1,9 @@
 import Config from 'consts/index'
 import { json } from 'services/request'
 
+const BASE = '/task/jmd/fuel-availability'
+const BASE_COST = '/task/jmd/fuel-availability-cost'
+
 export const FuelAvailabilityAPIService = {
   getFuelAvailability,
   saveFuelAvailability,
@@ -8,6 +11,13 @@ export const FuelAvailabilityAPIService = {
   importFuelAvailability,
   getFuels,
   deleteFuelAvailability,
+  getFuelAvailabilityCost,
+  getMappedFuelAvailability,
+  saveFuelAvailabilityCost,
+  exportFuelAvailabilityCost,
+  importFuelAvailabilityCost,
+  getFuelExchangeRate,
+  saveFuelExchangeRate,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -26,10 +36,23 @@ function buildPlantIdsParam(plantIds) {
 }
 
 // ===================== || FUEL AVAILABILITY GET || ===================== //
-// GET /task/jmd/fuel-availability?plantIds=...&financialYear=...&type=...
-async function getFuelAvailability(keycloak, plantIds, financialYear, type) {
+// GET {base}?siteId=...&plantIds=...&financialYear=...&type=...
+async function getFuelAvailabilityBase(
+  keycloak,
+  plantIds,
+  financialYear,
+  type,
+  base,
+  siteId,
+) {
   const queryParams = buildPlantIdsParam(plantIds)
-  let url = `${Config.CaseEngineUrl}/task/jmd/fuel-availability?plantIds=${queryParams}&financialYear=${financialYear}`
+  let url = `${Config.CaseEngineUrl}${base}?financialYear=${financialYear}`
+  if (queryParams) {
+    url += `&plantIds=${queryParams}`
+  }
+  if (siteId) {
+    url += `&siteId=${encodeURIComponent(siteId)}`
+  }
   if (type) {
     url += `&type=${encodeURIComponent(type)}`
   }
@@ -46,16 +69,66 @@ async function getFuelAvailability(keycloak, plantIds, financialYear, type) {
   }
 }
 
+function getFuelAvailability(keycloak, plantIds, financialYear, type) {
+  return getFuelAvailabilityBase(keycloak, plantIds, financialYear, type, BASE)
+}
+
+function getFuelAvailabilityCost(
+  keycloak,
+  plantIds,
+  financialYear,
+  type,
+  siteId,
+) {
+  return getFuelAvailabilityBase(
+    keycloak,
+    plantIds,
+    financialYear,
+    type,
+    BASE_COST,
+    siteId,
+  )
+}
+
+// GET {base}/mapped?plantIds=...&financialYear=...&type=...
+// Fuel availability expanded through CPPPlantFuelSourceMapping — rows declared
+// under source plants (e.g. C2-CPP, DTA-PCG-CPP) come back attributed to the
+// consuming CPP plant (e.g. DTA-CPP). Used by the Fuel Priority screen.
+async function getMappedFuelAvailability(
+  keycloak,
+  plantIds,
+  financialYear,
+  type,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  let url = `${Config.CaseEngineUrl}${BASE}/mapped?plantIds=${queryParams}&financialYear=${financialYear}`
+  if (type) {
+    url += `&type=${encodeURIComponent(type)}`
+  }
+  const headers = buildHeaders(keycloak)
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching mapped fuel availability data:', e)
+    return await Promise.reject(e)
+  }
+}
+
 // ===================== || FUEL AVAILABILITY SAVE OR UPDATE || ===================== //
-// POST /task/jmd/fuel-availability?plantIds=...&financialYear=...
-async function saveFuelAvailability(
+// POST {base}?plantIds=...&financialYear=...
+async function saveFuelAvailabilityBase(
   keycloak,
   plantIds,
   financialYear,
   payload,
+  base,
 ) {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/jmd/fuel-availability?plantIds=${queryParams}&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}${base}?plantIds=${queryParams}&financialYear=${financialYear}`
   const headers = buildHeaders(keycloak)
   const body = JSON.stringify(payload)
   try {
@@ -75,11 +148,45 @@ async function saveFuelAvailability(
   }
 }
 
+function saveFuelAvailability(keycloak, plantIds, financialYear, payload) {
+  return saveFuelAvailabilityBase(
+    keycloak,
+    plantIds,
+    financialYear,
+    payload,
+    BASE,
+  )
+}
+
+function saveFuelAvailabilityCost(keycloak, plantIds, financialYear, payload) {
+  return saveFuelAvailabilityBase(
+    keycloak,
+    plantIds,
+    financialYear,
+    payload,
+    BASE_COST,
+  )
+}
+
 // ===================== || FUEL AVAILABILITY EXCEL IMPORT || ===================== //
-// POST /task/jmd/fuel-availability/import?plantIds=...&financialYear=... (multipart)
-async function importFuelAvailability(file, keycloak, plantIds, financialYear) {
+// POST {base}/import?plantIds=...&financialYear=... (multipart)
+async function importFuelAvailabilityBase(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+  base,
+  minimal,
+  type,
+) {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/jmd/fuel-availability/import?plantIds=${queryParams}&financialYear=${financialYear}`
+  let url = `${Config.CaseEngineUrl}${base}/import?plantIds=${queryParams}&financialYear=${financialYear}`
+  if (minimal) {
+    url += `&minimal=true`
+  }
+  if (type) {
+    url += `&type=${encodeURIComponent(type)}`
+  }
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -113,19 +220,68 @@ async function importFuelAvailability(file, keycloak, plantIds, financialYear) {
   }
 }
 
+function importFuelAvailability(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+  minimal,
+  type,
+) {
+  return importFuelAvailabilityBase(
+    file,
+    keycloak,
+    plantIds,
+    financialYear,
+    BASE,
+    minimal,
+    type,
+  )
+}
+
+function importFuelAvailabilityCost(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+  type,
+) {
+  return importFuelAvailabilityBase(
+    file,
+    keycloak,
+    plantIds,
+    financialYear,
+    BASE_COST,
+    true,
+    type,
+  )
+}
+
 // ===================== || FUEL AVAILABILITY EXPORT || ===================== //
-// GET /task/jmd/fuel-availability/export?plantIds=...&financialYear=...&type=...
-async function exportFuelAvailability(
+// GET {base}/export?plantIds=...&financialYear=...&type=...
+async function exportFuelAvailabilityBase(
   keycloak,
   plantIds,
   financialYear,
   type,
   fileName,
+  base,
+  siteId,
+  minimal,
 ) {
   const queryParams = buildPlantIdsParam(plantIds)
-  let url = `${Config.CaseEngineUrl}/task/jmd/fuel-availability/export?plantIds=${queryParams}&financialYear=${financialYear}`
+  let url = `${Config.CaseEngineUrl}${base}/export?financialYear=${financialYear}`
+  if (queryParams) {
+    url += `&plantIds=${queryParams}`
+  }
+  if (siteId) {
+    url += `&siteId=${encodeURIComponent(siteId)}`
+  }
   if (type) {
     url += `&type=${encodeURIComponent(type)}`
+  }
+  if (minimal) {
+    url += `&minimal=true`
   }
   const headers = {
     'Content-Type': 'application/json',
@@ -165,11 +321,52 @@ async function exportFuelAvailability(
   }
 }
 
+function exportFuelAvailability(
+  keycloak,
+  plantIds,
+  financialYear,
+  type,
+  fileName,
+  siteId,
+  minimal,
+) {
+  return exportFuelAvailabilityBase(
+    keycloak,
+    plantIds,
+    financialYear,
+    type,
+    fileName,
+    BASE,
+    siteId,
+    minimal,
+  )
+}
+
+function exportFuelAvailabilityCost(
+  keycloak,
+  plantIds,
+  financialYear,
+  type,
+  fileName,
+  siteId,
+) {
+  return exportFuelAvailabilityBase(
+    keycloak,
+    plantIds,
+    financialYear,
+    type,
+    fileName,
+    BASE_COST,
+    siteId,
+    true,
+  )
+}
+
 // ===================== || FUELS LIST (with category) || ===================== //
 // GET /task/jmd/fuel-availability/fuels?type=FUEL
 // Returns { data: [{ id, fuelName, fuelDisplayName, type, categoryFkId, categoryName, categoryDisplayName }] }
 async function getFuels(keycloak, type) {
-  let url = `${Config.CaseEngineUrl}/task/jmd/fuel-availability/fuels`
+  let url = `${Config.CaseEngineUrl}${BASE}/fuels`
   if (type) {
     url += `?type=${encodeURIComponent(type)}`
   }
@@ -186,10 +383,57 @@ async function getFuels(keycloak, type) {
   }
 }
 
+// ===================== || FUEL EXCHANGE RATE || ===================== //
+// GET {BASE_COST}/exchange-rate?siteId=...&financialYear=...
+// Returns { data: { id, siteId, aopYear, value, remarks, createdDate, updatedDate } | null }
+async function getFuelExchangeRate(keycloak, siteId, financialYear) {
+  const url = `${Config.CaseEngineUrl}${BASE_COST}/exchange-rate?siteId=${encodeURIComponent(siteId)}&financialYear=${financialYear}`
+  const headers = buildHeaders(keycloak)
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching fuel exchange rate:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST {BASE_COST}/exchange-rate?siteId=...&financialYear=...&value=...&remarks=...
+async function saveFuelExchangeRate(
+  keycloak,
+  siteId,
+  financialYear,
+  value,
+  remarks,
+) {
+  let url = `${Config.CaseEngineUrl}${BASE_COST}/exchange-rate?siteId=${encodeURIComponent(siteId)}&financialYear=${financialYear}`
+  if (value !== null && value !== undefined && value !== '') {
+    url += `&value=${encodeURIComponent(value)}`
+  }
+  if (remarks !== null && remarks !== undefined) {
+    url += `&remarks=${encodeURIComponent(remarks)}`
+  }
+  const headers = buildHeaders(keycloak)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving fuel exchange rate:', e)
+    return await Promise.reject(e)
+  }
+}
+
 // ===================== || FUEL AVAILABILITY DELETE || ===================== //
 // DELETE /task/jmd/fuel-availability/{id}
 async function deleteFuelAvailability(keycloak, id) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/fuel-availability/${id}`
+  const url = `${Config.CaseEngineUrl}${BASE}/${id}`
   const headers = buildHeaders(keycloak)
   try {
     const resp = await fetch(url, { method: 'DELETE', headers })

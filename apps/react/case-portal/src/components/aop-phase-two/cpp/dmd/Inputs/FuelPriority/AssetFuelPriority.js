@@ -1,10 +1,9 @@
-import { useState, useMemo, useCallback, Children } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/jmd/assetPriorityApiService'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
@@ -67,8 +66,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, verticalObject, year, screenTitle } =
-    dataGridStore
+  const { plantObject, year, screenTitle } = dataGridStore
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
@@ -82,13 +80,11 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
 
   // Create a per-month getOptions function that returns only fuels available
-  // for that plant in that specific month
+  // for that plant in that specific month. No fallback — if the plant has no
+  // fuels declared in Fuel Availability, the dropdown is empty.
   const getOptionsForMonth = useCallback(
-    (mon) => (dataItem) => {
-      const plantMonthFuels = plantFuelMap[dataItem?.plantName]?.[mon]
-      return plantMonthFuels?.length ? plantMonthFuels : fuelOptions
-    },
-    [plantFuelMap, fuelOptions],
+    (mon) => (dataItem) => plantFuelMap[dataItem?.plantName]?.[mon] || [],
+    [plantFuelMap],
   )
 
   // Generate month columns dynamically — memoized so grid doesn't remount on every render
@@ -99,8 +95,8 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
         field: mon,
         title: headerMap[MONTH_TO_INDEX[mon]],
         children: FUEL_PRIORITY_FIELDS.map(({ field, title }) => ({
-          widthT: 120,
-          minWidth: 120,
+          widthT: 160,
+          minWidth: 160,
           type: 'select',
           dynamicOptions: true,
           getOptions: getOptionsForMonth(mon),
@@ -235,7 +231,6 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
-    console.log('modifiedCells', modifiedCells)
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length == 0) {
       setSnackbarOpen(true)
@@ -383,7 +378,6 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  console.log('rows', rows)
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />

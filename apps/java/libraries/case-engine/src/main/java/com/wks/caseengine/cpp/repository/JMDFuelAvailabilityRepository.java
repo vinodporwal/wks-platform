@@ -43,7 +43,11 @@ public interface JMDFuelAvailabilityRepository extends JpaRepository<CPPFuelAvai
         // "  CPPPlantFKId = :cppPlantFkId, " +
         "  Fuel_FK_Id   = :fuelFkId, " +
         // "  [Type]       = :type, " +
-        "  UOM          = :uom, " +
+        // COALESCE so files without a UOM column never wipe the stored value.
+        "  UOM          = COALESCE(:uom, UOM), " +
+        // COALESCE so callers that don't carry calorificValue (DMD/NCV payloads)
+        // never wipe the stored value.
+        "  CalorificValue = COALESCE(:calorificValue, CalorificValue), " +
         "  Apr = :apr, May = :may, Jun = :jun, Jul = :jul, " +
         "  Aug = :aug, Sep = :sep, Oct = :oct, Nov = :nov, " +
         "  [Dec] = :dec, Jan = :jan, Feb = :feb, Mar = :mar, " +
@@ -57,6 +61,7 @@ public interface JMDFuelAvailabilityRepository extends JpaRepository<CPPFuelAvai
             @Param("fuelFkId")      UUID fuelFkId,
             // @Param("type")          String type,
             @Param("uom")           String uom,
+            @Param("calorificValue") Double calorificValue,
             @Param("apr")           Double apr,
             @Param("may")           Double may,
             @Param("jun")           Double jun,
@@ -70,5 +75,31 @@ public interface JMDFuelAvailabilityRepository extends JpaRepository<CPPFuelAvai
             @Param("feb")           Double feb,
             @Param("mar")           Double mar,
             // @Param("financialYear") String financialYear,
+            @Param("remarks")       String remarks);
+
+    @Modifying
+    @Transactional
+    @Query(value =
+        "UPDATE dbo.CPPFuelAvailabilityTransaction SET " +
+        "  Cost_Apr = :costApr, Cost_May = :costMay, Cost_Jun = :costJun, Cost_Jul = :costJul, " +
+        "  Cost_Aug = :costAug, Cost_Sep = :costSep, Cost_Oct = :costOct, Cost_Nov = :costNov, " +
+        "  Cost_Dec = :costDec, Cost_Jan = :costJan, Cost_Feb = :costFeb, Cost_Mar = :costMar, " +
+        "  Remarks = :remarks, UpdatedDate = GETDATE() " +
+        "WHERE Id = :id",
+        nativeQuery = true)
+    int updateFuelAvailabilityCost(
+            @Param("id")            UUID id,
+            @Param("costApr")       Double costApr,
+            @Param("costMay")       Double costMay,
+            @Param("costJun")       Double costJun,
+            @Param("costJul")       Double costJul,
+            @Param("costAug")       Double costAug,
+            @Param("costSep")       Double costSep,
+            @Param("costOct")       Double costOct,
+            @Param("costNov")       Double costNov,
+            @Param("costDec")       Double costDec,
+            @Param("costJan")       Double costJan,
+            @Param("costFeb")       Double costFeb,
+            @Param("costMar")       Double costMar,
             @Param("remarks")       String remarks);
 }

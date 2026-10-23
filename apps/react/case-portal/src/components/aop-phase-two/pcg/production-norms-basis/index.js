@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Box, Stack } from '../../../../../node_modules/@mui/material/index'
 import TabSection from 'components/aop-phase-two/common/utilities/Tabs'
 import ConfigurationAccordian from '../../common/components/ConfigurationAccordian'
@@ -44,6 +44,15 @@ const ProductionNormsBasisPCG = () => {
     severity: 'info',
     autoHide: true,
   })
+
+  const site = siteObject?.name?.toLowerCase()?.trim()
+  const plant = plantObject?.name?.toLowerCase()?.trim()
+
+  const isDisplayConstantToManualEntry = useMemo(() => {
+    if (site === 'sez' && ['gasifier'].includes(plant)) return true
+    if (site === 'dta' && ['gasifier'].includes(plant)) return true
+    return false
+  }, [site, plant])
 
   const getConfigurationTabsMatrix = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
@@ -200,6 +209,7 @@ const ProductionNormsBasisPCG = () => {
     return tab ? tab.displayName : null
   }
 
+  
   // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
   const filteredTabs = tabs
     .map((tabId) => {
@@ -210,7 +220,12 @@ const ProductionNormsBasisPCG = () => {
       if (!tabInfo) return null
 
       const name = tabInfo.displayName
-
+      if (name === 'Constants' && isDisplayConstantToManualEntry) {
+        return {
+          id: tabId,
+          name: 'Manual Entry',
+        }
+      }
       return {
         id: tabId,
         name,
