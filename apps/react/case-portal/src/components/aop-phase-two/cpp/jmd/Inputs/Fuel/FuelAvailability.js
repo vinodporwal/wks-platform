@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux'
 import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
 import { TabAccessApiService } from 'components/aop-phase-two/services/common/tabAccessApiService'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
@@ -37,8 +37,6 @@ const FuelAvailability = ({
   const IS_JMD = siteObject?.name?.toLowerCase() == 'jmd'
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Fuel_Availability')
-  const IS_DTA_SEZ = (name) =>
-    name.toLowerCase() == 'dta-cpp' || name.toLowerCase() == 'sez-cpp'
 
   // For JMD plants we send the full list of selected plants; for non-JMD
   // we send only the currently selected plant.
@@ -53,7 +51,7 @@ const FuelAvailability = ({
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(2)
 
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -210,22 +208,22 @@ const FuelAvailability = ({
       locked: true,
       minWidth: 200,
     },
-    {
-      field: 'uom',
-      title: 'UOM',
-      type: 'text',
-      editable: false,
-      locked: false,
-      minWidth: 100,
-    },
+    // {
+    //   field: 'uom',
+    //   title: 'UOM',
+    //   type: 'text',
+    //   editable: false,
+    //   locked: false,
+    //   minWidth: 100,
+    // },
     {
       field: 'calorificValue',
-      title: 'Calorific Value',
+      title: 'Calorific Value (Kcal/Kg)',
       type: 'number1',
       format: valueFormat,
       editable: true,
       locked: false,
-      minWidth: 120,
+      minWidth: 220,
     },
     ...MONTH_QTY_COLUMNS,
     {
@@ -388,7 +386,7 @@ const FuelAvailability = ({
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fuel Availability',
+    titleName: 'Fuel Availability (In MMBTU)',
   }
 
   const saveChanges = async () => {

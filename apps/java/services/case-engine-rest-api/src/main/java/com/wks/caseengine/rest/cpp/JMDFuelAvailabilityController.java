@@ -325,6 +325,55 @@ public class JMDFuelAvailabilityController {
         }
     }
 
+    @GetMapping("/jmd/fuel-availability-cost/exchange-rate")
+    public ResponseEntity<?> getFuelExchangeRate(
+            @RequestParam UUID siteId,
+            @RequestParam String financialYear
+    ) {
+        try {
+            log.info("=== GET JMD FuelExchangeRate Request === siteId: {}, financialYear: {}", siteId, financialYear);
+
+            AOPMessageVM result = jmdFuelAvailabilityService.getFuelExchangeRate(siteId, financialYear);
+
+            log.info("=== GET JMD FuelExchangeRate Response === code: {}", result.getCode());
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("=== CONTROLLER EXCEPTION (FuelExchangeRate GET) ===", e);
+
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/jmd/fuel-availability-cost/exchange-rate")
+    public ResponseEntity<?> saveFuelExchangeRate(
+            @RequestParam UUID siteId,
+            @RequestParam String financialYear,
+            @RequestParam(required = false) Double value,
+            @RequestParam(required = false) String remarks
+    ) {
+        try {
+            log.info("=== POST JMD FuelExchangeRate Request === siteId: {}, financialYear: {}, value: {}",
+                    siteId, financialYear, value);
+
+            AOPMessageVM result = jmdFuelAvailabilityService.saveFuelExchangeRate(siteId, financialYear, value, remarks);
+
+            log.info("=== POST JMD FuelExchangeRate Response === code: {}", result.getCode());
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("=== CONTROLLER EXCEPTION (FuelExchangeRate POST) ===", e);
+
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     @PostMapping(value = "/jmd/fuel-availability-cost/import")
     public ResponseEntity<AOPMessageVM> importFuelAvailabilityCost(
             @RequestParam List<UUID> plantIds,

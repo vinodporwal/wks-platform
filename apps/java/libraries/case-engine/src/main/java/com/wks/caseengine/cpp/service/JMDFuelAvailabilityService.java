@@ -36,4 +36,8 @@ public interface JMDFuelAvailabilityService {
 
     AOPMessageVM importFuelAvailabilityCost(List<UUID> plantIds, String financialYear, MultipartFile file,
                                             String type) throws IOException;
+
+    AOPMessageVM getFuelExchangeRate(UUID siteId, String financialYear);
+
+    AOPMessageVM saveFuelExchangeRate(UUID siteId, String financialYear, Double value, String remarks);
 }
