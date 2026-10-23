@@ -13,13 +13,13 @@ const COLUMNS = [
   { field: 'targetValue', title: 'Target Value', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
   { field: 'range', title: 'Range', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
   { field: 'selection', title: 'Selection', editable: true, widthT: 80, minWidth: 80, type: 'checkbox' },
-  { field: 'remarks', title: 'Remarks', widthT: 250, type: 'textarea', editable: true, minWidth: 250, showPlaceholder: false },
+  { field: 'remarks', title: 'Criteria', widthT: 250, type: 'textarea', editable: false, minWidth: 250, showPlaceholder: false },
   { field: 'dependantAttributeId', title: 'Applicable Utilities & Cat-Chems', widthT: 250, minWidth: 200, type: 'text', editable: false },
 ]
 
 const FILTER_CONFIG = [
   { id: 1, displayName: 'Sulphur Production', uom: '', targetValue: 'PIMS Sulphur Production (auto fetch from PIMS throughput tab)', range: '+/- 5%', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['targetValue'], type: 'formula-text' },
-  { id: 2, displayName: 'AGR C003 Inline/Bypass', uom: '', targetValue: 'Bypass', range: '+/-5%', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'dropdown', options: ['Inline', 'Bypass'] },
+  { id: 2, displayName: 'AGR C003 Inline/Bypass', uom: '', targetValue: 'Bypass', range: '', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'dropdown', options: ['Inline', 'Bypass'] },
   { id: 3, displayName: 'AGR C003 Inline (G330PI400340 A/B/C)', uom: 'kg/cm2g', targetValue: '1.2', range: '', selection: false, remarks: 'Less than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
   { id: 4, displayName: 'AGR C003 Inline ( G330FIC400305)', uom: '%', targetValue: '10', range: '', selection: false, remarks: 'more than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
   { id: 5, displayName: 'AGR C003 Bypass (G330PI400340 A/B/C)', uom: 'kg/cm2g', targetValue: '1.6', range: '', selection: false, remarks: 'more than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
@@ -152,19 +152,19 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
   const saveChanges = async () => {
     const modifiedData = Object.values(modifiedCells)
-    console.log("modifiedData", modifiedData)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
-
+    console.log('modifiedData', modifiedData)
+    console.log('dataToSave', dataToSave)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
 
-    const validationError = validateRowDataWithRemarks(
-      dataToSave.filter((item) => item.isEditable),
-      originalRows,
-      ['targetValue', 'range', 'selection'],
-      'displayName'
-    )
+    // const validationError = validateRowDataWithRemarks(
+    //   dataToSave.filter((item) => item.isEditable),
+    //   originalRows,
+    //   ['targetValue', 'range', 'selection'],
+    //   'displayName'
+    // )
 
-    if (validationError) return showSnackbar(validationError, 'error')
+    // if (validationError) return showSnackbar(validationError, 'error')
 
     setLoading(true)
     

@@ -10,8 +10,8 @@ import { Checkbox } from '@mui/material'
 
 const parseFormulaText = (value, dataItem, field) => {
   const str = String(value ?? '').trim();
-  const match = str.match(/^([+/-]+\s*)(\d+(?:\.\d+)?)(\s*%?)?$/);
-  if (match) {
+  const match = str.match(/^([+/-]+\s*)(\d*(?:\.\d+)?)(\s*%?)?$/);
+  if (match && (match[1] || match[2])) {
     return {
       prefix: match[1] || '',
       num: match[2] || '',
@@ -262,7 +262,10 @@ export const DynamicRowCellEditor = (props) => {
       return <BooleanCellEditor {...props} />
 
     case 'formula-text':
-      if (/^[+/-]+\s*\d+(?:\.\d+)?\s*%?$/.test(String(dataItem?.[field] || ''))) {
+      if (
+        field === 'range' ||
+        /^[+/-]+\s*\d*(?:\.\d+)?\s*%?$/.test(String(dataItem?.[field] || ''))
+      ) {
         return <FormulaTextEditor {...props} />
       }
       return <NoSpinnerNumericEditor {...props} />
