@@ -348,12 +348,12 @@ async function importConstantsExcel(
  * @param {string} year - AOP Year
  * @returns {Promise} Export response
  */
-async function exportConstantsExcel(keycloak, plantId, year) {
+async function exportConstantsExcel(keycloak, plantId, year, fileName) {
   return exportExcelData(
     keycloak,
     'vgoht/norms-basis/constant/export',
     { year: year, plantFKId: plantId },
-    `VGOHT_Production_Norms_Constants_${year}.xlsx`,
+    fileName || `PCG_Production_Norms_Constants_${year}.xlsx`,
   )
 }
 
