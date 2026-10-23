@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Box, Alert } from '@mui/material'
+import { Box, Typography, TextField } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 
@@ -39,6 +39,16 @@ const SignOffReport = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const todayDateStr = new Date().toISOString().split('T')[0]
+  const [signOffDetails, setSignOffDetails] = useState({
+    preparedBy: '',
+    preparedDate: todayDateStr,
+    reviewedBy: '',
+    reviewedDate: todayDateStr,
+    approvedBy: '',
+    approvedDate: todayDateStr,
+  })
 
   // Notification state
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -98,18 +108,23 @@ const SignOffReport = () => {
   const enrichColumns = useCallback(
     (backendCols = []) => {
       if (!Array.isArray(backendCols)) return []
-
+      const excludeColumns = [
+        'iseditable',
+        'is_editable',
+        'grid_type',
+        'gridtype',
+        'id',
+        'unitno',
+        'unit_no',
+      ]
       return backendCols
         .filter((col) => {
           if (!col || !col.field) return false
-          const fieldUpper = col.field.trim().toUpperCase()
-          const titleUpper = col.title?.trim().toUpperCase()
+          const fieldUpper = col.field.trim().toLowerCase()
+          const titleUpper = col.title?.trim().toLowerCase()
           return (
-            fieldUpper !== 'GRID_TYPE' &&
-            fieldUpper !== 'ID' &&
-            titleUpper !== 'ID' &&
-            fieldUpper !== 'UNITNO' &&
-            titleUpper !== 'UNITNO'
+            !excludeColumns.includes(fieldUpper)
+            && !excludeColumns.includes(titleUpper)
           )
         })
         .map((col, index) => {
@@ -144,10 +159,13 @@ const SignOffReport = () => {
           }
 
           if (isNumber) {
+            const isDaysCol =
+              formattedTitle.toLowerCase().includes('days') ||
+              col.field?.toLowerCase().includes('days')
             return {
               ...baseConfig,
               type: 'number',
-              format: numberFormatFiveDecimals,
+              format: isDaysCol ? '{0:0}' : numberFormatFiveDecimals,
               align: 'right',
               headerAlign: 'left',
               widthT: Math.max(150, Math.min(formattedTitle.length * 12, 220)),
@@ -206,6 +224,24 @@ const SignOffReport = () => {
       normalizedRow.id = rowId
       normalizedRow.Id = rowId
 
+      // Normalize isEditable flag as boolean for row-level permissions
+      const rawEditable =
+        normalizedRow.isEditable ??
+        normalizedRow.IsEditable ??
+        normalizedRow.is_editable
+      const isRowEditable =
+        rawEditable !== false &&
+        rawEditable !== 'false' &&
+        rawEditable !== 0 &&
+        rawEditable !== '0'
+      normalizedRow.isEditable = isRowEditable
+      normalizedRow.IsEditable = isRowEditable
+
+      const isDaysRow =
+        String(normalizedRow.UOM ?? normalizedRow.uom ?? '')
+          .trim()
+          .toLowerCase() === 'days'
+
       // Convert numeric fields to JavaScript numbers so Kendo number formatting applies
       numericFields.forEach((field) => {
         const val = normalizedRow[field]
@@ -214,7 +250,11 @@ const SignOffReport = () => {
             typeof val === 'number'
               ? val
               : parseFloat(String(val).replace(/,/g, '').trim())
-          normalizedRow[field] = !isNaN(parsed) ? parsed : null
+          normalizedRow[field] = !isNaN(parsed)
+            ? isDaysRow
+              ? Math.round(parsed)
+              : parsed
+            : null
         } else {
           normalizedRow[field] = null
         }
@@ -235,9 +275,6 @@ const SignOffReport = () => {
       const remarks = normalizedRow?.Remarks ?? normalizedRow?.remarks ?? ''
       normalizedRow.remarks = remarks
 
-      if (normalizedRow?.UnitNo) {
-        setUnitNo(String(normalizedRow.UnitNo))
-      }
       return normalizedRow
     })
   }, [])
@@ -249,11 +286,13 @@ const SignOffReport = () => {
   const fetchSignOffReport = useCallback(
     async (isCalculate = false) => {
       if (!PLANT_ID || !AOP_YEAR) {
+        setUnitNo(null)
         setColumns([])
         setRows([])
         return
       }
 
+      setUnitNo(null)
       setLoading(true)
       if (isCalculate) {
         setSnackbarData({
@@ -348,6 +387,20 @@ const SignOffReport = () => {
 
           const enrichedCols = enrichColumns(rawCols)
           const enrichedRows = normalizeRows(rawRows, enrichedCols)
+
+          const foundUnitNo = rawRows.find(
+            (r) => r?.UnitNo ?? r?.unitNo ?? r?.unitno,
+          )
+          setUnitNo(
+            foundUnitNo
+              ? String(
+                  foundUnitNo.UnitNo ??
+                    foundUnitNo.unitNo ??
+                    foundUnitNo.unitno,
+                )
+              : null,
+          )
+
           setColumns(enrichedCols)
           setRows(enrichedRows)
           setOriginalRows(JSON.parse(JSON.stringify(enrichedRows)))
@@ -404,6 +457,15 @@ const SignOffReport = () => {
   )
 
   const handleRemarkCellClick = useCallback((row) => {
+    const rawEditable = row?.isEditable ?? row?.IsEditable ?? row?.is_editable
+    if (
+      rawEditable === false ||
+      rawEditable === 'false' ||
+      rawEditable === 0 ||
+      rawEditable === '0'
+    ) {
+      return
+    }
     setCurrentRemark(row.remarks ?? '')
     setCurrentRowId(row.id ?? row.Id)
     setRemarkDialogOpen(true)
@@ -528,7 +590,7 @@ const SignOffReport = () => {
         })
         setSnackbarOpen(true)
         setModifiedCells({})
-        await fetchSignOffReport()
+        setOriginalRows(JSON.parse(JSON.stringify(rows)))
       } else {
         setSnackbarData({
           message:
@@ -556,7 +618,6 @@ const SignOffReport = () => {
     columns,
     keycloak,
     AOP_YEAR,
-    fetchSignOffReport,
   ])
 
   /**
@@ -600,11 +661,12 @@ const SignOffReport = () => {
       remarksEditable: true,
       showNote: Boolean(unitNo),
       note: unitNo ? `(${unitNo})` : '',
+      isDaysUomInInteger: true,
     }
   }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading])
 
   return (
-    <div>
+    <Box sx={{ minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       {/* Global Loader */}
       <LoaderBackdrop open={loading} />
 
@@ -640,7 +702,145 @@ const SignOffReport = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
       />
-    </div>
+
+      {/* Sign-off Section: Prepared By, Reviewed By, Approved By */}
+      <Box
+        sx={{
+          mt: 2.5,
+          mb: 2,
+          p: 2,
+          backgroundColor: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: '14px',
+            fontWeight: 700,
+            fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
+            color: '#1e293b',
+            mb: 1.5,
+          }}
+        >
+          Sign Off Details
+        </Typography>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
+          {/* Prepared By */}
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: '6px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#475569',
+                mb: 1,
+              }}
+            >
+              Prepared By
+            </Typography>
+            <TextField
+              size='small'
+              fullWidth
+              placeholder='Name / Designation'
+              value={signOffDetails.preparedBy}
+              onChange={(e) =>
+                setSignOffDetails((prev) => ({
+                  ...prev,
+                  preparedBy: e.target.value,
+                }))
+              }
+              sx={{ backgroundColor: '#fff', mb: 1 }}
+            />
+            
+          </Box>
+
+          {/* Reviewed By */}
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: '6px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#475569',
+                mb: 1,
+              }}
+            >
+              Reviewed By
+            </Typography>
+            <TextField
+              size='small'
+              fullWidth
+              placeholder='Name / Designation'
+              value={signOffDetails.reviewedBy}
+              onChange={(e) =>
+                setSignOffDetails((prev) => ({
+                  ...prev,
+                  reviewedBy: e.target.value,
+                }))
+              }
+              sx={{ backgroundColor: '#fff', mb: 1 }}
+            />
+            
+          </Box>
+
+          {/* Approved By */}
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: '6px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#475569',
+                mb: 1,
+              }}
+            >
+              Approved By
+            </Typography>
+            <TextField
+              size='small'
+              fullWidth
+              placeholder='Name / Designation'
+              value={signOffDetails.approvedBy}
+              onChange={(e) =>
+                setSignOffDetails((prev) => ({
+                  ...prev,
+                  approvedBy: e.target.value,
+                }))
+              }
+              sx={{ backgroundColor: '#fff', mb: 1 }}
+            />
+            
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 

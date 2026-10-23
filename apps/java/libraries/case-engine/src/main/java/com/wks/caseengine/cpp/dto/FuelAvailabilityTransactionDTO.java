@@ -38,6 +38,9 @@ public class FuelAvailabilityTransactionDTO {
     @JsonProperty("categoryDisplayName")
     private String categoryDisplayName;
 
+    @JsonProperty("calorificValue")
+    private Double calorificValue;
+
     @JsonProperty("type")
     private String type;
 
@@ -59,6 +62,19 @@ public class FuelAvailabilityTransactionDTO {
     private Double jan;
     private Double feb;
     private Double mar;
+
+    private Double costApr;
+    private Double costMay;
+    private Double costJun;
+    private Double costJul;
+    private Double costAug;
+    private Double costSep;
+    private Double costOct;
+    private Double costNov;
+    private Double costDec;
+    private Double costJan;
+    private Double costFeb;
+    private Double costMar;
 
     @JsonProperty("remarks")
     private String remarks;

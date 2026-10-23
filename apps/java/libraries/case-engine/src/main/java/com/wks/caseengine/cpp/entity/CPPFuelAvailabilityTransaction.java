@@ -30,6 +30,9 @@ public class CPPFuelAvailabilityTransaction {
     @Column(name = "UOM")
     private String uom;
 
+    @Column(name = "CalorificValue")
+    private Double calorificValue;
+
     @Column(name = "Apr")
     private Double apr;
 
@@ -65,6 +68,42 @@ public class CPPFuelAvailabilityTransaction {
 
     @Column(name = "Mar")
     private Double mar;
+
+    @Column(name = "Cost_Apr")
+    private Double costApr;
+
+    @Column(name = "Cost_May")
+    private Double costMay;
+
+    @Column(name = "Cost_Jun")
+    private Double costJun;
+
+    @Column(name = "Cost_Jul")
+    private Double costJul;
+
+    @Column(name = "Cost_Aug")
+    private Double costAug;
+
+    @Column(name = "Cost_Sep")
+    private Double costSep;
+
+    @Column(name = "Cost_Oct")
+    private Double costOct;
+
+    @Column(name = "Cost_Nov")
+    private Double costNov;
+
+    @Column(name = "Cost_Dec")
+    private Double costDec;
+
+    @Column(name = "Cost_Jan")
+    private Double costJan;
+
+    @Column(name = "Cost_Feb")
+    private Double costFeb;
+
+    @Column(name = "Cost_Mar")
+    private Double costMar;
 
     @Column(name = "FinancialYear", nullable = false)
     private String financialYear;
