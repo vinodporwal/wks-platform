@@ -1292,16 +1292,16 @@ public AOPMessageVM getTreatmentVendorConsumption(String year, String plantFKId)
 			dto.setUom(row[3] != null ? row[3].toString() : null);
 			dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
 			dto.setApril(row[5] != null ? parseDouble(row[5]) : null);
-			dto.setAuditYear(row[6] != null ? row[6].toString() : null);
-			dto.setRemarks(row[7] != null ? row[7].toString() : null);
-			dto.setDisplayOrder(row[8] != null ? Integer.parseInt(row[8].toString()) : null);
+			dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+			dto.setRemarks(row[18] != null ? row[18].toString() : null);
+			dto.setDisplayOrder(row[19] != null ? Integer.parseInt(row[19].toString()) : null);
 
 			Boolean isEditable = null;
-			if (row[9] != null) {
-				if (row[9] instanceof Boolean) {
-					isEditable = (Boolean) row[9];
-				} else if (row[9] instanceof Number) {
-					isEditable = ((Number) row[9]).intValue() == 1;
+			if (row[20] != null) {
+				if (row[20] instanceof Boolean) {
+					isEditable = (Boolean) row[20];
+				} else if (row[20] instanceof Number) {
+					isEditable = ((Number) row[20]).intValue() == 1;
 				}
 			}
 			dto.setIsEditable(isEditable);
@@ -1345,16 +1345,16 @@ public AOPMessageVM getCommodityChemicalsConsumption(String year, String plantFK
 			dto.setUom(row[3] != null ? row[3].toString() : null);
 			dto.setNormTypeName(row[4] != null ? row[4].toString() : null);
 			dto.setApril(row[5] != null ? parseDouble(row[5]) : null);
-			dto.setAuditYear(row[6] != null ? row[6].toString() : null);
-			dto.setRemarks(row[7] != null ? row[7].toString() : null);
-			dto.setDisplayOrder(row[8] != null ? Integer.parseInt(row[8].toString()) : null);
+			dto.setAuditYear(row[17] != null ? row[17].toString() : null);
+			dto.setRemarks(row[18] != null ? row[18].toString() : null);
+			dto.setDisplayOrder(row[19] != null ? Integer.parseInt(row[19].toString()) : null);
 
 			Boolean isEditable = null;
-			if (row[9] != null) {
-				if (row[9] instanceof Boolean) {
-					isEditable = (Boolean) row[9];
-				} else if (row[9] instanceof Number) {
-					isEditable = ((Number) row[9]).intValue() == 1;
+			if (row[20] != null) {
+				if (row[20] instanceof Boolean) {
+					isEditable = (Boolean) row[20];
+				} else if (row[20] instanceof Number) {
+					isEditable = ((Number) row[20]).intValue() == 1;
 				}
 			}
 			dto.setIsEditable(isEditable);
