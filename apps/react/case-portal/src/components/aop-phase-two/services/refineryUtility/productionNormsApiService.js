@@ -61,10 +61,14 @@ export const ProductionNormsApiService = {
   // vendor consumption APIs
   getVendorConsumptionData,
   saveVendorConsumptionData,
+  getTreatmentVendorConsumptionMonthly,
+  saveTreatmentVendorConsumptionMonthly,
 
   // commodity consumption APIs
   getCommodityConsumptionData,
   saveCommodityConsumptionData,
+  getCommodityChemicalsConsumptionMonthly,
+  saveCommodityChemicalsConsumptionMonthly,
  //Resin Consumption
   getResinConsumptionData,
   saveResinConsumption,
@@ -1008,6 +1012,54 @@ async function saveVendorConsumptionData(
   }
 }
 
+async function getTreatmentVendorConsumptionMonthly(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/treatment-vendor-consumption-monthly?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveTreatmentVendorConsumptionMonthly(
+  keycloak,
+  PlantId,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/treatment-vendor-consumption-monthly?year=${AOP_YEAR}&plantFKId=${PlantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 async function getCommodityConsumptionData(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/commodity-chemicals-consumption?year=${year}&plantFKId=${plantId}`
   const headers = {
@@ -1054,6 +1106,55 @@ async function saveCommodityConsumptionData(
     return await Promise.reject(e)
   }
 }
+
+async function getCommodityChemicalsConsumptionMonthly(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/commodity-chemicals-consumption-monthly?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveCommodityChemicalsConsumptionMonthly(
+  keycloak,
+  PlantId,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/commodity-chemicals-consumption-monthly?year=${AOP_YEAR}&plantFKId=${PlantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 async function getResinConsumptionData(keycloak, plantId, aopYear) {
   const url = `${Config.CaseEngineUrl}/task/resin-consumptions?plantFKId=${plantId}&year=${aopYear}`
   const headers = {
