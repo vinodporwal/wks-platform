@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
@@ -7,6 +7,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const Constants = ({ startDate, endDate }) => {
   const keycloak = useSession()
@@ -32,6 +33,18 @@ const Constants = ({ startDate, endDate }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const DECIMALS = IS_GASIFIER ? 10 : 5
   const valueFormat = customValueFormatterPhaseTwo(DECIMALS)
+
+  const site = siteObject?.name?.toLowerCase()?.trim()
+  const plant = plantObject?.name?.toLowerCase()?.trim()
+
+  const isDisplayConstantToManualEntry = useMemo(() => {
+    if (site === 'sez' && ['gasifier'].includes(plant)) return true
+    if (site === 'dta' && ['gasifier'].includes(plant)) return true
+    return false
+  }, [site, plant])
+
+  const ExcelName = generateExcelName(dataGridStore, `Production_Norms_${isDisplayConstantToManualEntry ? 'Manual_Entry' : 'Constant'}`)
+
   const columns = [
     {
       field: 'productName',
@@ -115,11 +128,11 @@ const Constants = ({ startDate, endDate }) => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Production_Norms_Constants_${AOP_YEAR}`,
+    ExcelName: `Production_Norms_${isDisplayConstantToManualEntry ? 'Manual_Entry' : 'Constants'}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Constants',
+    titleName: isDisplayConstantToManualEntry ? 'Manual Entry' : 'Constants',
   }
 
   const formatDateForAPI = (date) => {
@@ -278,7 +291,7 @@ const Constants = ({ startDate, endDate }) => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Constants_Errors_${new Date().getTime()}.xlsx`
+          link.download = `${isDisplayConstantToManualEntry ? 'Manual_Entry_Error' : 'Constant_Error'}_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -331,6 +344,7 @@ const Constants = ({ startDate, endDate }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        ExcelName
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

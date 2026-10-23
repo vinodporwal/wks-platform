@@ -4,8 +4,9 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
+import { TabAccessApiService } from 'components/aop-phase-two/services/common/tabAccessApiService'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
@@ -17,15 +18,22 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 // CPPFuelAvailabilityTransaction table (shared with NCV).
 const DATA_TYPE = 'FUEL_AVAILABILITY'
 
+// JMD fuel availability applies only to these two CPP plants
+const IS_DTA_SEZ = (name) =>
+  name?.toLowerCase() === 'dta-cpp' || name?.toLowerCase() === 'sez-cpp'
+
 const FuelAvailability = ({
   allFuels = [],
   allCategories = [],
-  categoryOptions = [],
+  onDataChange,
 }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, year, jmdSelectedPlants } = dataGridStore
+  const { plantObject, siteObject, verticalObject, year, jmdSelectedPlants } =
+    dataGridStore
+  const VERTICAL_ID = verticalObject?.id
   const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
   const IS_JMD = siteObject?.name?.toLowerCase() == 'jmd'
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Fuel_Availability')
@@ -42,20 +50,8 @@ const FuelAvailability = ({
     [plantObject, jmdSelectedPlants, siteObject],
   )
 
-  // Plant options for the inline add row's CPP Plant dropdown
-  const plantOptions = useMemo(
-    () =>
-      (IS_JMD ? jmdSelectedPlants : PLANT_ID ? [plantObject] : [])?.map(
-        (plant) => ({
-          value: plant.id,
-          label: plant.name || plant.id,
-        }),
-      ) || [],
-    [IS_JMD, jmdSelectedPlants, plantObject, PLANT_ID],
-  )
-
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(2)
 
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -72,19 +68,45 @@ const FuelAvailability = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [rowToDelete, setRowToDelete] = useState(null)
 
-  // Fuel dropdown options filtered by the selected category for a given row.
-  // For rows with no category, show all fuels.
+  // All plants under the current site (from /task/plant-site-vertical).
+  // For JMD the CPP Plant dropdown always lists the site's plants
+  // (e.g. DTA-CPP, SEZ-CPP), not just the selected plants.
+  const [sitePlants, setSitePlants] = useState([])
+
+  useEffect(() => {
+    if (!keycloak?.token || !SITE_ID) return
+    TabAccessApiService.getPlantSiteVertical(keycloak)
+      .then((data) => {
+        // The same site can appear under multiple verticals — scope by the
+        // selected vertical first, then the site.
+        const vertical = (data || []).find((v) => v.id === VERTICAL_ID)
+        const site = (vertical?.sites || []).find((s) => s.id === SITE_ID)
+        setSitePlants(site?.plants || [])
+      })
+      .catch(() => setSitePlants([]))
+  }, [keycloak, VERTICAL_ID, SITE_ID])
+
+  const plantOptions = useMemo(() => {
+    if (!IS_JMD) {
+      return PLANT_ID
+        ? [{ value: PLANT_ID, label: plantObject?.name || PLANT_ID }]
+        : []
+    }
+    return sitePlants
+      .filter((p) => IS_DTA_SEZ(p.name) || IS_DTA_SEZ(p.displayName))
+      .map((p) => ({
+        value: p.id,
+        label: p.displayName || p.name || p.id,
+      }))
+  }, [IS_JMD, sitePlants, PLANT_ID, plantObject])
+
+  // Fuel dropdown options — for JMD show all fuels (no category filter).
   const getFuelOptionsForRow = useCallback(
-    (dataItem) => {
-      const selectedCategoryId = dataItem?.categoryId
-      if (!selectedCategoryId) return []
-      return allFuels
-        .filter((f) => f.categoryFkId === selectedCategoryId)
-        .map((f) => ({
-          value: f.id,
-          label: f.fuelDisplayName || f.fuelName || f.id,
-        }))
-    },
+    () =>
+      allFuels.map((f) => ({
+        value: f.id,
+        label: f.fuelDisplayName || f.fuelName || f.id,
+      })),
     [allFuels],
   )
 
@@ -128,7 +150,7 @@ const FuelAvailability = ({
     format: valueFormat,
   }
 
-  const MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
+  const MONTH_QTY_COLUMNS = MONTH_FIELDS.map((mon) => ({
     ...monthBaseColumnConfig,
     field: mon,
     title: headerMap[MONTH_TO_INDEX[mon]],
@@ -175,17 +197,6 @@ const FuelAvailability = ({
       minWidth: 120,
     },
     {
-      field: 'categoryDisplayName',
-      title: 'Fuel Category',
-      type: 'select',
-      options: categoryOptions,
-      displayMode: 'label',
-      returnFullObject: true,
-      editable: true,
-      locked: true,
-      minWidth: 150,
-    },
-    {
       field: 'fuelDisplayName',
       title: 'Fuel',
       type: 'select',
@@ -197,23 +208,24 @@ const FuelAvailability = ({
       locked: true,
       minWidth: 200,
     },
+    // {
+    //   field: 'uom',
+    //   title: 'UOM',
+    //   type: 'text',
+    //   editable: false,
+    //   locked: false,
+    //   minWidth: 100,
+    // },
     {
-      field: 'fuelCode',
-      title: 'Fuel Code',
-      type: 'text',
-      editable: false,
-      locked: true,
-      minWidth: 120,
+      field: 'calorificValue',
+      title: 'Calorific Value (Kcal/Kg)',
+      type: 'number1',
+      format: valueFormat,
+      editable: true,
+      locked: false,
+      minWidth: 220,
     },
-    {
-      field: 'uom',
-      title: 'UOM',
-      type: 'text',
-      editable: false,
-      locked: true,
-      minWidth: 100,
-    },
-    ...MONTH_COLUMNS,
+    ...MONTH_QTY_COLUMNS,
     {
       field: 'remarks',
       title: 'Remarks',
@@ -236,14 +248,15 @@ const FuelAvailability = ({
 
   // Fetch fuel availability transaction data for the grid
   const fetchData = useCallback(async () => {
-    if (!PLANT_ID_LIST.length || !AOP_YEAR) return
+    if ((!SITE_ID && !PLANT_ID_LIST.length) || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await FuelAvailabilityAPIService.getFuelAvailability(
+      const response = await FuelAvailabilityAPIService.getFuelAvailabilityCost(
         keycloak,
-        PLANT_ID_LIST,
+        SITE_ID ? [] : PLANT_ID_LIST,
         AOP_YEAR,
         DATA_TYPE,
+        SITE_ID,
       )
       const data = response?.data || []
 
@@ -255,13 +268,13 @@ const FuelAvailability = ({
         return
       }
 
-      const rowsWithId = data.map((row, index) => ({
+      const mapRow = (row, index) => ({
         ...row,
         id: row.id || `row_${index}`,
         remarks: row.remarks || '',
-      }))
-      setRows(rowsWithId)
-      setOriginalRows(rowsWithId)
+      })
+      setRows(data.map(mapRow))
+      setOriginalRows(data.map(mapRow))
     } catch (error) {
       console.error('Error fetching fuel availability data:', error)
       setRows([])
@@ -271,16 +284,16 @@ const FuelAvailability = ({
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, SITE_ID])
 
   useDebounce(
     () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+      if ((SITE_ID || PLANT_ID_LIST?.length) && AOP_YEAR) {
         fetchData()
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR],
+    [PLANT_ID_LIST, AOP_YEAR, SITE_ID],
   )
 
   useEffect(() => {
@@ -322,10 +335,8 @@ const FuelAvailability = ({
         updates.fuelDisplayName = fuel?.fuelDisplayName || selectedLabel || ''
         updates.fuelName = fuel?.fuelName || ''
         updates.fuelCode = fuel?.fuelCode || ''
-        // Auto-populate UOM from the selected fuel
-        if (fuel?.uom) {
-          updates.uom = fuel.uom
-        }
+        // UOM is hardcoded to MMBTU — never read from fuel master.
+        updates.uom = 'MMBTU'
         // Auto-populate category from the selected fuel's categoryFkId
         if (fuel?.categoryFkId) {
           updates.categoryId = fuel.categoryFkId
@@ -375,7 +386,7 @@ const FuelAvailability = ({
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fuel Availability',
+    titleName: 'Fuel Availability (In MMBTU)',
   }
 
   const saveChanges = async () => {
@@ -426,7 +437,7 @@ const FuelAvailability = ({
       }
     }
 
-    const fieldsToCheck = MONTH_FIELDS
+    const fieldsToCheck = ['calorificValue', ...MONTH_FIELDS]
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
@@ -453,6 +464,7 @@ const FuelAvailability = ({
           id: isNew ? null : rest.id,
           type: DATA_TYPE,
           financialYear: AOP_YEAR,
+          uom: 'MMBTU',
         }
         // Convert empty strings to null
         Object.keys(sanitized).forEach((key) => {
@@ -477,6 +489,7 @@ const FuelAvailability = ({
         severity: 'success',
       })
       fetchData()
+      onDataChange?.()
     } catch (error) {
       console.error('Error saving fuel availability data:', error)
       setSnackbarOpen(true)
@@ -498,6 +511,8 @@ const FuelAvailability = ({
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        true,
+        DATA_TYPE,
       )
 
       if (response?.code === 200) {
@@ -508,6 +523,7 @@ const FuelAvailability = ({
         })
         setModifiedCells({})
         await fetchData()
+        onDataChange?.()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -573,10 +589,12 @@ const FuelAvailability = ({
     try {
       await FuelAvailabilityAPIService.exportFuelAvailability(
         keycloak,
-        PLANT_ID_LIST,
+        SITE_ID ? [] : PLANT_ID_LIST,
         AOP_YEAR,
         DATA_TYPE,
         EXCEL_NAME,
+        SITE_ID,
+        true,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -632,6 +650,7 @@ const FuelAvailability = ({
     }
 
     deleteRowData(rowToDelete)
+    onDataChange?.()
     setSnackbarOpen(true)
     setSnackbarData({
       message: 'Record deleted successfully!',
@@ -665,14 +684,15 @@ const FuelAvailability = ({
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // groupBy={['cppPlantName']}
+        groupBy={['cppPlantName']}
         initialFieldValues={{
           cppPlantName: '',
           categoryDisplayName: '',
           fuelDisplayName: '',
           fuelCode: '',
           type: DATA_TYPE,
-          uom: '',
+          uom: 'MMBTU',
+          calorificValue: '',
           remarks: '',
         }}
         customItemChange={handleCustomItemChange}

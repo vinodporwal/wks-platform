@@ -1,10 +1,9 @@
-import { useState, useMemo, useCallback, Children } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/jmd/assetPriorityApiService'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
@@ -67,14 +66,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-    jmdSelectedPlants,
-  } = dataGridStore
+  const { year, screenTitle, jmdSelectedPlants } = dataGridStore
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
 
@@ -90,13 +82,11 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
 
   // Create a per-month getOptions function that returns only fuels available
-  // for that plant in that specific month
+  // for that plant in that specific month. No fallback — if the plant has no
+  // fuels declared in Fuel Availability, the dropdown is empty.
   const getOptionsForMonth = useCallback(
-    (mon) => (dataItem) => {
-      const plantMonthFuels = plantFuelMap[dataItem?.plantName]?.[mon]
-      return plantMonthFuels?.length ? plantMonthFuels : fuelOptions
-    },
-    [plantFuelMap, fuelOptions],
+    (mon) => (dataItem) => plantFuelMap[dataItem?.plantName]?.[mon] || [],
+    [plantFuelMap],
   )
 
   // Generate month columns dynamically — memoized so grid doesn't remount on every render
@@ -114,6 +104,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
           getOptions: getOptionsForMonth(mon),
           displayMode: 'label',
           editable: true,
+          showClearOption: true,
           returnFullObject: true,
           field: `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`,
           title,
@@ -242,7 +233,6 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
-    console.log('modifiedCells', modifiedCells)
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length == 0) {
       setSnackbarOpen(true)
@@ -356,15 +346,17 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   // Store label in FuelName field for display, UUID in the original field for saving
   const handleCustomItemChange = useCallback(({ dataItem, field, value }) => {
     const updates = { [field]: value }
-    // If field ends with FuelName, also update the UUID field
+    // If field ends with FuelName, also update the UUID field.
+    // The "Clear" option arrives as { value: '', label: 'Clear' } —
+    // an empty value means cleared, so store null/'' (never the label).
     if (field.endsWith('FuelName')) {
       const uuidField = field.replace('FuelName', '')
-      if (value && typeof value === 'object') {
+      if (value && typeof value === 'object' && value.value) {
         updates[uuidField] = value.value // UUID for saving
         updates[field] = value.label // name for display
       } else {
         updates[uuidField] = null
-        updates[field] = value || ''
+        updates[field] = ''
       }
     }
 
@@ -390,7 +382,6 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  console.log('rows', rows)
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
