@@ -254,7 +254,7 @@ const ProductionNormsBasis = () => {
         return <CatChemConsumption />
       case 'Treatment Vendor':
         return <TreatmentVendor />
-        case 'Treatment Vendor Consumption':
+        case 'Vendor Chemical Consumption':
         return <VendorConsumption/>
       case 'Commodity Chemicals':
         return <CommoditySelection />

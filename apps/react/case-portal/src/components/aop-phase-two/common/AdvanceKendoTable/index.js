@@ -657,15 +657,21 @@ const AdvanceKendoTable = ({
     _export.current.save(options)
   }
   const handleRowClick = (e) => {
-    if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
+    const item = e?.dataItem || e
+    if (!item?.isEditable && item?.isEditable !== undefined) {
       setEdit({})
       return
     }
 
+    const targetId = item?.id !== undefined ? item.id : item?.idFromApi
+    if (targetId === undefined) return
+
     setRows((prev) =>
       (prev || []).map((r) => ({
         ...r,
-        inEdit: r.id === e.dataItem.id,
+        inEdit:
+          (r.id !== undefined && String(r.id) === String(targetId)) ||
+          (r.idFromApi !== undefined && String(r.idFromApi) === String(targetId)),
       })),
     )
   }
@@ -680,7 +686,7 @@ const AdvanceKendoTable = ({
         return
       }
 
-      const itemId = dataItem.id
+      const itemId = dataItem?.id !== undefined ? dataItem.id : dataItem?.idFromApi
 
       if (screenType === 'shutdown' && field === 'monthly') {
         const monthDur = calculateMonthDuration(value, AOP_YEAR)
@@ -704,7 +710,7 @@ const AdvanceKendoTable = ({
         // Merge with previous modified cells to get all accumulated changes
         const previousModified = prev[itemId] || {}
         // Ensure that the freshly calculated duration and dates from dataItem override previousModified
-        const base = { ...dataItem, ...previousModified, [field]: value }
+        const base = { ...dataItem, ...previousModified, [field]: value, inEdit: true }
         if (screenType === 'shutdown' && field === 'monthly') {
           if (dataItem.durationInHrs) base.durationInHrs = dataItem.durationInHrs
           if (dataItem.maintStartDateTime) base.maintStartDateTime = dataItem.maintStartDateTime
@@ -732,11 +738,14 @@ const AdvanceKendoTable = ({
       // Then update rows using the accumulated modified data
       setRows((prev) =>
         prev.map((r) => {
-          if (r.id !== itemId) return r
+          const isTarget =
+            String(r.id) === String(itemId) ||
+            (r.idFromApi !== undefined && String(r.idFromApi) === String(itemId))
+          if (!isTarget) return r
 
           // Handle nested field paths (e.g., "summer.kbpsd")
           const fieldParts = field.split('.')
-          const updated = { ...r }
+          const updated = { ...r, inEdit: true }
 
           if (fieldParts.length === 1) {
             // Simple field
@@ -777,7 +786,7 @@ const AdvanceKendoTable = ({
 
       // customModifiedCells: always set per-row custom changes (include months if percentChange)
       setCustomModifiedCells((prev) => {
-        const base = { ...(prev[itemId] || {}), [field]: value }
+        const base = { ...(prev[itemId] || {}), [field]: value, inEdit: true }
 
         if (field === 'siteName' && isDropdownSiteplant) {
           base.plantName = ''
@@ -1186,9 +1195,15 @@ const AdvanceKendoTable = ({
       format &&
       (typeof value === 'number' || typeof value === 'string')
     ) {
+      const isDaysUom =
+        permissions?.isDaysUomInInteger &&
+        String(dataItem?.UOM || dataItem?.uom || '').trim().toLowerCase() ===
+        'days'
       const numValue = typeof value === 'string' ? parseFloat(value) : value
       if (!isNaN(numValue)) {
-        formattedValue = applyKendoNumberFormat(numValue, format)
+        formattedValue = isDaysUom
+          ? String(Math.round(numValue))
+          : applyKendoNumberFormat(numValue, format)
       }
     }
 
@@ -1260,9 +1275,15 @@ const AdvanceKendoTable = ({
 
     // Apply Kendo number format if provided
     if (format && (typeof value === 'number' || typeof value === 'string')) {
+      const isDaysUom =
+        permissions?.isDaysUomInInteger &&
+        String(dataItem?.UOM || dataItem?.uom || '').trim().toLowerCase() ===
+        'days'
       const numValue = typeof value === 'string' ? parseFloat(value) : value
       if (!isNaN(numValue)) {
-        formattedValue = applyKendoNumberFormat(numValue, format)
+        formattedValue = isDaysUom
+          ? String(Math.round(numValue))
+          : applyKendoNumberFormat(numValue, format)
       }
     }
 
@@ -1354,7 +1375,9 @@ const AdvanceKendoTable = ({
           ...tdProps?.style,
         }}
       >
-        {children}
+        {permissions?.isDaysUomInInteger && String(dataItem?.UOM || dataItem?.uom || '').trim().toLowerCase() === 'days' && (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')) && !isNaN(parseFloat(value))
+          ? String(Math.round(parseFloat(value)))
+          : children}
       </td>
     )
   }
@@ -2600,6 +2623,65 @@ const AdvanceKendoTable = ({
       // Checkbox Type Handler — column-level checkbox (col.type === 'checkbox')
       // Fires itemChange like any other editor so changes are tracked in modifiedCells
       if (col.type === 'checkbox') {
+        const renderCheckboxCell = (cellProps) => {
+          const { dataItem, field, tdProps } = cellProps
+          const checked = !!dataItem?.[field]
+          const isCellDisabled =
+            !isEditable ||
+            dataItem?.isEditable === false ||
+            !isCellEditableByCondition(dataItem, col)
+
+          return (
+            <td
+              {...tdProps}
+              style={{
+                textAlign: 'center',
+                ...tdProps?.style,
+              }}
+              onClick={(e) => {
+                if (e.target.closest?.('.MuiCheckbox-root')) return
+                if (!isCellDisabled) {
+                  handleRowClick(dataItem)
+                }
+              }}
+            >
+              {dataItem?.hideCheckbox ? null : (
+                <Checkbox
+                  checked={checked}
+                  disabled={isCellDisabled}
+                  size='medium'
+                  onChange={(e) => {
+                    if (isCellDisabled) return
+                    const nextVal =
+                      typeof e?.value === 'boolean'
+                        ? e.value
+                        : e?.target?.checked ?? !checked
+                    const rowWithEdit = {
+                      ...dataItem,
+                      [field]: nextVal,
+                      inEdit: true,
+                    }
+                    if (cellProps.onChange) {
+                      cellProps.onChange({
+                        dataItem: rowWithEdit,
+                        field,
+                        value: nextVal,
+                      })
+                    } else {
+                      itemChange({
+                        dataItem: rowWithEdit,
+                        field,
+                        value: nextVal,
+                      })
+                    }
+                    handleRowClick(rowWithEdit)
+                  }}
+                />
+              )}
+            </td>
+          )
+        }
+
         return (
           <GridColumn
             key={col.field}
@@ -2612,65 +2694,9 @@ const AdvanceKendoTable = ({
             headerClassName={`${isActive ? 'active-column' : ''}`}
             cells={{
               edit: {
-                text: (cellProps) => {
-                  const { dataItem, field, onChange } = cellProps
-                  const checked = !!dataItem[field]
-                  const isCellDisabled =
-                    !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
-                  return (
-                    <td style={{ textAlign: 'center', padding: '6px 2px' }}>
-                      {dataItem?.hideCheckbox ? null : (
-                        <Checkbox
-                          checked={checked}
-                          disabled={isCellDisabled}
-                          onChange={(e) => {
-                            if (isCellDisabled) return
-                            const newVal =
-                              typeof e.value === 'boolean'
-                                ? e.value
-                                : e.target?.checked ?? !checked
-                            onChange({ dataItem, field, value: newVal })
-                          }}
-                          size='medium'
-                        />
-                      )}
-                    </td>
-                  )
-                },
+                text: renderCheckboxCell,
               },
-              data: (cellProps) => {
-                const { dataItem, field, tdProps } = cellProps
-                const checked = !!dataItem[field]
-                const isCellDisabled =
-                  !isEditable || dataItem?.isEditable === false || !isCellEditableByCondition(dataItem, col)
-                return (
-                  <td
-                    {...tdProps}
-                    style={{
-                      textAlign: 'center',
-                      ...tdProps?.style,
-                    }}
-                  >
-                    {dataItem?.hideCheckbox ? null : (
-                      <div style={{ pointerEvents: 'none', display: 'inline-block' }}>
-                        <Checkbox
-                        checked={checked}
-                        disabled={isCellDisabled}
-                        onChange={(e) => {
-                          if (isCellDisabled) return
-                          const newVal =
-                            typeof e.value === 'boolean'
-                              ? e.value
-                              : e.target?.checked ?? !checked
-                          itemChange({ dataItem, field, value: newVal })
-                        }}
-                        size='medium'
-                      />
-                      </div>
-                    )}
-                  </td>
-                )
-              },
+              data: renderCheckboxCell,
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
