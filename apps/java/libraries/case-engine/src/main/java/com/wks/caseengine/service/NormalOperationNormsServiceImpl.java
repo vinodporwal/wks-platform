@@ -8,12 +8,14 @@ import jakarta.persistence.StoredProcedureQuery;
 import jakarta.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
 
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Service;
@@ -74,6 +76,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Service
 public class NormalOperationNormsServiceImpl implements NormalOperationNormsService {
+
+	private static final int FILTER_ARROW_PADDING = 4 * 256;
 
 	@Autowired
 	private NormalOperationNormsRepository normalOperationNormsRepository;
@@ -579,8 +583,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	        int visibleColumnCount = orderedKeys.size();
 
-	        Workbook workbook = new XSSFWorkbook();
-	        Sheet sheet = workbook.createSheet("Steady State Norms");
+	        XSSFWorkbook workbook = new XSSFWorkbook();
+	        XSSFSheet sheet = workbook.createSheet("Steady State Norms");
 	        sheet.protectSheet("secret_password");
 
 	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
@@ -697,12 +701,28 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	       
 	        for (int i = 0; i < visibleColumnCount; i++) {
 	            sheet.autoSizeColumn(i);
+	            // Users cannot resize columns once the sheet is protected, so leave room for the filter arrow.
+	            sheet.setColumnWidth(i, Math.min(sheet.getColumnWidth(i) + FILTER_ARROW_PADDING, 60 * 256));
 	        }
 
 	        for (int i = 0; i < hiddenKeys.size(); i++) {
 	            int colIdx = visibleColumnCount + i;
 	            sheet.setColumnHidden(colIdx, true);
 	        }
+
+	        sheet.setAutoFilter(new CellRangeAddress(0, Math.max(rowIdx - 1, 0), 0, visibleColumnCount + hiddenKeys.size() - 1));
+
+	        // Keeping "Format columns" locked stops Excel from unhiding the hidden columns
+	        // when the neighbouring column is resized; filters/sorting remain usable.
+	        sheet.protectSheet("secret_password");
+
+			sheet.lockFormatColumns(true);
+	        sheet.lockAutoFilter(false);
+	        sheet.lockSort(false);
+	        sheet.lockSelectLockedCells(false);
+	        sheet.lockSelectUnlockedCells(false);
+	        sheet.lockInsertRows(false);
+	        sheet.lockDeleteRows(false);
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
