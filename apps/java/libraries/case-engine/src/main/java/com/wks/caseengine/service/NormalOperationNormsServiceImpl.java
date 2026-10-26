@@ -5326,6 +5326,26 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				}
 			}
 
+			// Users cannot resize columns once the sheet is protected, so leave room for the filter arrow.
+			for (int col = 0; col < totalCols; col++) {
+				if (col != idColIndex) {
+					sheet.setColumnWidth(col, Math.min(sheet.getColumnWidth(col) + FILTER_ARROW_PADDING, 60 * 256));
+				}
+			}
+
+			sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, totalCols - 1));
+
+			// Keeping "Format columns" locked stops Excel from unhiding the Id column
+			// when the neighbouring column is resized; filters/sorting remain usable.
+			XSSFSheet xssfSheet = (XSSFSheet) sheet;
+			xssfSheet.lockFormatColumns(true);
+			xssfSheet.lockAutoFilter(false);
+			xssfSheet.lockSort(false);
+			xssfSheet.lockInsertRows(false);
+			xssfSheet.lockDeleteRows(false);
+			xssfSheet.lockSelectLockedCells(false);
+			xssfSheet.lockSelectUnlockedCells(false);
+
 			try {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
