@@ -320,7 +320,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        data.put("columns", columnMetadata);
 
 	        List<AopCalculation> aopCalculation = aopCalculationRepository
-	                .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "normal-op-norms");
+	                .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "grade-wise-steady-state");
 	        data.put("aopCalculation", aopCalculation);
 
 	        aopMessageVM.setCode(200);
@@ -1728,7 +1728,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	           Integer result = executeCalculateSP(String.valueOf(plantId), year, procedureName);
 
-	           List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+	           List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("grade-wise-steady-state");
 	           for (ScreenMapping screenMapping : screenMappingList) {
 	               AopCalculation aopCalculation = new AopCalculation();
 	               aopCalculation.setAopYear(year);
@@ -5753,9 +5753,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			e.printStackTrace();
 		}
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear,
-				"normal-op-norms");
+				"grade-wise-steady-state");
 
-		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("grade-wise-steady-state");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			if (!screenMapping.getCalculationScreen().equalsIgnoreCase(screenMapping.getDependentScreen())) {
 
