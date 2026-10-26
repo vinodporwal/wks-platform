@@ -173,6 +173,9 @@ const ProductionNormsBasisCoker = () => {
       }
     } catch (error) {
       console.error('Error in norm calculation:', error)
+      setTimeout(() => {
+        setRefreshData(true)
+      }, 500)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to calculate norms. Please try again.',
@@ -294,6 +297,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'Manual Entry - Factors':
@@ -312,6 +316,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'Data Filters':

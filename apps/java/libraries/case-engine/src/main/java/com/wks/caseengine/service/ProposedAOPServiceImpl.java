@@ -19,6 +19,8 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,6 +43,8 @@ import com.wks.caseengine.utility.Utility;
 
 @Service
 public class ProposedAOPServiceImpl implements ProposedAOPService {
+
+	private static final int FILTER_ARROW_PADDING = 4 * 256;
 
 	private static final double EXCEL_MAX_NUMBER = 9.99999999999999E307;
 	private static final double EXCEL_MIN_POSITIVE_NUMBER = 2.2250738585072014E-308;
@@ -1036,6 +1040,8 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				sheet.setColumnWidth(col, 15000);
 			} else {
 				sheet.autoSizeColumn(col);
+				// Leave room for the filter dropdown arrow, since columns cannot be resized once protected.
+				sheet.setColumnWidth(col, Math.min(sheet.getColumnWidth(col) + FILTER_ARROW_PADDING, 60 * 256));
 			}
 		}
 
@@ -1045,7 +1051,19 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		sheet.setColumnHidden(11, true);
 		sheet.setColumnHidden(12, true);
 
-		sheet.protectSheet("");
+		sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, totalCols - 1));
+
+		// Protection keeps "Format columns" locked, which stops Excel from
+		// unhiding the ID columns when the neighbouring column is resized.
+		XSSFSheet xssfSheet = (XSSFSheet) sheet;
+		xssfSheet.protectSheet("");
+		xssfSheet.lockFormatColumns(true);
+		xssfSheet.lockAutoFilter(false);
+		xssfSheet.lockSort(false);
+		xssfSheet.lockInsertRows(false);
+		xssfSheet.lockDeleteRows(false);
+		xssfSheet.lockSelectLockedCells(false);
+		xssfSheet.lockSelectUnlockedCells(false);
 	}
 
 	// ─── Proposed Steady State Import – Excel Reader ─────────────────────────────

@@ -10,7 +10,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const HistoricalMonths = ({ refreshData }) => {
+const HistoricalMonths = ({ refreshData, onLoadNormCalculation }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -238,16 +238,15 @@ const HistoricalMonths = ({ refreshData }) => {
       })
       setModifiedCells({})
       setOriginalRows([])
-      await fetchData()
+      await onLoadNormCalculation()
     } catch (error) {
       console.error('Error saving manual entry data:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 

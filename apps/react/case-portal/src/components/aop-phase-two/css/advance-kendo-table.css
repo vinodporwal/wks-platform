@@ -52,3 +52,15 @@
 .k-grid .k-grid-header .k-table-th.k-first {
   border-inline-start-width: 0 !important;
 }
+
+/* Cell styling for rows without UOM on SignOffReport screen */
+.kendo-data-grid tr td.cell-no-uom-first-col,
+.kendo-data-grid tr.custom-disabled-row td.cell-no-uom-first-col {
+  font-weight: bold !important;
+}
+
+.kendo-data-grid tr td.cell-no-uom-header,
+.kendo-data-grid tr.custom-disabled-row td.cell-no-uom-header {
+  background-color: #F7C7AC !important;
+  font-weight: bold !important;
+}
