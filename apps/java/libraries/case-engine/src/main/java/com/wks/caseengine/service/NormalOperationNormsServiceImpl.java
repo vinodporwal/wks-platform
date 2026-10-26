@@ -8,12 +8,14 @@ import jakarta.persistence.StoredProcedureQuery;
 import jakarta.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
 
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Service;
@@ -74,6 +76,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 @Service
 public class NormalOperationNormsServiceImpl implements NormalOperationNormsService {
+
+	private static final int FILTER_ARROW_PADDING = 4 * 256;
 
 	@Autowired
 	private NormalOperationNormsRepository normalOperationNormsRepository;
@@ -320,7 +324,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        data.put("columns", columnMetadata);
 
 	        List<AopCalculation> aopCalculation = aopCalculationRepository
-	                .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "normal-op-norms");
+	                .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "grade-wise-steady-state");
 	        data.put("aopCalculation", aopCalculation);
 
 	        aopMessageVM.setCode(200);
@@ -579,8 +583,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	        int visibleColumnCount = orderedKeys.size();
 
-	        Workbook workbook = new XSSFWorkbook();
-	        Sheet sheet = workbook.createSheet("Steady State Norms");
+	        XSSFWorkbook workbook = new XSSFWorkbook();
+	        XSSFSheet sheet = workbook.createSheet("Steady State Norms");
 	        sheet.protectSheet("secret_password");
 
 	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
@@ -697,12 +701,28 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	       
 	        for (int i = 0; i < visibleColumnCount; i++) {
 	            sheet.autoSizeColumn(i);
+	            // Users cannot resize columns once the sheet is protected, so leave room for the filter arrow.
+	            sheet.setColumnWidth(i, Math.min(sheet.getColumnWidth(i) + FILTER_ARROW_PADDING, 60 * 256));
 	        }
 
 	        for (int i = 0; i < hiddenKeys.size(); i++) {
 	            int colIdx = visibleColumnCount + i;
 	            sheet.setColumnHidden(colIdx, true);
 	        }
+
+	        sheet.setAutoFilter(new CellRangeAddress(0, Math.max(rowIdx - 1, 0), 0, visibleColumnCount + hiddenKeys.size() - 1));
+
+	        // Keeping "Format columns" locked stops Excel from unhiding the hidden columns
+	        // when the neighbouring column is resized; filters/sorting remain usable.
+	        sheet.protectSheet("secret_password");
+
+			sheet.lockFormatColumns(true);
+	        sheet.lockAutoFilter(false);
+	        sheet.lockSort(false);
+	        sheet.lockSelectLockedCells(false);
+	        sheet.lockSelectUnlockedCells(false);
+	        sheet.lockInsertRows(false);
+	        sheet.lockDeleteRows(false);
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
@@ -724,7 +744,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        List<Map<String, Object>> payloadList = readSteadyStateNorms(file.getInputStream(), plantId, year);
 
 	        
-	        AOPMessageVM aopMessageVM = updateSteadyStateNorms(plantId, year, payloadList);
+	        AOPMessageVM aopMessageVM = updateAOPConsumptionNormGrade(plantId, year, payloadList);
 
 	       
 	        Map<String, Object> responseData = (Map<String, Object>) aopMessageVM.getData();
@@ -1728,7 +1748,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	           Integer result = executeCalculateSP(String.valueOf(plantId), year, procedureName);
 
-	           List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+	           List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("grade-wise-steady-state");
 	           for (ScreenMapping screenMapping : screenMappingList) {
 	               AopCalculation aopCalculation = new AopCalculation();
 	               aopCalculation.setAopYear(year);
@@ -5306,6 +5326,26 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				}
 			}
 
+			// Users cannot resize columns once the sheet is protected, so leave room for the filter arrow.
+			for (int col = 0; col < totalCols; col++) {
+				if (col != idColIndex) {
+					sheet.setColumnWidth(col, Math.min(sheet.getColumnWidth(col) + FILTER_ARROW_PADDING, 60 * 256));
+				}
+			}
+
+			sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, totalCols - 1));
+
+			// Keeping "Format columns" locked stops Excel from unhiding the Id column
+			// when the neighbouring column is resized; filters/sorting remain usable.
+			XSSFSheet xssfSheet = (XSSFSheet) sheet;
+			xssfSheet.lockFormatColumns(true);
+			xssfSheet.lockAutoFilter(false);
+			xssfSheet.lockSort(false);
+			xssfSheet.lockInsertRows(false);
+			xssfSheet.lockDeleteRows(false);
+			xssfSheet.lockSelectLockedCells(false);
+			xssfSheet.lockSelectUnlockedCells(false);
+
 			try {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -5753,9 +5793,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			e.printStackTrace();
 		}
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear,
-				"normal-op-norms");
+				"grade-wise-steady-state");
 
-		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("normal-op-norms");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("grade-wise-steady-state");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			if (!screenMapping.getCalculationScreen().equalsIgnoreCase(screenMapping.getDependentScreen())) {
 

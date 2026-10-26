@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.*;
-
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -110,6 +111,8 @@ import jakarta.persistence.PersistenceContext;
 
 @Service
 public class ConfigurationServiceImpl implements ConfigurationService {
+
+	private static final int FILTER_ARROW_PADDING = 4 * 256;
 
 	@Autowired
 	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
@@ -391,8 +394,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			
 			List<Boolean> isEditable = new ArrayList<>();
 
-			Workbook workbook = new XSSFWorkbook();
-			Sheet sheet = workbook.createSheet("Sheet1");
+			XSSFWorkbook workbook = new XSSFWorkbook();
+			XSSFSheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 
 			List<List<Object>> rows = new ArrayList<>();
@@ -501,7 +504,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 		// Fixed preferred width for remarks column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
-		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
+		// Users cannot resize columns once the sheet is protected, so leave room for the filter arrow.
+		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256 + FILTER_ARROW_PADDING);
 
 		// Apply wrap style to every data cell in remarks column and adjust row height
 		for (int rowIdx = 1; rowIdx < currentRow; rowIdx++) {
@@ -529,7 +533,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		for (int col = 0; col < totalCols; col++) {
 			if (col != remarkColIndex) {
 				sheet.autoSizeColumn(col);
+				sheet.setColumnWidth(col, Math.min(sheet.getColumnWidth(col) + FILTER_ARROW_PADDING, 60 * 256));
 			}
+			sheet.setDefaultColumnStyle(col, col == remarkColIndex ? wrapUnlockedStyle : unlockedStyle);
 		}
 
 	if (hasCategory) {
@@ -539,6 +545,19 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		sheet.setColumnHidden(4, true);
 		sheet.setColumnHidden(5, true);
 	}
+
+		sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, totalCols - 1));
+
+		// Protection keeps "Format columns" locked, which is what stops Excel from
+		// unhiding the hidden columns when the neighbouring column is resized.
+		sheet.protectSheet("password");
+		sheet.lockFormatColumns(true);
+	        sheet.lockAutoFilter(false);
+	        sheet.lockSort(false);
+	        sheet.lockSelectLockedCells(false);
+	        sheet.lockSelectUnlockedCells(false);
+	        sheet.lockInsertRows(false);
+	        sheet.lockDeleteRows(false);
 
 		try {
 

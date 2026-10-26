@@ -17,6 +17,8 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,8 @@ import jakarta.persistence.Query;
 
 @Service
 public class ProductionRangeServiceImpl implements ProductionRangeService {
+
+    private static final int FILTER_ARROW_PADDING = 4 * 256;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -138,8 +142,8 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 		        }
 	        }
 
-	        Workbook workbook = new XSSFWorkbook();
-	        Sheet sheet = workbook.createSheet("Sheet1");
+	        XSSFWorkbook workbook = new XSSFWorkbook();
+	        XSSFSheet sheet = workbook.createSheet("Sheet1");
 	        int currentRow = 0;
 
 	        List<String> innerHeaders = new ArrayList<>();
@@ -171,6 +175,11 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
         // Wrap-text style for the Remarks column
         CellStyle wrapStyle = workbook.createCellStyle();
         wrapStyle.setWrapText(true);
+        wrapStyle.setLocked(false);
+
+        // Data cells stay editable once the sheet is protected
+        CellStyle unlockedStyle = workbook.createCellStyle();
+        unlockedStyle.setLocked(false);
 
         final int REMARKS_COL_CHAR_WIDTH = 40;
 
@@ -195,6 +204,8 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	                Cell cell = row.createCell(col);
 	                if (col == 4) {
 	                    cell.setCellStyle(wrapStyle);
+	                } else {
+	                    cell.setCellStyle(unlockedStyle);
 	                }
 	                Object value = rowData.get(col);
 	                if (value instanceof Number) {
@@ -218,12 +229,35 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	        }
 
         // Particulars column width based on max content length
-        sheet.setColumnWidth(0, (maxParticularsLen + 2) * 256);
+        // Users cannot resize columns once the sheet is protected, so leave room for the filter arrow.
+        sheet.setColumnWidth(0, (maxParticularsLen + 2) * 256 + FILTER_ARROW_PADDING);
 
         // Remarks column: fixed default width with wrap text enabled
-        sheet.setColumnWidth(4, REMARKS_COL_CHAR_WIDTH * 256);
+        sheet.setColumnWidth(4, REMARKS_COL_CHAR_WIDTH * 256 + FILTER_ARROW_PADDING);
+
+	        int columnCount = innerHeaders.size();
+	        for (int col = 0; col < columnCount; col++) {
+	            if (col == 4) {
+	                sheet.setDefaultColumnStyle(col, wrapStyle);
+	            } else {
+	                sheet.setDefaultColumnStyle(col, unlockedStyle);
+	            }
+	        }
 
 	        sheet.setColumnHidden(5, true);
+
+	        sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, columnCount - 1));
+
+	        // Protection keeps "Format columns" locked, which is what stops Excel from
+	        // unhiding the Material Id column when the neighbouring column is resized.
+	        sheet.protectSheet("password");
+			sheet.lockFormatColumns(true);
+	        sheet.lockAutoFilter(false);
+	        sheet.lockSort(false);
+	        sheet.lockSelectLockedCells(false);
+	        sheet.lockSelectUnlockedCells(false);
+	        sheet.lockInsertRows(false);
+	        sheet.lockDeleteRows(false);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();

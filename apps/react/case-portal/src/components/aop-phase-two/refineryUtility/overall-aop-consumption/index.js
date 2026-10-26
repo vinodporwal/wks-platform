@@ -25,7 +25,7 @@ const SIX_DECIMAL_NORM_TYPES=[
 'Norms proposed for Next FY-Cooling Water',
 'Cooling Water Norms',
 ].map(normalizeKey)
-const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption']
+const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
 const OverallAopConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
