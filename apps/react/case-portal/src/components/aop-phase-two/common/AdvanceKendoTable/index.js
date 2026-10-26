@@ -271,6 +271,8 @@ const AdvanceKendoTable = ({
   showFilters = false,
   convertScientificValue = false,
   pagable = true,
+  extraExportGrid = null,
+  isSignOffReport = false,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -595,24 +597,43 @@ const AdvanceKendoTable = ({
 
     const CELL_BORDER = {
       size: 1,
-      color: '#D9D9D9',
+      color: '#000000',
     }
 
     const HEADER_BORDER = {
       size: 1,
-      color: '#808080',
+      color: '#000000',
     }
 
     const GROUP_HEADER_BORDER = {
       size: 2,
-      color: '#404040',
+      color: '#000000',
     }
 
-    options.sheets.forEach((sheet) => {
-      sheet.rows.forEach((row) => {
-        const isHeader = row.type === 'header' || row.type === 'group-header'
+    const visibleColumns =
+      columns?.filter(
+        (col) =>
+          !hiddenFields.includes(col.field) &&
+          !col.hidden &&
+          col.isVisible !== false,
+      ) || []
 
-        row.cells.forEach((cell) => {
+    options.sheets.forEach((sheet) => {
+      let maxCols = 1
+
+      const headerRows = sheet.rows.filter(
+        (r) => r.type === 'header' || r.type === 'group-header',
+      )
+      const headerRowCount = headerRows.length
+
+      sheet.rows.forEach((row, rIdx) => {
+        let rowCols = 0
+        const isHeader = row.type === 'header' || row.type === 'group-header'
+        const dataRow = !isHeader ? rows?.[rIdx - headerRowCount] : null
+        const isRowNonEditable = dataRow && dataRow.isEditable === false
+
+        row.cells.forEach((cell, cIdx) => {
+          rowCols += Number(cell.colSpan || 1)
           const isMerged = Number(cell.colSpan) > 1
 
           // -----------------------------
@@ -642,6 +663,7 @@ const AdvanceKendoTable = ({
             cell.textAlign = 'center'
             cell.verticalAlign = 'center'
             cell.wrap = true
+            cell.disabled = true
           }
 
           // -----------------------------
@@ -649,9 +671,90 @@ const AdvanceKendoTable = ({
           // -----------------------------
           if (!isHeader) {
             cell.verticalAlign = 'center'
+            const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
+            const rawUom = dataRow?.UOM ?? dataRow?.uom
+            const isNoUom =
+              isSignOff &&
+              dataRow &&
+              (dataRow.isNoUom ||
+                (('uom' in dataRow || 'UOM' in dataRow) &&
+                  (rawUom === undefined || rawUom === null || String(rawUom).trim() === '')))
+            if (isNoUom) {
+              if (cIdx === 0) {
+                cell.bold = true
+              } else if (cIdx === 1) {
+                cell.bold = true
+                cell.background = '#F7C7AC'
+              }
+            }
+            if (cell.disabled === undefined) {
+              if (isRowNonEditable) {
+                cell.disabled = true
+              } else {
+                const col = visibleColumns[cIdx]
+                cell.disabled = col?.editable === false
+              }
+            }
           }
         })
+
+        if (rowCols > maxCols) {
+          maxCols = rowCols
+        }
       })
+
+      const targetGrid = extraExportGrid || permissions?.extraExportGrid
+      if (targetGrid?.rows && targetGrid?.columns) {
+        // Blank row for spacing
+        sheet.rows.push({
+          type: 'data',
+          cells: [{ value: '', disabled: true }],
+        })
+
+        // Header row matching web style
+        sheet.rows.push({
+          type: 'header',
+          cells: targetGrid.columns.map((col) => ({
+            value: col.title ?? col.headerName ?? '',
+            bold: true,
+            background: '#DFDFDF',
+            color: '#000000',
+            textAlign: 'center',
+            verticalAlign: 'center',
+            disabled: true,
+            borderTop: CELL_BORDER,
+            borderBottom: CELL_BORDER,
+            borderLeft: CELL_BORDER,
+            borderRight: CELL_BORDER,
+            width: col?.width,
+          })),
+        })
+
+        // Data rows matching web style
+        targetGrid.rows.forEach((r) => {
+          sheet.rows.push({
+            type: 'data',
+            cells: targetGrid.columns.map((col, idx) => {
+              const isLabelCol = idx === 0 || col.editable === false
+              const val = r[col.field] ?? ''
+              return {
+                value: val,
+                bold: isLabelCol,
+                background: isLabelCol ? '#DFDFDF' : '#ffffff',
+                color: '#000000',
+                textAlign: isLabelCol ? 'left' : 'center',
+                verticalAlign: 'center',
+                disabled: isLabelCol,
+                borderTop: CELL_BORDER,
+                borderBottom: CELL_BORDER,
+                borderLeft: CELL_BORDER,
+                borderRight: CELL_BORDER,
+                width: col?.width,
+              }
+            }),
+          })
+        })
+      }
     })
 
     _export.current.save(options)
@@ -2942,6 +3045,25 @@ const AdvanceKendoTable = ({
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
+    const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
+    const visibleCols =
+      columns?.filter(
+        (c) =>
+          !hiddenFields.includes(c.field) &&
+          !c.hidden &&
+          c.isVisible !== false,
+      ) || []
+    const isFirstCol = props.field === visibleCols[0]?.field
+    const isSecondCol = props.field === visibleCols[1]?.field
+    const rawUom = props.dataItem?.UOM ?? props.dataItem?.uom
+    const isNoUom =
+      isSignOff &&
+      (props.dataItem?.isNoUom ||
+        (('uom' in (props.dataItem || {}) || 'UOM' in (props.dataItem || {})) &&
+          (rawUom === undefined || rawUom === null || String(rawUom).trim() === '')))
+    const isNoUomFirstCol = isNoUom && isFirstCol
+    const isNoUomSecondCol = isNoUom && isSecondCol
+
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
       typeof value === 'boolean'
@@ -2957,10 +3079,14 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''} ${isNoUomFirstCol ? 'cell-no-uom-first-col' : ''} ${isNoUomSecondCol ? 'cell-no-uom-header' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
+          ...(isNoUomFirstCol ? { fontWeight: 'bold' } : {}),
+          ...(isNoUomSecondCol
+            ? { fontWeight: 'bold', backgroundColor: '#F7C7AC' }
+            : {}),
         }}
       >
         {cellContent}

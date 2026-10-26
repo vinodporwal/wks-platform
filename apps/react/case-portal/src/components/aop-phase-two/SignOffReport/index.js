@@ -19,10 +19,45 @@ import { HistoricPeriodBasisApiService } from '../services/common/historicPeriod
  * Uses configuration execution details API to get StartDate and EndDate,
  * and dynamically renders a single sign-off report grid with 5 decimal places for numbers.
  */
+const SIGN_OFF_COLUMNS = [
+  {
+    field: 'label',
+    title: ' ',
+    editable: false,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+  {
+    field: 'prepared',
+    title: 'Prepared By',
+    editable: true,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+  {
+    field: 'reviewed',
+    title: 'Reviewed By',
+    editable: true,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+  {
+    field: 'approved',
+    title: 'Approved By',
+    editable: true,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+]
+
 const SignOffReport = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
 
   // Store variables
   const PLANT_ID = plantObject?.id || plantObject?.value || plantObject?.plantId
@@ -40,15 +75,12 @@ const SignOffReport = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  const todayDateStr = new Date().toISOString().split('T')[0]
-  const [signOffDetails, setSignOffDetails] = useState({
-    preparedBy: '',
-    preparedDate: todayDateStr,
-    reviewedBy: '',
-    reviewedDate: todayDateStr,
-    approvedBy: '',
-    approvedDate: todayDateStr,
-  })
+  const [signOffRows, setSignOffRows] = useState([
+    { id: '1', label: 'Name', prepared: '', reviewed: '', approved: '' },
+    { id: '2', label: 'Designation', prepared: '', reviewed: '', approved: '' },
+    { id: '3', label: 'Sign', prepared: '', reviewed: '', approved: '' },
+  ])
+
 
   // Notification state
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -56,6 +88,14 @@ const SignOffReport = () => {
     message: '',
     severity: 'info',
   })
+
+  const site = siteObject?.name?.toLowerCase()?.trim()
+  const plant = plantObject?.name?.toLowerCase()?.trim()
+
+  const isFirstTwoColColor = useMemo(() => {
+    if (site === 'dta' && ['dht1'].includes(plant)) return true
+    return false
+  }, [site, plant])
 
   // 5 Decimal place formatter for numeric columns
   const numberFormatFiveDecimals = useMemo(
@@ -237,8 +277,20 @@ const SignOffReport = () => {
       normalizedRow.isEditable = isRowEditable
       normalizedRow.IsEditable = isRowEditable
 
+      const rawUom = normalizedRow.UOM ?? normalizedRow.uom
+      const isUomEmpty =
+        rawUom === undefined ||
+        rawUom === null ||
+        String(rawUom).trim() === ''
+      if (isUomEmpty) {
+        normalizedRow.isNoUom = true
+        normalizedRow.isEditable = false
+        normalizedRow.IsEditable = false
+      }
+
       const isDaysRow =
-        String(normalizedRow.UOM ?? normalizedRow.uom ?? '')
+        !isUomEmpty &&
+        String(rawUom)
           .trim()
           .toLowerCase() === 'days'
 
@@ -662,8 +714,9 @@ const SignOffReport = () => {
       showNote: Boolean(unitNo),
       note: unitNo ? `(${unitNo})` : '',
       isDaysUomInInteger: true,
+      isSignOffReport: isFirstTwoColColor,
     }
-  }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading])
+  }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor])
 
   return (
     <Box sx={{ minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
@@ -701,145 +754,22 @@ const SignOffReport = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        extraExportGrid={{ columns: SIGN_OFF_COLUMNS, rows: signOffRows }}
       />
 
-      {/* Sign-off Section: Prepared By, Reviewed By, Approved By */}
-      <Box
-        sx={{
-          mt: 2.5,
-          mb: 2,
-          p: 2,
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+      {/* Second AdvanceKendoTable Component for Sign Off Details */}
+      <AdvanceKendoTable
+        columns={SIGN_OFF_COLUMNS}
+        rows={signOffRows}
+        setRows={setSignOffRows}
+        pagable={false}
+        permissions={{
+          allAction: false,
+          showAction: false,
+          showTitle: false,
+          filterable: false,
         }}
-      >
-        <Typography
-          sx={{
-            fontSize: '14px',
-            fontWeight: 700,
-            fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
-            color: '#1e293b',
-            mb: 1.5,
-          }}
-        >
-          Sign Off Details
-        </Typography>
-
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-            gap: 2,
-          }}
-        >
-          {/* Prepared By */}
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: '6px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#475569',
-                mb: 1,
-              }}
-            >
-              Prepared By
-            </Typography>
-            <TextField
-              size='small'
-              fullWidth
-              placeholder='Name / Designation'
-              value={signOffDetails.preparedBy}
-              onChange={(e) =>
-                setSignOffDetails((prev) => ({
-                  ...prev,
-                  preparedBy: e.target.value,
-                }))
-              }
-              sx={{ backgroundColor: '#fff', mb: 1 }}
-            />
-            
-          </Box>
-
-          {/* Reviewed By */}
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: '6px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#475569',
-                mb: 1,
-              }}
-            >
-              Reviewed By
-            </Typography>
-            <TextField
-              size='small'
-              fullWidth
-              placeholder='Name / Designation'
-              value={signOffDetails.reviewedBy}
-              onChange={(e) =>
-                setSignOffDetails((prev) => ({
-                  ...prev,
-                  reviewedBy: e.target.value,
-                }))
-              }
-              sx={{ backgroundColor: '#fff', mb: 1 }}
-            />
-            
-          </Box>
-
-          {/* Approved By */}
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: '6px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#475569',
-                mb: 1,
-              }}
-            >
-              Approved By
-            </Typography>
-            <TextField
-              size='small'
-              fullWidth
-              placeholder='Name / Designation'
-              value={signOffDetails.approvedBy}
-              onChange={(e) =>
-                setSignOffDetails((prev) => ({
-                  ...prev,
-                  approvedBy: e.target.value,
-                }))
-              }
-              sx={{ backgroundColor: '#fff', mb: 1 }}
-            />
-            
-          </Box>
-        </Box>
-      </Box>
+      />
     </Box>
   )
 }

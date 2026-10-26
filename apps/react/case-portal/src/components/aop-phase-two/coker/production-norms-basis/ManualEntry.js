@@ -12,7 +12,7 @@ import { ProductionNormsApiService } from '../../services/coker/productionNormsA
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { formatDateForAPI } from 'components/aop-phase-two/common/utilities/helper'
 
-const ManualEntry = ({startDate, endDate, refreshData }) => {
+const ManualEntry = ({startDate, endDate, refreshData, onLoadNormCalculation }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -284,16 +284,15 @@ const ManualEntry = ({startDate, endDate, refreshData }) => {
       })
       setModifiedCells({})
       setOriginalRows([])
-      await fetchData()
+      await onLoadNormCalculation()
     } catch (error) {
       console.error('Error saving manual entry data:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Error saving data!',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 
