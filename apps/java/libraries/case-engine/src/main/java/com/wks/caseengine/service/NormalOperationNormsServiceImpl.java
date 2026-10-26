@@ -724,7 +724,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	        List<Map<String, Object>> payloadList = readSteadyStateNorms(file.getInputStream(), plantId, year);
 
 	        
-	        AOPMessageVM aopMessageVM = updateSteadyStateNorms(plantId, year, payloadList);
+	        AOPMessageVM aopMessageVM = updateAOPConsumptionNormGrade(plantId, year, payloadList);
 
 	       
 	        Map<String, Object> responseData = (Map<String, Object>) aopMessageVM.getData();
