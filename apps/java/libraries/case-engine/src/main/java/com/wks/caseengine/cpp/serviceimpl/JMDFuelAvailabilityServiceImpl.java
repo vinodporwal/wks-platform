@@ -601,6 +601,120 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         return vm;
     }
 
+    // Exchange rate shown above the JMD Fuel Cost grid — persisted per
+    // site + AOP year in dbo.CPPFuelExchangeRate via native queries
+    // (no entity/repo/dto).
+    @Override
+    @Transactional
+    public AOPMessageVM getFuelExchangeRate(UUID siteId, String financialYear) {
+        logger.info("[JMDFuelAvailabilityCost] GET EXCHANGE RATE - siteId: {}, financialYear: {}",
+                siteId, financialYear);
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (siteId == null) {
+                vm.setCode(400);
+                vm.setMessage("siteId cannot be null");
+                return vm;
+            }
+
+            if (financialYear == null || financialYear.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("financialYear cannot be null or empty");
+                return vm;
+            }
+
+            String sql = "SELECT TOP 1 Id, SiteFKId, AOPYear, [Value], Remarks, CreatedDate, UpdatedDate " +
+                    "FROM dbo.CPPFuelExchangeRate WITH(NOLOCK) " +
+                    "WHERE SiteFKId = :siteId AND AOPYear = :financialYear";
+
+            Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("siteId", siteId);
+            query.setParameter("financialYear", financialYear);
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> rawResults = query.getResultList();
+
+            java.util.Map<String, Object> data = null;
+            if (!rawResults.isEmpty()) {
+                Object[] row = rawResults.get(0);
+                data = new java.util.LinkedHashMap<>();
+                data.put("id", row[0] != null ? row[0].toString() : null);
+                data.put("siteId", row[1] != null ? row[1].toString() : null);
+                data.put("aopYear", row[2] != null ? row[2].toString() : null);
+                data.put("value", row[3] != null ? ((Number) row[3]).doubleValue() : null);
+                data.put("remarks", row[4] != null ? row[4].toString() : null);
+                data.put("createdDate", row[5] != null ? row[5].toString() : null);
+                data.put("updatedDate", row[6] != null ? row[6].toString() : null);
+            }
+
+            vm.setCode(200);
+            vm.setMessage("Success");
+            vm.setData(data);
+
+        } catch (Exception e) {
+            logger.error("[JMDFuelAvailabilityCost] GET EXCHANGE RATE error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+        }
+
+        return vm;
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM saveFuelExchangeRate(UUID siteId, String financialYear, Double value, String remarks) {
+        logger.info("[JMDFuelAvailabilityCost] SAVE EXCHANGE RATE - siteId: {}, financialYear: {}, value: {}",
+                siteId, financialYear, value);
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (siteId == null) {
+                vm.setCode(400);
+                vm.setMessage("siteId cannot be null");
+                return vm;
+            }
+
+            if (financialYear == null || financialYear.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("financialYear cannot be null or empty");
+                return vm;
+            }
+
+            Query update = entityManager.createNativeQuery(
+                    "UPDATE dbo.CPPFuelExchangeRate " +
+                    "SET [Value] = :value, Remarks = :remarks, UpdatedDate = SYSUTCDATETIME() " +
+                    "WHERE SiteFKId = :siteId AND AOPYear = :financialYear");
+            update.setParameter("value", value);
+            update.setParameter("remarks", remarks);
+            update.setParameter("siteId", siteId);
+            update.setParameter("financialYear", financialYear);
+            int updated = update.executeUpdate();
+
+            if (updated == 0) {
+                Query insert = entityManager.createNativeQuery(
+                        "INSERT INTO dbo.CPPFuelExchangeRate " +
+                        "(Id, SiteFKId, AOPYear, [Value], Remarks, CreatedDate, UpdatedDate) " +
+                        "VALUES (NEWID(), :siteId, :financialYear, :value, :remarks, SYSUTCDATETIME(), SYSUTCDATETIME())");
+                insert.setParameter("siteId", siteId);
+                insert.setParameter("financialYear", financialYear);
+                insert.setParameter("value", value);
+                insert.setParameter("remarks", remarks);
+                insert.executeUpdate();
+            }
+
+            vm.setCode(200);
+            vm.setMessage(updated == 0 ? "Exchange rate saved successfully" : "Exchange rate updated successfully");
+
+        } catch (Exception e) {
+            logger.error("[JMDFuelAvailabilityCost] SAVE EXCHANGE RATE error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+        }
+
+        return vm;
+    }
+
     @Override
     @Transactional
     public AOPMessageVM deleteFuelAvailability(UUID id) {
@@ -698,7 +812,9 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         boolean isErrorExcel = errorMessages != null && !errorMessages.isEmpty();
 
         Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet(isErrorExcel ? "Fuel Availability Errors" : "Fuel Availability");
+        Sheet sheet = workbook.createSheet(isErrorExcel
+                ? (includeCost ? "Fuel Cost Errors" : "Fuel Availability Errors")
+                : (includeCost ? "Fuel Cost (In INR)" : "Fuel Availability (In MMBTU)"));
 
         CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
         CellStyle lockedStyle = ExcelStyles.createLockedStyle(workbook);
@@ -713,7 +829,9 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
 
         Row headerRow = sheet.createRow(rowNum++);
         String[] baseHeaders = minimal
-                ? new String[]{"CPP Plant", "Fuel", "UOM", "Calorific Value"}
+                ? (includeCost
+                        ? new String[]{"CPP Plant", "Fuel"}
+                        : new String[]{"CPP Plant", "Fuel", "Calorific Value"})
                 : new String[]{"CPP Plant", "Category", "Fuel", "Fuel Code", "Type", "UOM"};
         for (String header : baseHeaders) {
             ExcelCells.setString(headerRow.createCell(col++), header, headerStyle);
@@ -757,8 +875,9 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
             if (minimal) {
                 ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), lockedStyle);
                 ExcelCells.setString(row.createCell(col++), dto.getFuelDisplayName(), lockedStyle);
-                ExcelCells.setString(row.createCell(col++), dto.getUom(), lockedStyle);
-                ExcelCells.setDouble(row.createCell(col++), dto.getCalorificValue(), unlockedStyle);
+                if (!includeCost) {
+                    ExcelCells.setDouble(row.createCell(col++), dto.getCalorificValue(), unlockedStyle);
+                }
             } else {
                 ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), lockedStyle);
                 ExcelCells.setString(row.createCell(col++), dto.getCategoryDisplayName(), lockedStyle);
@@ -850,9 +969,10 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         int fuelCodeColIdx = -1;
         int remarksColIdx = -1;
         int dataHashColIdx = -1;
-        // Full:   0=CPP Plant, 1=Category, 2=Fuel, 3=Fuel Code, 4=Type, 5=UOM
-        // Minimal: 0=CPP Plant, 1=Fuel, 2=UOM, 3=Calorific Value
-        int monthStartIdx = minimal ? 4 : 6;
+        // Full:         0=CPP Plant, 1=Category, 2=Fuel, 3=Fuel Code, 4=Type, 5=UOM
+        // Minimal:      0=CPP Plant, 1=Fuel, 2=Calorific Value
+        // Minimal cost: 0=CPP Plant, 1=Fuel (no UOM / Calorific Value)
+        int monthStartIdx = minimal ? (includeCost ? 2 : 3) : 6;
 
         for (int i = 0; i < numCols; i++) {
             String header = ExcelCells.toString(headerRow.getCell(i));
@@ -883,8 +1003,9 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
             if (minimal) {
                 dto.setCppPlantName(ExcelCells.toStringValue(row.getCell(0)));
                 dto.setFuelDisplayName(ExcelCells.toStringValue(row.getCell(1)));
-                dto.setUom(ExcelCells.toStringValue(row.getCell(2)));
-                dto.setCalorificValue(ExcelCells.toDouble(row.getCell(3)));
+                if (!includeCost) {
+                    dto.setCalorificValue(ExcelCells.toDouble(row.getCell(2)));
+                }
             } else {
                 dto.setCppPlantName(ExcelCells.toStringValue(row.getCell(0)));
                 dto.setCategoryDisplayName(ExcelCells.toStringValue(row.getCell(1)));

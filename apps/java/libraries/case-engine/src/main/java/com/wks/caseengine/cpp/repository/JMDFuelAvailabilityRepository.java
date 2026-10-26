@@ -43,7 +43,8 @@ public interface JMDFuelAvailabilityRepository extends JpaRepository<CPPFuelAvai
         // "  CPPPlantFKId = :cppPlantFkId, " +
         "  Fuel_FK_Id   = :fuelFkId, " +
         // "  [Type]       = :type, " +
-        "  UOM          = :uom, " +
+        // COALESCE so files without a UOM column never wipe the stored value.
+        "  UOM          = COALESCE(:uom, UOM), " +
         // COALESCE so callers that don't carry calorificValue (DMD/NCV payloads)
         // never wipe the stored value.
         "  CalorificValue = COALESCE(:calorificValue, CalorificValue), " +

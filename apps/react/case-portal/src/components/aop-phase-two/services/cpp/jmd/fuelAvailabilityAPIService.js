@@ -16,6 +16,8 @@ export const FuelAvailabilityAPIService = {
   saveFuelAvailabilityCost,
   exportFuelAvailabilityCost,
   importFuelAvailabilityCost,
+  getFuelExchangeRate,
+  saveFuelExchangeRate,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -89,7 +91,7 @@ function getFuelAvailabilityCost(
 }
 
 // GET {base}/mapped?plantIds=...&financialYear=...&type=...
-// Fuel availability expanded through CPPPlantFuelSourceMapping — rows declared
+// Fuel availability expanded through CPPPlantFuelSourceMapping â€” rows declared
 // under source plants (e.g. C2-CPP, DTA-PCG-CPP) come back attributed to the
 // consuming CPP plant (e.g. DTA-CPP). Used by the Fuel Priority screen.
 async function getMappedFuelAvailability(
@@ -377,6 +379,53 @@ async function getFuels(keycloak, type) {
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error fetching fuels list:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// ===================== || FUEL EXCHANGE RATE || ===================== //
+// GET {BASE_COST}/exchange-rate?siteId=...&financialYear=...
+// Returns { data: { id, siteId, aopYear, value, remarks, createdDate, updatedDate } | null }
+async function getFuelExchangeRate(keycloak, siteId, financialYear) {
+  const url = `${Config.CaseEngineUrl}${BASE_COST}/exchange-rate?siteId=${encodeURIComponent(siteId)}&financialYear=${financialYear}`
+  const headers = buildHeaders(keycloak)
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching fuel exchange rate:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST {BASE_COST}/exchange-rate?siteId=...&financialYear=...&value=...&remarks=...
+async function saveFuelExchangeRate(
+  keycloak,
+  siteId,
+  financialYear,
+  value,
+  remarks,
+) {
+  let url = `${Config.CaseEngineUrl}${BASE_COST}/exchange-rate?siteId=${encodeURIComponent(siteId)}&financialYear=${financialYear}`
+  if (value !== null && value !== undefined && value !== '') {
+    url += `&value=${encodeURIComponent(value)}`
+  }
+  if (remarks !== null && remarks !== undefined) {
+    url += `&remarks=${encodeURIComponent(remarks)}`
+  }
+  const headers = buildHeaders(keycloak)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving fuel exchange rate:', e)
     return await Promise.reject(e)
   }
 }

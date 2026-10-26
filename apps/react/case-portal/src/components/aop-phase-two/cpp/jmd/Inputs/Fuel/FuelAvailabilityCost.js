@@ -4,7 +4,7 @@ import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/g
 import { useSelector } from 'react-redux'
 import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
@@ -17,7 +17,7 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 // so quantity data is never touched here.
 const DATA_TYPE = 'FUEL_AVAILABILITY'
 
-const FuelAvailabilityCost = ({ refreshTrigger = 0 }) => {
+const FuelAvailabilityCost = ({ refreshTrigger = 0, exchangeRate }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, year, jmdSelectedPlants } = dataGridStore
@@ -38,7 +38,7 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0 }) => {
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(2)
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -114,11 +114,11 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0 }) => {
   const columns = [
     readonlyCol('cppPlantName', 'CPP Plant', 120, { locked: true }),
     readonlyCol('fuelDisplayName', 'Fuel', 200, { locked: true }),
-    readonlyCol('uom', 'UOM', 100),
-    readonlyCol('calorificValue', 'Calorific Value', 120, {
-      type: 'number1',
-      format: valueFormat,
-    }),
+    // readonlyCol('uom', 'UOM', 100),
+    // readonlyCol('calorificValue', 'Calorific Value', 120, {
+    //   type: 'number1',
+    //   format: valueFormat,
+    // }),
     ...MONTH_COST_COLUMNS,
     {
       field: 'remarks',
@@ -192,7 +192,7 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0 }) => {
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fuel Cost',
+    titleName: `Fuel Cost (In INR , ${exchangeRate !== '' && exchangeRate != null ? ` 1$=${exchangeRate}` : ''})`,
   }
 
   const saveChanges = async () => {
