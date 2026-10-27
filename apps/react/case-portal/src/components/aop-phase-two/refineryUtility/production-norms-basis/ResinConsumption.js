@@ -50,20 +50,6 @@ const ResinConsumption = () => {
     severity: 'info',
   })
 
-  const formatUomValue = useCallback(
-    (val) => {
-      if (val === null || val === undefined || val === '') return ''
-      const num = parseFloat(val)
-      if (isNaN(num)) return val
-
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      }
-      return val
-    },
-    [isDtaUnitPlant],
-  )
-
   const fetchResinData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
@@ -80,11 +66,15 @@ const ResinConsumption = () => {
           ? response
           : []
         const formattedData = list.map((item, index) => {
-          const rawVal = item?.value
-          let val = ''
-          if (rawVal !== undefined && rawVal !== null && rawVal !== '') {
-            val = isDtaUnitPlant ? formatUomValue(rawVal) : Number(rawVal)
+          let val = item?.value
+          if (val !== undefined && val !== null && val !== '') {
+            val = isDtaUnitPlant && !isNaN(parseFloat(val))
+              ? (Math.trunc(parseFloat(val) * 100) / 100).toFixed(2)
+              : Number(val)
+          } else {
+            val = item?.value ?? ''
           }
+
           return {
             ...item,
             id: item?.id ?? index + 1,
@@ -113,13 +103,13 @@ const ResinConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, READ_ONLY, isDtaUnitPlant, formatUomValue])
+  }, [keycloak, PLANT_ID, AOP_YEAR, READ_ONLY, isDtaUnitPlant])
 
   useEffect(() => {
     setRows([])
     setModifiedCells({})
     fetchResinData()
-  }, [fetchResinData, PLANT_ID, AOP_YEAR, isDtaUnitPlant])
+  }, [fetchResinData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(
     () => [

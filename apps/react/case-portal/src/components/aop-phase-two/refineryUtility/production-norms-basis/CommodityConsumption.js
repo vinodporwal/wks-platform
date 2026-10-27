@@ -40,7 +40,7 @@ const CommodityConsumption = () => {
   const valueFormat = ValueFormatterPhaseTwo()
 
   const plantName = (plantObject?.name || '').trim()
-  const siteName = (siteObject?.name || '').trim().toUpperCase()
+  const siteName = (siteObject?.name || '').trim()
 
   const isDtaCtPlant =
     siteName === 'DTA' &&
@@ -72,20 +72,6 @@ const CommodityConsumption = () => {
     message: '',
     severity: 'info',
   })
-
-  const formatUomValue = useCallback(
-    (val) => {
-      if (val === null || val === undefined || val === '') return ''
-      const num = parseFloat(val)
-      if (isNaN(num)) return val
-
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      }
-      return val
-    },
-    [isDtaUnitPlant],
-  )
 
   useEffect(() => {
     const fetchPlantColumnConfig = async () => {
@@ -126,8 +112,8 @@ const CommodityConsumption = () => {
               : item?.value !== undefined && item?.value !== null
               ? item.value
               : ''
-          if (isDtaUnitPlant) {
-            val = formatUomValue(val)
+          if (isDtaUnitPlant && val !== '' && !isNaN(parseFloat(val))) {
+            val = (Math.trunc(parseFloat(val) * 100) / 100).toFixed(2)
           }
           const uomVal = item?.uom || item?.UOM || ''
           const nameVal =
@@ -139,9 +125,12 @@ const CommodityConsumption = () => {
 
           const monthValues = {}
           MONTHS_LIST.forEach((m) => {
-            const rawM =
+            let mVal =
               item?.[m] !== undefined && item?.[m] !== null ? item[m] : ''
-            monthValues[m] = isDtaUnitPlant ? formatUomValue(rawM) : rawM
+            if (isDtaUnitPlant && mVal !== '' && !isNaN(parseFloat(mVal))) {
+              mVal = (Math.trunc(parseFloat(mVal) * 100) / 100).toFixed(2)
+            }
+            monthValues[m] = mVal
           })
 
           return {
@@ -174,13 +163,13 @@ const CommodityConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtaUnitPlant, formatUomValue])
+  }, [keycloak, PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtaUnitPlant])
 
   useEffect(() => {
     setRows([])
     setModifiedCells({})
     fetchCommodityData()
-  }, [fetchCommodityData, PLANT_ID, AOP_YEAR, isDtaUnitPlant])
+  }, [fetchCommodityData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(() => {
     if (isDtaCtPlant) {
@@ -368,7 +357,7 @@ const CommodityConsumption = () => {
         widthT: 300,
       },
     ]
-  }, [isDtaCtPlant, headerMap, valueFormat, isDtaUnitPlant])
+  }, [isDtaCtPlant, isDtaUnitPlant, headerMap, valueFormat])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
