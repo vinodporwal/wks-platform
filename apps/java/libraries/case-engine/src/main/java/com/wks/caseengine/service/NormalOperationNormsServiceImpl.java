@@ -1683,7 +1683,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	               AOPConsumptionNormGrade existing = opt.get();
 	               String existingRemark = existing.getAopRemarks() != null ? existing.getAopRemarks().trim() : "";
 
-	               boolean isValueChanged = isAnyMonthValueChanged(existing, steadyStateNormDTO);
+	               boolean isValueChanged = isAprilValueChanged(existing, steadyStateNormDTO);
 	               boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
 
 	               if (isValueChanged && !isRemarkChanged) {
@@ -1716,12 +1716,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                   continue;
 	               }
 
-	               if (newRemark.isEmpty()) {
-	                   steadyStateNormDTO.setSaveStatus("Failed");
-	                   steadyStateNormDTO.setErrDescription("Remark is mandatory for creating a new record.");
-	                   failedList.add(steadyStateNormDTO);
-	                   continue;
-	               }
+	            //    if (newRemark.isEmpty()) {
+	            //        steadyStateNormDTO.setSaveStatus("Failed");
+	            //        steadyStateNormDTO.setErrDescription("Remark is mandatory for creating a new record.");
+	            //        failedList.add(steadyStateNormDTO);
+	            //        continue;
+	            //    }
 
 	               AOPConsumptionNormGrade newEntity = new AOPConsumptionNormGrade();
 	               setMonthlyValues(newEntity, steadyStateNormDTO);
@@ -1801,6 +1801,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	              isDoubleChanged(existing.getFeb(), dto.getFebruary()) ||
 	              isDoubleChanged(existing.getMarch(), dto.getMarch());
 	   }
+
+	   private boolean isAprilValueChanged(AOPConsumptionNormGrade existing, SteadyStateNormDTO dto) {
+		return isDoubleChanged(existing.getApril(), dto.getApril());
+			 
+	}
 	   
 	   public Integer executeCalculateSP( String plantId, String aopYear, String procedureName) {
 		try {
