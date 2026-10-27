@@ -173,17 +173,24 @@ const SignOffReport = () => {
           let titleClean = rawTitle
           let groupTag = col.group || ''
 
-          if (rawField.includes('~')) {
-            const parts = rawField.split('~')
-            titleClean = parts[0]
-            groupTag = parts[1] || ''
-          } else if (rawTitle.includes('~')) {
+          if (rawTitle.includes('~')) {
             const parts = rawTitle.split('~')
             titleClean = parts[0]
-            groupTag = parts[1] || ''
+            groupTag = parts[1] || groupTag
+          } else if (rawField.includes('~')) {
+            const parts = rawField.split('~')
+            if (!col.title || col.title === rawField) {
+              titleClean = parts[0]
+            }
+            groupTag = parts[1] || groupTag
+          }
+
+          if (typeof titleClean === 'string' && titleClean.includes('~')) {
+            titleClean = titleClean.split('~')[0]
           }
 
           const formattedTitle = titleClean.replace(/_/g, ' ').trim()
+          const cleanGroupTag = groupTag.replace(/_/g, ' ').trim()
           const isRemarks =
             rawField.toLowerCase().includes('remarks') ||
             titleClean.toLowerCase().includes('remark')
@@ -191,6 +198,7 @@ const SignOffReport = () => {
             col.type === 'number' ||
             (!col.type &&
               (rawField.includes('~') ||
+                rawTitle.includes('~') ||
                 /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(titleClean)))
           const isDate = col.type === 'date'
           const isFirstCol = index === 0
@@ -199,7 +207,7 @@ const SignOffReport = () => {
           const baseConfig = {
             field: col.field,
             title: formattedTitle,
-            group: groupTag.trim(),
+            group: cleanGroupTag,
             editable: isRemarks ? true : Boolean(col.editable),
             hidden: col.hidden || false,
             locked: isFrozenCol && backendCols.length > 2,
@@ -282,25 +290,38 @@ const SignOffReport = () => {
       })
 
       const isNumbered = Array.from(groupsMap.keys()).every((k) =>
-        /^group\s*\d+$/i.test(k.trim())
+        /^group\s*\d+$/i.test(k.trim()),
       )
       const sortedGroupKeys = isNumbered
         ? Array.from(groupsMap.keys()).sort((a, b) =>
-            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }),
           )
         : Array.from(groupsMap.keys())
 
       const groupedCols = []
       sortedGroupKeys.forEach((key) => {
-        groupedCols.push(...groupsMap.get(key))
+        const childCols = groupsMap.get(key) || []
+        // Child columns inside a multi-column group must not be individually locked
+        childCols.forEach((c) => {
+          c.locked = false
+        })
+        groupedCols.push({
+          title: key,
+          headerClassName: 'center-group-header',
+          children: childCols,
+        })
       })
 
-      const reorderedCols = [...leadingCols, ...groupedCols, ...trailingCols]
-      reorderedCols.forEach((c, idx) => {
-        c.locked = (idx === 0 || idx === 1) && reorderedCols.length > 2
+      // Lock only the first 1-2 leading columns (e.g. Particulars, UOM) if grid has more than 2 columns
+      leadingCols.forEach((c, idx) => {
+        c.locked = (idx === 0 || idx === 1) && mappedCols.length > 2
       })
 
-      return reorderedCols
+      trailingCols.forEach((c) => {
+        c.locked = false
+      })
+
+      return [...leadingCols, ...groupedCols, ...trailingCols]
     },
     [numberFormatFiveDecimals],
   )
@@ -312,11 +333,23 @@ const SignOffReport = () => {
   const normalizeRows = useCallback((rawRows = [], cols = []) => {
     if (!Array.isArray(rawRows)) return []
 
+    const leafCols = []
+    const traverse = (items) => {
+      items.forEach((c) => {
+        if (c.children && Array.isArray(c.children)) {
+          traverse(c.children)
+        } else {
+          leafCols.push(c)
+        }
+      })
+    }
+    traverse(cols)
+
     const numericFields = new Set(
-      cols.filter((c) => c.type === 'number').map((c) => c.field),
+      leafCols.filter((c) => c.type === 'number').map((c) => c.field),
     )
     const dateFields = new Set(
-      cols.filter((c) => c.type === 'date').map((c) => c.field),
+      leafCols.filter((c) => c.type === 'date').map((c) => c.field),
     )
 
     return rawRows.map((row, idx) => {
