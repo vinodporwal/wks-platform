@@ -13,6 +13,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 // Phase Two API Services
 import { SignOffReportApiService } from '../services/common/signOffReportApiService'
 import { HistoricPeriodBasisApiService } from '../services/common/historicPeriodBasisApiService'
+import SignOffReportFcc2 from '../SignOffReportFcc/index'
 
 /**
  * SignOffReport Component
@@ -57,7 +58,7 @@ const SIGN_OFF_COLUMNS = [
 const SignOffReport = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, siteObject } = dataGridStore
+  const { plantObject, year, siteObject, verticalObject } = dataGridStore
 
   // Store variables
   const PLANT_ID = plantObject?.id || plantObject?.value || plantObject?.plantId
@@ -89,9 +90,10 @@ const SignOffReport = () => {
     severity: 'info',
   })
 
+  const vertical = verticalObject?.name?.toLowerCase()?.trim()
   const site = siteObject?.name?.toLowerCase()?.trim()
   const plant = plantObject?.name?.toLowerCase()?.trim()
-
+  const IS_FCC_SEZ_FCC2= vertical==='fcc'&& site=== 'sez' && plant==='fcc-2'
   const isFirstTwoColColor = useMemo(() => {
     if (site === 'dta' && ['dht1'].includes(plant)) return true
     return false
@@ -157,7 +159,7 @@ const SignOffReport = () => {
         'unitno',
         'unit_no',
       ]
-      return backendCols
+      const mappedCols = backendCols
         .filter((col) => {
           if (!col || !col.field) return false
           const fieldUpper = col.field.trim().toLowerCase()
@@ -168,18 +170,38 @@ const SignOffReport = () => {
           )
         })
         .map((col, index) => {
-          const isNumber = col.type === 'number'
+          const rawField = col.field || ''
+          const rawTitle = col.title || rawField
+          let titleClean = rawTitle
+          let groupTag = col.group || ''
+
+          if (rawField.includes('~')) {
+            const parts = rawField.split('~')
+            titleClean = parts[0]
+            groupTag = parts[1] || ''
+          } else if (rawTitle.includes('~')) {
+            const parts = rawTitle.split('~')
+            titleClean = parts[0]
+            groupTag = parts[1] || ''
+          }
+
+          const formattedTitle = titleClean.replace(/_/g, ' ').trim()
+          const isRemarks =
+            rawField.toLowerCase().includes('remarks') ||
+            titleClean.toLowerCase().includes('remark')
+          const isNumber =
+            col.type === 'number' ||
+            (!col.type &&
+              (rawField.includes('~') ||
+                /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(titleClean)))
           const isDate = col.type === 'date'
           const isFirstCol = index === 0
           const isFrozenCol = index === 0 || index === 1
-          const formattedTitle = col.title || col.field.replace(/_/g, ' ')
-          const isRemarks =
-            col.field?.toLowerCase().includes('remarks') ||
-            col.title?.toLowerCase().includes('remark')
 
           const baseConfig = {
             field: col.field,
             title: formattedTitle,
+            group: groupTag.trim(),
             editable: isRemarks ? true : Boolean(col.editable),
             hidden: col.hidden || false,
             locked: isFrozenCol && backendCols.length > 2,
@@ -188,8 +210,8 @@ const SignOffReport = () => {
           if (isRemarks) {
             return {
               ...baseConfig,
-              field: 'remarks',
-              title: 'Remarks',
+              field: col.field || 'remarks',
+              title: formattedTitle || 'Remarks',
               type: 'textarea',
               align: 'left',
               headerAlign: 'left',
@@ -238,6 +260,49 @@ const SignOffReport = () => {
             minWidth: isFirstCol ? 220 : 150,
           }
         })
+
+      const hasGroup = mappedCols.some((c) => Boolean(c.group))
+      if (!hasGroup) return mappedCols
+
+      const leadingCols = []
+      const trailingCols = []
+      const groupsMap = new Map()
+
+      mappedCols.forEach((col) => {
+        if (col.group) {
+          if (!groupsMap.has(col.group)) {
+            groupsMap.set(col.group, [])
+          }
+          groupsMap.get(col.group).push(col)
+        } else {
+          if (groupsMap.size === 0) {
+            leadingCols.push(col)
+          } else {
+            trailingCols.push(col)
+          }
+        }
+      })
+
+      const isNumbered = Array.from(groupsMap.keys()).every((k) =>
+        /^group\s*\d+$/i.test(k.trim())
+      )
+      const sortedGroupKeys = isNumbered
+        ? Array.from(groupsMap.keys()).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+          )
+        : Array.from(groupsMap.keys())
+
+      const groupedCols = []
+      sortedGroupKeys.forEach((key) => {
+        groupedCols.push(...groupsMap.get(key))
+      })
+
+      const reorderedCols = [...leadingCols, ...groupedCols, ...trailingCols]
+      reorderedCols.forEach((c, idx) => {
+        c.locked = (idx === 0 || idx === 1) && reorderedCols.length > 2
+      })
+
+      return reorderedCols
     },
     [numberFormatFiveDecimals],
   )
@@ -432,10 +497,13 @@ const SignOffReport = () => {
             return
           }
 
-          const rawCols = Array.isArray(singleGrid.columns)
-            ? singleGrid.columns
-            : []
           const rawRows = Array.isArray(singleGrid.data) ? singleGrid.data : []
+          const rawCols =
+            Array.isArray(singleGrid.columns) && singleGrid.columns.length > 0
+              ? singleGrid.columns
+              : rawRows.length > 0
+              ? Object.keys(rawRows[0]).map((k) => ({ field: k, title: k }))
+              : []
 
           const enrichedCols = enrichColumns(rawCols)
           const enrichedRows = normalizeRows(rawRows, enrichedCols)
@@ -621,7 +689,7 @@ const SignOffReport = () => {
     // Prepare payload with expected keys: id and remarks
     const signOffReportDTOList = changedRows.map((row) => ({
       id: String(row.Id ?? row.id ?? ''),
-      remarks: String(row.remarks ?? '').trim(),
+      remarks: String(row.remarks ?? row.Remarks ?? '').trim(),
     }))
 
     setLoading(true)
@@ -674,17 +742,69 @@ const SignOffReport = () => {
 
   /**
    * Handle Calculate action:
-   * Deletes old rows and calls GET API again to set new calculated data
+   * 1. Silently calls the calculateSignOffReport API to trigger the backend stored procedure.
+   * 2. Then fetches the updated Sign Off Report data regardless of the result.
    */
   const handleCalculate = useCallback(async () => {
-    // Delete the old rows
+    if (!PLANT_ID || !AOP_YEAR) return
+
     setRows([])
     setOriginalRows([])
     setModifiedCells({})
 
-    // Call the GET api again to set new data
+    // Resolve periodFrom & periodTo
+    let periodFrom = null
+    let periodTo = null
+
+    try {
+      const configResponse =
+        await HistoricPeriodBasisApiService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      const configDetails = Array.isArray(configResponse?.data)
+        ? configResponse.data
+        : Array.isArray(configResponse?.data?.data)
+          ? configResponse.data.data
+          : []
+
+      const startDateObj = configDetails.find((d) => d.Name === 'StartDate')
+      const endDateObj = configDetails.find((d) => d.Name === 'EndDate')
+
+      periodFrom = formatDateForAPI(
+        startDateObj?.AttributeValue || startDateObj?.Value || startDateObj?.apr,
+      )
+      periodTo = formatDateForAPI(
+        endDateObj?.AttributeValue || endDateObj?.Value || endDateObj?.apr,
+      )
+    } catch (configErr) {
+      console.warn('Could not fetch config execution details for calculate, using fallback:', configErr)
+    }
+
+    if (!periodFrom || !periodTo) {
+      const fallbackDates = getDatesFromAopYear(AOP_YEAR)
+      if (!periodFrom) periodFrom = fallbackDates.startDate
+      if (!periodTo) periodTo = fallbackDates.endDate
+    }
+
+    // Step 1: Fire calculate API silently (no notifications, ignore result)
+    try {
+      await SignOffReportApiService.calculateSignOffReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        periodFrom,
+        periodTo,
+      )
+    } catch (calcError) {
+      console.error('calculateSignOffReport error (ignored):', calcError)
+    }
+
+    // Step 2: Always fetch fresh data after the calculate call
     await fetchSignOffReport(true)
-  }, [fetchSignOffReport])
+  }, [PLANT_ID, AOP_YEAR, keycloak, formatDateForAPI, getDatesFromAopYear, fetchSignOffReport])
 
   // Fetch report whenever plant or year changes
   useEffect(() => {
@@ -714,9 +834,14 @@ const SignOffReport = () => {
       showNote: Boolean(unitNo),
       note: unitNo ? `(${unitNo})` : '',
       isDaysUomInInteger: true,
+      exportReportGroupWise: true,
       isSignOffReport: isFirstTwoColColor,
     }
   }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor])
+ 
+  if (IS_FCC_SEZ_FCC2) {
+  return <SignOffReportFcc2 />
+}
 
   return (
     <Box sx={{ minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
