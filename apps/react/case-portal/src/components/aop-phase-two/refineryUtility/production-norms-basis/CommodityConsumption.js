@@ -40,7 +40,7 @@ const CommodityConsumption = () => {
   const valueFormat = ValueFormatterPhaseTwo()
 
   const plantName = (plantObject?.name || '').trim()
-  const siteName = (siteObject?.name || '').trim().toUpperCase()
+  const siteName = (siteObject?.name || '').trim()
 
   const isDtaCtPlant =
     siteName === 'DTA' &&
@@ -72,20 +72,6 @@ const CommodityConsumption = () => {
     message: '',
     severity: 'info',
   })
-
-  const formatUomValue = useCallback(
-    (val) => {
-      if (val === null || val === undefined || val === '') return ''
-      const num = parseFloat(val)
-      if (isNaN(num)) return val
-
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      }
-      return val
-    },
-    [isDtaUnitPlant],
-  )
 
   useEffect(() => {
     const fetchPlantColumnConfig = async () => {
@@ -183,7 +169,7 @@ const CommodityConsumption = () => {
     setRows([])
     setModifiedCells({})
     fetchCommodityData()
-  }, [fetchCommodityData, PLANT_ID, AOP_YEAR, isDtaUnitPlant])
+  }, [fetchCommodityData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(() => {
     if (isDtaCtPlant) {

@@ -98,7 +98,7 @@ const SteadyStateConsumption = () => {
   plantName.toLowerCase() === 'ct10 (740)' 
 )
 
-  const isSezCtPlant=siteName === 'SEZ' &&
+const isSezCtPlant=siteName === 'SEZ' &&
       (
   plantName.toLowerCase() === 'ct1 (z731)' ||
   plantName.toLowerCase() === 'ct5 (z735)' ||

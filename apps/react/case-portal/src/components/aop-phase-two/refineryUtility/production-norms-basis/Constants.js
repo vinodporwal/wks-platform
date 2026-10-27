@@ -33,26 +33,14 @@ const Constants = ({ startDate, endDate }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const siteName = (siteObject?.name || '').trim().toUpperCase()
-  const plantName = (plantObject?.name || '').trim()
-
-  const isDtaUnitPlant =
-    siteName === 'DTA' &&
-    (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
-      plantName.toLowerCase() === 'new_dm_unit (721)' ||
-      plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
-      plantName.toLowerCase() === 'old_cpu_unit (722)' ||
-      plantName.toLowerCase() === 'old_dm_unit (721)' ||
-      plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
-      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
-      plantName.toLowerCase() === 'wao_unit (672)')
-
   const formatUomValue = useCallback(
     (val, uom, itemOrName, displayName) => {
       if (val === null || val === undefined || val === '') return ''
       const num = parseFloat(val)
       if (isNaN(num)) return val
 
+      const siteName = siteObject?.name?.toUpperCase() || ''
+      const plantName = plantObject?.name?.toUpperCase() || ''
       const isSpecialPlant =
         (siteName === 'DTA' && plantName === 'PCG ASU') ||
         (siteName === 'SEZ' && plantName === 'PCG ASU') ||
@@ -152,7 +140,7 @@ const Constants = ({ startDate, endDate }) => {
         return Math.trunc(num).toString()
       }
     },
-    [siteObject?.name, plantObject?.name, isDtaUnitPlant],
+    [siteObject?.name, plantObject?.name],
   )
 
   useEffect(() => {
@@ -255,7 +243,7 @@ const Constants = ({ startDate, endDate }) => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConstantsData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaUnitPlant])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchConstantsData = async () => {
     setLoading(true)

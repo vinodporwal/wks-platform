@@ -50,20 +50,6 @@ const ResinConsumption = () => {
     severity: 'info',
   })
 
-  const formatUomValue = useCallback(
-    (val) => {
-      if (val === null || val === undefined || val === '') return ''
-      const num = parseFloat(val)
-      if (isNaN(num)) return val
-
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      }
-      return val
-    },
-    [isDtaUnitPlant],
-  )
-
   const fetchResinData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
@@ -123,7 +109,7 @@ const ResinConsumption = () => {
     setRows([])
     setModifiedCells({})
     fetchResinData()
-  }, [fetchResinData, PLANT_ID, AOP_YEAR, isDtaUnitPlant])
+  }, [fetchResinData, PLANT_ID, AOP_YEAR])
 
   const colDefs = useMemo(
     () => [

@@ -76,18 +76,18 @@ const isSezCtPlant=siteName === 'SEZ' &&
   plantName.toLowerCase() === 'ct8 (z761)' ||
   plantName.toLowerCase() === 'ct3 (z733)' ||
   plantName.toLowerCase() === 'ct2 (z732)' 
+)
+const isDtaUnitPlant =
+  siteName === 'DTA' &&
+  (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
+    plantName.toLowerCase() === 'new_dm_unit (721)' ||
+    plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
+    plantName.toLowerCase() === 'old_cpu_unit (722)' ||
+    plantName.toLowerCase() === 'old_dm_unit (721)' ||
+    plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
+    plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+    plantName.toLowerCase() === 'wao_unit (672)')
 const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
-
-  const isDtaUnitPlant =
-    siteName === 'DTA' &&
-    (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
-      plantName.toLowerCase() === 'new_dm_unit (721)' ||
-      plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
-      plantName.toLowerCase() === 'old_cpu_unit (722)' ||
-      plantName.toLowerCase() === 'old_dm_unit (721)' ||
-      plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
-      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
-      plantName.toLowerCase() === 'wao_unit (672)')
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -120,34 +120,29 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
           }
           return Math.trunc(num).toString()
         }
-        return Math.trunc(num).toString()
-      }
-      if (isFCCTame) {
-        return (Math.trunc(num * 100000) / 100000).toFixed(5)
-      }
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      }
-      if (isAsuPlant) {
-        const typeKeys = [
-          normalizeKey(row?.normParameterTypeName),
-          normalizeKey(row?.normParameterTypeDisplayName),
-        ]
-        const isThreeDecimal = typeKeys.some((k) =>
-          THREE_DECIMAL_NORM_TYPES.includes(k),
-        )
-        if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        if (isFCCTame) {
+          return (Math.trunc(num * 100000) / 100000).toFixed(5)
         }
-        const isSixDecimal = typeKeys.some((k) =>
-          SIX_DECIMAL_NORM_TYPES.includes(k),
-        )
-        if (isSixDecimal) {
-          return (Math.trunc(num * 1000000) / 1000000).toFixed(6)
+        if (isAsuPlant) {
+          const typeKeys = [
+            normalizeKey(row?.normParameterTypeName),
+            normalizeKey(row?.normParameterTypeDisplayName),
+          ]
+          const isThreeDecimal = typeKeys.some((k) =>
+            THREE_DECIMAL_NORM_TYPES.includes(k),
+          )
+          if (isThreeDecimal) {
+            return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          }
+          const isSixDecimal = typeKeys.some((k) =>
+            SIX_DECIMAL_NORM_TYPES.includes(k),
+          )
+          if (isSixDecimal) {
+            return (Math.trunc(num * 1000000) / 1000000).toFixed(6)
+          }
+          return (Math.trunc(num * 100000) / 100000).toFixed(5)
         }
-        return (Math.trunc(num * 100000) / 100000).toFixed(5)
-      }
-      if (ISDMD_Plants) {
+        if(ISDMD_Plants){
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
           normalizeKey(row?.normParameterTypeDisplayName),
