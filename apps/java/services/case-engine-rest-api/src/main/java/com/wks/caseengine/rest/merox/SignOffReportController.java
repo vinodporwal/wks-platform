@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.merox;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,17 @@ public class SignOffReportController {
             @RequestBody List<SignOffReportDTO> signOffReportDTOList) {
 
         AOPMessageVM response = signOffReportService.saveSignOffReportRemarks(year, signOffReportDTOList);
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @GetMapping(value = "/calculate-sign-off-report")
+    public ResponseEntity<AOPMessageVM> calculateSignOffReport(
+            @RequestParam String plantId,
+            @RequestParam String year,
+            @RequestParam String periodFrom,
+            @RequestParam String periodTo) {
+
+        AOPMessageVM response = signOffReportService.calculateSignOffReport(plantId, year, periodFrom, periodTo);
         return ResponseEntity.status(response.getCode()).body(response);
     }
 }
