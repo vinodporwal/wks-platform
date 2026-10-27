@@ -11,7 +11,7 @@ import { configurationAndReportManualEntryResponse } from '../dummyData'
 import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const PIMSThroughput = ({ refreshData }) => {
+const PIMSThroughput = ({ refreshData, onLoadNormCalculation }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -206,15 +206,15 @@ const PIMSThroughput = ({ refreshData }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      onLoadNormCalculation()
     } catch (error) {
       console.error('Error saving configuration data:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -236,7 +236,7 @@ const PIMSThroughput = ({ refreshData }) => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchConfigurationData()
+        await onLoadNormCalculation()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -256,7 +256,7 @@ const PIMSThroughput = ({ refreshData }) => {
           link.click()
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-
+          setLoading(false)
           setSnackbarOpen(true)
           setSnackbarData({
             message:
@@ -264,8 +264,8 @@ const PIMSThroughput = ({ refreshData }) => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchConfigurationData()
         } catch (downloadError) {
+          setLoading(false)
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
           setSnackbarData({
@@ -274,6 +274,7 @@ const PIMSThroughput = ({ refreshData }) => {
           })
         }
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Failed to import Excel file.',
@@ -281,14 +282,13 @@ const PIMSThroughput = ({ refreshData }) => {
         })
       }
     } catch (error) {
+      setLoading(false)
       console.error('Error uploading Excel file:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Failed to import Excel file: ${error.message}`,
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 

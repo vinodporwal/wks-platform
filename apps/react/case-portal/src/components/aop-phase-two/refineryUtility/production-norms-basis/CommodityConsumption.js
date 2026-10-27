@@ -47,6 +47,17 @@ const CommodityConsumption = () => {
     (plantName.toLowerCase() === 'ct8 (738)' ||
       plantName.toLowerCase() === 'ct9 (739)')
 
+  const isDtaUnitPlant =
+    siteName === 'DTA' &&
+    (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
+      plantName.toLowerCase() === 'new_dm_unit (721)' ||
+      plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
+      plantName.toLowerCase() === 'old_cpu_unit (722)' ||
+      plantName.toLowerCase() === 'old_dm_unit (721)' ||
+      plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
+      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+      plantName.toLowerCase() === 'wao_unit (672)')
+
   const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [AOP_YEAR])
 
   const [rows, setRows] = useState([])
@@ -95,12 +106,15 @@ const CommodityConsumption = () => {
           )
       if (response?.code === 200) {
         const formattedData = (response?.data || []).map((item, index) => {
-          const val =
+          let val =
             item?.april !== undefined && item?.april !== null
               ? item.april
               : item?.value !== undefined && item?.value !== null
               ? item.value
               : ''
+          if (isDtaUnitPlant && val !== '' && !isNaN(parseFloat(val))) {
+            val = (Math.trunc(parseFloat(val) * 100) / 100).toFixed(2)
+          }
           const uomVal = item?.uom || item?.UOM || ''
           const nameVal =
             item?.displayName || item?.name || item?.productName || ''
@@ -111,8 +125,12 @@ const CommodityConsumption = () => {
 
           const monthValues = {}
           MONTHS_LIST.forEach((m) => {
-            monthValues[m] =
+            let mVal =
               item?.[m] !== undefined && item?.[m] !== null ? item[m] : ''
+            if (isDtaUnitPlant && mVal !== '' && !isNaN(parseFloat(mVal))) {
+              mVal = (Math.trunc(parseFloat(mVal) * 100) / 100).toFixed(2)
+            }
+            monthValues[m] = mVal
           })
 
           return {
@@ -145,7 +163,7 @@ const CommodityConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, isDtaCtPlant])
+  }, [keycloak, PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtaUnitPlant])
 
   useEffect(() => {
     setRows([])
@@ -327,7 +345,7 @@ const CommodityConsumption = () => {
         minWidth: 120,
         widthT: 150,
         type: 'number',
-        format: valueFormat,
+        format: isDtaUnitPlant ? '{0:0.00}' : valueFormat,
         editable: true,
       },
       {
@@ -339,7 +357,7 @@ const CommodityConsumption = () => {
         widthT: 300,
       },
     ]
-  }, [isDtaCtPlant, headerMap, valueFormat])
+  }, [isDtaCtPlant, isDtaUnitPlant, headerMap, valueFormat])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return

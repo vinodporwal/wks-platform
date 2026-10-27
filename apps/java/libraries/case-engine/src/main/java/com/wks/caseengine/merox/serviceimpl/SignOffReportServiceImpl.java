@@ -352,7 +352,7 @@ public class SignOffReportServiceImpl implements SignOffReportService {
 	public Integer executeSignOffReportCalculationSP( String plantId, String aopYear, String periodFrom, String periodTo, String procedureName) {
 		try {
 
-			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
+			String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
 
 
 			return jdbcTemplate.update(callSql, plantId, aopYear, periodFrom, periodTo);
