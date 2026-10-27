@@ -734,7 +734,7 @@ const AdvanceKendoTable = ({
           // Header styling
           // -----------------------------
           if (isHeader) {
-            cell.background = cell.background || '#DFDFDF'
+            cell.background = '#DFDFDF'
             cell.color = '#000000'
             cell.bold = true
 
