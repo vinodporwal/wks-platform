@@ -57,6 +57,22 @@ const Constants = ({ startDate, endDate }) => {
       const isDtaCtPlant =
         siteName === 'DTA' &&
         (plantObject?.name === 'CT4 (734)' || plantObject?.name === 'CT6 (736)')
+
+      const isDtaUnitPlant =
+        siteName === 'DTA' &&
+        (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
+          plantName.toLowerCase() === 'new_dm_unit (721)' ||
+          plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
+          plantName.toLowerCase() === 'old_cpu_unit (722)' ||
+          plantName.toLowerCase() === 'old_dm_unit (721)' ||
+          plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
+          plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+          plantName.toLowerCase() === 'wao_unit (672)')
+
+      if (isDtaUnitPlant) {
+        return (Math.trunc(num * 100) / 100).toFixed(2)
+      }
+
       const cleanUom = String(uom ?? '')
         .trim()
         .toLowerCase()
