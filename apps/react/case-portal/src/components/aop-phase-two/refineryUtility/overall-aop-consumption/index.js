@@ -76,17 +76,6 @@ const isSezCtPlant=siteName === 'SEZ' &&
   plantName.toLowerCase() === 'ct8 (z761)' ||
   plantName.toLowerCase() === 'ct3 (z733)' ||
   plantName.toLowerCase() === 'ct2 (z732)' 
-)
-const isDtaUnitPlant =
-  siteName === 'DTA' &&
-  (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
-    plantName.toLowerCase() === 'new_dm_unit (721)' ||
-    plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
-    plantName.toLowerCase() === 'old_cpu_unit (722)' ||
-    plantName.toLowerCase() === 'old_dm_unit (721)' ||
-    plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
-    plantName.toLowerCase() === 'spent_caustic (palpro)' ||
-    plantName.toLowerCase() === 'wao_unit (672)')
 const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
 
   const isDtaUnitPlant =

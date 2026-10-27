@@ -98,18 +98,6 @@ const SteadyStateConsumption = () => {
   plantName.toLowerCase() === 'ct10 (740)' 
 )
 
-  const isDtaUnitPlant =
-    siteName === 'DTA' &&
-    (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
-      plantName.toLowerCase() === 'new_dm_unit (721)' ||
-      plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
-      plantName.toLowerCase() === 'old_cpu_unit (722)' ||
-      plantName.toLowerCase() === 'old_dm_unit (721)' ||
-      plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
-      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
-      plantName.toLowerCase() === 'wao_unit (672)')
-      
-
   const isSezCtPlant=siteName === 'SEZ' &&
       (
   plantName.toLowerCase() === 'ct1 (z731)' ||
@@ -166,9 +154,6 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
           return (Math.trunc(num * 1000) / 1000).toFixed(3)
         }
         return Math.trunc(num).toString()
-      }
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
       }
       if (isFCCTame) {
         return (Math.trunc(num * 100000) / 100000).toFixed(5)

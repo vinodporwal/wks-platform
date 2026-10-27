@@ -143,10 +143,6 @@ const Constants = ({ startDate, endDate }) => {
         return (Math.trunc(num * 1000) / 1000).toFixed(3)
       }
 
-      if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      }
-
       if (isSpecialPlant) {
         if (cleanUom === '%' || cleanUom === 'm3/hr') {
           return Math.trunc(num).toString()
