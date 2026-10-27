@@ -9,7 +9,7 @@ import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/Va
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const Constants = ({ startDate, endDate, refreshData }) => {
+const Constants = ({ startDate, endDate, refreshData, onLoadNormCalculation }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -227,16 +227,15 @@ const Constants = ({ startDate, endDate, refreshData }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchConstantsData()
+      onLoadNormCalculation()
     } catch (error) {
       console.error('Error saving constants data:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -273,7 +272,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchConstantsData()
+        await onLoadNormCalculation()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -293,7 +292,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
           link.click()
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-
+          setLoading(false)
           setSnackbarOpen(true)
           setSnackbarData({
             message:
@@ -301,8 +300,8 @@ const Constants = ({ startDate, endDate, refreshData }) => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchConstantsData()
         } catch (downloadError) {
+          setLoading(false)
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
           setSnackbarData({
@@ -311,6 +310,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
           })
         }
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Failed to import Excel file.',
@@ -319,14 +319,13 @@ const Constants = ({ startDate, endDate, refreshData }) => {
       }
     } catch (error) {
       console.error('Error uploading Excel file:', error)
+      setLoading(false)
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Failed to import Excel file: ${error.message}`,
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
-    }
+    } 
   }
 
   const handleExport = async () => {
