@@ -13,6 +13,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 // Phase Two API Services
 import { SignOffReportApiService } from '../services/common/signOffReportApiService'
 import { HistoricPeriodBasisApiService } from '../services/common/historicPeriodBasisApiService'
+import SignOffReportFcc2 from '../SignOffReportFcc/index'
 
 /**
  * SignOffReport Component
@@ -57,7 +58,7 @@ const SIGN_OFF_COLUMNS = [
 const SignOffReport = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, siteObject } = dataGridStore
+  const { plantObject, year, siteObject, verticalObject } = dataGridStore
 
   // Store variables
   const PLANT_ID = plantObject?.id || plantObject?.value || plantObject?.plantId
@@ -89,9 +90,10 @@ const SignOffReport = () => {
     severity: 'info',
   })
 
+  const vertical = verticalObject?.name?.toLowerCase()?.trim()
   const site = siteObject?.name?.toLowerCase()?.trim()
   const plant = plantObject?.name?.toLowerCase()?.trim()
-
+  const IS_FCC_SEZ_FCC2= vertical==='fcc'&& site=== 'sez' && plant==='fcc-2'
   const isFirstTwoColColor = useMemo(() => {
     if (site === 'dta' && ['dht1'].includes(plant)) return true
     return false
@@ -836,6 +838,10 @@ const SignOffReport = () => {
       isSignOffReport: isFirstTwoColColor,
     }
   }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor])
+ 
+  if (IS_FCC_SEZ_FCC2) {
+  return <SignOffReportFcc2 />
+}
 
   return (
     <Box sx={{ minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
