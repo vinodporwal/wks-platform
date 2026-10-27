@@ -24,6 +24,20 @@ const ResinConsumption = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const valueFormat = ValueFormatterPhaseTwo()
 
+  const siteName = (siteObject?.name || '').trim().toUpperCase()
+  const plantName = (plantObject?.name || '').trim()
+
+  const isDtaUnitPlant =
+    siteName === 'DTA' &&
+    (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
+      plantName.toLowerCase() === 'new_dm_unit (721)' ||
+      plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
+      plantName.toLowerCase() === 'old_cpu_unit (722)' ||
+      plantName.toLowerCase() === 'old_dm_unit (721)' ||
+      plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
+      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+      plantName.toLowerCase() === 'wao_unit (672)')
+
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -52,6 +66,15 @@ const ResinConsumption = () => {
           ? response
           : []
         const formattedData = list.map((item, index) => {
+          let val = item?.value
+          if (val !== undefined && val !== null && val !== '') {
+            val = isDtaUnitPlant && !isNaN(parseFloat(val))
+              ? (Math.trunc(parseFloat(val) * 100) / 100).toFixed(2)
+              : Number(val)
+          } else {
+            val = item?.value ?? ''
+          }
+
           return {
             ...item,
             id: item?.id ?? index + 1,
@@ -61,12 +84,7 @@ const ResinConsumption = () => {
             displayName:
               item?.displayName || item?.DisplayName || item?.name || '',
             name: item?.name || item?.displayName || '',
-            value:
-              item?.value !== undefined &&
-              item?.value !== null &&
-              item?.value !== ''
-                ? Number(item.value)
-                : item?.value ?? '',
+            value: val,
             remarks: item?.remarks || '',
             originalRemark: item?.remarks || '',
             aopYear: item?.aopYear || AOP_YEAR,
@@ -85,7 +103,7 @@ const ResinConsumption = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, READ_ONLY])
+  }, [keycloak, PLANT_ID, AOP_YEAR, READ_ONLY, isDtaUnitPlant])
 
   useEffect(() => {
     setRows([])
@@ -118,7 +136,7 @@ const ResinConsumption = () => {
         minWidth: 120,
         widthT: 150,
         type: 'number',
-        format: valueFormat,
+        format: isDtaUnitPlant ? '{0:0.00}' : valueFormat,
         editable: !READ_ONLY,
       },
       {
@@ -130,7 +148,7 @@ const ResinConsumption = () => {
         widthT: 300,
       },
     ],
-    [valueFormat, READ_ONLY],
+    [valueFormat, READ_ONLY, isDtaUnitPlant],
   )
 
   const handleRemarkCellClick = (row) => {
