@@ -674,17 +674,69 @@ const SignOffReport = () => {
 
   /**
    * Handle Calculate action:
-   * Deletes old rows and calls GET API again to set new calculated data
+   * 1. Silently calls the calculateSignOffReport API to trigger the backend stored procedure.
+   * 2. Then fetches the updated Sign Off Report data regardless of the result.
    */
   const handleCalculate = useCallback(async () => {
-    // Delete the old rows
+    if (!PLANT_ID || !AOP_YEAR) return
+
     setRows([])
     setOriginalRows([])
     setModifiedCells({})
 
-    // Call the GET api again to set new data
+    // Resolve periodFrom & periodTo
+    let periodFrom = null
+    let periodTo = null
+
+    try {
+      const configResponse =
+        await HistoricPeriodBasisApiService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      const configDetails = Array.isArray(configResponse?.data)
+        ? configResponse.data
+        : Array.isArray(configResponse?.data?.data)
+          ? configResponse.data.data
+          : []
+
+      const startDateObj = configDetails.find((d) => d.Name === 'StartDate')
+      const endDateObj = configDetails.find((d) => d.Name === 'EndDate')
+
+      periodFrom = formatDateForAPI(
+        startDateObj?.AttributeValue || startDateObj?.Value || startDateObj?.apr,
+      )
+      periodTo = formatDateForAPI(
+        endDateObj?.AttributeValue || endDateObj?.Value || endDateObj?.apr,
+      )
+    } catch (configErr) {
+      console.warn('Could not fetch config execution details for calculate, using fallback:', configErr)
+    }
+
+    if (!periodFrom || !periodTo) {
+      const fallbackDates = getDatesFromAopYear(AOP_YEAR)
+      if (!periodFrom) periodFrom = fallbackDates.startDate
+      if (!periodTo) periodTo = fallbackDates.endDate
+    }
+
+    // Step 1: Fire calculate API silently (no notifications, ignore result)
+    try {
+      await SignOffReportApiService.calculateSignOffReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        periodFrom,
+        periodTo,
+      )
+    } catch (calcError) {
+      console.error('calculateSignOffReport error (ignored):', calcError)
+    }
+
+    // Step 2: Always fetch fresh data after the calculate call
     await fetchSignOffReport(true)
-  }, [fetchSignOffReport])
+  }, [PLANT_ID, AOP_YEAR, keycloak, formatDateForAPI, getDatesFromAopYear, fetchSignOffReport])
 
   // Fetch report whenever plant or year changes
   useEffect(() => {
