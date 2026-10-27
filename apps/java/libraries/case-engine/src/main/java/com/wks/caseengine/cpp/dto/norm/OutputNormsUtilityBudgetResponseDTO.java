@@ -21,11 +21,17 @@ public class OutputNormsUtilityBudgetResponseDTO {
     @JsonProperty("generatingPlantName")
     private String generatingPlantName;
 
+    @JsonProperty("generatingPlantCode")
+    private String generatingPlantCode;
+
     @JsonProperty("utilityName")
     private String utilityName;
 
     @JsonProperty("utilityId")
     private String utilityId;
+
+    @JsonProperty("utilityActivity")
+    private String utilityActivity;
 
     @JsonProperty("uom")
     private String uom;
@@ -39,8 +45,14 @@ public class OutputNormsUtilityBudgetResponseDTO {
     @JsonProperty("materialId")
     private String materialId;
 
+    @JsonProperty("materialActivity")
+    private String materialActivity;
+
     @JsonProperty("issuingPlantName")
     private String issuingPlantName;
+
+    @JsonProperty("issuingPlantCode")
+    private String issuingPlantCode;
 
     @JsonProperty("issuingUom")
     private String issuingUom;

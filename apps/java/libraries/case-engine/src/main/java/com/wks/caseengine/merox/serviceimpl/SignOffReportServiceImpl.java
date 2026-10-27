@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +51,9 @@ public class SignOffReportServiceImpl implements SignOffReportService {
 
     @Autowired
 	private NormAttributeTransactionsReportRepository normAttributeTransactionsReportRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
     public AOPMessageVM getSignOffReport(String plantId, String aopYear, String periodFrom, String periodTo) {
@@ -321,6 +325,40 @@ public class SignOffReportServiceImpl implements SignOffReportService {
 			
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to save month wise constants", ex);
+		}
+	}
+
+    @Override
+    public AOPMessageVM calculateSignOffReport(String plantId, String aopYear, String periodFrom, String periodTo) {
+        
+        Plants plants = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_LoadSignOffReport";
+        
+        procedureName = "[RIL.AOP.Report].[dbo].[" + procedureName + "]";
+
+        Integer result = executeSignOffReportCalculationSP(plantId, aopYear, periodFrom, periodTo, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+
+		return aopMessageVM;
+    }
+
+    
+	public Integer executeSignOffReportCalculationSP( String plantId, String aopYear, String periodFrom, String periodTo, String procedureName) {
+		try {
+
+			String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear, periodFrom, periodTo);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
 
