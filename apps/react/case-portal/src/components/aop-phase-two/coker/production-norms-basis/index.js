@@ -262,6 +262,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'Constants':
@@ -270,6 +271,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'PIMS Throughput':
@@ -278,6 +280,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'PIMS Monthly Throughput':
@@ -287,6 +290,7 @@ const ProductionNormsBasisCoker = () => {
           <PIMSMontlyThroughput
             startDate={startDate}
             endDate={endDate}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'Job Work Avg Norms':
@@ -308,6 +312,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       case 'Historical Months':
@@ -325,6 +330,7 @@ const ProductionNormsBasisCoker = () => {
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
+            onLoadNormCalculation={handleLoadNormCalculation}
           />
         )
       default:

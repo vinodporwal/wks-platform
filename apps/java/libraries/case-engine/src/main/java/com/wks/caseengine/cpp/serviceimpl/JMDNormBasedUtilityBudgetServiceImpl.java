@@ -396,6 +396,20 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             dto.setFeb(parseMonthJson(getString(r[i++]), "feb", rowIndex));
             dto.setMar(parseMonthJson(getString(r[i++]), "mar", rowIndex));
 
+            // Columns added at end of SP SELECT clause (after mar)
+            if (i < r.length) {
+                dto.setGeneratingPlantCode(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setIssuingPlantCode(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setUtilityActivity(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setMaterialActivity(getString(r[i++]));
+            }
+
             // set remarks
             if (dto.getApr() != null && dto.getApr().getRemarks() != null) {
                 dto.setRemarks(dto.getApr().getRemarks());
@@ -467,6 +481,20 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             dto.setAnnual(parseSummaryJson(getString(r[i++]), "annual", rowIndex));
             dto.setCppPlantId(getString(r[i++]));
             dto.setCppPlantName(getString(r[i++]));
+
+            // Columns added at end of SP SELECT clause (after cppPlantName)
+            if (i < r.length) {
+                dto.setGeneratingPlantCode(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setIssuingPlantCode(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setUtilityActivity(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setMaterialActivity(getString(r[i++]));
+            }
 
             return dto;
 
@@ -967,8 +995,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
 
             // Static columns: Row 0 is empty but styled (header appears in Row 1)
             String[] staticColNames = {
-                "Plant Name","Generating Plant", "Utility", "Utility ID", "UOM",
-                "Account", "Material", "SAP Code", "Issuing Plant", "Issuing UOM"
+                "Plant Name", "Generating Plant", "Generating Plant Code", "Utility", "Utility ID", "Utility Activity", "UOM",
+                "Account", "Material", "SAP Code", "Material Activity", "Issuing Plant", "Issuing Plant Code", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
                 Cell emptyCell = topHeaderRow.createCell(col + i);
@@ -1106,10 +1134,16 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getGeneratingPlantName() != null ? dto.getGeneratingPlantName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getGeneratingPlantCode() != null ? dto.getGeneratingPlantCode() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getUtilityName() != null ? dto.getUtilityName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getUtilityId() != null ? dto.getUtilityId() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getUtilityActivity() != null ? dto.getUtilityActivity() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
@@ -1124,7 +1158,13 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getMaterialId() != null ? dto.getMaterialId() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getMaterialActivity() != null ? dto.getMaterialActivity() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getIssuingPlantName() != null ? dto.getIssuingPlantName() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getIssuingPlantCode() != null ? dto.getIssuingPlantCode() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getIssuingUom() != null ? dto.getIssuingUom() : "");
@@ -1262,8 +1302,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             col = 0;
 
             String[] staticColNames = {
-                "CPP Plant", "Generating Plant", "Utility", "Utility ID", "UOM",
-                "Account", "Material", "SAP Code", "Issuing Plant", "Issuing UOM"
+                "CPP Plant", "Generating Plant", "Generating Plant Code", "Utility", "Utility ID", "Utility Activity", "UOM",
+                "Account", "Material", "SAP Code", "Material Activity", "Issuing Plant", "Issuing Plant Code", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
                 Cell emptyCell = topHeaderRow.createCell(col + i);
@@ -1363,10 +1403,16 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getGeneratingPlantName() != null ? dto.getGeneratingPlantName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getGeneratingPlantCode() != null ? dto.getGeneratingPlantCode() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getUtilityName() != null ? dto.getUtilityName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getUtilityId() != null ? dto.getUtilityId() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getUtilityActivity() != null ? dto.getUtilityActivity() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
@@ -1381,7 +1427,13 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getMaterialId() != null ? dto.getMaterialId() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getMaterialActivity() != null ? dto.getMaterialActivity() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getIssuingPlantName() != null ? dto.getIssuingPlantName() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getIssuingPlantCode() != null ? dto.getIssuingPlantCode() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getIssuingUom() != null ? dto.getIssuingUom() : "");
@@ -1471,8 +1523,8 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             col = 0;
 
             String[] staticColNames = {
-                "CPP Plant", "Generating Plant", "Utility", "Utility ID", "UOM",
-                "Account", "Material", "SAP Code", "Issuing Plant", "Issuing UOM"
+                "CPP Plant", "Generating Plant", "Plant Code", "Utility", "Utility ID", "Utility Activity", "UOM",
+                "Account", "Material", "SAP Code", "Material Activity", "Issuing Plant", "Plant Code", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
                 Cell emptyCell = topHeaderRow.createCell(col + i);
@@ -1553,10 +1605,16 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getGeneratingPlantName() != null ? dto.getGeneratingPlantName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getGeneratingPlantCode() != null ? dto.getGeneratingPlantCode() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getUtilityName() != null ? dto.getUtilityName() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getUtilityId() != null ? dto.getUtilityId() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getUtilityActivity() != null ? dto.getUtilityActivity() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
@@ -1571,7 +1629,13 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getMaterialId() != null ? dto.getMaterialId() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getMaterialActivity() != null ? dto.getMaterialActivity() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getIssuingPlantName() != null ? dto.getIssuingPlantName() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getIssuingPlantCode() != null ? dto.getIssuingPlantCode() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getIssuingUom() != null ? dto.getIssuingUom() : "");

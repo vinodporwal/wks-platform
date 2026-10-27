@@ -181,7 +181,18 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
     customActionButton: true,
   }
 
+  const isFailedExecution = (dataItem) =>
+    dataItem?.status === 'Failed' && dataItem?.iterations === 0
+
   const handleViewClick = (dataItem) => {
+    if (isFailedExecution(dataItem)) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Execution failed for Month ${dataItem.month}. No data available to view.`,
+        severity: 'warning',
+      })
+      return
+    }
     if (onViewClick) {
       onViewClick(dataItem)
     } else {
@@ -195,6 +206,14 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   }
 
   const handleDownloadExcel = async (dataItem) => {
+    if (isFailedExecution(dataItem)) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Execution failed for Month ${dataItem.month}. Excel report is not available.`,
+        severity: 'warning',
+      })
+      return
+    }
     try {
       setLoading(true)
 

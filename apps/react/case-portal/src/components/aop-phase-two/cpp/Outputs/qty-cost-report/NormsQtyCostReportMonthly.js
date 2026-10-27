@@ -157,6 +157,15 @@ const NormsQtyCostReport = () => {
       locked: true,
       minWidth: 180,
     },
+    //Generating Plant Code
+    {
+      field: 'generatingPlantCode',
+      title: 'Plant Code',
+      widthT: 160,
+      type: 'text',
+      editable: false,
+      minWidth: 160,
+    },
     //Utility
     {
       field: 'utilityName',
@@ -176,6 +185,16 @@ const NormsQtyCostReport = () => {
       editable: false,
       locked: false,
       minWidth: 120,
+    },
+    // Utility Activity
+    {
+      field: 'utilityActivity',
+      title: 'Utility Activity',
+      widthT: 140,
+      type: 'text',
+      editable: false,
+      minWidth: 140,
+      hidden: true,
     },
     //UOM
     {
@@ -215,10 +234,29 @@ const NormsQtyCostReport = () => {
       locked: true,
       minWidth: 120,
     },
+    // Material Activity
+    {
+      field: 'materialActivity',
+      title: 'Material Activity',
+      widthT: 140,
+      type: 'text',
+      editable: false,
+      minWidth: 140,
+      hidden: true,
+    },
     // Issuing Plant
     {
       field: 'issuingPlantName',
       title: 'Issuing Plant',
+      widthT: 150,
+      type: 'text',
+      editable: false,
+      minWidth: 150,
+    },
+    // Issuing Plant Code
+    {
+      field: 'issuingPlantCode',
+      title: 'Plant Code',
       widthT: 150,
       type: 'text',
       editable: false,

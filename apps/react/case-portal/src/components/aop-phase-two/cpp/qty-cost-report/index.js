@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import NormsQtyCostReportMonthly from './NormsQtyCostReportMonthly'
 import NormsQtyCostReportAnnual from './NormsQtyCostReportAnnual'
-import QtyCostReportJMD from '../jmd/qty-cost-report/index'
-import QtyCostReportDMD from '../dmd/qty-cost-report/index'
+import QtyCostReportJMD from '../Outputs/qty-cost-report/index'
+import QtyCostReportDMD from '../Outputs/qty-cost-report/index'
 
 const QtyCostReport = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)

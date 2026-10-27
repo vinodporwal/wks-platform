@@ -9,7 +9,7 @@ import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/Va
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const DataFilters = ({ startDate, endDate, refreshData }) => {
+const DataFilters = ({ startDate, endDate, refreshData, onLoadNormCalculation }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -200,7 +200,7 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      onLoadNormCalculation()
     } catch (error) {
       console.error('Error saving data:', error)
       setLoading(false)
@@ -231,7 +231,7 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchData()
+        await onLoadNormCalculation()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -251,7 +251,7 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
           link.click()
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-
+          setLoading(false)
           setSnackbarOpen(true)
           setSnackbarData({
             message:
@@ -259,7 +259,6 @@ const DataFilters = ({ startDate, endDate, refreshData }) => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchData()
         } catch (downloadError) {
           setLoading(false)
           console.error('Error downloading error file:', downloadError)

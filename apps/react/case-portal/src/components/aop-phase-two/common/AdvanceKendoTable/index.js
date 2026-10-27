@@ -609,7 +609,7 @@ const AdvanceKendoTable = ({
       size: 2,
       color: '#000000',
     }
-
+    const exportReportGroupWise = Boolean(permissions?.exportReportGroupWise)
     const visibleColumns =
       columns?.filter(
         (col) =>
@@ -620,6 +620,84 @@ const AdvanceKendoTable = ({
 
     options.sheets.forEach((sheet) => {
       let maxCols = 1
+
+      const hasGroupHeaders = visibleColumns.some(
+        (col) => Boolean(col.group || (col.field && col.field.includes('~'))),
+      )
+      if (hasGroupHeaders && exportReportGroupWise) {
+        const groupCells = []
+        let curGroup = null
+        let curSpan = 0
+        visibleColumns.forEach((col, idx) => {
+          const grp = (
+            col.group ||
+            (col.field && col.field.includes('~') ? col.field.split('~')[1] : '') ||
+            ''
+          ).trim()
+          if (idx === 0) {
+            curGroup = grp
+            curSpan = 1
+          } else if (grp && grp === curGroup) {
+            curSpan++
+          } else {
+            if (curGroup) {
+              groupCells.push({
+                value: curGroup,
+                colSpan: curSpan,
+                bold: true,
+                textAlign: 'center',
+                verticalAlign: 'center',
+                background: '#DFDFDF',
+                color: '#000000',
+                disabled: true,
+              })
+            } else {
+              for (let i = 0; i < curSpan; i++) {
+                groupCells.push({
+                  value: '',
+                  colSpan: 1,
+                  bold: true,
+                  textAlign: 'center',
+                  verticalAlign: 'center',
+                  background: '#ffffff',
+                  color: '#000000',
+                  disabled: true,
+                })
+              }
+            }
+            curGroup = grp
+            curSpan = 1
+          }
+        })
+        if (curSpan > 0) {
+          if (curGroup) {
+            groupCells.push({
+              value: curGroup,
+              colSpan: curSpan,
+              bold: true,
+              textAlign: 'center',
+              verticalAlign: 'center',
+              background: '#DFDFDF',
+              color: '#000000',
+              disabled: true,
+            })
+          } else {
+            for (let i = 0; i < curSpan; i++) {
+              groupCells.push({
+                value: '',
+                colSpan: 1,
+                bold: true,
+                textAlign: 'center',
+                verticalAlign: 'center',
+                background: '#ffffff',
+                color: '#000000',
+                disabled: true,
+              })
+            }
+          }
+        }
+        sheet.rows.unshift({ type: 'group-header', cells: groupCells })
+      }
 
       const headerRows = sheet.rows.filter(
         (r) => r.type === 'header' || r.type === 'group-header',
@@ -664,6 +742,14 @@ const AdvanceKendoTable = ({
             cell.verticalAlign = 'center'
             cell.wrap = true
             cell.disabled = true
+          }
+
+          if (row.type === 'group-header' && !cell.value) {
+            cell.background = '#ffffff'
+          }
+
+          if (row.type === 'header' && typeof cell.value === 'string' && cell.value.includes('~')) {
+            cell.value = cell.value.split('~')[0].replace(/_/g, ' ').trim()
           }
 
           // -----------------------------
@@ -1005,6 +1091,7 @@ const AdvanceKendoTable = ({
         if (row.id === currentRowId) {
           const keysToUpdate = [
             'aopRemarks',
+            'AOPRemarks',
             'remarks',
             'remark',
             'Remark',
