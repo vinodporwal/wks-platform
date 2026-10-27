@@ -157,7 +157,7 @@ const SignOffReport = () => {
         'unitno',
         'unit_no',
       ]
-      return backendCols
+      const mappedCols = backendCols
         .filter((col) => {
           if (!col || !col.field) return false
           const fieldUpper = col.field.trim().toLowerCase()
@@ -168,18 +168,38 @@ const SignOffReport = () => {
           )
         })
         .map((col, index) => {
-          const isNumber = col.type === 'number'
+          const rawField = col.field || ''
+          const rawTitle = col.title || rawField
+          let titleClean = rawTitle
+          let groupTag = col.group || ''
+
+          if (rawField.includes('~')) {
+            const parts = rawField.split('~')
+            titleClean = parts[0]
+            groupTag = parts[1] || ''
+          } else if (rawTitle.includes('~')) {
+            const parts = rawTitle.split('~')
+            titleClean = parts[0]
+            groupTag = parts[1] || ''
+          }
+
+          const formattedTitle = titleClean.replace(/_/g, ' ').trim()
+          const isRemarks =
+            rawField.toLowerCase().includes('remarks') ||
+            titleClean.toLowerCase().includes('remark')
+          const isNumber =
+            col.type === 'number' ||
+            (!col.type &&
+              (rawField.includes('~') ||
+                /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(titleClean)))
           const isDate = col.type === 'date'
           const isFirstCol = index === 0
           const isFrozenCol = index === 0 || index === 1
-          const formattedTitle = col.title || col.field.replace(/_/g, ' ')
-          const isRemarks =
-            col.field?.toLowerCase().includes('remarks') ||
-            col.title?.toLowerCase().includes('remark')
 
           const baseConfig = {
             field: col.field,
             title: formattedTitle,
+            group: groupTag.trim(),
             editable: isRemarks ? true : Boolean(col.editable),
             hidden: col.hidden || false,
             locked: isFrozenCol && backendCols.length > 2,
@@ -188,8 +208,8 @@ const SignOffReport = () => {
           if (isRemarks) {
             return {
               ...baseConfig,
-              field: 'remarks',
-              title: 'Remarks',
+              field: col.field || 'remarks',
+              title: formattedTitle || 'Remarks',
               type: 'textarea',
               align: 'left',
               headerAlign: 'left',
@@ -238,6 +258,49 @@ const SignOffReport = () => {
             minWidth: isFirstCol ? 220 : 150,
           }
         })
+
+      const hasGroup = mappedCols.some((c) => Boolean(c.group))
+      if (!hasGroup) return mappedCols
+
+      const leadingCols = []
+      const trailingCols = []
+      const groupsMap = new Map()
+
+      mappedCols.forEach((col) => {
+        if (col.group) {
+          if (!groupsMap.has(col.group)) {
+            groupsMap.set(col.group, [])
+          }
+          groupsMap.get(col.group).push(col)
+        } else {
+          if (groupsMap.size === 0) {
+            leadingCols.push(col)
+          } else {
+            trailingCols.push(col)
+          }
+        }
+      })
+
+      const isNumbered = Array.from(groupsMap.keys()).every((k) =>
+        /^group\s*\d+$/i.test(k.trim())
+      )
+      const sortedGroupKeys = isNumbered
+        ? Array.from(groupsMap.keys()).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+          )
+        : Array.from(groupsMap.keys())
+
+      const groupedCols = []
+      sortedGroupKeys.forEach((key) => {
+        groupedCols.push(...groupsMap.get(key))
+      })
+
+      const reorderedCols = [...leadingCols, ...groupedCols, ...trailingCols]
+      reorderedCols.forEach((c, idx) => {
+        c.locked = (idx === 0 || idx === 1) && reorderedCols.length > 2
+      })
+
+      return reorderedCols
     },
     [numberFormatFiveDecimals],
   )
@@ -432,10 +495,13 @@ const SignOffReport = () => {
             return
           }
 
-          const rawCols = Array.isArray(singleGrid.columns)
-            ? singleGrid.columns
-            : []
           const rawRows = Array.isArray(singleGrid.data) ? singleGrid.data : []
+          const rawCols =
+            Array.isArray(singleGrid.columns) && singleGrid.columns.length > 0
+              ? singleGrid.columns
+              : rawRows.length > 0
+              ? Object.keys(rawRows[0]).map((k) => ({ field: k, title: k }))
+              : []
 
           const enrichedCols = enrichColumns(rawCols)
           const enrichedRows = normalizeRows(rawRows, enrichedCols)
@@ -621,7 +687,7 @@ const SignOffReport = () => {
     // Prepare payload with expected keys: id and remarks
     const signOffReportDTOList = changedRows.map((row) => ({
       id: String(row.Id ?? row.id ?? ''),
-      remarks: String(row.remarks ?? '').trim(),
+      remarks: String(row.remarks ?? row.Remarks ?? '').trim(),
     }))
 
     setLoading(true)
@@ -766,6 +832,7 @@ const SignOffReport = () => {
       showNote: Boolean(unitNo),
       note: unitNo ? `(${unitNo})` : '',
       isDaysUomInInteger: true,
+      exportReportGroupWise: true,
       isSignOffReport: isFirstTwoColColor,
     }
   }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor])
