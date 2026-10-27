@@ -172,4 +172,60 @@ public class JMDInterSitePowerTransferController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
+    // ========================================
+    // GET POWER DEMAND
+    // ========================================
+
+    @GetMapping("/jmd/power-demand")
+    public AOPMessageVM getPowerDemand(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear) {
+
+        logger.info("[GET /jmd/power-demand] plantIds: {}, financialYear: {}",
+                plantIds, financialYear);
+
+        AOPMessageVM response = interSitePowerTransferService
+                .getPowerDemand(plantIds, financialYear);
+
+        logger.info("[GET /jmd/power-demand] code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        return response;
+    }
+
+    // ========================================
+    // EXPORT POWER DEMAND
+    // ========================================
+
+    @GetMapping("/jmd/power-demand/export")
+    public ResponseEntity<byte[]> exportPowerDemand(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear) {
+
+        logger.info("[GET /jmd/power-demand/export] plantIds: {}, financialYear: {}",
+                plantIds, financialYear);
+
+        try {
+            byte[] excelData = interSitePowerTransferService
+                    .exportPowerDemand(plantIds, financialYear);
+
+            if (excelData == null || excelData.length == 0) {
+                logger.error("[GET /jmd/power-demand/export] Failed to generate Excel");
+                return ResponseEntity.status(500).body(null);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment",
+                    "Power_Demand_" + financialYear + ".xlsx");
+
+            logger.info("[GET /jmd/power-demand/export] Excel generated, {} bytes", excelData.length);
+
+            return ResponseEntity.ok().headers(headers).body(excelData);
+        } catch (Exception e) {
+            logger.error("[GET /jmd/power-demand/export] Error: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }
