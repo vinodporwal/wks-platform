@@ -2262,7 +2262,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public FunctionalLocationValidationResponse validateFunctionalLocation(String functionalLocation) {
-		log.info("GE APM functional location validation started: functionalLocation={}", functionalLocation);
+		log.info("GE APM functional location validation started : functionalLocation={}", functionalLocation);
 
 		try {
 			String sessionId = geLogin();
