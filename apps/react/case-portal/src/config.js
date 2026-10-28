@@ -1,7 +1,7 @@
 const config = {
   basename: '/',
-  defaultPath: '/home',
-  fontFamily: "'Public Sans', sans-serif",
+  defaultPath: '/production-norms-plan/configuration',
+  fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
   i18n: 'en',
   miniDrawer: false,
   container: true,
@@ -10,8 +10,16 @@ const config = {
   themeDirection: 'ltr',
 }
 
+// font-family: '', '',  !important;
+//     overflow-y: scroll;
+//     overflow-x: auto;
+//     scroll-behavior: smooth;
+//     font-size: 14px !important;
+//     font-weight: 400;
+
 export default config
-export const drawerWidth = 260
+export const drawerWidth = 250
+export const miniDrawerWidth = 60
 
 export const twitterColor = '#1DA1F2'
 export const facebookColor = '#3b5998'

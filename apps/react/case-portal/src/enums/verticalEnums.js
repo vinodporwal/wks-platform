@@ -1,0 +1,14 @@
+export const verticalEnums = {
+  MEG: 'meg',
+  PE: 'pe',
+  PP: 'pp',
+  CRACKER: 'cracker',
+  NMD: 'nmd',
+  PTA: 'pta',
+  ELASTOMER: 'elastomer',
+  AROMATICS: 'aromatics',
+  VCM: 'vcm',
+  PVC: 'pvc',
+  PET: 'pet',
+  CHEMICAL: 'chemical',
+}

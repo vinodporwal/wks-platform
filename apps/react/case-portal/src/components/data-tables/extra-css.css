@@ -1,0 +1,203 @@
+/* ===============================
+   COMMON BUTTON BASE
+================================ */
+.btn-save,
+.btn-approve,
+.btn-dashboard {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 6px 22px;
+  text-transform: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  min-width: 90px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+}
+
+.btn-load {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 6px 22px;
+  text-transform: none;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 90px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+/* ===============================
+   SAVE / LOAD BUTTON
+================================ */
+.btn-save,
+.btn-load {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.btn-save:hover,
+.btn-load:hover {
+  background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(30, 64, 175, 0.45);
+}
+
+.btn-save,
+.btn-load:disabled {
+  background: linear-gradient(135deg, #94a3b8, #c7d2fe);
+  color: #ffffff;
+  opacity: 0.75;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===============================
+   ACTION BUTTONS (NEW)
+================================ */
+.btn-add {
+  background: linear-gradient(135deg, #10b981, #059669); /* Green */
+}
+.btn-add:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.btn-export {
+  background: linear-gradient(135deg, #6366f1, #4f46e5); /* Indigo */
+}
+.btn-export:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+}
+
+.btn-import {
+  background: linear-gradient(135deg, #f59e0b, #d97706); /* Amber */
+}
+.btn-import:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+.btn-calculate {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed); /* Violet */
+}
+.btn-calculate:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+
+.btn-add,
+.btn-export,
+.btn-import,
+.btn-calculate {
+  color: #252525;
+  border-radius: 8px;
+  padding: 4px 12px;
+  text-transform: none;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  /* gap: 6px; */
+}
+
+.btn-add:hover,
+.btn-export:hover,
+.btn-import:hover,
+.btn-calculate:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.btn-add:disabled,
+.btn-export:disabled,
+.btn-import:disabled,
+.btn-calculate:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ===============================
+   APPROVE BUTTON (STRONG ACTION)
+================================ */
+.btn-approve {
+  background: linear-gradient(135deg, #059669, #047857);
+  font-size: 0.85rem;
+  min-width: 110px;
+  float: right;
+}
+
+.btn-approve:hover {
+  background: linear-gradient(135deg, #047857, #065f46);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(5, 150, 105, 0.45);
+}
+
+.btn-approve:disabled {
+  background: linear-gradient(135deg, #9ca3af, #d1d5db);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===============================
+   ACTION CONTAINERS
+================================ */
+.action-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-box2 {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+.action-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===============================
+   UNIT CHIP (PILL STYLE)
+================================ */
+.unit-chip {
+  border-radius: 10px;
+  padding: 8px 26px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  height: 40px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+}
+
+/* ===============================
+   DASHBOARD BUTTON
+================================ */
+.btn-dashboard {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  margin-bottom: 10px;
+}
+
+.btn-dashboard:hover {
+  background: linear-gradient(135deg, #6d28d9, #4c1d95);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.45);
+}

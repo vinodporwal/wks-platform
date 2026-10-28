@@ -1,0 +1,275 @@
+package com.wks.caseengine.rest.server;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.wks.caseengine.dto.ConversionVariableCostDTO;
+import com.wks.caseengine.dto.PlantReportDTO;
+import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
+import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
+import com.wks.caseengine.dto.ReliabilityImprovementDTO;
+import com.wks.caseengine.dto.SiteSafetyPerformanceTargetsDTO;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.service.PlantReportService;
+
+@RestController
+@RequestMapping("task")
+public class PlantReportController {
+
+    @Autowired
+    private PlantReportService plantReportService;
+
+    @GetMapping(value = "/plant-report") // Sp_PlantSafetyPerformanceTargets
+    public AOPMessageVM getPlantReport(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.getPlantReport(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/plant-report")
+    public AOPMessageVM savePlantReport(@RequestBody List<PlantReportDTO> plantReportDTOs) {
+        List<PlantReportDTO> failedList = plantReportService.savePlantReport(plantReportDTOs);
+        if (failedList.isEmpty()) {
+            return new AOPMessageVM(200, "Data saved successfully", null);
+        } else {
+            return new AOPMessageVM(500, "Partial data saved successfully", failedList);
+        }
+    }
+
+    @GetMapping(value = "/plant-safety-improvement") 
+    public AOPMessageVM getPlantSafetyImprovement(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.getPlantSafetyImprovement(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/plant-safety-improvement")
+    public AOPMessageVM savePlantSafetyImprovement(@RequestBody List<PlantSafetyImprovementDTO> plantSafetyImprovementDTOs) {
+        return plantReportService.savePlantSafetyImprovement(plantSafetyImprovementDTOs);
+    }
+
+    @DeleteMapping(value = "/plant-safety-improvement")
+    public AOPMessageVM deletePlantSafetyImprovement(@RequestParam String id) {
+        return plantReportService.deletePlantSafetyImprovement(id);
+    }
+
+    @GetMapping(value = "/plant-safety-improvement-export")
+    public ResponseEntity<byte[]> exportPlantSafetyImprovement(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = plantReportService.exportPlantSafetyImprovement(plantId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("plant_safety_improvement.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/plant-safety-improvement-import", consumes = "multipart/form-data")
+    public AOPMessageVM importPlantSafetyImprovement(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return plantReportService.importPlantSafetyImprovementExcel(plantId, aopYear, file);
+    }
+
+    @GetMapping(value = "/profit-improvement-initiative")
+    public AOPMessageVM getProfitImprovementInitiative(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.getProfitImprovementInitiative(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/profit-improvement-initiative")
+    public AOPMessageVM saveProfitImprovementInitiative(@RequestBody List<ProfitImprovementInitiativeDTO> profitImprovementInitiativeDTOs) {
+        return plantReportService.saveProfitImprovementInitiative(profitImprovementInitiativeDTOs);
+    }
+
+    @DeleteMapping(value = "/profit-improvement-initiative")
+    public AOPMessageVM deleteProfitImprovementInitiative(@RequestParam String id) {
+        return plantReportService.deleteProfitImprovementInitiative(id);
+    }
+
+    @GetMapping(value = "/profit-improvement-initiative-export")
+    public ResponseEntity<byte[]> exportProfitImprovementInitiative(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = plantReportService.exportProfitImprovementInitiative(plantId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("profit_improvement_initiative.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/profit-improvement-initiative-import", consumes = "multipart/form-data")
+    public AOPMessageVM importProfitImprovementInitiative(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return plantReportService.importProfitImprovementInitiativeExcel(plantId, aopYear, file);
+    }
+
+    @GetMapping(value = "/reliability-improvement")
+    public AOPMessageVM getReliabilityImprovement(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.getReliabilityImprovement(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/reliability-improvement")
+    public AOPMessageVM saveReliabilityImprovement(@RequestBody List<ReliabilityImprovementDTO> reliabilityImprovementDTOs) {
+        return plantReportService.saveReliabilityImprovement(reliabilityImprovementDTOs);
+    }
+
+    @DeleteMapping(value = "/reliability-improvement")
+    public AOPMessageVM deleteReliabilityImprovement(@RequestParam String id) {
+        return plantReportService.deleteReliabilityImprovement(id);
+    }
+
+    @GetMapping(value = "/reliability-improvement-export")
+    public ResponseEntity<byte[]> exportReliabilityImprovement(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = plantReportService.exportReliabilityImprovement(plantId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("reliability_improvement.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/reliability-improvement-import", consumes = "multipart/form-data")
+    public AOPMessageVM importReliabilityImprovement(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return plantReportService.importReliabilityImprovementExcel(plantId, aopYear, file);
+    }
+
+    @GetMapping(value = "/site-safety-performance") 
+    public AOPMessageVM getSiteSafetyPerformanceTargets(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.getSiteSafetyPerformanceTargets(siteId, aopYear);
+    }
+
+    @PostMapping(value = "/site-safety-performance")
+    public AOPMessageVM saveSiteSafetyPerformanceTargets(@RequestBody List<SiteSafetyPerformanceTargetsDTO> siteSafetyPerformanceTargetsDTOs) {
+        return plantReportService.saveSiteSafetyPerformanceTargets(siteSafetyPerformanceTargetsDTOs);
+    }
+
+    @GetMapping(value = "/site-safety-performance-load")
+    public AOPMessageVM loadSiteSafetyPerformanceData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.loadSiteSafetyPerformanceData(siteId, aopYear);
+    }
+
+    @GetMapping(value = "/site-safety-performance-export")
+    public ResponseEntity<byte[]> exportSiteSafetyPerformance(
+            @RequestParam String siteId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = plantReportService.exportSiteSafetyPerformanceTargets(siteId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("site_safety_performance.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/site-safety-performance-import", consumes = "multipart/form-data")
+    public AOPMessageVM importSiteSafetyPerformance(
+            @RequestParam String siteId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return plantReportService.importSiteSafetyPerformanceTargetsExcel(siteId, aopYear, file);
+    }
+
+    @GetMapping(value = "/conversion-variable-cost")
+    public AOPMessageVM getConversionVariableCostData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.getConversionVariableCostData(siteId, aopYear);
+    }
+
+    @PostMapping(value = "/conversion-variable-cost")
+    public AOPMessageVM saveConversionVariableCostData(@RequestBody List<ConversionVariableCostDTO> conversionVariableCostDTOs) {
+        return plantReportService.saveConversionVariableCostData(conversionVariableCostDTOs);
+    }
+
+    @GetMapping(value = "/conversion-variable-cost-load")
+    public AOPMessageVM loadConversionVariableCostData(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.loadConversionVariableCostData(siteId, aopYear);
+    }
+
+    @GetMapping(value = "/site-aop-report-tabs")
+    public AOPMessageVM getSiteAopReportTabs(@RequestParam(required = false) String siteId) {
+        return plantReportService.getSiteAopReportTabs(siteId);
+    }
+
+    @GetMapping(value = "/plant-report-export")
+    public ResponseEntity<byte[]> exportPlantReport(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = plantReportService.createPlantReportExcel(plantId, aopYear, false, null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("plant_report.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/plant-report-import", consumes = "multipart/form-data")
+    public AOPMessageVM importPlantReport(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return plantReportService.importPlantReportExcel(plantId, aopYear, file);
+    }
+
+    @GetMapping(value = "/reliability-performance-load")
+    public AOPMessageVM loadReliabilityPerformanceData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.loadReliabilityPerformanceData(plantId, aopYear);
+    }
+
+    @GetMapping(value = "/plant-safety-performance-load")
+    public AOPMessageVM loadPlantSafetyPerformanceData(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.loadPlantSafetyPerformanceData(plantId, aopYear);
+    }
+}

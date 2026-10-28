@@ -1,0 +1,62 @@
+package com.wks.caseengine.tcs.service;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.camunda.community.rest.client.dto.TaskDto;
+
+import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailDTO;
+
+public interface TCSWorkFlowService {
+    
+    void completePlantSubmissionTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void completeCTSTechTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void AOMApproval(String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void AOMApproveReject(String plantName, String siteId, boolean approvalStatus, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void startProcess(String verticalId, String siteId, String finacialYear);
+
+    void ctsApproval(String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void epsApproval(String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void epsApproveReject(String siteId, boolean approvalStatus, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void clusterHeadApproval(String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    List<PlantSubmissionAuditTrailDTO> getPlantSubmissionAuditTrail(String plantName, String siteId, String verticalId, String type, String finacialYear);
+
+    List<PlantSubmissionAuditTrailDTO> getEBSSubmissionAuditTrail(String siteId, String verticalId, String type, String finacialYear);
+
+    List<PlantSubmissionAuditTrailDTO> getLatestPlantWiseSubmissionAuditTrail(String siteId, String verticalId, String type, String finacialYear);
+
+    List<PlantSubmissionAuditTrailDTO> getPlantSubmissionAuditTrailByVerfiedDate(String plantId, String siteId, String verticalId, String type, String finacialYear);
+
+    List<PlantSubmissionAuditTrailDTO> getEbsSubmissionAuditTrailByVerfiedDate(String siteId, String verticalId, String type, String finacialYear);
+
+    PlantSubmissionAuditTrailDTO getLatestAOMSubmissionAuditTrail(String siteId, String verticalId, String type, String finacialYear);
+
+    void ctsApproveReject(String siteId, boolean approvalStatus, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void clusterHeadApproveReject(String siteId, boolean approvalStatus, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void notifyPlantManagers();
+
+    String deleteProcess(String verticalId, String siteId, String finacialYear);
+
+    String generateBusinessKey(String verticalId, String siteId, String finacialYear);
+
+    String resetAuditTrail(String businessKey);
+
+    void resetProcessVariables(String businessKey);
+
+    List<PlantSubmissionAuditTrailDTO> getAuditTrail(String verticalId, String siteId, String finacialYear);
+
+    List<TaskDto> getTasks(String businessKey);
+
+    List<String> getPlantList(UUID verticalId, UUID siteId);
+
+}

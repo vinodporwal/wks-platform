@@ -1,0 +1,40 @@
+.stepperContainer {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(1, 0, 203, 0.1);
+  border-radius: 8px;
+  padding: 2px 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex; /* Added */
+  align-items: center; /* Added */
+}
+
+.fixedNav {
+  position: fixed;
+  top: 45px;
+}
+
+.scrollWrapper {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+  /* Standard way to hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollWrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.navButton {
+  flex-shrink: 0; /* Prevents arrows from being crushed */
+  color: #0100cb !important;
+  background: transparent !important;
+}
+
+.navButton:hover {
+  background: rgba(1, 0, 203, 0.04) !important;
+}

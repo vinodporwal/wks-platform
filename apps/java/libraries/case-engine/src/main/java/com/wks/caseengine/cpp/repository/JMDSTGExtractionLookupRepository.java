@@ -1,0 +1,32 @@
+package com.wks.caseengine.cpp.repository;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.wks.caseengine.cpp.entity.STGExtractionLookup;
+
+@Repository
+public interface JMDSTGExtractionLookupRepository extends JpaRepository<STGExtractionLookup, UUID> {
+
+    // Find all records ordered by LoadMW
+    List<STGExtractionLookup> findAllByOrderByLoadMWAsc();
+
+    // Find exact match by LoadMW
+    Optional<STGExtractionLookup> findByLoadMW(BigDecimal loadMW);
+
+    // Find the closest lower LoadMW for interpolation
+    @Query(value = "SELECT TOP 1 * FROM STGExtractionLookup WITH(NOLOCK) WHERE LoadMW <= :loadMW ORDER BY LoadMW DESC", nativeQuery = true)
+    Optional<STGExtractionLookup> findClosestLowerLoad(@Param("loadMW") BigDecimal loadMW);
+
+    // Find the closest higher LoadMW for interpolation
+    @Query(value = "SELECT TOP 1 * FROM STGExtractionLookup WITH(NOLOCK) WHERE LoadMW >= :loadMW ORDER BY LoadMW ASC", nativeQuery = true)
+    Optional<STGExtractionLookup> findClosestHigherLoad(@Param("loadMW") BigDecimal loadMW);
+
+}

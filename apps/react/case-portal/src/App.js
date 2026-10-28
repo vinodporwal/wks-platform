@@ -2,20 +2,32 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { ThemeRoutes } from './routes'
 import ThemeCustomization from './themes'
 import { SessionStoreProvider } from './SessionStoreContext'
-import { CaseService, RecordService } from 'services'
-import menuItemsDefs from './menu'
+// import {
+//   CaseService,
+//   //  RecordService
+// } from 'services'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
+import './extra-css.css'
+import './data-grid-css.css'
+import './jio-grid-style.css'
+// import '@progress/kendo-theme-default/dist/all.css'
+// import '@progress/kendo-theme-bootstrap/dist/all.css'
+import '@progress/kendo-theme-fluent/dist/all.css'
+import '@progress/kendo-font-icons/dist/index.css'
+
+// import { useSelector } from 'react-redux'
+import Layout from 'layout/FooterLayout/index'
+import { MenuProvider } from 'menu/menuProvider'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
 const App = () => {
   const [keycloak, setKeycloak] = useState({})
   const [authenticated, setAuthenticated] = useState(null)
-  const [recordsTypes, setRecordsTypes] = useState([])
-  const [casesDefinitions, setCasesDefinitions] = useState([])
-  const [menu, setMenu] = useState({ items: [] })
+  // const [recordsTypes, setRecordsTypes] = useState([])
+  // const [casesDefinitions, setCasesDefinitions] = useState([])
 
   useEffect(() => {
     const { keycloak } = sessionStore.bootstrap()
@@ -23,7 +35,7 @@ const App = () => {
     keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
-      buildMenuItems(keycloak)
+      // buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
@@ -47,7 +59,7 @@ const App = () => {
                 Math.round(
                   keycloak.tokenParsed.exp +
                     keycloak.timeSkew -
-                    new Date().getTime() / 1000,
+                    new Date()?.getTime() / 1000,
                 ) +
                 ' seconds',
             )
@@ -65,69 +77,29 @@ const App = () => {
     }
   }
 
-  async function buildMenuItems(keycloak) {
-    const menu = {
-      items: [...menuItemsDefs.items],
-    }
-
-    await RecordService.getAllRecordTypes(keycloak).then((data) => {
-      setRecordsTypes(data)
-
-      data.forEach((element) => {
-        menu.items[1].children
-          .filter((menu) => menu.id === 'record-list')[0]
-          .children.push({
-            id: element.id,
-            title: element.id,
-            type: 'item',
-            url: '/record-list/' + element.id,
-            breadcrumbs: true,
-          })
-      })
-    })
-
-    await CaseService.getCaseDefinitions(keycloak).then((data) => {
-      setCasesDefinitions(data)
-
-      data.forEach((element) => {
-        menu.items[1].children
-          .filter((menu) => menu.id === 'case-list')[0]
-          .children.push({
-            id: element.id,
-            title: element.name,
-            type: 'item',
-            url: '/case-list/' + element.id,
-            breadcrumbs: true,
-          })
-      })
-    })
-
-    if (!accountStore.isManagerUser(keycloak)) {
-      delete menu.items[2]
-    }
-
-    return setMenu(menu)
-  }
-
   return (
     keycloak &&
     authenticated && (
       <ThemeCustomization>
+        {/* <Layout> */}
         <Suspense fallback={<div>Loading...</div>}>
           <ScrollTop>
-            <SessionStoreProvider value={{ keycloak, menu }}>
-              <ThemeRoutes
-                keycloak={keycloak}
-                authenticated={authenticated}
-                recordsTypes={recordsTypes}
-                casesDefinitions={casesDefinitions}
-              />
+            <SessionStoreProvider value={{ keycloak }}>
+              <MenuProvider>
+                <ThemeRoutes
+                  keycloak={keycloak}
+                  authenticated={authenticated}
+
+                  // recordsTypes={recordsTypes}
+                  // casesDefinitions={casesDefinitions}
+                />
+              </MenuProvider>
             </SessionStoreProvider>
           </ScrollTop>
         </Suspense>
+        {/* </Layout> */}
       </ThemeCustomization>
     )
   )
 }
-
 export default App

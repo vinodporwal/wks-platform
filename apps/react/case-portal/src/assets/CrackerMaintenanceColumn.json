@@ -1,0 +1,232 @@
+[
+  {
+    "field": "id",
+    "title": "Id",
+    "editable": true,
+    "hidden": true
+  },
+  {
+    "field": "monthName",
+    "title": "Month",
+    "editable": false,
+    "widthT": 100
+  },
+
+  {
+    "field": "fiveF",
+    "title": "5F",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+  {
+    "field": "fourF",
+    "title": "4F/5F+D",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "fourFD",
+    "title": "4F with Demo",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 100
+  },
+  {
+    "field": "coilReplacement",
+    "title": "IBR/Coil Replacement",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 125
+  },
+
+  {
+    "field": "shutdown",
+    "title": "Shutdown(TA)",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 100
+  },
+  {
+    "field": "slowdown",
+    "title": "Slowdown",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "sad",
+    "title": "SAD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+  {
+    "field": "bbu",
+    "title": "BBU",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+  {
+    "field": "bbd",
+    "title": "BBD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "demoSAD",
+    "title": "Demo SAD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "demoSD",
+    "title": "Demo SD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "demoBBU",
+    "title": "Demo BBU/BBD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 120
+  },
+
+  {
+    "field": "demoHSS",
+    "title": "Demo HSS",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "mnt",
+    "title": "MNT",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "total",
+    "title": "Total",
+    "editable": true,
+
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+  {
+    "field": "numberOfDays",
+    "title": "No of Days",
+    "editable": false,
+
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+  {
+    "field": "totalSAD",
+    "title": "No of SADs",
+    "editable": true,
+
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": false,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "fourFHours",
+    "title": "4F Hours",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.##}",
+    "hidden": true,
+    "hideFilter": true,
+    "hideSort": true,
+    "widthT": 70
+  },
+
+  {
+    "field": "remarks",
+    "title": "Remarks",
+    "widthT": 80
+  }
+]

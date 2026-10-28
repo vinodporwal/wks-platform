@@ -1,0 +1,294 @@
+{
+  "_comment": "Dummy fixed and process consumption values for JMD plants. Used as fallback when DB tables (CPPFixedConsumption, CalculatedProcessDemand) return empty. All 12 FY months Apr-Mar per plant.",
+
+  "plants": {
+
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": {
+      "name": "DTA-CPP",
+
+      "fixed_consumption": {
+        "comment": "MWh for power, MT for steam — monthly values Apr to Mar",
+        "power_fixed": [1200, 1180, 1190, 1170, 1200, 1195, 1180, 1175, 1185, 1190, 1200, 1210],
+        "lp_fixed":    [ 420,  410,  415,  405,  420,  418,  410,  408,  412,  415,  420,  425],
+        "mp_fixed":    [ 310,  305,  308,  300,  310,  308,  305,  302,  307,  308,  310,  315],
+        "hp_fixed":    [ 180,  175,  178,  172,  180,  178,  175,  173,  176,  178,  180,  182],
+        "shp_fixed":   [  95,   92,   94,   90,   95,   94,   92,   91,   93,   94,   95,   96]
+      },
+
+      "process_demands": {
+        "comment": "Power KWH, Steam MT, Air NM3, Water M3/KM3 — monthly values Apr to Mar",
+        "power_process":     [4500000, 4400000, 4450000, 4350000, 4500000, 4480000, 4400000, 4380000, 4420000, 4450000, 4500000, 4550000],
+        "lp_process":        [  15000,   14700,   14850,   14400,   15000,   14950,   14700,   14640,   14760,   14850,   15000,   15150],
+        "mp_process":        [   9800,    9600,    9700,    9400,    9800,    9760,    9600,    9560,    9640,    9700,    9800,    9900],
+        "hp_process":        [   5200,    5100,    5150,    5000,    5200,    5180,    5100,    5080,    5120,    5150,    5200,    5250],
+        "shp_process":       [   2800,    2750,    2770,    2700,    2800,    2790,    2750,    2730,    2760,    2770,    2800,    2830],
+        "air_process":       [ 320000,  315000,  318000,  310000,  320000,  318000,  315000,  313000,  316000,  318000,  320000,  323000],
+        "dm_process":        [   8500,    8300,    8400,    8200,    8500,    8460,    8300,    8260,    8340,    8400,    8500,    8600],
+        "cw1_process":       [    420,     410,     415,     405,     420,     418,     410,     408,     412,     415,     420,     425],
+        "cw2_process":       [    180,     175,     178,     172,     180,     178,     175,     173,     176,     178,     180,     182],
+        "raw_water_process": [  12000,   11800,   11900,   11600,   12000,   11950,   11800,   11750,   11850,   11900,   12000,   12100],
+        "oxygen_process":    [    260,     255,     257,     250,     260,     258,     255,     253,     256,     257,     260,     263],
+        "effluent_process":  [   3800,    3700,    3750,    3650,    3800,    3780,    3700,    3680,    3720,    3750,    3800,    3850]
+      }
+    },
+
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": {
+      "name": "DTA-PCG-CPP",
+
+      "fixed_consumption": {
+        "power_fixed": [ 980,  960,  970,  950,  980,  975,  960,  955,  965,  970,  980,  990],
+        "lp_fixed":    [ 340,  333,  337,  328,  340,  338,  333,  331,  335,  337,  340,  343],
+        "mp_fixed":    [ 255,  250,  252,  246,  255,  253,  250,  248,  251,  252,  255,  258],
+        "hp_fixed":    [ 148,  145,  146,  142,  148,  147,  145,  144,  145,  146,  148,  150],
+        "shp_fixed":   [  78,   76,   77,   75,   78,   77,   76,   76,   77,   77,   78,   79]
+      },
+
+      "process_demands": {
+        "power_process":     [3700000, 3620000, 3660000, 3580000, 3700000, 3680000, 3620000, 3600000, 3640000, 3660000, 3700000, 3740000],
+        "lp_process":        [  12300,   12040,   12170,   11800,   12300,   12250,   12040,   11990,   12090,   12170,   12300,   12420],
+        "mp_process":        [   8100,    7940,    8020,    7800,    8100,    8060,    7940,    7900,    7980,    8020,    8100,    8180],
+        "hp_process":        [   4300,    4210,    4260,    4140,    4300,    4280,    4210,    4190,    4230,    4260,    4300,    4340],
+        "shp_process":       [   2300,    2255,    2278,    2210,    2300,    2290,    2255,    2237,    2264,    2278,    2300,    2323],
+        "air_process":       [ 265000,  259500,  262000,  255000,  265000,  263500,  259500,  258000,  261000,  262000,  265000,  268000],
+        "dm_process":        [   7000,    6860,    6930,    6720,    7000,    6965,    6860,    6825,    6895,    6930,    7000,    7070],
+        "cw1_process":       [    345,     338,     341,     332,     345,     343,     338,     336,     340,     341,     345,     348],
+        "cw2_process":       [    148,     145,     147,     142,     148,     147,     145,     144,     146,     147,     148,     150],
+        "raw_water_process": [   9800,    9604,    9700,    9408,    9800,    9751,    9604,    9555,    9653,    9700,    9800,    9900],
+        "oxygen_process":    [    213,     209,     211,     205,     213,     212,     209,     208,     210,     211,     213,     215],
+        "effluent_process":  [   3100,    3038,    3069,    2976,    3100,    3085,    3038,    3023,    3053,    3069,    3100,    3131]
+      }
+    },
+
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": {
+      "name": "SEZ-CPP",
+
+      "fixed_consumption": {
+        "power_fixed": [1450, 1421, 1435, 1406, 1450, 1443, 1421, 1414, 1428, 1435, 1450, 1465],
+        "lp_fixed":    [  505,  495,  500,  490,  505,  503,  495,  492,  497,  500,  505,  510],
+        "mp_fixed":    [  375,  368,  372,  363,  375,  373,  368,  365,  370,  372,  375,  379],
+        "hp_fixed":    [  218,  214,  216,  211,  218,  217,  214,  213,  215,  216,  218,  220],
+        "shp_fixed":   [  115,  113,  114,  111,  115,  114,  113,  112,  113,  114,  115,  116]
+      },
+
+      "process_demands": {
+        "power_process":     [5400000, 5292000, 5346000, 5238000, 5400000, 5373000, 5292000, 5265000, 5319000, 5346000, 5400000, 5454000],
+        "lp_process":        [  18000,   17640,   17820,   17460,   18000,   17910,   17640,   17550,   17730,   17820,   18000,   18180],
+        "mp_process":        [  11800,   11564,   11682,   11446,   11800,   11741,   11564,   11505,   11623,   11682,   11800,   11918],
+        "hp_process":        [   6200,    6076,    6138,    6014,    6200,    6169,    6076,    6045,    6107,    6138,    6200,    6262],
+        "shp_process":       [   3400,    3332,    3366,    3298,    3400,    3383,    3332,    3315,    3349,    3366,    3400,    3434],
+        "air_process":       [ 385000,  377300,  381150,  373450,  385000,  383075,  377300,  375375,  379225,  381150,  385000,  388850],
+        "dm_process":        [  10200,    9996,   10098,    9894,   10200,   10149,    9996,    9945,   10047,   10098,   10200,   10302],
+        "cw1_process":       [    505,     495,     500,     490,     505,     503,     495,     492,     497,     500,     505,     510],
+        "cw2_process":       [    218,     214,     216,     211,     218,     217,     214,     213,     215,     216,     218,     220],
+        "raw_water_process": [  14500,   14210,   14355,   14065,   14500,   14428,   14210,   14138,   14283,   14355,   14500,   14645],
+        "oxygen_process":    [    313,     307,     310,     303,     313,     312,     307,     306,     309,     310,     313,     316],
+        "effluent_process":  [   4600,    4508,    4554,    4462,    4600,    4577,    4508,    4485,    4531,    4554,    4600,    4646]
+      }
+    },
+
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": {
+      "name": "SEZ-PCG-CPP",
+
+      "fixed_consumption": {
+        "power_fixed": [1180, 1156, 1168, 1144, 1180, 1174, 1156, 1150, 1162, 1168, 1180, 1192],
+        "lp_fixed":    [  410,  402,  406,  398,  410,  408,  402,  400,  404,  406,  410,  414],
+        "mp_fixed":    [  305,  299,  302,  295,  305,  304,  299,  297,  301,  302,  305,  308],
+        "hp_fixed":    [  177,  173,  175,  171,  177,  176,  173,  172,  174,  175,  177,  179],
+        "shp_fixed":   [   93,   91,   92,   90,   93,   93,   91,   91,   92,   92,   93,   94]
+      },
+
+      "process_demands": {
+        "power_process":     [4400000, 4312000, 4356000, 4268000, 4400000, 4378000, 4312000, 4290000, 4334000, 4356000, 4400000, 4444000],
+        "lp_process":        [  14700,   14406,   14553,   14259,   14700,   14627,   14406,   14333,   14480,   14553,   14700,   14847],
+        "mp_process":        [   9600,    9408,    9504,    9312,    9600,    9552,    9408,    9360,    9456,    9504,    9600,    9696],
+        "hp_process":        [   5100,    4998,    5049,    4896,    5100,    5074,    4998,    4972,    5023,    5049,    5100,    5151],
+        "shp_process":       [   2750,    2695,    2722,    2640,    2750,    2736,    2695,    2681,    2708,    2722,    2750,    2778],
+        "air_process":       [ 310000,  303800,  306900,  300600,  310000,  308450,  303800,  302250,  305350,  306900,  310000,  313100],
+        "dm_process":        [   8300,    8134,    8217,    7966,    8300,    8258,    8134,    8092,    8175,    8217,    8300,    8383],
+        "cw1_process":       [    410,     402,     406,     398,     410,     408,     402,     400,     404,     406,     410,     414],
+        "cw2_process":       [    177,     173,     175,     171,     177,     176,     173,     172,     174,     175,     177,     179],
+        "raw_water_process": [  11800,   11564,   11682,   11328,   11800,   11741,   11564,   11505,   11623,   11682,   11800,   11918],
+        "oxygen_process":    [    255,     250,     253,     245,     255,     254,     250,     249,     251,     253,     255,     258],
+        "effluent_process":  [   3700,    3626,    3663,    3552,    3700,    3682,    3626,    3608,    3645,    3663,    3700,    3737]
+      }
+    },
+
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": {
+      "name": "C2-CPP",
+
+      "fixed_consumption": {
+        "power_fixed": [2100, 2058, 2079, 2037, 2100, 2090, 2058, 2048, 2069, 2079, 2100, 2121],
+        "lp_fixed":    [  730,  715,  723,  707,  730,  726,  715,  711,  719,  723,  730,  737],
+        "mp_fixed":    [  545,  534,  540,  527,  545,  542,  534,  531,  537,  540,  545,  550],
+        "hp_fixed":    [  315,  309,  312,  305,  315,  314,  309,  308,  311,  312,  315,  318],
+        "shp_fixed":   [  165,  162,  163,  160,  165,  164,  162,  161,  163,  163,  165,  167]
+      },
+
+      "process_demands": {
+        "power_process":     [8000000, 7840000, 7920000, 7760000, 8000000, 7960000, 7840000, 7800000, 7880000, 7920000, 8000000, 8080000],
+        "lp_process":        [  26500,   25970,   26235,   25705,   26500,   26368,   25970,   25838,   26103,   26235,   26500,   26765],
+        "mp_process":        [  17400,   17052,   17226,   16878,   17400,   17313,   17052,   16965,   17139,   17226,   17400,   17574],
+        "hp_process":        [   9200,    9016,    9108,    8924,    9200,    9154,    9016,    8970,    9062,    9108,    9200,    9292],
+        "shp_process":       [   4900,    4802,    4851,    4704,    4900,    4876,    4802,    4778,    4826,    4851,    4900,    4949],
+        "air_process":       [ 560000,  548800,  554400,  542400,  560000,  557200,  548800,  546000,  551600,  554400,  560000,  565600],
+        "dm_process":        [  15000,   14700,   14850,   14400,   15000,   14925,   14700,   14625,   14775,   14850,   15000,   15150],
+        "cw1_process":       [    740,     725,     733,     717,     740,     736,     725,     721,     729,     733,     740,     747],
+        "cw2_process":       [    320,     314,     317,     310,     320,     318,     314,     312,     316,     317,     320,     323],
+        "raw_water_process": [  21000,   20580,   20790,   20370,   21000,   20895,   20580,   20475,   20685,   20790,   21000,   21210],
+        "oxygen_process":    [    455,     446,     451,     441,     455,     453,     446,     444,     448,     451,     455,     460],
+        "effluent_process":  [   6700,    6566,    6633,    6499,    6700,    6667,    6566,    6533,    6600,    6633,    6700,    6767]
+      }
+    }
+
+  },
+
+  "month_index": {
+    "comment": "Index 0=Apr, 1=May, 2=Jun, 3=Jul, 4=Aug, 5=Sep, 6=Oct, 7=Nov, 8=Dec, 9=Jan, 10=Feb, 11=Mar",
+    "4":  0,  "5":  1,  "6":  2,  "7":  3,
+    "8":  4,  "9":  5,  "10": 6,  "11": 7,
+    "12": 8,  "1":  9,  "2":  10, "3":  11
+  },
+
+  "units": {
+    "power_fixed":      "MWh",
+    "lp_fixed":         "MT",
+    "mp_fixed":         "MT",
+    "hp_fixed":         "MT",
+    "shp_fixed":        "MT",
+    "power_process":    "KWH",
+    "lp_process":       "MT",
+    "mp_process":       "MT",
+    "hp_process":       "MT",
+    "shp_process":      "MT",
+    "air_process":      "NM3",
+    "dm_process":       "M3",
+    "cw1_process":      "KM3",
+    "cw2_process":      "KM3",
+    "raw_water_process":"M3",
+    "oxygen_process":   "MT",
+    "effluent_process": "M3"
+  },
+
+  "asset_capacity": {
+    "comment": "Dummy asset-level capacity for demand matching. Indexed per plant by asset_name. capacity_mw for power assets, capacity_tph for steam assets. min/max operating capacities.",
+
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": {
+      "name": "DTA-CPP",
+      "power_assets": [
+        {"asset_name": "GT1",   "type": "GT",  "capacity_mw": 30.0,  "min_mw": 15.0, "max_mw": 30.0,  "op_hours_month": 720},
+        {"asset_name": "GT2",   "type": "GT",  "capacity_mw": 30.0,  "min_mw": 15.0, "max_mw": 30.0,  "op_hours_month": 720},
+        {"asset_name": "STG1",  "type": "STG", "capacity_mw": 25.0,  "min_mw": 10.0, "max_mw": 25.0,  "op_hours_month": 720},
+        {"asset_name": "DG1",   "type": "DG",  "capacity_mw":  2.5,  "min_mw":  1.0, "max_mw":  2.5,  "op_hours_month": 400}
+      ],
+      "steam_assets": [
+        {"asset_name": "HRSG1", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 90.0,  "min_tph": 45.0, "max_tph": 90.0,  "op_hours_month": 720},
+        {"asset_name": "HRSG2", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 90.0,  "min_tph": 45.0, "max_tph": 90.0,  "op_hours_month": 720},
+        {"asset_name": "AUX_BOILER1", "type": "BOILER", "steam_type": "HP", "capacity_tph": 50.0, "min_tph": 15.0, "max_tph": 50.0, "op_hours_month": 720}
+      ],
+      "utility_assets": [
+        {"asset_name": "AIR_COMP1",   "utility": "air",       "capacity_nm3h": 18000, "op_hours_month": 720},
+        {"asset_name": "DM_PLANT1",   "utility": "dm_water",  "capacity_m3h":   20,   "op_hours_month": 720},
+        {"asset_name": "CW_TOWER1",   "utility": "cw1",       "capacity_km3h":   1.0, "op_hours_month": 720},
+        {"asset_name": "CW_TOWER2",   "utility": "cw2",       "capacity_km3h":   0.5, "op_hours_month": 720},
+        {"asset_name": "WATER_PUMP1", "utility": "raw_water",  "capacity_m3h":   20,   "op_hours_month": 720}
+      ]
+    },
+
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": {
+      "name": "DTA-PCG-CPP",
+      "power_assets": [
+        {"asset_name": "GT1",   "type": "GT",  "capacity_mw": 25.0,  "min_mw": 12.5, "max_mw": 25.0,  "op_hours_month": 720},
+        {"asset_name": "GT2",   "type": "GT",  "capacity_mw": 25.0,  "min_mw": 12.5, "max_mw": 25.0,  "op_hours_month": 720},
+        {"asset_name": "STG1",  "type": "STG", "capacity_mw": 20.0,  "min_mw":  8.0, "max_mw": 20.0,  "op_hours_month": 720},
+        {"asset_name": "DG1",   "type": "DG",  "capacity_mw":  2.0,  "min_mw":  1.0, "max_mw":  2.0,  "op_hours_month": 400}
+      ],
+      "steam_assets": [
+        {"asset_name": "HRSG1", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 75.0,  "min_tph": 37.5, "max_tph": 75.0,  "op_hours_month": 720},
+        {"asset_name": "HRSG2", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 75.0,  "min_tph": 37.5, "max_tph": 75.0,  "op_hours_month": 720},
+        {"asset_name": "AUX_BOILER1", "type": "BOILER", "steam_type": "HP", "capacity_tph": 40.0, "min_tph": 12.0, "max_tph": 40.0, "op_hours_month": 720}
+      ],
+      "utility_assets": [
+        {"asset_name": "AIR_COMP1",   "utility": "air",       "capacity_nm3h": 15000, "op_hours_month": 720},
+        {"asset_name": "DM_PLANT1",   "utility": "dm_water",  "capacity_m3h":   16,   "op_hours_month": 720},
+        {"asset_name": "CW_TOWER1",   "utility": "cw1",       "capacity_km3h":   0.8, "op_hours_month": 720},
+        {"asset_name": "CW_TOWER2",   "utility": "cw2",       "capacity_km3h":   0.4, "op_hours_month": 720},
+        {"asset_name": "WATER_PUMP1", "utility": "raw_water",  "capacity_m3h":   16,   "op_hours_month": 720}
+      ]
+    },
+
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": {
+      "name": "SEZ-CPP",
+      "power_assets": [
+        {"asset_name": "GT1",   "type": "GT",  "capacity_mw": 35.0,  "min_mw": 17.5, "max_mw": 35.0,  "op_hours_month": 720},
+        {"asset_name": "GT2",   "type": "GT",  "capacity_mw": 35.0,  "min_mw": 17.5, "max_mw": 35.0,  "op_hours_month": 720},
+        {"asset_name": "GT3",   "type": "GT",  "capacity_mw": 35.0,  "min_mw": 17.5, "max_mw": 35.0,  "op_hours_month": 720},
+        {"asset_name": "STG1",  "type": "STG", "capacity_mw": 30.0,  "min_mw": 12.0, "max_mw": 30.0,  "op_hours_month": 720},
+        {"asset_name": "DG1",   "type": "DG",  "capacity_mw":  3.0,  "min_mw":  1.5, "max_mw":  3.0,  "op_hours_month": 400}
+      ],
+      "steam_assets": [
+        {"asset_name": "HRSG1", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 110.0, "min_tph": 55.0, "max_tph": 110.0, "op_hours_month": 720},
+        {"asset_name": "HRSG2", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 110.0, "min_tph": 55.0, "max_tph": 110.0, "op_hours_month": 720},
+        {"asset_name": "HRSG3", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 110.0, "min_tph": 55.0, "max_tph": 110.0, "op_hours_month": 720},
+        {"asset_name": "AUX_BOILER1", "type": "BOILER", "steam_type": "HP", "capacity_tph": 60.0, "min_tph": 18.0, "max_tph": 60.0, "op_hours_month": 720}
+      ],
+      "utility_assets": [
+        {"asset_name": "AIR_COMP1",   "utility": "air",       "capacity_nm3h": 22000, "op_hours_month": 720},
+        {"asset_name": "AIR_COMP2",   "utility": "air",       "capacity_nm3h": 22000, "op_hours_month": 720},
+        {"asset_name": "DM_PLANT1",   "utility": "dm_water",  "capacity_m3h":   24,   "op_hours_month": 720},
+        {"asset_name": "CW_TOWER1",   "utility": "cw1",       "capacity_km3h":   1.2, "op_hours_month": 720},
+        {"asset_name": "CW_TOWER2",   "utility": "cw2",       "capacity_km3h":   0.6, "op_hours_month": 720},
+        {"asset_name": "WATER_PUMP1", "utility": "raw_water",  "capacity_m3h":   24,   "op_hours_month": 720}
+      ]
+    },
+
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": {
+      "name": "SEZ-PCG-CPP",
+      "power_assets": [
+        {"asset_name": "GT1",   "type": "GT",  "capacity_mw": 28.0,  "min_mw": 14.0, "max_mw": 28.0,  "op_hours_month": 720},
+        {"asset_name": "GT2",   "type": "GT",  "capacity_mw": 28.0,  "min_mw": 14.0, "max_mw": 28.0,  "op_hours_month": 720},
+        {"asset_name": "STG1",  "type": "STG", "capacity_mw": 22.0,  "min_mw":  9.0, "max_mw": 22.0,  "op_hours_month": 720},
+        {"asset_name": "DG1",   "type": "DG",  "capacity_mw":  2.5,  "min_mw":  1.0, "max_mw":  2.5,  "op_hours_month": 400}
+      ],
+      "steam_assets": [
+        {"asset_name": "HRSG1", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 85.0,  "min_tph": 42.5, "max_tph": 85.0,  "op_hours_month": 720},
+        {"asset_name": "HRSG2", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 85.0,  "min_tph": 42.5, "max_tph": 85.0,  "op_hours_month": 720},
+        {"asset_name": "AUX_BOILER1", "type": "BOILER", "steam_type": "HP", "capacity_tph": 45.0, "min_tph": 14.0, "max_tph": 45.0, "op_hours_month": 720}
+      ],
+      "utility_assets": [
+        {"asset_name": "AIR_COMP1",   "utility": "air",       "capacity_nm3h": 18000, "op_hours_month": 720},
+        {"asset_name": "DM_PLANT1",   "utility": "dm_water",  "capacity_m3h":   19,   "op_hours_month": 720},
+        {"asset_name": "CW_TOWER1",   "utility": "cw1",       "capacity_km3h":   0.9, "op_hours_month": 720},
+        {"asset_name": "CW_TOWER2",   "utility": "cw2",       "capacity_km3h":   0.4, "op_hours_month": 720},
+        {"asset_name": "WATER_PUMP1", "utility": "raw_water",  "capacity_m3h":   19,   "op_hours_month": 720}
+      ]
+    },
+
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": {
+      "name": "C2-CPP",
+      "power_assets": [
+        {"asset_name": "GT1",   "type": "GT",  "capacity_mw": 50.0,  "min_mw": 25.0, "max_mw": 50.0,  "op_hours_month": 720},
+        {"asset_name": "GT2",   "type": "GT",  "capacity_mw": 50.0,  "min_mw": 25.0, "max_mw": 50.0,  "op_hours_month": 720},
+        {"asset_name": "GT3",   "type": "GT",  "capacity_mw": 50.0,  "min_mw": 25.0, "max_mw": 50.0,  "op_hours_month": 720},
+        {"asset_name": "STG1",  "type": "STG", "capacity_mw": 40.0,  "min_mw": 16.0, "max_mw": 40.0,  "op_hours_month": 720},
+        {"asset_name": "STG2",  "type": "STG", "capacity_mw": 40.0,  "min_mw": 16.0, "max_mw": 40.0,  "op_hours_month": 720},
+        {"asset_name": "DG1",   "type": "DG",  "capacity_mw":  4.0,  "min_mw":  2.0, "max_mw":  4.0,  "op_hours_month": 400}
+      ],
+      "steam_assets": [
+        {"asset_name": "HRSG1", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 140.0, "min_tph": 70.0, "max_tph": 140.0, "op_hours_month": 720},
+        {"asset_name": "HRSG2", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 140.0, "min_tph": 70.0, "max_tph": 140.0, "op_hours_month": 720},
+        {"asset_name": "HRSG3", "type": "HRSG", "steam_type": "SHP", "capacity_tph": 140.0, "min_tph": 70.0, "max_tph": 140.0, "op_hours_month": 720},
+        {"asset_name": "AUX_BOILER1", "type": "BOILER", "steam_type": "HP", "capacity_tph": 80.0, "min_tph": 24.0, "max_tph": 80.0, "op_hours_month": 720},
+        {"asset_name": "AUX_BOILER2", "type": "BOILER", "steam_type": "HP", "capacity_tph": 80.0, "min_tph": 24.0, "max_tph": 80.0, "op_hours_month": 720}
+      ],
+      "utility_assets": [
+        {"asset_name": "AIR_COMP1",   "utility": "air",       "capacity_nm3h": 32000, "op_hours_month": 720},
+        {"asset_name": "AIR_COMP2",   "utility": "air",       "capacity_nm3h": 32000, "op_hours_month": 720},
+        {"asset_name": "DM_PLANT1",   "utility": "dm_water",  "capacity_m3h":   35,   "op_hours_month": 720},
+        {"asset_name": "DM_PLANT2",   "utility": "dm_water",  "capacity_m3h":   35,   "op_hours_month": 720},
+        {"asset_name": "CW_TOWER1",   "utility": "cw1",       "capacity_km3h":   1.8, "op_hours_month": 720},
+        {"asset_name": "CW_TOWER2",   "utility": "cw2",       "capacity_km3h":   0.8, "op_hours_month": 720},
+        {"asset_name": "WATER_PUMP1", "utility": "raw_water",  "capacity_m3h":   35,   "op_hours_month": 720}
+      ]
+    }
+  }
+}

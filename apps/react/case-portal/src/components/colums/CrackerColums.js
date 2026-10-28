@@ -1,0 +1,234 @@
+export const CrackerColums = [
+  {
+    field: 'sapMaterialCode',
+    title: 'SAP MAT Code',
+    widthT: 120,
+    editable: false,
+    minWidth: 150,
+  },
+  {
+    field: 'materialDisplayName',
+    title: 'Particulars',
+    widthT: 120,
+    minWidth: 300,
+  },
+  {
+    field: 'uom',
+    title: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
+  {
+    field: 'april',
+    title: 4,
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'may',
+    title: 5,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'june',
+    title: 6,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'july',
+    title: 7,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+
+  {
+    field: 'august',
+    title: 8,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'september',
+    title: 9,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'october',
+    title: 10,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'november',
+    title: 11,
+    editable: true,
+
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'december',
+    title: 12,
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'january',
+    title: 1,
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'february',
+    title: 2,
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'march',
+    title: 3,
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  { field: 'remark', title: 'Remarks', editable: true, minWidth: 100 },
+]
+export const CrackerColumsForYearlyNorms = [
+  {
+    field: 'isChecked',
+    type: 'switch',
+    widthT: 30,
+    filter: false,
+    minWidth: 60,
+  },
+  {
+    field: 'materialDisplayName',
+    title: 'Particulars',
+    minWidth: 120,
+  },
+
+  {
+    field: 'uom',
+    title: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
+
+  {
+    field: 'april',
+    title: 4,
+    editable: true,
+
+    align: 'right',
+    format: '{0:0.0000}',
+    type: 'number',
+    minWidth: 100,
+  },
+]
+
+export const ShutdownConsumptionCrackerColumns = [
+  {
+    field: 'sapCode',
+    headerName: 'SAP MAT Code',
+    widthT: 130,
+    editable: false,
+    minWidth: 150,
+  },
+  {
+    field: 'productName',
+    headerName: 'Particulars',
+    widthT: 130,
+    editable: false,
+    minWidth: 300,
+  },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
+
+  ...Array.from({ length: 12 }, (_, i) => {
+    const monthIndex = (i + 4) % 12 || 12
+    const monthField = new Date(2000, monthIndex - 1)
+      .toLocaleString('en-US', { month: 'long' })
+      .toLowerCase()
+
+    return {
+      field: monthField,
+
+      type: 'number',
+      format: '{0:0.0000}',
+      editable: false,
+      isDisabled: true,
+      monthNumber: monthIndex,
+      minWidth: 100,
+    }
+  }),
+
+  {
+    field: 'remarks',
+    headerName: 'Remark',
+
+    editable: true,
+    minWidth: 100,
+  },
+]

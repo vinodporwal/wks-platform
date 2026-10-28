@@ -1,0 +1,13 @@
+# JMD Plant Budgeting System - Python Dependencies
+#
+# Install with:
+#   pip install -r requirements.txt
+#
+# ODBC Driver (system-level, not pip):
+#   macOS:   brew install msodbcsql17
+#   Linux:   https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server
+#   Windows: https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server
+
+pandas>=2.0.0
+pyodbc>=5.0.0
+openpyxl>=3.1.0

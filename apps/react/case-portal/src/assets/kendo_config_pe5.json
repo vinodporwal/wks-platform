@@ -1,0 +1,42 @@
+[
+  {
+    "field": "TypeDisplayName",
+    "title": "Type",
+    "groupable": true,
+    "editable": false,
+    "hidden": true,
+    "isVisible": false
+  },
+  {
+    "field": "normParameterFKId",
+    "title": "Particulars",
+    "editable": false,
+    "hidden": true,
+    "isVisible": false
+  },
+  {
+    "field": "productName",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 300,
+    "minWidth": 120
+  },
+  {
+    "field": "apr",
+    "title": "Values",
+    "editable": true,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:#.##}",
+    "minWidth": 120
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": true,
+    "renderCell": "renderRemarkCell",
+    "widthT": 300,
+    "minWidth": 120
+  }
+]

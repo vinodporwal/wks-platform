@@ -1,0 +1,364 @@
+[
+  {
+    "field": "normParameterDisplayName",
+    "title": "Particulars",
+    "editable": false,
+    "isDisabled": true,
+    "fixedWidth": 160,
+    "locked": true
+  },
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "isDisabled": true,
+    "fixedWidth": 50,
+    "locked": true
+  },
+  {
+    "title": "April",
+    "children": [
+      {
+        "field": "prevYearBudgetApril",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetApril",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedApril",
+        "title": "Proposed",
+        "isDisabled": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70,
+        "editable": true
+      }
+    ]
+  },
+  {
+    "title": "May",
+    "children": [
+      {
+        "field": "prevYearBudgetMay",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetMay",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedMay",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "June",
+    "children": [
+      {
+        "field": "prevYearBudgetJune",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetJune",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedJune",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "July",
+    "children": [
+      {
+        "field": "prevYearBudgetJuly",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetJuly",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedJuly",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "August",
+    "children": [
+      {
+        "field": "prevYearBudgetAugust",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetAugust",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedAugust",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "September",
+    "children": [
+      {
+        "field": "prevYearBudgetSeptember",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetSeptember",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedSeptember",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "October",
+    "children": [
+      {
+        "field": "prevYearBudgetOctober",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetOctober",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedOctober",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "November",
+    "children": [
+      {
+        "field": "prevYearBudgetNovember",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetNovember",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedNovember",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "December",
+    "children": [
+      {
+        "field": "prevYearBudgetDecember",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetDecember",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedDecember",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "Jan",
+    "children": [
+      {
+        "field": "prevYearBudgetJanuary",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetJanuary",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedJanuary",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "Feb",
+    "children": [
+      {
+        "field": "prevYearBudgetFebruary",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetFebruary",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedFebruary",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "title": "Mar",
+    "children": [
+      {
+        "field": "prevYearBudgetMarch",
+        "title": "LastFY",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearBudgetMarch",
+        "title": "SysGen",
+        "editable": false,
+        "isDisabled": true,
+        "type": "number",
+        "fixedWidth": 70
+      },
+      {
+        "field": "currYearProposedMarch",
+        "title": "Proposed",
+        "editable": true,
+        "type": "numberNonGrey",
+        "fixedWidth": 70
+      }
+    ]
+  },
+  {
+    "field": "remarks",
+    "title": "Remarks",
+    "fixedWidth": 160
+  },
+  {
+    "field": "isEditable",
+    "hidden": true
+  }
+]

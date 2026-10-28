@@ -1,0 +1,120 @@
+[
+  {
+    "field": "Particulars",
+    "headerName": "Type",
+    "minWidth": 120,
+    "groupable": true
+  },
+  {
+    "field": "NormParametersId",
+    "headerName": "Particulars",
+    "minWidth": 175,
+    "editable": false
+  },
+  {
+    "field": "UOM",
+    "headerName": "UOM1 / MT",
+    "widthT": 60,
+    "editable": false
+  },
+  {
+    "field": "april",
+    "headerName": 4,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "may",
+    "headerName": 5,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "june",
+    "headerName": 6,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "july",
+    "headerName": 7,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "aug",
+    "headerName": 8,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "sep",
+    "headerName": 9,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "oct",
+    "headerName": 10,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "nov",
+    "headerName": 11,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "dec",
+    "headerName": 12,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "jan",
+    "headerName": 1,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "feb",
+    "headerName": 2,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "march",
+    "headerName": 3,
+    "editable": false,
+
+    "align": "left",
+    "headerAlign": "left"
+  },
+  {
+    "field": "isEditable",
+    "headerName": "isEditable"
+  }
+]

@@ -10,13 +10,18 @@ const Search = () => (
         size='small'
         id='header-search'
         startAdornment={
-          <InputAdornment position='start' sx={{ mr: -0.5 }}>
+          <InputAdornment position='start' sx={{ color: '#fff', mr: -0.5 }}>
             <SearchOutlined />
           </InputAdornment>
         }
         aria-describedby='header-search-text'
         inputProps={{
           'aria-label': 'weight',
+        }}
+        sx={{
+          input: {
+            '&::placeholder': { color: '#fff', opacity: 1 }, // Makes placeholder fully visible
+          },
         }}
         placeholder='Ctrl + K'
       />

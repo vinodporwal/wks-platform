@@ -1,0 +1,26 @@
+[
+  {
+    "field": "norm",
+    "headerName": "Type",
+    "editable": false,
+    "flex": 1,
+    "minWidth": 250
+  },
+  {
+    "field": "particulars",
+    "headerName": "Particulars",
+    "editable": false,
+    "flex": 2,
+    "minWidth": 250
+  },
+  {
+    "field": "cost",
+    "headerName": "Cost",
+    "editable": false,
+    "align": "left",
+    "headerAlign": "left",
+    "flex": 1,
+    "type": "number",
+    "minWidth": 250
+  }
+]

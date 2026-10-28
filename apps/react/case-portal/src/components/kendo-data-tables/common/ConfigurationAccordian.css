@@ -1,0 +1,101 @@
+/* ConfigurationAccordian.css */
+
+.configuration-accordion-wrapper {
+  margin-bottom: 8px;
+}
+
+.configuration-accordion-root {
+  padding: 10px !important;
+}
+
+.configuration-accordion-root:before {
+  display: none !important;
+}
+
+.configuration-accordion-summary {
+  min-height: 36px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  background-color: #ffffff !important;
+  flex-direction: row-reverse !important;
+}
+
+.configuration-accordion-summary .MuiAccordionSummary-content {
+  margin-left: 8px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+.configuration-accordion-summary .MuiAccordionSummary-expandIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #eceeff;
+  color: #1e293b;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.configuration-accordion-title {
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  color: #303030 !important;
+}
+
+.last-refreshed-container {
+  color: #303030;
+  background-color: #f6fafc;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  white-space: nowrap;
+  margin-top: 10px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #00688c;
+  padding: 10px;
+}
+
+.last-refreshed-text {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #303030 !important;
+  line-height: 1.2 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+}
+
+.aop-design-basis-label {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  color: #303030 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.aop-design-basis-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #dddee1;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #303030;
+  resize: none;
+}
+
+.aop-design-basis-textarea:disabled {
+  background-color: #f8fafc;
+}
+
+.aop-design-basis-textarea:hover {
+  border: 1px solid #dddee1 !important;
+}
+
+.aop-design-basis-textarea textarea:focus {
+  border: 1px solid #dddee1 !important;
+}
