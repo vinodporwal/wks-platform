@@ -13,6 +13,7 @@ import AverageAssetLoading from './average-asset-loading'
 import UtilityRate from './utility-rate'
 import MonthlyCalculatedNorms from './monthly-calculated-norms'
 import SpinningMarginReport from './spinning-margin-report'
+import PurchasePowerAndSell from './power-purchase-sell'
 
 const Outputs = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -34,6 +35,8 @@ const Outputs = () => {
     if (!currentTabName) return null
 
     switch (currentTabName) {
+      case 'Power Purchase & Sell':
+        return <PurchasePowerAndSell />
       case 'Heat Rate':
         return <HeatRate />
       case 'SR Mapping':

@@ -309,7 +309,10 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
       const payload = modifiedData.map((item) => {
         const { inEdit, ...rest } = item
         // Remove FuelName display fields, keep UUID fields for backend
-        const cleanedItem = { ...rest }
+        const cleanedItem = {
+          ...rest,
+          financialYear: item.financialYear || AOP_YEAR,
+        }
         MONTH_FIELDS.forEach((mon) => {
           FUEL_PRIORITY_FIELDS.forEach(({ field }) => {
             const fuelNameField = `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`

@@ -97,12 +97,21 @@ public interface CPPSRMappingService {
 
     /**
      * Returns sender-receiver mapping data with monthly QTY values by calling SP
-     * CPP_GetSRMappingQTY.
+     * CPP_GetSRMappingQTY (utility data only).
      *
      * @param plantIds      comma-separated Plant GUIDs (e.g. "23BCA1B3-...,48051DCF-...")
      * @param financialYear financial year string e.g. "2025-26"
      */
     AOPMessageVM getSRMappingQty(String plantIds, String financialYear);
+
+    /**
+     * Returns sender-receiver mapping data including utility + process + fixed data
+     * by calling SP CPP_GetSRPlantFixedSummary (used for JMD site).
+     *
+     * @param plantIds      comma-separated Plant GUIDs
+     * @param financialYear financial year string e.g. "2025-26"
+     */
+    AOPMessageVM getSRMappingQtyFixed(String plantIds, String financialYear);
 
     /**
      * Exports the SR Mapping QTY data (from SP CPP_GetSRMappingQTY) to an Excel
@@ -113,4 +122,14 @@ public interface CPPSRMappingService {
      * @return Excel file bytes, or {@code null} on error
      */
     byte[] exportSRMappingQty(String plantIds, String financialYear);
+
+    /**
+     * Exports the SR Mapping QTY (utility + process + fixed) data
+     * (from SP CPP_GetSRPlantFixedSummary) to an Excel workbook and returns the workbook bytes.
+     *
+     * @param plantIds      comma-separated Plant GUIDs
+     * @param financialYear financial year string e.g. "2025-26"
+     * @return Excel file bytes, or {@code null} on error
+     */
+    byte[] exportSRMappingQtyFixed(String plantIds, String financialYear);
 }

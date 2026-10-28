@@ -318,7 +318,7 @@ public class CPPSRMappingController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  SR MAPPING QTY  (SP: CPP_GetSRMappingQTY)
+    //  SR MAPPING QTY  (SP: CPP_GetSRMappingQTY / CPP_GetSRPlantFixedSummary)
     //  GET + EXPORT
     // ════════════════════════════════════════════════════════════════════════
 
@@ -326,20 +326,26 @@ public class CPPSRMappingController {
     /**
      * GET /task/sr-mapping-qty
      *
-     * Calls SP CPP_GetSRMappingQTY.
-     * Returns sender-receiver mapping records with monthly QTY values
-     * (apr → mar) for the given plant(s) and financial year.
+     * Calls SP CPP_GetSRMappingQTY (utility only) by default.
+     * When {@code dataType=all} is supplied, calls SP CPP_GetSRPlantFixedSummary
+     * which returns utility + process + fixed data (used for JMD site).
      *
      * @param plantIds      Required. Comma-separated Plant GUIDs.
      *                      Example: "23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653,48051DCF-8383-4240-A1B9-AB5D9CD196CA"
      * @param financialYear Required. Financial year string e.g. "2025-26".
+     * @param dataType      Optional. "utility" (default) = CPP_GetSRMappingQTY,
+     *                                "all"               = CPP_GetSRPlantFixedSummary.
      */
     @GetMapping("/sr-mapping-qty")
     public ResponseEntity<AOPMessageVM> getSRMappingQty(
             @RequestParam String plantIds,
-            @RequestParam String financialYear) {
+            @RequestParam String financialYear,
+            @RequestParam(required = false, defaultValue = "utility") String dataType) {
 
-        AOPMessageVM response = service.getSRMappingQty(plantIds, financialYear);
+        AOPMessageVM response = "all".equalsIgnoreCase(dataType)
+                ? service.getSRMappingQtyFixed(plantIds, financialYear)
+                : service.getSRMappingQty(plantIds, financialYear);
+
         int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
         return ResponseEntity.status(httpStatus).body(response);
     }
@@ -348,18 +354,24 @@ public class CPPSRMappingController {
     /**
      * GET /task/sr-mapping-qty/export
      *
-     * Exports the SR Mapping QTY data (from SP CPP_GetSRMappingQTY) to an
-     * Excel (.xlsx) file.
+     * Exports the SR Mapping QTY data to an Excel (.xlsx) file.
+     * When {@code dataType=all} is supplied, exports via SP CPP_GetSRPlantFixedSummary
+     * (utility + process + fixed — JMD site).
+     * Otherwise exports via SP CPP_GetSRMappingQTY (utility only).
      *
      * @param plantIds      Required. Comma-separated Plant GUIDs.
      * @param financialYear Required. Financial year string e.g. "2025-26".
+     * @param dataType      Optional. "utility" (default) or "all".
      */
     @GetMapping(value = "/sr-mapping-qty/export")
     public ResponseEntity<byte[]> exportSRMappingQty(
             @RequestParam String plantIds,
-            @RequestParam String financialYear) {
+            @RequestParam String financialYear,
+            @RequestParam(required = false, defaultValue = "utility") String dataType) {
 
-        byte[] excelData = service.exportSRMappingQty(plantIds, financialYear);
+        byte[] excelData = "all".equalsIgnoreCase(dataType)
+                ? service.exportSRMappingQtyFixed(plantIds, financialYear)
+                : service.exportSRMappingQty(plantIds, financialYear);
 
         if (excelData == null || excelData.length == 0) {
             return ResponseEntity.status(500).body(null);

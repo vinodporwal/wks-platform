@@ -166,7 +166,7 @@ const Prices = () => {
       widthT: 120,
       type: 'text',
       editable: false,
-      locked: false,
+      locked: true,
       minWidth: 120,
     },
     {
@@ -226,7 +226,7 @@ const Prices = () => {
       type: 'text',
       editable: false,
       minWidth: 150,
-      locked: true,
+      locked: false,
     },
     {
       field: 'valueType',
@@ -307,6 +307,7 @@ const Prices = () => {
           id: item.id || index + 1,
           remarks: item.remarks || '',
           valueType: item.valueType || '',
+          isEditable:item.accountName !=='Raw Material',
           total,
         }
       })
