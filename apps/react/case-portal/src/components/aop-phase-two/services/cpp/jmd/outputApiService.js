@@ -25,6 +25,11 @@ export const OutputApiService = {
   // Used in: Outputs/spinning-margin-report/index.js (Spinning Margin report grid)
   getSpinningMarginReport,
   exportSpinningMarginReportExcel,
+
+  // Used in: Outputs/power-purchase-sell/PowerDemandGrid.js (Power Demand output grid)
+  getPowerDemand,
+  exportPowerDemand: exportPowerDemandExcel,
+  exportPowerDemandExcel,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -183,8 +188,9 @@ async function exportAverageAssetLoadingExcel(
 }
 
 // ===================== || SR MAPPING OUTPUT APIs || ===================== //
-// GET /task/sr-mapping-qty?plantIds=...&financialYear=...
-// Calls SP CPP_GetSRMappingQTY.
+// GET /task/sr-mapping-qty?plantIds=...&financialYear=...&dataType=...
+// Calls SP CPP_GetSRMappingQTY (dataType=utility, default) or
+//         CPP_GetSRPlantFixedSummary (dataType=all — JMD: utility+process+fixed).
 // Returns SR mapping output rows with monthly QTY values for the given plant(s).
 // Field names follow SenderReceiverMapping.js convention:
 //   id, cppPlantId, cppPlantName,
@@ -195,9 +201,9 @@ async function exportAverageAssetLoadingExcel(
 //   receiverUtilityId, receiverUtilityName, receiverUtilityCode, receiverUtilityUOM,
 //   receiverCostCenterId, receiverCostCenterName, receiverCostCenterCode,
 //   remarks, and 12 monthly QTY fields (apr → mar).
-async function getSRMappingOutput(keycloak, plantIds, financialYear) {
+async function getSRMappingOutput(keycloak, plantIds, financialYear, dataType = 'utility') {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/sr-mapping-qty?plantIds=${queryParams}&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping-qty?plantIds=${queryParams}&financialYear=${financialYear}&dataType=${dataType}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -215,15 +221,16 @@ async function getSRMappingOutput(keycloak, plantIds, financialYear) {
   }
 }
 
-// GET /task/sr-mapping-qty/export?plantIds=...&financialYear=...
+// GET /task/sr-mapping-qty/export?plantIds=...&financialYear=...&dataType=...
 async function exportSRMappingOutputExcel(
   keycloak,
   plantIds,
   financialYear,
   EXCEL_NAME,
+  dataType = 'utility',
 ) {
   const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/sr-mapping-qty/export?plantIds=${queryParams}&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping-qty/export?plantIds=${queryParams}&financialYear=${financialYear}&dataType=${dataType}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -496,3 +503,81 @@ async function exportSpinningMarginReportExcel(
     return Promise.reject(e)
   }
 }
+
+// ===================== || POWER DEMAND OUTPUT APIs || ===================== //
+// GET /task/jmd/power-demand?plantIds=...&financialYear=...
+// Returns Power Demand rows for the given plant(s) and financial year.
+// Each row contains: id, cppPlantId, cppPlantName, normParameterId, utilityName,
+// utilityId, utilityUOM, financialYear, type, apr..mar, remarks.
+async function getPowerDemand(keycloak, plantIds, financialYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/power-demand?plantIds=${queryParams}&financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching Power Demand data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/power-demand/export?plantIds=...&financialYear=...
+async function exportPowerDemandExcel(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/power-demand/export?plantIds=${queryParams}&financialYear=${financialYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting Power Demand Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export default OutputApiService
+
+

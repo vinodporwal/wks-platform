@@ -1926,4 +1926,119 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         workbook.close();
         return baos.toByteArray();
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SR MAPPING QTY FIXED  (SP: CPP_GetSRPlantFixedSummary)
+    //  Utility + Process + Fixed data — used for JMD site
+    // ════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public AOPMessageVM getSRMappingQtyFixed(String plantIds, String financialYear) {
+        logger.info("getSRMappingQtyFixed: plantIds={}, financialYear={}", plantIds, financialYear);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(db1JdbcTemplate)
+                    .withProcedureName("CPP_GetSRPlantFixedSummary");
+
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("PlantIds",      plantIds)
+                    .addValue("FinancialYear", financialYear);
+
+            Map<String, Object> result = jdbcCall.execute(params);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            List<SRMappingQtyDTO> data = new ArrayList<>();
+            if (rows != null) {
+                for (Map<String, Object> row : rows) {
+                    SRMappingQtyDTO dto = new SRMappingQtyDTO();
+
+                    dto.setId                    (toLong  (row, "id"));
+                    dto.setCppPlantId            (str     (row, "cppPlantId"));
+                    dto.setCppPlantName          (str     (row, "cppPlantName"));
+
+                    dto.setSenderPlantName       (str     (row, "senderPlantName"));
+                    dto.setSenderPlantCode       (str     (row, "senderPlantCode"));
+                    dto.setSenderPlantId         (toUuid  (row, "senderPlantId"));
+
+                    dto.setSenderUtilityId       (toUuid  (row, "senderUtilityId"));
+                    dto.setSenderUtilityName     (str     (row, "senderUtilityName"));
+                    dto.setSenderUtilityCode     (str     (row, "senderUtilityCode"));
+                    dto.setSenderUtilityUOM      (str     (row, "senderUtilityUOM"));
+
+                    dto.setSenderCostCenterId    (toUuid  (row, "senderCostCenterId"));
+                    dto.setSenderCostCenterName  (str     (row, "senderCostCenterName"));
+                    dto.setSenderCostCenterCode  (str     (row, "senderCostCenterCode"));
+
+                    dto.setReceiverPlantName     (str     (row, "receiverPlantName"));
+                    dto.setReceiverPlantCode     (str     (row, "receiverPlantCode"));
+                    dto.setReceiverPlantId       (toUuid  (row, "receiverPlantId"));
+
+                    dto.setReceiverUtilityId     (toUuid  (row, "receiverUtilityId"));
+                    dto.setReceiverUtilityName   (str     (row, "receiverUtilityName"));
+                    dto.setReceiverUtilityCode   (str     (row, "receiverUtilityCode"));
+                    dto.setReceiverUtilityUOM    (str     (row, "receiverUtilityUOM"));
+
+                    dto.setReceiverCostCenterId  (toUuid  (row, "receiverCostCenterId"));
+                    dto.setReceiverCostCenterName(str     (row, "receiverCostCenterName"));
+                    dto.setReceiverCostCenterCode(str     (row, "receiverCostCenterCode"));
+
+                    dto.setRemarks               (str     (row, "remarks"));
+
+                    // Monthly QTY (Apr → Mar)
+                    dto.setApr(toDouble(row, "apr"));
+                    dto.setMay(toDouble(row, "may"));
+                    dto.setJun(toDouble(row, "jun"));
+                    dto.setJul(toDouble(row, "jul"));
+                    dto.setAug(toDouble(row, "aug"));
+                    dto.setSep(toDouble(row, "sep"));
+                    dto.setOct(toDouble(row, "oct"));
+                    dto.setNov(toDouble(row, "nov"));
+                    dto.setDec(toDouble(row, "dec"));
+                    dto.setJan(toDouble(row, "jan"));
+                    dto.setFeb(toDouble(row, "feb"));
+                    dto.setMar(toDouble(row, "mar"));
+
+                    data.add(dto);
+                }
+            }
+
+            logger.info("getSRMappingQtyFixed: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getSRMappingQtyFixed error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public byte[] exportSRMappingQtyFixed(String plantIds, String financialYear) {
+        logger.info("[Export SR Mapping QTY Fixed] plantIds: {}, financialYear: {}", plantIds, financialYear);
+        try {
+            AOPMessageVM response = getSRMappingQtyFixed(plantIds, financialYear);
+            @SuppressWarnings("unchecked")
+            List<SRMappingQtyDTO> dtoList = (List<SRMappingQtyDTO>) response.getData();
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            // Preserve SP ordering
+            dtoList.sort(Comparator
+                    .comparing((SRMappingQtyDTO d) -> d.getSenderPlantName() != null ? d.getSenderPlantName() : "")
+                    .thenComparing(d -> d.getReceiverPlantName() != null ? d.getReceiverPlantName() : "")
+                    .thenComparing(d -> d.getReceiverCostCenterName() != null ? d.getReceiverCostCenterName() : ""));
+
+            return buildSRMappingQtyExcel(dtoList, financialYear);
+        } catch (Exception e) {
+            logger.error("[Export SR Mapping QTY Fixed] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
 }

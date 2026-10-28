@@ -16,6 +16,7 @@ public class AssetFuelPriorityDto {
     private String assetType;
     private UUID cppPlantFkId;
     private String plantName;
+    private String financialYear;
 
     // April
     private UUID aprPrimary;
