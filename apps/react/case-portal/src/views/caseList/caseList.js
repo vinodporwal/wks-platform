@@ -481,9 +481,14 @@ export const CaseList = ({ status, caseDefId }) => {
         const mainAssetName = context.assetName;
         const eventIds = context.eventIds;
         setFetching(true);
-        CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds).then((data) => {
+        Promise.all([
+          CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds, rowsPerPage, page * rowsPerPage),
+          CaseService.countCasesByCaseDefinitionId(keycloak, caseDefId || 'create', mainAssetName, context.hierarchyName)
+        ]).then(([data, total]) => {
           const cases = Array.isArray(data) ? data : (data?.data || []);
           setCases(cases);
+          const safeTotal = (total && total > 0) ? total : (cases.length >= rowsPerPage ? (page + 2) * rowsPerPage : cases.length);
+          setTotalCount(safeTotal)
           setFetching(false);
         }).catch(() => setFetching(false));
       } else {
