@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -15,16 +15,48 @@ import { SignOffReportApiService } from '../services/common/signOffReportApiServ
 import { HistoricPeriodBasisApiService } from '../services/common/historicPeriodBasisApiService'
 
 /**
- * SignOffReportFccSezFcc2
- * Used only for Vertical = FCC, Site = SEZ_, Plant = FCC-2.
- * The API returns MANY grids: all of them are rendered, and ONE sign-off
- * table (Prepared / Reviewed / Approved) is rendered below all grids.
+ * SignOffReport Component
+ * Uses configuration execution details API to get StartDate and EndDate,
+ * and dynamically renders ONE grid for EVERY grid returned by the API
+ * (grid 1, grid 2, ... added automatically one below the other),
+ * with 5 decimal places for numbers.
+ *
+ * - Every grid has its own Save and Calculate buttons.
+ * - ONE sign-off table (Prepared / Reviewed / Approved) is shown below all grids.
  */
 const SIGN_OFF_COLUMNS = [
-  { field: 'label', title: ' ', editable: false, minWidth: 100, type: 'text', filterable: false },
-  { field: 'prepared', title: 'Prepared By', editable: true, minWidth: 100, type: 'text', filterable: false },
-  { field: 'reviewed', title: 'Reviewed By', editable: true, minWidth: 100, type: 'text', filterable: false },
-  { field: 'approved', title: 'Approved By', editable: true, minWidth: 100, type: 'text', filterable: false },
+  {
+    field: 'label',
+    title: ' ',
+    editable: false,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+  {
+    field: 'prepared',
+    title: 'Prepared By',
+    editable: true,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+  {
+    field: 'reviewed',
+    title: 'Reviewed By',
+    editable: true,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
+  {
+    field: 'approved',
+    title: 'Approved By',
+    editable: true,
+    minWidth: 100,
+    type: 'text',
+    filterable: false,
+  },
 ]
 
 const DEFAULT_GRID_TITLE = 'Sign Off Report'
@@ -35,11 +67,32 @@ const isFalsyEditable = (value) =>
 
 const cloneDeep = (value) => JSON.parse(JSON.stringify(value))
 
-const SignOffReportFccSezFcc2 = () => {
+// First column that really has a field (columns can be wrapped in groups)
+const getFirstLeafField = (cols = []) => {
+  for (const c of cols) {
+    if (c?.children && Array.isArray(c.children)) {
+      const f = getFirstLeafField(c.children)
+      if (f) return f
+    } else if (c?.field) {
+      return c.field
+    }
+  }
+  return undefined
+}
+
+// Grids with GRID_TYPE === 'GENERAL_NOTES' are not shown
+const isGeneralNotesGrid = (g) => {
+  const first = Array.isArray(g?.data) ? g.data[0] : null
+  const gridType = first?.GRID_TYPE ?? first?.gridType ?? first?.grid_type
+  return gridType === 'GENERAL_NOTES'
+}
+
+const SignOffReport = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
 
+  // Store variables
   const PLANT_ID = plantObject?.id || plantObject?.value || plantObject?.plantId
   const AOP_YEAR = year?.selectedYear || year
 
@@ -47,10 +100,23 @@ const SignOffReportFccSezFcc2 = () => {
 
   /**
    * grids: [{ key, title, columns, rows, originalRows, modifiedCells, unitNo }]
+   * One entry per grid returned by the API.
    */
-  const [grids, setGrids] = useState([])
+  const [grids, setGridsState] = useState([])
 
-  // Remark dialog (shared, opened only for the clicked grid)
+  // Always holds the latest grids. AdvanceKendoTable calls setModifiedCells()
+  // from INSIDE a setRows() updater, so both updates must be applied
+  // synchronously on the latest value, otherwise the modifiedCells update is
+  // lost and the Save button stays disabled.
+  const gridsRef = useRef([])
+  const setGrids = useCallback((valueOrFn) => {
+    const next =
+      typeof valueOrFn === 'function' ? valueOrFn(gridsRef.current) : valueOrFn
+    gridsRef.current = next
+    setGridsState(next)
+  }, [])
+
+  // Remark dialog (shared state, opened only for the clicked grid)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -62,21 +128,47 @@ const SignOffReportFccSezFcc2 = () => {
     { id: '3', label: 'Sign', prepared: '', reviewed: '', approved: '' },
   ])
 
+  // Notification state
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({ message: '', severity: 'info' })
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
 
-  const numberFormatFiveDecimals = useMemo(() => customValueFormatterPhaseTwo(5), [])
+  const site = siteObject?.name?.toLowerCase()?.trim()
+  const plant = plantObject?.name?.toLowerCase()?.trim()
 
-  const updateGrid = useCallback((key, patch) => {
-    setGrids((prev) =>
-      prev.map((g) =>
-        g.key === key
-          ? { ...g, ...(typeof patch === 'function' ? patch(g) : patch) }
-          : g,
-      ),
-    )
-  }, [])
+  const isFirstTwoColColor = useMemo(() => {
+    if (site === 'dta' && ['dht1'].includes(plant)) return true
+    return false
+  }, [site, plant])
 
+  // 5 Decimal place formatter for numeric columns
+  const numberFormatFiveDecimals = useMemo(
+    () => customValueFormatterPhaseTwo(5),
+    [],
+  )
+
+  /**
+   * Patch ONE grid by key. `patch` can be an object or (currentGrid) => object.
+   * The patch is resolved first (it may trigger nested updates such as
+   * setModifiedCells inside setRows) and then merged into the latest grids.
+   */
+  const updateGrid = useCallback(
+    (key, patch) => {
+      const current = gridsRef.current.find((g) => g.key === key)
+      if (!current) return
+      const resolved = typeof patch === 'function' ? patch(current) : patch
+      setGrids((prev) =>
+        prev.map((g) => (g.key === key ? { ...g, ...resolved } : g)),
+      )
+    },
+    [setGrids],
+  )
+
+  /**
+   * Helper function to format Date object or date string to YYYY-MM-DD
+   */
   const formatDateForAPI = useCallback((date) => {
     if (!date) return null
     if (typeof date === 'string') {
@@ -96,18 +188,24 @@ const SignOffReportFccSezFcc2 = () => {
     return `${y}-${m}-${day}`
   }, [])
 
+  /**
+   * Calculate fallback dates from AOP year (1st April of prior year to 31st March)
+   */
   const getDatesFromAopYear = useCallback((aopYear) => {
     if (typeof aopYear === 'string' && aopYear.includes('-')) {
       const startYear = parseInt(aopYear.split('-')[0], 10)
       if (!isNaN(startYear)) {
-        return { startDate: `${startYear - 1}-04-01`, endDate: `${startYear}-03-31` }
+        return {
+          startDate: `${startYear - 1}-04-01`,
+          endDate: `${startYear}-03-31`,
+        }
       }
     }
     return { startDate: null, endDate: null }
   }, [])
 
   /**
-   * periodFrom / periodTo from configuration execution API,
+   * periodFrom / periodTo from the configuration execution API,
    * falling back to AOP year based dates.
    */
   const resolvePeriod = useCallback(async () => {
@@ -138,18 +236,25 @@ const SignOffReportFccSezFcc2 = () => {
         endDateObj?.AttributeValue || endDateObj?.Value || endDateObj?.apr,
       )
     } catch (configErr) {
-      console.warn('Could not fetch configuration execution details, using fallback:', configErr)
+      console.warn(
+        'Could not fetch configuration execution details, falling back to AOP year calculation:',
+        configErr,
+      )
     }
 
     if (!periodFrom || !periodTo) {
-      const fallback = getDatesFromAopYear(AOP_YEAR)
-      if (!periodFrom) periodFrom = fallback.startDate
-      if (!periodTo) periodTo = fallback.endDate
+      const fallbackDates = getDatesFromAopYear(AOP_YEAR)
+      if (!periodFrom) periodFrom = fallbackDates.startDate
+      if (!periodTo) periodTo = fallbackDates.endDate
     }
 
     return { periodFrom, periodTo }
   }, [keycloak, PLANT_ID, AOP_YEAR, formatDateForAPI, getDatesFromAopYear])
 
+  /**
+   * Enriches backend column metadata into AdvanceKendoTable-compliant columns.
+   * Ensures numbers are configured to 5 decimal places.
+   */
   const enrichColumns = useCallback(
     (backendCols = []) => {
       if (!Array.isArray(backendCols)) return []
@@ -162,26 +267,59 @@ const SignOffReportFccSezFcc2 = () => {
         'unitno',
         'unit_no',
       ]
-      return backendCols
+      const mappedCols = backendCols
         .filter((col) => {
           if (!col || !col.field) return false
-          const fieldLower = col.field.trim().toLowerCase()
-          const titleLower = col.title?.trim().toLowerCase()
-          return !excludeColumns.includes(fieldLower) && !excludeColumns.includes(titleLower)
+          const fieldUpper = col.field.trim().toLowerCase()
+          const titleUpper = col.title?.trim().toLowerCase()
+          return (
+            !excludeColumns.includes(fieldUpper) &&
+            !excludeColumns.includes(titleUpper)
+          )
         })
         .map((col, index) => {
-          const isNumber = col.type === 'number'
+          const rawField = col.field || ''
+          const rawTitle = col.title || rawField
+          let titleClean = rawTitle
+          let groupTag = col.group || ''
+
+          if (rawTitle.includes('~')) {
+            const parts = rawTitle.split('~')
+            titleClean = parts[0]
+            groupTag = parts[1] || groupTag
+          } else if (rawField.includes('~')) {
+            const parts = rawField.split('~')
+            if (!col.title || col.title === rawField) {
+              titleClean = parts[0]
+            }
+            groupTag = parts[1] || groupTag
+          }
+
+          if (typeof titleClean === 'string' && titleClean.includes('~')) {
+            titleClean = titleClean.split('~')[0]
+          }
+
+          const formattedTitle = titleClean.replace(/_/g, ' ').trim()
+          const cleanGroupTag = groupTag.replace(/_/g, ' ').trim()
+          const isRemarks =
+            rawField.toLowerCase().includes('remarks') ||
+            titleClean.toLowerCase().includes('remark')
+          const isNumber =
+            col.type === 'number' ||
+            (!col.type &&
+              (rawField.includes('~') ||
+                rawTitle.includes('~') ||
+                /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(
+                  titleClean,
+                )))
           const isDate = col.type === 'date'
           const isFirstCol = index === 0
           const isFrozenCol = index === 0 || index === 1
-          const formattedTitle = col.title || col.field.replace(/_/g, ' ')
-          const isRemarks =
-            col.field?.toLowerCase().includes('remarks') ||
-            col.title?.toLowerCase().includes('remark')
 
           const baseConfig = {
             field: col.field,
             title: formattedTitle,
+            group: cleanGroupTag,
             editable: isRemarks ? true : Boolean(col.editable),
             hidden: col.hidden || false,
             locked: isFrozenCol && backendCols.length > 2,
@@ -190,8 +328,8 @@ const SignOffReportFccSezFcc2 = () => {
           if (isRemarks) {
             return {
               ...baseConfig,
-              field: 'remarks',
-              title: 'Remarks',
+              field: col.field || 'remarks',
+              title: formattedTitle || 'Remarks',
               type: 'textarea',
               align: 'left',
               headerAlign: 'left',
@@ -227,34 +365,118 @@ const SignOffReportFccSezFcc2 = () => {
             }
           }
 
+          // Text / String columns
           return {
             ...baseConfig,
             type: 'text',
             align: 'left',
             headerAlign: 'left',
-            widthT: Math.max(isFirstCol ? 260 : 180, formattedTitle.length * 11),
+            widthT: Math.max(
+              isFirstCol ? 260 : 180,
+              formattedTitle.length * 11,
+            ),
             minWidth: isFirstCol ? 220 : 150,
           }
         })
+
+      const hasGroup = mappedCols.some((c) => Boolean(c.group))
+      if (!hasGroup) return mappedCols
+
+      const leadingCols = []
+      const trailingCols = []
+      const groupsMap = new Map()
+
+      mappedCols.forEach((col) => {
+        if (col.group) {
+          if (!groupsMap.has(col.group)) {
+            groupsMap.set(col.group, [])
+          }
+          groupsMap.get(col.group).push(col)
+        } else {
+          if (groupsMap.size === 0) {
+            leadingCols.push(col)
+          } else {
+            trailingCols.push(col)
+          }
+        }
+      })
+
+      const isNumbered = Array.from(groupsMap.keys()).every((k) =>
+        /^group\s*\d+$/i.test(k.trim()),
+      )
+      const sortedGroupKeys = isNumbered
+        ? Array.from(groupsMap.keys()).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }),
+          )
+        : Array.from(groupsMap.keys())
+
+      const groupedCols = []
+      sortedGroupKeys.forEach((key) => {
+        const childCols = groupsMap.get(key) || []
+        // Child columns inside a multi-column group must not be individually locked
+        childCols.forEach((c) => {
+          c.locked = false
+        })
+        groupedCols.push({
+          title: key,
+          headerClassName: 'center-group-header',
+          children: childCols,
+        })
+      })
+
+      // Lock only the first 1-2 leading columns (e.g. Particulars, UOM) if grid has more than 2 columns
+      leadingCols.forEach((c, idx) => {
+        c.locked = (idx === 0 || idx === 1) && mappedCols.length > 2
+      })
+
+      trailingCols.forEach((c) => {
+        c.locked = false
+      })
+
+      return [...leadingCols, ...groupedCols, ...trailingCols]
     },
     [numberFormatFiveDecimals],
   )
 
+  /**
+   * Normalizes raw row data from API.
+   * Ensures each row has a stable unique ID and numeric columns are parsed as numbers.
+   */
   const normalizeRows = useCallback((rawRows = [], cols = []) => {
     if (!Array.isArray(rawRows)) return []
 
-    const numericFields = new Set(cols.filter((c) => c.type === 'number').map((c) => c.field))
-    const dateFields = new Set(cols.filter((c) => c.type === 'date').map((c) => c.field))
+    const leafCols = []
+    const traverse = (items) => {
+      items.forEach((c) => {
+        if (c.children && Array.isArray(c.children)) {
+          traverse(c.children)
+        } else {
+          leafCols.push(c)
+        }
+      })
+    }
+    traverse(cols)
+
+    const numericFields = new Set(
+      leafCols.filter((c) => c.type === 'number').map((c) => c.field),
+    )
+    const dateFields = new Set(
+      leafCols.filter((c) => c.type === 'date').map((c) => c.field),
+    )
 
     return rawRows.map((row, idx) => {
       const normalizedRow = { ...row }
 
+      // Guarantee unique key for Kendo and preserve database UUID
       const rowId = normalizedRow.Id ?? normalizedRow.id ?? idx + 1
       normalizedRow.id = rowId
       normalizedRow.Id = rowId
 
+      // Normalize isEditable flag as boolean for row-level permissions
       const rawEditable =
-        normalizedRow.isEditable ?? normalizedRow.IsEditable ?? normalizedRow.is_editable
+        normalizedRow.isEditable ??
+        normalizedRow.IsEditable ??
+        normalizedRow.is_editable
       const isRowEditable = !isFalsyEditable(rawEditable)
       normalizedRow.isEditable = isRowEditable
       normalizedRow.IsEditable = isRowEditable
@@ -268,8 +490,10 @@ const SignOffReportFccSezFcc2 = () => {
         normalizedRow.IsEditable = false
       }
 
-      const isDaysRow = !isUomEmpty && String(rawUom).trim().toLowerCase() === 'days'
+      const isDaysRow =
+        !isUomEmpty && String(rawUom).trim().toLowerCase() === 'days'
 
+      // Convert numeric fields to JavaScript numbers so Kendo number formatting applies
       numericFields.forEach((field) => {
         const val = normalizedRow[field]
         if (val !== null && val !== undefined && val !== '') {
@@ -287,14 +511,18 @@ const SignOffReportFccSezFcc2 = () => {
         }
       })
 
+      // Convert date strings to Date objects if needed
       dateFields.forEach((field) => {
         const val = normalizedRow[field]
         if (val) {
           const d = new Date(val)
-          if (!isNaN(d.getTime())) normalizedRow[field] = d
+          if (!isNaN(d.getTime())) {
+            normalizedRow[field] = d
+          }
         }
       })
 
+      // Ensure remarks field has default empty string and exists
       normalizedRow.remarks = normalizedRow?.Remarks ?? normalizedRow?.remarks ?? ''
 
       return normalizedRow
@@ -302,27 +530,40 @@ const SignOffReportFccSezFcc2 = () => {
   }, [])
 
   /**
-   * Converts one backend grid into the local grid shape.
+   * Converts ONE backend grid into the local grid shape.
+   * `total` = number of grids in the response (used for the title fallback).
    */
   const buildGrid = useCallback(
-    (backendGrid, index) => {
-      const rawCols = Array.isArray(backendGrid?.columns) ? backendGrid.columns : []
+    (backendGrid, index, total = 1) => {
       const rawRows = Array.isArray(backendGrid?.data) ? backendGrid.data : []
+      const rawCols =
+        Array.isArray(backendGrid?.columns) && backendGrid.columns.length > 0
+          ? backendGrid.columns
+          : rawRows.length > 0
+            ? Object.keys(rawRows[0]).map((k) => ({ field: k, title: k }))
+            : []
 
       const cols = enrichColumns(rawCols)
       const normRows = normalizeRows(rawRows, cols)
-      const foundUnitNo = rawRows.find((r) => r?.UnitNo ?? r?.unitNo ?? r?.unitno)
+      const foundUnitNo = rawRows.find(
+        (r) => r?.UnitNo ?? r?.unitNo ?? r?.unitno,
+      )
 
-      // NOTE: adjust these keys to match the real API response
-      // The API currently returns gridName = "Id" for every grid, so ignore
-      // that value and fall back to a numbered title.
+      // The API currently returns gridName = "Id" for every grid, so that
+      // value is ignored. Adjust the keys below if the API gets a real name.
       const rawName = [
         backendGrid?.gridName,
         backendGrid?.gridTitle,
         backendGrid?.name,
         backendGrid?.title,
-      ].find((n) => n && String(n).trim() && String(n).trim().toLowerCase() !== 'id')
-      const title = rawName ? String(rawName).trim() : `${DEFAULT_GRID_TITLE} ${index + 1}`
+      ].find(
+        (n) => n && String(n).trim() && String(n).trim().toLowerCase() !== 'id',
+      )
+      const title = rawName
+        ? String(rawName).trim()
+        : total > 1
+          ? `${DEFAULT_GRID_TITLE} ${index + 1}`
+          : DEFAULT_GRID_TITLE
 
       return {
         key: `grid-${index}`,
@@ -332,7 +573,9 @@ const SignOffReportFccSezFcc2 = () => {
         originalRows: cloneDeep(normRows),
         modifiedCells: {},
         unitNo: foundUnitNo
-          ? String(foundUnitNo.UnitNo ?? foundUnitNo.unitNo ?? foundUnitNo.unitno)
+          ? String(
+              foundUnitNo.UnitNo ?? foundUnitNo.unitNo ?? foundUnitNo.unitno,
+            )
           : null,
       }
     },
@@ -340,7 +583,40 @@ const SignOffReportFccSezFcc2 = () => {
   )
 
   /**
-   * Fetch all Sign Off Report grids.
+   * Calls the Sign Off Report API and returns the list of visible grids.
+   */
+  const requestVisibleGrids = useCallback(async () => {
+    const { periodFrom, periodTo } = await resolvePeriod()
+
+    const response = await SignOffReportApiService.getSignOffReport(
+      keycloak,
+      PLANT_ID,
+      AOP_YEAR,
+      periodFrom,
+      periodTo,
+    )
+
+    const statusCode = response?.code || (response?.status ?? 200)
+    const responseData = response?.data
+
+    if (statusCode !== 200 || !responseData) {
+      return { ok: false, response, backendGrids: [] }
+    }
+
+    // Response can be: array of grids | { data: [grids] } | single grid object
+    const gridList = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(responseData?.data)
+        ? responseData.data
+        : [responseData]
+
+    const backendGrids = gridList.filter(Boolean).filter((g) => !isGeneralNotesGrid(g))
+
+    return { ok: true, response, backendGrids }
+  }, [keycloak, PLANT_ID, AOP_YEAR, resolvePeriod])
+
+  /**
+   * Fetch ALL grids returned by the API.
    */
   const fetchSignOffReport = useCallback(
     async (isCalculate = false) => {
@@ -356,53 +632,9 @@ const SignOffReportFccSezFcc2 = () => {
       }
 
       try {
-        const { periodFrom, periodTo } = await resolvePeriod()
+        const { ok, response, backendGrids } = await requestVisibleGrids()
 
-        const response = await SignOffReportApiService.getSignOffReport(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          periodFrom,
-          periodTo,
-        )
-
-        const statusCode = response?.code || (response?.status ?? 200)
-        const responseData = response?.data
-
-        if (statusCode === 200 && responseData) {
-          const gridList = Array.isArray(responseData)
-            ? responseData
-            : Array.isArray(responseData?.data)
-              ? responseData.data
-              : [responseData]
-
-          const built = gridList
-            .filter(Boolean)
-            // Hide GENERAL_NOTES grids
-            .filter((g) => {
-              const first = Array.isArray(g.data) ? g.data[0] : null
-              const gridType = first?.GRID_TYPE ?? first?.gridType ?? first?.grid_type
-              return gridType !== 'GENERAL_NOTES'
-            })
-            .map((g, i) => buildGrid(g, i))
-
-          if (built.length === 0) {
-            setGrids([])
-            setSnackbarData({
-              message: response?.message || 'No records returned for the selected criteria.',
-              severity: 'info',
-            })
-            setSnackbarOpen(true)
-            return
-          }
-
-          setGrids(built)
-
-          if (isCalculate) {
-            setSnackbarData({ message: 'Data calculated successfully!', severity: 'success' })
-            setSnackbarOpen(true)
-          }
-        } else {
+        if (!ok) {
           setGrids([])
           setSnackbarData({
             message:
@@ -411,6 +643,31 @@ const SignOffReportFccSezFcc2 = () => {
                 ? 'Failed to calculate Sign Off Report. Please try again.'
                 : 'Failed to fetch Sign Off Report. Please try again.'),
             severity: 'error',
+          })
+          setSnackbarOpen(true)
+          return
+        }
+
+        if (backendGrids.length === 0) {
+          setGrids([])
+          setSnackbarData({
+            message:
+              response?.message ||
+              'No records returned for the selected criteria.',
+            severity: 'info',
+          })
+          setSnackbarOpen(true)
+          return
+        }
+
+        setGrids(
+          backendGrids.map((g, i) => buildGrid(g, i, backendGrids.length)),
+        )
+
+        if (isCalculate) {
+          setSnackbarData({
+            message: 'Data calculated successfully!',
+            severity: 'success',
           })
           setSnackbarOpen(true)
         }
@@ -428,12 +685,12 @@ const SignOffReportFccSezFcc2 = () => {
         setLoading(false)
       }
     },
-    [keycloak, PLANT_ID, AOP_YEAR, resolvePeriod, buildGrid],
+    [PLANT_ID, AOP_YEAR, setGrids, requestVisibleGrids, buildGrid],
   )
 
   /**
    * Refresh ONLY one grid (used by that grid's own Calculate button).
-   * Other grids keep their current rows and unsaved remarks.
+   * Other grids keep their rows and unsaved remarks.
    * Grids are matched by position in the response ("grid-0", "grid-1", ...).
    */
   const fetchSingleGrid = useCallback(
@@ -448,51 +705,9 @@ const SignOffReportFccSezFcc2 = () => {
       }
 
       try {
-        const { periodFrom, periodTo } = await resolvePeriod()
+        const { ok, response, backendGrids } = await requestVisibleGrids()
 
-        const response = await SignOffReportApiService.getSignOffReport(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          periodFrom,
-          periodTo,
-        )
-
-        const statusCode = response?.code || (response?.status ?? 200)
-        const responseData = response?.data
-
-        if (statusCode === 200 && responseData) {
-          const gridList = Array.isArray(responseData)
-            ? responseData
-            : Array.isArray(responseData?.data)
-              ? responseData.data
-              : [responseData]
-
-          const visibleGrids = gridList.filter(Boolean).filter((g) => {
-            const first = Array.isArray(g.data) ? g.data[0] : null
-            const gridType = first?.GRID_TYPE ?? first?.gridType ?? first?.grid_type
-            return gridType !== 'GENERAL_NOTES'
-          })
-
-          const backendGrid = visibleGrids[gridIndex]
-
-          if (!backendGrid) {
-            setSnackbarData({
-              message: response?.message || 'No records returned for this grid.',
-              severity: 'info',
-            })
-            setSnackbarOpen(true)
-            return
-          }
-
-          // Replace only this grid
-          updateGrid(gridKey, buildGrid(backendGrid, gridIndex))
-
-          if (isCalculate) {
-            setSnackbarData({ message: 'Data calculated successfully!', severity: 'success' })
-            setSnackbarOpen(true)
-          }
-        } else {
+        if (!ok) {
           setSnackbarData({
             message:
               response?.message ||
@@ -500,6 +715,28 @@ const SignOffReportFccSezFcc2 = () => {
                 ? 'Failed to calculate Sign Off Report. Please try again.'
                 : 'Failed to fetch Sign Off Report. Please try again.'),
             severity: 'error',
+          })
+          setSnackbarOpen(true)
+          return
+        }
+
+        const backendGrid = backendGrids[gridIndex]
+        if (!backendGrid) {
+          setSnackbarData({
+            message: response?.message || 'No records returned for this grid.',
+            severity: 'info',
+          })
+          setSnackbarOpen(true)
+          return
+        }
+
+        // Replace only this grid
+        updateGrid(gridKey, buildGrid(backendGrid, gridIndex, backendGrids.length))
+
+        if (isCalculate) {
+          setSnackbarData({
+            message: 'Data calculated successfully!',
+            severity: 'success',
           })
           setSnackbarOpen(true)
         }
@@ -516,9 +753,13 @@ const SignOffReportFccSezFcc2 = () => {
         setLoading(false)
       }
     },
-    [keycloak, PLANT_ID, AOP_YEAR, resolvePeriod, buildGrid, updateGrid],
+    [PLANT_ID, AOP_YEAR, requestVisibleGrids, buildGrid, updateGrid],
   )
 
+  /**
+   * Remark cell click. Remembers which grid was clicked so that only that
+   * grid's dialog opens.
+   */
   const handleRemarkCellClick = useCallback((gridKey, row) => {
     const rawEditable = row?.isEditable ?? row?.IsEditable ?? row?.is_editable
     if (isFalsyEditable(rawEditable)) return
@@ -529,7 +770,8 @@ const SignOffReportFccSezFcc2 = () => {
   }, [])
 
   /**
-   * Rows of ONE grid whose remark actually changed.
+   * Rows of ONE grid whose remark actually changed
+   * (from modifiedCells, or by comparing rows with originalRows).
    */
   const getChangedRowsForGrid = useCallback((grid) => {
     const fromModifiedCells = Object.values(grid.modifiedCells || {}).filter(
@@ -562,139 +804,150 @@ const SignOffReportFccSezFcc2 = () => {
   /**
    * Save remarks of ONE grid (the grid whose Save button was clicked).
    */
-  const saveGridChanges = useCallback(async (gridKey) => {
-    const targetGrid = grids.find((g) => g.key === gridKey)
-    if (!targetGrid) return
+  const saveGridChanges = useCallback(
+    async (gridKey) => {
+      const targetGrid = gridsRef.current.find((g) => g.key === gridKey)
+      if (!targetGrid) return
 
-    const changedRows = []
-    const firstColFieldByRow = new Map()
+      const changedRows = getChangedRowsForGrid(targetGrid)
 
-    getChangedRowsForGrid(targetGrid).forEach((row) => {
-      changedRows.push(row)
-      firstColFieldByRow.set(row, targetGrid.columns?.[0]?.field)
-    })
+      if (changedRows.length === 0) {
+        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+        setSnackbarOpen(true)
+        return
+      }
 
-    if (changedRows.length === 0) {
-      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-      setSnackbarOpen(true)
-      return
-    }
-
-    const invalidRows = changedRows.filter((row) => String(row.remarks ?? '').trim() === '')
-
-    if (invalidRows.length > 0) {
-      const displayNames = invalidRows
-        .map((row) => {
-          const firstField = firstColFieldByRow.get(row)
-          return (
-            row.Particulars ||
-            row.particulars ||
-            row.NormParameterName ||
-            row.normParameterName ||
-            row.Parameter ||
-            row.parameter ||
-            (firstField ? row[firstField] : '') ||
-            `Row ${row.id}`
-          )
-        })
-        .filter(Boolean)
-        .join(', ')
-
-      setSnackbarData({ message: `Remarks is required for: ${displayNames}`, severity: 'error' })
-      setSnackbarOpen(true)
-      return
-    }
-
-    const signOffReportDTOList = changedRows.map((row) => ({
-      id: String(row.Id ?? row.id ?? ''),
-      remarks: String(row.remarks ?? '').trim(),
-    }))
-
-    setLoading(true)
-    try {
-      const response = await SignOffReportApiService.saveSignOffReportRemarks(
-        keycloak,
-        AOP_YEAR,
-        signOffReportDTOList,
+      // Remark validation: Remarks cannot be empty for any modified row
+      const invalidRows = changedRows.filter(
+        (row) => String(row.remarks ?? '').trim() === '',
       )
 
-      const statusCode = response?.code || (response?.status ?? 200)
+      if (invalidRows.length > 0) {
+        const firstField = getFirstLeafField(targetGrid.columns)
+        const displayNames = invalidRows
+          .map(
+            (row) =>
+              row.Particulars ||
+              row.particulars ||
+              row.NormParameterName ||
+              row.normParameterName ||
+              row.Parameter ||
+              row.parameter ||
+              (firstField ? row[firstField] : '') ||
+              `Row ${row.id}`,
+          )
+          .filter(Boolean)
+          .join(', ')
 
-      if (statusCode === 200) {
         setSnackbarData({
-          message: response?.message || 'Sign off report remarks saved successfully',
-          severity: 'success',
-        })
-        setSnackbarOpen(true)
-        // Reset modified state only for the saved grid
-        updateGrid(gridKey, (cur) => ({
-          modifiedCells: {},
-          originalRows: cloneDeep(cur.rows),
-        }))
-      } else {
-        setSnackbarData({
-          message: response?.message || 'Failed to save Sign Off Report remarks.',
+          message: `Remarks is required for: ${displayNames}`,
           severity: 'error',
         })
         setSnackbarOpen(true)
+        return
       }
-    } catch (error) {
-      console.error('Error saving Sign Off Report remarks:', error)
-      setSnackbarData({
-        message:
-          error?.response?.data?.message ||
-          error?.message ||
-          'Error saving Sign Off Report remarks. Please try again.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [grids, getChangedRowsForGrid, updateGrid, keycloak, AOP_YEAR])
+
+      // Payload with expected keys: id and remarks
+      const signOffReportDTOList = changedRows.map((row) => ({
+        id: String(row.Id ?? row.id ?? ''),
+        remarks: String(row.remarks ?? row.Remarks ?? '').trim(),
+      }))
+
+      setLoading(true)
+      try {
+        const response = await SignOffReportApiService.saveSignOffReportRemarks(
+          keycloak,
+          AOP_YEAR,
+          signOffReportDTOList,
+        )
+
+        const statusCode = response?.code || (response?.status ?? 200)
+
+        if (statusCode === 200) {
+          setSnackbarData({
+            message:
+              response?.message || 'Sign off report remarks saved successfully',
+            severity: 'success',
+          })
+          setSnackbarOpen(true)
+          // Reset modified state only for the saved grid
+          updateGrid(gridKey, (cur) => ({
+            modifiedCells: {},
+            originalRows: cloneDeep(cur.rows),
+          }))
+          await fetchSignOffReport()
+        } else {
+          setSnackbarData({
+            message:
+              response?.message || 'Failed to save Sign Off Report remarks.',
+            severity: 'error',
+          })
+          setSnackbarOpen(true)
+        }
+      } catch (error) {
+        console.error('Error saving Sign Off Report remarks:', error)
+        setSnackbarData({
+          message:
+            error?.response?.data?.message ||
+            error?.message ||
+            'Error saving Sign Off Report remarks. Please try again.',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [getChangedRowsForGrid, updateGrid, keycloak, AOP_YEAR, fetchSignOffReport],
+  )
 
   /**
-   * Calculate for ONE grid: trigger backend calculation (result ignored),
-   * then refresh only that grid.
+   * Calculate for ONE grid:
+   * 1. Silently calls calculateSignOffReport (backend stored procedure).
+   * 2. Then refreshes only that grid.
    * NOTE: calculateSignOffReport has no grid parameter, so the backend
    * recalculates for the plant / year; the UI refreshes just this grid.
    */
-  const handleCalculateGrid = useCallback(async (gridKey) => {
-    if (!PLANT_ID || !AOP_YEAR) return
+  const handleCalculateGrid = useCallback(
+    async (gridKey) => {
+      if (!PLANT_ID || !AOP_YEAR) return
 
-    const { periodFrom, periodTo } = await resolvePeriod()
+      const { periodFrom, periodTo } = await resolvePeriod()
 
-    try {
-      await SignOffReportApiService.calculateSignOffReport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        periodFrom,
-        periodTo,
-      )
-    } catch (calcError) {
-      console.error('calculateSignOffReport error (ignored):', calcError)
-    }
+      // Step 1: Fire calculate API silently (no notifications, ignore result)
+      try {
+        await SignOffReportApiService.calculateSignOffReport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          periodFrom,
+          periodTo,
+        )
+      } catch (calcError) {
+        console.error('calculateSignOffReport error (ignored):', calcError)
+      }
 
-    if (gridKey === EMPTY_GRID_KEY) {
-      // No data loaded yet: load every grid
-      await fetchSignOffReport(true)
-    } else {
-      await fetchSingleGrid(gridKey, true)
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak, resolvePeriod, fetchSignOffReport, fetchSingleGrid])
+      // Step 2: Always fetch fresh data after the calculate call
+      if (gridKey === EMPTY_GRID_KEY) {
+        // No data loaded yet: load every grid
+        await fetchSignOffReport(true)
+      } else {
+        await fetchSingleGrid(gridKey, true)
+      }
+    },
+    [PLANT_ID, AOP_YEAR, keycloak, resolvePeriod, fetchSignOffReport, fetchSingleGrid],
+  )
 
+  // Fetch report whenever plant or year changes
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchSignOffReport()
     }
   }, [PLANT_ID, AOP_YEAR, fetchSignOffReport])
 
-  /**
-   * Every grid has its own Save / Calculate buttons.
-   */
+  // Permissions are built per grid (own Save / Calculate, title, note, Excel name)
   const getPermissions = useCallback(
-    (grid, index) => ({
+    (grid) => ({
       showAction: true,
       allAction: true,
       saveBtn: true,
@@ -709,11 +962,14 @@ const SignOffReportFccSezFcc2 = () => {
       showNote: Boolean(grid.unitNo),
       note: grid.unitNo ? `(${grid.unitNo})` : '',
       isDaysUomInInteger: true,
+      exportReportGroupWise: true,
+      isSignOffReport: isFirstTwoColColor,
     }),
-    [PLANT_ID, AOP_YEAR, loading, dataGridStore],
+    [PLANT_ID, AOP_YEAR, loading, dataGridStore, isFirstTwoColColor],
   )
 
-  // Keep one empty grid when there is no data so Calculate stays available
+  // When there is no data yet, still render one empty grid so the toolbar
+  // (Calculate / Save) stays available, same as the original behaviour.
   const displayGrids = useMemo(() => {
     if (grids.length > 0) return grids
     return [
@@ -730,9 +986,17 @@ const SignOffReportFccSezFcc2 = () => {
   }, [grids])
 
   return (
-    <Box sx={{ minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        minHeight: 'calc(100vh - 120px)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Global Loader */}
       <LoaderBackdrop open={loading} />
 
+      {/* Modern Toast Notification */}
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}
@@ -740,7 +1004,7 @@ const SignOffReportFccSezFcc2 = () => {
         onClose={() => setSnackbarOpen(false)}
       />
 
-      {/* All report grids */}
+      {/* One grid for every grid in the API response, added automatically below each other */}
       {displayGrids.map((g, index) => (
         <AdvanceKendoTable
           key={g.key}
@@ -755,6 +1019,7 @@ const SignOffReportFccSezFcc2 = () => {
           loading={loading}
           pagable={false}
           handleRemarkCellClick={(row) => handleRemarkCellClick(g.key, row)}
+          // Open the dialog only for the grid that was clicked
           remarkDialogOpen={remarkDialogOpen && activeGridKey === g.key}
           setRemarkDialogOpen={setRemarkDialogOpen}
           currentRemark={currentRemark}
@@ -770,18 +1035,20 @@ const SignOffReportFccSezFcc2 = () => {
           }
           saveChanges={() => saveGridChanges(g.key)}
           handleCalculate={() => handleCalculateGrid(g.key)}
-          permissions={getPermissions(g, index)}
+          permissions={getPermissions(g)}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           extraExportGrid={
-            index === 0 ? { columns: SIGN_OFF_COLUMNS, rows: signOffRows } : undefined
+            index === 0
+              ? { columns: SIGN_OFF_COLUMNS, rows: signOffRows }
+              : undefined
           }
         />
       ))}
 
-      {/* ONE sign-off table below ALL grids */}
+      {/* ONE Sign Off Details table, always below ALL grids */}
       <AdvanceKendoTable
         columns={SIGN_OFF_COLUMNS}
         rows={signOffRows}
@@ -798,4 +1065,4 @@ const SignOffReportFccSezFcc2 = () => {
   )
 }
 
-export default SignOffReportFccSezFcc2
+export default SignOffReport
