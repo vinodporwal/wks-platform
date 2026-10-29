@@ -480,6 +480,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                 FuelMasterDetails fuelDetails = getFuelDetails(fuelId, fuelMasterCache);
                 ResolvedNormParameter normParam = findOrCreateNormParameter(fuelDetails, procurementPlantId, rawMaterialTypeId, 2, normParameterCache);
                 findOrCreateNormsHeader(assetId, normParam, plantNameCache, normsHeaderCache);
+                ensureLinkedHrsgFreeSteamHeaders(dto, fuelId, fuelDetails, procurementPlantId, rawMaterialTypeId,
+                        plantNameCache, normsHeaderCache);
                 fuelToNormParamMap.put(fuelId, normParam.id());
             }
 
@@ -488,6 +490,66 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
 
         logger.info("processFuelPriorityNormParameters: processed {} assets with unique NormParameters resolved", assetToFuelNormParams.size());
         return assetToFuelNormParams;
+    }
+
+    /** Creates the free-steam companion header for each linked HRSG that has a generation-side header. */
+    private void ensureLinkedHrsgFreeSteamHeaders(
+            AssetFuelPriorityDto dto,
+            UUID fuelId,
+            FuelMasterDetails fuelDetails,
+            UUID procurementPlantId,
+            UUID rawMaterialTypeId,
+            Map<UUID, String> plantNameCache,
+            Map<NormsHeaderKey, UUID> normsHeaderCache) {
+        UUID gtAssetId = dto.getAssetId();
+        UUID cppPlantId = dto.getCppPlantFkId();
+        String linkedHrsgSql = "SELECT CAST(s.AssetId AS varchar(36)) " +
+                "FROM dbo.CPPSteamGenerationAsset s " +
+                "WHERE s.LinkedPowerAsset_FK_ID = ? AND s.CPPPLANT_FK_Id = ? " +
+                "AND EXISTS (SELECT 1 FROM dbo.NormsHeader gh " +
+                " WHERE gh.AssetFKId = s.AssetId AND gh.AccountName <> 'Raw Material' " +
+                " AND (gh.UtilityName LIKE '%SHP%' OR gh.UtilityName LIKE '%HP%'))";
+        List<String> hrsgIds = db1JdbcTemplate.queryForList(linkedHrsgSql, String.class,
+                gtAssetId.toString(), cppPlantId.toString());
+        if (hrsgIds.isEmpty()) {
+            return;
+        }
+
+        String freeName = fuelDetails.fuelName() + " (Free steam)";
+        String freeParamSql = "SELECT CAST(Id AS varchar(36)) AS Id, Name, UOM, SAPMaterialCode, " +
+                "CAST(Plant_FK_Id AS varchar(36)) AS Plant_FK_Id FROM dbo.NormParameters " +
+                "WHERE Plant_FK_Id = ? AND SAPMaterialCode = ? AND NormParameterType_FK_Id = ? " +
+                "AND NormType_FK_Id = 2 AND [Type] = 'CPPFuel' AND Name = ?";
+        List<ResolvedNormParameter> freeParams = db1JdbcTemplate.query(freeParamSql, (rs, rowNum) ->
+                new ResolvedNormParameter(UUID.fromString(rs.getString("Id")), rs.getString("Name"),
+                        rs.getString("UOM"), rs.getString("SAPMaterialCode"),
+                        UUID.fromString(rs.getString("Plant_FK_Id"))), procurementPlantId.toString(),
+                fuelDetails.fuelCode(), rawMaterialTypeId.toString(), freeName);
+        if (freeParams.size() != 1) {
+            throw new IllegalStateException("Expected exactly one free-steam NormParameter for fuel '" +
+                    fuelDetails.fuelName() + "' (SAP code " + fuelDetails.fuelCode() + ") at procurement plant " +
+                    procurementPlantId + ", found " + freeParams.size());
+        }
+
+        ResolvedNormParameter freeParam = freeParams.get(0);
+        for (String hrsgId : hrsgIds) {
+            UUID hrsgAssetId = UUID.fromString(hrsgId);
+            UUID headerId = findOrCreateNormsHeader(hrsgAssetId, freeParam, plantNameCache, normsHeaderCache);
+            String financialYear = dto.getFinancialYear();
+            if (financialYear != null && !financialYear.isBlank()) {
+                ensureNormMonthDetails(headerId, financialYear);
+                ensureCppNorms(headerId, financialYear);
+                String sourcePlantSql = "SELECT CAST(FuelAvailablePlantFKId AS varchar(36)) " +
+                        "FROM dbo.CPPPlantFuelSourceMapping WHERE CPPPlantFKId = ?";
+                List<String> sourcePlantIds = db1JdbcTemplate.queryForList(sourcePlantSql, String.class, cppPlantId.toString());
+                if (sourcePlantIds.size() != 1 || sourcePlantIds.get(0) == null) {
+                    throw new IllegalStateException("Expected one fuel source mapping for CPP plant " + cppPlantId +
+                            ", found " + sourcePlantIds.size());
+                }
+                MonthlyFuelPrices prices = getMonthlyFuelPrices(UUID.fromString(sourcePlantIds.get(0)), fuelId, financialYear);
+                ensureCppMonthWisePrice(headerId, financialYear, prices);
+            }
+        }
     }
 
     public Set<UUID> extractUniqueFuelIds(AssetFuelPriorityDto dto) {
@@ -651,7 +713,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                          "WHERE SAPMaterialCode = ? " +
                          "  AND Plant_FK_Id = ? " +
                          "  AND NormParameterType_FK_Id = ? " +
-                         "  AND NormType_FK_Id = ?";
+                         "  AND NormType_FK_Id = ? " +
+                         "  AND (Name IS NULL OR Name NOT LIKE '% (Free steam)')";
         List<ResolvedNormParameter> existing = db1JdbcTemplate.query(findSql, (rs, rowNum) -> new ResolvedNormParameter(
                 UUID.fromString(rs.getString("Id")),
                 rs.getString("Name"),
@@ -1454,7 +1517,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             UUID normParameterId,
             UUID fuelId,
             String fuelCode,
-            String normParamName
+            String normParamName,
+            boolean freeSteam
     ) {}
 
     public List<FuelNormsHeaderCandidate> getFuelNormsHeaderCandidates(UUID assetId) {
@@ -1465,7 +1529,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                 "  CAST(nh.NormParameter_FK_Id AS varchar(36)) AS NormParameterId, " +
                 "  CAST(fm.Id AS varchar(36)) AS FuelId, " +
                 "  fm.FuelCode, " +
-                "  np.Name AS NormParamName " +
+                "  np.Name AS NormParamName, " +
+                "  CASE WHEN np.Name LIKE '% (Free steam)' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS FreeSteam " +
                 "FROM dbo.NormsHeader nh WITH(NOLOCK) " +
                 "INNER JOIN dbo.NormParameters np WITH(NOLOCK) ON nh.NormParameter_FK_Id = np.Id " +
                 "LEFT JOIN dbo.CPP_FuelMaster fm WITH(NOLOCK) ON fm.FuelCode = np.SAPMaterialCode " +
@@ -1478,7 +1543,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                 rs.getString("NormParameterId") != null ? UUID.fromString(rs.getString("NormParameterId")) : null,
                 rs.getString("FuelId") != null ? UUID.fromString(rs.getString("FuelId")) : null,
                 rs.getString("FuelCode"),
-                rs.getString("NormParamName")
+                rs.getString("NormParamName"),
+                rs.getBoolean("FreeSteam")
         ), assetId.toString());
     }
 
@@ -1511,11 +1577,6 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             }
 
             Set<UUID> finalUsedFuelIds = extractUniqueFuelIds(dto);
-            if (finalUsedFuelIds.isEmpty()) {
-                logger.info("cleanUpUnusedFuelRecords: skipping cleanup for assetId={} because no monthly fuel assignments were provided in payload", assetId);
-                continue;
-            }
-
             totalCleanedUp += cleanUpUnusedFuelRecords(assetId, financialYear, finalUsedFuelIds);
         }
 
@@ -1528,11 +1589,22 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             String financialYear,
             Set<UUID> finalUsedFuelIds) {
 
-        if (assetId == null || financialYear == null || financialYear.isBlank()) {
-            return 0;
+        Set<UUID> usedFuelIds = finalUsedFuelIds != null ? finalUsedFuelIds : Collections.emptySet();
+        int cleaned = cleanUpFuelHeaders(assetId, financialYear, usedFuelIds, false);
+        if (assetId != null) {
+            String linkedSql = "SELECT CAST(AssetId AS varchar(36)) FROM dbo.CPPSteamGenerationAsset " +
+                    "WHERE LinkedPowerAsset_FK_ID = ?";
+            List<String> linkedHrsgIds = db1JdbcTemplate.queryForList(linkedSql, String.class, assetId.toString());
+            for (String hrsgId : linkedHrsgIds) {
+                cleaned += cleanUpFuelHeaders(UUID.fromString(hrsgId), financialYear, usedFuelIds, true);
+            }
         }
-        if (finalUsedFuelIds == null || finalUsedFuelIds.isEmpty()) {
-            logger.info("cleanUpUnusedFuelRecords: skipping assetId={} because finalUsedFuelIds is empty", assetId);
+        return cleaned;
+    }
+
+    private int cleanUpFuelHeaders(UUID assetId, String financialYear, Set<UUID> finalUsedFuelIds, boolean freeSteamOnly) {
+
+        if (assetId == null || financialYear == null || financialYear.isBlank()) {
             return 0;
         }
 
@@ -1552,6 +1624,9 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         int cleanedUpHeaders = 0;
 
         for (FuelNormsHeaderCandidate candidate : candidates) {
+            if (candidate.freeSteam() != freeSteamOnly) {
+                continue;
+            }
             UUID normsHeaderId = candidate.normsHeaderId();
             if (normsHeaderId == null || !processedHeaders.add(normsHeaderId)) {
                 continue;
