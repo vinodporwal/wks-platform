@@ -743,8 +743,16 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 savedCase =caseRepository.getByBusinessKey(caseNo);
             }
             System.out.println("savedCase: " + savedCase);
-            caseData.setCreationDate(savedCase.getCreationDate()==null?currentDate:savedCase.getCreationDate());
-            caseDetails  = caseRepository.save(caseData);
+            if (savedCase != null) {
+                caseData.setCreationDate(savedCase.getCreationDate() == null ? currentDate : savedCase.getCreationDate());
+                if (savedCase.getHierarchyNodePKID() != null && !savedCase.getHierarchyNodePKID().isBlank()) {
+                    caseData.setHierarchyNodePKID(savedCase.getHierarchyNodePKID());
+                }
+                if (savedCase.getAssetName() != null && !savedCase.getAssetName().isBlank()) {
+                    caseData.setAssetName(savedCase.getAssetName());
+                }
+            }
+             caseDetails = caseRepository.save(caseData);
         }
 
         //sending Emails part
@@ -1534,7 +1542,15 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
             caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
         }
         Case savedCase = caseRepository.getByCaseNo(caseNo);
-        caseData.setCreationDate(savedCase.getCreationDate());
+        if (savedCase != null) {
+            caseData.setCreationDate(savedCase.getCreationDate());
+            if (savedCase.getHierarchyNodePKID() != null && !savedCase.getHierarchyNodePKID().isBlank()) {
+                caseData.setHierarchyNodePKID(savedCase.getHierarchyNodePKID());
+            }
+            if (savedCase.getAssetName() != null && !savedCase.getAssetName().isBlank()) {
+                caseData.setAssetName(savedCase.getAssetName());
+            }
+        }
 
         // ---- Notify Analysis Team on edit/status change ----
         try {
