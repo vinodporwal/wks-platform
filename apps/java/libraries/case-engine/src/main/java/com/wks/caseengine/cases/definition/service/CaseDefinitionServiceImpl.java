@@ -1138,9 +1138,10 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 "        hn.Path LIKE CONCAT('%', :assetName, '%') " +
                 "        OR EXISTS (" +
                 "            SELECT 1 FROM [" + db1Name + "].[dbo].[HierarchyNodes] c " +
-                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] p ON c.Parent_PK_ID = p.HierarchyNode_PK_ID " +
+                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] a ON (c.Path LIKE CONCAT('%', a.Name, '%') OR c.Path LIKE CONCAT('%', a.DisplayName, '%')) " +
                 "            WHERE (c.Name = :assetName OR c.DisplayName = :assetName) AND c.IsDeleted = 0 " +
-                "              AND (hn.Path LIKE CONCAT('%', p.Name, '%') OR hn.Path LIKE CONCAT('%', p.DisplayName, '%'))" +
+                "              AND a.IsDeleted = 0 AND a.EntityType = 'Asset' " +
+                "              AND (hn.Path LIKE CONCAT('%', a.Name, '%') OR hn.Path LIKE CONCAT('%', a.DisplayName, '%'))" +
                 "        )" +
                 "    ) " +
                 "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
@@ -1169,9 +1170,10 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 "        hn.Path LIKE CONCAT('%', :assetName, '%') " +
                 "        OR EXISTS (" +
                 "            SELECT 1 FROM [" + db1Name + "].[dbo].[HierarchyNodes] c " +
-                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] p ON c.Parent_PK_ID = p.HierarchyNode_PK_ID " +
+                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] a ON (c.Path LIKE CONCAT('%', a.Name, '%') OR c.Path LIKE CONCAT('%', a.DisplayName, '%')) " +
                 "            WHERE (c.Name = :assetName OR c.DisplayName = :assetName) AND c.IsDeleted = 0 " +
-                "              AND (hn.Path LIKE CONCAT('%', p.Name, '%') OR hn.Path LIKE CONCAT('%', p.DisplayName, '%'))" +
+                "              AND a.IsDeleted = 0 AND a.EntityType = 'Asset' " +
+                "              AND (hn.Path LIKE CONCAT('%', a.Name, '%') OR hn.Path LIKE CONCAT('%', a.DisplayName, '%'))" +
                 "        )" +
                 "    ) " +
                 "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
@@ -1190,9 +1192,10 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 "        hn.Path LIKE CONCAT('%', :assetName, '%') " +
                 "        OR EXISTS (" +
                 "            SELECT 1 FROM [" + db1Name + "].[dbo].[HierarchyNodes] c " +
-                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] p ON c.Parent_PK_ID = p.HierarchyNode_PK_ID " +
+                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] a ON (c.Path LIKE CONCAT('%', a.Name, '%') OR c.Path LIKE CONCAT('%', a.DisplayName, '%')) " +
                 "            WHERE (c.Name = :assetName OR c.DisplayName = :assetName) AND c.IsDeleted = 0 " +
-                "              AND (hn.Path LIKE CONCAT('%', p.Name, '%') OR hn.Path LIKE CONCAT('%', p.DisplayName, '%'))" +
+                "              AND a.IsDeleted = 0 AND a.EntityType = 'Asset' " +
+                "              AND (hn.Path LIKE CONCAT('%', a.Name, '%') OR hn.Path LIKE CONCAT('%', a.DisplayName, '%'))" +
                 "        )" +
                 "    ) " +
                 "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
