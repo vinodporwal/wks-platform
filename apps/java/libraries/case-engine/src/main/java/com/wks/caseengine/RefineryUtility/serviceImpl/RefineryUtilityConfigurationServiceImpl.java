@@ -36,6 +36,8 @@ import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionMonthlyDTO;
+import com.wks.caseengine.RefineryUtility.dto.AntifoamDTO;
+import com.wks.caseengine.RefineryUtility.dto.AntiscalantDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorDTO;
@@ -1840,5 +1842,213 @@ public String getCommodityChemicalsConsumptionMonthlyAttributeValue(CommodityChe
 	}
 }
 
+@Override
+public AOPMessageVM getAntiscalantData(String year, String plantFKId) {
+	
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName() + "_GetAntiscalant";
+	
+		List<Object[]> resultList = new ArrayList<>();
+	
+		resultList = getAntiscalantDataFromSP(year, plantFKId, procedureName);
+		List<AntiscalantDTO> dtoList = new ArrayList<>();
+
+		for (Object[] row : resultList) {
+
+			AntiscalantDTO dto = new AntiscalantDTO();
+
+			dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+			dto.setName(row[1] != null ? row[1].toString() : null);
+			dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+			dto.setUom(row[3] != null ? row[3].toString() : null);
+			dto.setNormType(row[4] != null ? row[4].toString() : null);
+			dto.setApril(row[5] != null ? row[5].toString() : null);
+			dto.setAuditYear(row[6] != null ? row[6].toString() : null);
+			dto.setRemarks(row[7] != null ? row[7].toString() : null);
+			dto.setDisplayOrder(row[8] != null ? Integer.parseInt(row[8].toString()) : null);
+			Boolean isEditable = null;
+			if (row[9] != null) {
+				if (row[9] instanceof Boolean) {
+					isEditable = (Boolean) row[9];
+				} else if (row[9] instanceof Number) {
+					isEditable = ((Number) row[9]).intValue() == 1;
+				}
+			}
+			dto.setIsEditable(isEditable);
+			
+			dtoList.add(dto);
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	
+}
+
+public List<Object[]> getAntiscalantDataFromSP(String aopYear, String plantId, String procedureName) {
+	try {
+		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantId);
+		query.setParameter("aopYear", aopYear);
+
+		return query.getResultList();
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+@Override
+@Transactional
+public List<AntiscalantDTO> saveAntiscalantInDB(List<AntiscalantDTO> antiscalantDTOList, String plantId, String year) {
+
+	List<AntiscalantDTO> failedList = new ArrayList<>();
+
+	for(AntiscalantDTO antiscalantDTO : antiscalantDTOList) {
+
+	UUID normParameterFKId = UUID.fromString(antiscalantDTO.getNormParameterFKId());
+	String attributeValue = antiscalantDTO.getApril();
+	String remark = antiscalantDTO.getRemarks();
+
+	Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, year);
+
+	NormAttributeTransactions normAttributeTransactions;
+
+	if (existingRecord.isPresent()) {
+		normAttributeTransactions = existingRecord.get();
+		normAttributeTransactions.setModifiedOn(new Date());
+
+	} else {
+
+		normAttributeTransactions = new NormAttributeTransactions();
+		normAttributeTransactions.setCreatedOn(new Date());
+		normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+		normAttributeTransactions.setAopMonth(4);
+		normAttributeTransactions.setAuditYear(year);
+	}
+
+	normAttributeTransactions
+			.setAttributeValue(attributeValue);
+	normAttributeTransactions.setRemarks(remark);
+	normAttributeTransactions.setUserName(Utility.getUserName());
+	normAttributeTransactionsRepository.save(normAttributeTransactions);
+	}
+
+	return failedList;
+
+	}
+
+
+	@Override
+	public AOPMessageVM getAntifoamData(String year, String plantFKId) {
+	
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetAntifoam";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = getAntifoamDataFromSP(year, plantFKId, procedureName);
+			List<AntifoamDTO> dtoList = new ArrayList<>();
+	
+			for (Object[] row : resultList) {
+	
+				AntifoamDTO dto = new AntifoamDTO();
+	
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : null);
+				dto.setName(row[1] != null ? row[1].toString() : null);
+				dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+				dto.setUom(row[3] != null ? row[3].toString() : null);
+				dto.setNormType(row[4] != null ? row[4].toString() : null);
+				dto.setApril(row[5] != null ? row[5].toString() : null);
+				dto.setAuditYear(row[6] != null ? row[6].toString() : null);
+				dto.setRemarks(row[7] != null ? row[7].toString() : null);
+				dto.setDisplayOrder(row[8] != null ? Integer.parseInt(row[8].toString()) : null);
+				Boolean isEditable = null;
+				if (row[9] != null) {
+					if (row[9] instanceof Boolean) {
+						isEditable = (Boolean) row[9];
+					} else if (row[9] instanceof Number) {
+						isEditable = ((Number) row[9]).intValue() == 1;
+					}
+				}
+				dto.setIsEditable(isEditable);
+				
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+	
+	}
+	
+	public List<Object[]> getAntifoamDataFromSP(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
+	
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+	
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	@Override
+	@Transactional
+	public List<AntifoamDTO> saveAntifoamInDB(List<AntifoamDTO> antifoamDTOList, String plantId, String year) {
+	
+		List<AntifoamDTO> failedList = new ArrayList<>();
+	
+		for(AntifoamDTO antifoamDTO : antifoamDTOList) {
+	
+		UUID normParameterFKId = UUID.fromString(antifoamDTO.getNormParameterFKId());
+		String attributeValue = antifoamDTO.getApril();
+		String remark = antifoamDTO.getRemarks();
+	
+		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, year);
+	
+		NormAttributeTransactions normAttributeTransactions;
+	
+		if (existingRecord.isPresent()) {
+			normAttributeTransactions = existingRecord.get();
+			normAttributeTransactions.setModifiedOn(new Date());
+	
+		} else {
+	
+			normAttributeTransactions = new NormAttributeTransactions();
+			normAttributeTransactions.setCreatedOn(new Date());
+			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+			normAttributeTransactions.setAopMonth(4);
+			normAttributeTransactions.setAuditYear(year);
+		}
+	
+		normAttributeTransactions
+				.setAttributeValue(attributeValue);
+		normAttributeTransactions.setRemarks(remark);
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactionsRepository.save(normAttributeTransactions);
+		}
+	
+		return failedList;
+		
+		}
 
 }

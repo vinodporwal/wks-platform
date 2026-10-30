@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.RefineryUtility.dto.AntifoamDTO;
+import com.wks.caseengine.RefineryUtility.dto.AntiscalantDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
@@ -44,4 +46,8 @@ public interface RefineryUtilityConfigurationService {
     public List<TreatmentVendorConsumptionMonthlyDTO> saveTreatmentVendorConsumptionMonthly(String year, String plantFKId, List<TreatmentVendorConsumptionMonthlyDTO> treatmentVendorConsumptionMonthlyDTOList);
     public AOPMessageVM getCommodityChemicalsConsumptionMonthly(String year, String plantFKId);
     public List<CommodityChemicalsConsumptionMonthlyDTO> saveCommodityChemicalsConsumptionMonthly(String year, String plantFKId, List<CommodityChemicalsConsumptionMonthlyDTO> commodityChemicalsConsumptionMonthlyDTOList);
+    public AOPMessageVM getAntiscalantData(String year, String plantFKId);
+    public List<AntiscalantDTO> saveAntiscalantInDB(List<AntiscalantDTO> antiscalantDTOList, String plantId, String year);
+    public AOPMessageVM getAntifoamData(String year, String plantFKId);
+    public List<AntifoamDTO> saveAntifoamInDB(List<AntifoamDTO> antifoamDTOList, String plantId, String year);
 }
