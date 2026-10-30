@@ -1126,29 +1126,23 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
     @Override
     public List<Case> getCaseDetails(String displayName, String hierarchyName) {
+        String mainAsset = resolveMainAsset(displayName);
         String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
                 "WHERE (c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "OR c.asset_name LIKE CONCAT('%', :mainAsset, '%') " +
                 "OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
                 "    SELECT hn.HierarchyNode_PK_ID " +
                 "    FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
                 "    JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
                 "    ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
                 "    WHERE hn.IsDeleted = 0 " +
-                "    AND (" +
-                "        hn.Path LIKE CONCAT('%', :assetName, '%') " +
-                "        OR EXISTS (" +
-                "            SELECT 1 FROM [" + db1Name + "].[dbo].[HierarchyNodes] c " +
-                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] a ON (c.Path LIKE CONCAT('%', a.Name, '%') OR c.Path LIKE CONCAT('%', a.DisplayName, '%')) " +
-                "            WHERE (c.Name = :assetName OR c.DisplayName = :assetName) AND c.IsDeleted = 0 " +
-                "              AND a.IsDeleted = 0 AND a.EntityType = 'Asset' " +
-                "              AND (hn.Path LIKE CONCAT('%', a.Name, '%') OR hn.Path LIKE CONCAT('%', a.DisplayName, '%'))" +
-                "        )" +
-                "    ) " +
+                "    AND hn.Path LIKE CONCAT('%', :mainAsset, '%') " +
                 "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
                 ")) " +
                 "" +
                 "ORDER BY c.case_no DESC";
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+        nativeQuery.setParameter("mainAsset", mainAsset);
         nativeQuery.setParameter("assetName", displayName);
         nativeQuery.setParameter("hierarchyName", (hierarchyName == null || hierarchyName.isEmpty()) ? null : hierarchyName);
         List<Case> cases = nativeQuery.getResultList();
@@ -1158,46 +1152,31 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
     @Override
     public List<Case> getCaseDetails(String displayName, String hierarchyName, int page, int size) {
+        String mainAsset = resolveMainAsset(displayName);
         String baseQuery = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
                 "WHERE (c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "OR c.asset_name LIKE CONCAT('%', :mainAsset, '%') " +
                 "OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
                 "    SELECT hn.HierarchyNode_PK_ID " +
                 "    FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
                 "    JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
                 "    ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
                 "    WHERE hn.IsDeleted = 0 " +
-                "    AND (" +
-                "        hn.Path LIKE CONCAT('%', :assetName, '%') " +
-                "        OR EXISTS (" +
-                "            SELECT 1 FROM [" + db1Name + "].[dbo].[HierarchyNodes] c " +
-                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] a ON (c.Path LIKE CONCAT('%', a.Name, '%') OR c.Path LIKE CONCAT('%', a.DisplayName, '%')) " +
-                "            WHERE (c.Name = :assetName OR c.DisplayName = :assetName) AND c.IsDeleted = 0 " +
-                "              AND a.IsDeleted = 0 AND a.EntityType = 'Asset' " +
-                "              AND (hn.Path LIKE CONCAT('%', a.Name, '%') OR hn.Path LIKE CONCAT('%', a.DisplayName, '%'))" +
-                "        )" +
-                "    ) " +
+                "    AND hn.Path LIKE CONCAT('%', :mainAsset, '%') " +
                 "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
                 ")) " +
                 "" +
                 "ORDER BY c.case_no DESC";
         String countQuery = "SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
                 "WHERE (c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "OR c.asset_name LIKE CONCAT('%', :mainAsset, '%') " +
                 "OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
                 "    SELECT hn.HierarchyNode_PK_ID " +
                 "    FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
                 "    JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
                 "    ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
                 "    WHERE hn.IsDeleted = 0 " +
-                "    AND (" +
-                "        hn.Path LIKE CONCAT('%', :assetName, '%') " +
-                "        OR EXISTS (" +
-                "            SELECT 1 FROM [" + db1Name + "].[dbo].[HierarchyNodes] c " +
-                "            JOIN [" + db1Name + "].[dbo].[HierarchyNodes] a ON (c.Path LIKE CONCAT('%', a.Name, '%') OR c.Path LIKE CONCAT('%', a.DisplayName, '%')) " +
-                "            WHERE (c.Name = :assetName OR c.DisplayName = :assetName) AND c.IsDeleted = 0 " +
-                "              AND a.IsDeleted = 0 AND a.EntityType = 'Asset' " +
-                "              AND (hn.Path LIKE CONCAT('%', a.Name, '%') OR hn.Path LIKE CONCAT('%', a.DisplayName, '%'))" +
-                "        )" +
-                "    ) " +
+                "    AND hn.Path LIKE CONCAT('%', :mainAsset, '%') " +
                 "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
                 ")) " +
                 "";
@@ -1206,10 +1185,12 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
         Query countNativeQuery = entityManager.createNativeQuery(countQuery);
         countNativeQuery.setParameter("assetName", displayName);
+        countNativeQuery.setParameter("mainAsset", mainAsset);
         countNativeQuery.setParameter("hierarchyName", hn);
         long total = ((Number) countNativeQuery.getSingleResult()).longValue();
 
         Query nativeQuery = entityManager.createNativeQuery(baseQuery, Case.class);
+        nativeQuery.setParameter("mainAsset", mainAsset);
         nativeQuery.setParameter("assetName", displayName);
         nativeQuery.setParameter("hierarchyName", hn);
         nativeQuery.setFirstResult(page * size);
@@ -1223,6 +1204,26 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
 
     // thread-local to pass total count back to controller without changing return type
     public static final ThreadLocal<Long> totalHolder = new ThreadLocal<>();
+
+    private String resolveMainAsset(String displayName) {
+        if (displayName == null || displayName.isBlank()) return displayName;
+        try {
+            String sql = "SELECT TOP 1 Path FROM [" + db1Name + "].[dbo].[HierarchyNodes] WHERE (DisplayName = :assetName OR Name = :assetName) AND IsDeleted = 0";
+            Query q = entityManager.createNativeQuery(sql);
+            q.setParameter("assetName", displayName);
+            List<?> res = q.getResultList();
+            if (!res.isEmpty() && res.get(0) != null) {
+                String cleanPath = res.get(0).toString().replaceFirst("^[\\\\/]+", "");
+                String[] parts = cleanPath.split("[/\\\\]");
+                if (parts.length >= 5) {
+                    return parts[4].trim();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not resolve mainAsset for {}", displayName, e);
+        }
+        return displayName;
+    }
 
     @Override
     public List<Case> getCaseDetails(LocalDate from, LocalDate to, String status) {
@@ -2018,6 +2019,7 @@ public List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String ass
                     ") ORDER BY c.case_no DESC";
 	
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+        nativeQuery.setParameter("mainAsset", mainAsset);
             nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
 	        nativeQuery.setParameter("assetName", assetName);
 		    nativeQuery.setParameter("hierarchyName", hierarchyName);
