@@ -1142,8 +1142,9 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
                 "" +
                 "ORDER BY c.case_no DESC";
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
-        nativeQuery.setParameter("mainAsset", mainAsset);
+
         nativeQuery.setParameter("assetName", displayName);
+        nativeQuery.setParameter("mainAsset", mainAsset);
         nativeQuery.setParameter("hierarchyName", (hierarchyName == null || hierarchyName.isEmpty()) ? null : hierarchyName);
         List<Case> cases = nativeQuery.getResultList();
         cases.forEach(c -> c.setAssignedTo(new java.util.ArrayList<>()));
@@ -1190,8 +1191,9 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
         long total = ((Number) countNativeQuery.getSingleResult()).longValue();
 
         Query nativeQuery = entityManager.createNativeQuery(baseQuery, Case.class);
-        nativeQuery.setParameter("mainAsset", mainAsset);
+
         nativeQuery.setParameter("assetName", displayName);
+        nativeQuery.setParameter("mainAsset", mainAsset);
         nativeQuery.setParameter("hierarchyName", hn);
         nativeQuery.setFirstResult(page * size);
         nativeQuery.setMaxResults(size);
@@ -2019,7 +2021,7 @@ public List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String ass
                     ") ORDER BY c.case_no DESC";
 	
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
-        nativeQuery.setParameter("mainAsset", mainAsset);
+
             nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
 	        nativeQuery.setParameter("assetName", assetName);
 		    nativeQuery.setParameter("hierarchyName", hierarchyName);
