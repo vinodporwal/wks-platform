@@ -164,20 +164,22 @@ public class NormBasisServiceImpl implements NormBasisService {
 
     private List<NormBasisDTO> fetchNormBasisFromProcedure(UUID plantId, String aopYear, String procedureName) {
         String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-            NormBasisDTO.builder()
-                .id(UUID.fromString(rs.getString("Id")))
-                .name(rs.getString("DisplayName"))
-                .displayName(rs.getString("DisplayName"))
-                .uom(rs.getString("UOM"))
-                .attributeValue(rs.getString("AttributeValue"))
-                .remarks(rs.getString("Remarks"))
-                .type(rs.getString("Type"))
-                .normParameterType(rs.getString("NormParameterType"))
-                .displayOrder(rs.getString("DisplayOrder"))
-                .isEditable(rs.getBoolean("IsEditable"))
-                .config(rs.getString("Config"))
-                .build(),
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                String idStr = rs.getString("Id");
+                return NormBasisDTO.builder()
+                    .id(idStr != null ? UUID.fromString(idStr) : null)
+                    .name(rs.getString("DisplayName"))
+                    .displayName(rs.getString("DisplayName"))
+                    .uom(rs.getString("UOM"))
+                    .attributeValue(rs.getString("AttributeValue"))
+                    .remarks(rs.getString("Remarks"))
+                    .type(rs.getString("Type"))
+                    .normParameterType(rs.getString("NormParameterType"))
+                    .displayOrder(rs.getString("DisplayOrder"))
+                    .isEditable(rs.getBoolean("IsEditable"))
+                    .config(rs.getString("Config"))
+                    .build();
+            },
             plantId.toString(), aopYear
         );
     }
