@@ -1127,8 +1127,17 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
     @Override
     public List<Case> getCaseDetails(String displayName, String hierarchyName) {
         String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
-                "WHERE c.asset_name LIKE CONCAT('%', :assetName, '%') " +
-                "AND (:hierarchyName IS NULL OR c.hierarchy_name = :hierarchyName) " +
+                "WHERE (c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                "    SELECT hn.HierarchyNode_PK_ID " +
+                "    FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                "    JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+                "    ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                "    WHERE hn.IsDeleted = 0 " +
+                "    AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+                "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
+                ")) " +
+                "" +
                 "ORDER BY c.case_no DESC";
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
         nativeQuery.setParameter("assetName", displayName);
@@ -1141,12 +1150,30 @@ if (ownerEmail != null && !ownerEmail.isBlank() && !ccList.contains(ownerEmail))
     @Override
     public List<Case> getCaseDetails(String displayName, String hierarchyName, int page, int size) {
         String baseQuery = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
-                "WHERE c.asset_name LIKE CONCAT('%', :assetName, '%') " +
-                "AND (:hierarchyName IS NULL OR c.hierarchy_name = :hierarchyName) " +
+                "WHERE (c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                "    SELECT hn.HierarchyNode_PK_ID " +
+                "    FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                "    JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+                "    ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                "    WHERE hn.IsDeleted = 0 " +
+                "    AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+                "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
+                ")) " +
+                "" +
                 "ORDER BY c.case_no DESC";
         String countQuery = "SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
-                "WHERE c.asset_name LIKE CONCAT('%', :assetName, '%') " +
-                "AND (:hierarchyName IS NULL OR c.hierarchy_name = :hierarchyName)";
+                "WHERE (c.asset_name LIKE CONCAT('%', :assetName, '%') " +
+                "OR TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                "    SELECT hn.HierarchyNode_PK_ID " +
+                "    FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                "    JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+                "    ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                "    WHERE hn.IsDeleted = 0 " +
+                "    AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+                "    AND (:hierarchyName IS NULL OR ht.HierarchyType = :hierarchyName)" +
+                ")) " +
+                "";
 
         String hn = (hierarchyName == null || hierarchyName.isEmpty()) ? null : hierarchyName;
 
