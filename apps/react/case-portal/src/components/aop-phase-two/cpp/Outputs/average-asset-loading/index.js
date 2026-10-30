@@ -296,7 +296,7 @@ const AverageAssetLoading = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['cppPlantName']}
+        groupBy={['cppPlantName','assetType']}
         customHeight={65}
         pagable={false}
       />

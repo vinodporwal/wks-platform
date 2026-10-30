@@ -117,6 +117,18 @@ export const InputApiService = {
   exportPricesExcel,
   savePricesExcel,
 
+  // Used in: common/Prices/EdRpoRate.js
+  getActualRateEDRPO,
+  saveActualRateEDRPO,
+  exportActualRateEDRPOExcel,
+  saveActualRateEDRPOExcel,
+
+  // Used in: common/Prices/EdRpoMapping.js
+  getEdRpoMapping,
+  saveEdRpoMapping,
+  exportEdRpoMappingExcel,
+  saveEdRpoMappingExcel,
+
   // Used in: ImportPowerMain/InterSitePowerTransferGrid.js
   // NOTE: Backend endpoints pending DB table. Methods are ready to wire up.
   getInterSitePowerTransfer,
@@ -2018,4 +2030,131 @@ async function saveInterSitePowerTransferExcel(
       aopYear,
     },
   )
+}
+
+// ========================|| CPP Actual Rate EDRPO APIs ||=====================================//
+
+// GET /task/jmd/actual-rate-edrpo?aopYear=2025-26
+async function getActualRateEDRPO(keycloak, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/actual-rate-edrpo?aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('[EdRpoRate] Error fetching Actual Rate EDRPO data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/actual-rate-edrpo?aopYear=2025-26
+async function saveActualRateEDRPO(keycloak, aopYear, payload) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/actual-rate-edrpo?aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('[EdRpoRate] Error saving Actual Rate EDRPO data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/actual-rate-edrpo/export?aopYear=2025-26
+async function exportActualRateEDRPOExcel(keycloak, aopYear, EXCEL_NAME) {
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/actual-rate-edrpo/export',
+    queryParams: { aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/actual-rate-edrpo/import?aopYear=2025-26 (multipart)
+async function saveActualRateEDRPOExcel(file, keycloak, aopYear) {
+  return saveExcelData(file, keycloak, 'jmd/actual-rate-edrpo/import', null, null, {
+    aopYear,
+  })
+}
+
+// ========================|| CPP ED RPO Mapping APIs ||=====================================//
+
+// GET /task/jmd/ed-rpo-mapping?plantIds=...&aopYear=2025-26
+async function getEdRpoMapping(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/jmd/ed-rpo-mapping?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('[EdRpoMapping] Error fetching ED RPO Mapping data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/ed-rpo-mapping?plantIds=...&aopYear=2025-26
+async function saveEdRpoMapping(keycloak, plantIds, aopYear, payload) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const url = `${Config.CaseEngineUrl}/task/jmd/ed-rpo-mapping?plantIds=${plantIdArray.join(',')}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('[EdRpoMapping] Error saving ED RPO Mapping data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/ed-rpo-mapping/export?plantIds=...&aopYear=2025-26
+async function exportEdRpoMappingExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/ed-rpo-mapping/export',
+    queryParams: { plantIds: plantIdArray.join(','), aopYear },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/ed-rpo-mapping/import?plantIds=...&aopYear=2025-26 (multipart)
+async function saveEdRpoMappingExcel(file, keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(file, keycloak, 'jmd/ed-rpo-mapping/import', null, null, {
+    plantIds: plantIdArray.join(','),
+    aopYear,
+  })
 }
