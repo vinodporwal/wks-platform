@@ -30,6 +30,10 @@ export const OutputApiService = {
   getPowerDemand,
   exportPowerDemand: exportPowerDemandExcel,
   exportPowerDemandExcel,
+
+  // Used in: Outputs/monthly-asset-dispatch/index.js (Monthly Asset Dispatch output grid)
+  getMonthlyAssetDispatch,
+  exportMonthlyAssetDispatchExcel,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -574,6 +578,87 @@ async function exportPowerDemandExcel(
     return { success: true, message: 'Excel exported successfully' }
   } catch (e) {
     console.error('Error exporting Power Demand Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || MONTHLY ASSET DISPATCH OUTPUT APIs || ===================== //
+// GET /task/jmd/monthly-asset-dispatch?plantIds=...&aopYear=...
+// Calls SP dbo.CPP_GetMonthlyAssetDispatch.
+// Returns one row per (plant × asset) with per-month GenerationQty, GenerationUOM,
+// IsAvailable, IsDispatched, and Loading values.
+// Each row contains: id, cppPlantId, cppPlant, plantCode, utilityPlant,
+//   utility, utilityCode, asset, assetMasterType, assetType,
+//   material, materialCode, materialPlant, materialPlantCode,
+//   priority, minLoading, maxLoading, loadingUOM, netOperatingHours,
+//   heatRate, heatRateUOM, mandatoryToRun, sourceType, sourceDirection,
+//   and 12 monthly groups ({mon}GenerationQty, {mon}GenerationUOM,
+//   {mon}IsAvailable, {mon}IsDispatched, {mon}Loading) for apr → mar.
+async function getMonthlyAssetDispatch(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-asset-dispatch?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching monthly asset dispatch data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/monthly-asset-dispatch/export?plantIds=...&aopYear=...
+async function exportMonthlyAssetDispatchExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/monthly-asset-dispatch/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting monthly asset dispatch Excel:', e)
     return Promise.reject(e)
   }
 }

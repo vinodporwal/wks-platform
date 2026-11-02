@@ -894,7 +894,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			if (isAfterSave) {
 				writeProposedSteadyStateSheet(workbook, "Errors",
-						dtoList != null ? dtoList : Collections.emptyList(), true);
+						dtoList != null ? dtoList : Collections.emptyList(), true, aopYear);
 			} else {
 
 				Map<String, Object> responseData =
@@ -903,10 +903,10 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		       List<ProposedAOPDTO> data =
 				(List<ProposedAOPDTO>) responseData.get("proposedAOP");
 				
-				writeProposedSteadyStateSheet(workbook, "Proposed Steady State", data, false);
+				writeProposedSteadyStateSheet(workbook, "Proposed Steady State", data, false, aopYear);
 
 				if (workbook.getNumberOfSheets() == 0) {
-					writeProposedSteadyStateSheet(workbook, "No Data", Collections.emptyList(), false);
+					writeProposedSteadyStateSheet(workbook, "No Data", Collections.emptyList(), false, aopYear);
 				}
 			}
 
@@ -919,8 +919,32 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		}
 	}
 
+	/**
+	 * Derives the previous fiscal-year string from the AOP year.
+	 * e.g. "2026-27" → "2025-26"
+	 */
+	private String getPreviousFiscalYear(String aopYear) {
+		if (aopYear == null || !aopYear.matches("\\d{4}-\\d{2}")) {
+			return aopYear != null ? aopYear : "";
+		}
+		String[] parts = aopYear.split("-");
+		int startYear = Integer.parseInt(parts[0]) - 1;
+		int endYY     = Integer.parseInt(parts[1]) - 1;
+		return startYear + "-" + String.format("%02d", endYY);
+	}
+
+	/** e.g. "2026-27" → "Budget 2025-26" */
+	private String getBudgetColumnName(String aopYear) {
+		return "Budget " + getPreviousFiscalYear(aopYear);
+	}
+
+	/** e.g. "2026-27" → "Actual 2025-26" */
+	private String getActualColumnName(String aopYear) {
+		return "Actual " + getPreviousFiscalYear(aopYear);
+	}
+
 	private void writeProposedSteadyStateSheet(Workbook workbook, String sheetName,
-			List<ProposedAOPDTO> dtoList, boolean isAfterSave) {
+			List<ProposedAOPDTO> dtoList, boolean isAfterSave, String aopYear) {
 
 		Sheet sheet = workbook.createSheet(createUniqueSheetName(workbook, sheetName));
 		int currentRow = 0;
@@ -930,7 +954,9 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		// Columns 13-14: isAfterSave only (Status, Error Description)
 		// Col 0: SAP MAT Code | Col 1: Particulars
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
-				"SAP MAT Code", "Particulars", "UOM / MT", "Last FY", "Actual Last FY", "Sys Gen", "Proposed", "Remarks",
+				"SAP MAT Code", "Particulars", "UOM / MT",
+				getBudgetColumnName(aopYear), getActualColumnName(aopYear),
+				"Sys Gen", "Proposed", "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
