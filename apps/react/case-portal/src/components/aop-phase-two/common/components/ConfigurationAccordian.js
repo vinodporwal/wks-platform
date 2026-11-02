@@ -76,6 +76,7 @@ const ConfigurationAccordian = ({
       { vertical: 'hydrotreater', site: 'dta', plant: 'vgoht-2' },
       { vertical: 'hydrotreater', site: 'dta', plant: 'dht1' },
       { vertical: 'hydrotreater', site: 'dta', plant: 'dht2' },
+      { vertical: 'hydrotreater', site: 'dta', plant: 'kht' },
     ]
     return validConfigs.some(
       (config) =>

@@ -780,11 +780,7 @@ const SignOffReport = () => {
    */
   const handleCalculate = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-
-    setRows([])
-    setOriginalRows([])
-    setModifiedCells({})
-
+    setLoading(true)
     // Resolve periodFrom & periodTo
     let periodFrom = null
     let periodTo = null
