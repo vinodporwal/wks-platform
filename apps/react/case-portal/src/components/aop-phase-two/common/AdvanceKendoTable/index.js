@@ -618,6 +618,26 @@ const AdvanceKendoTable = ({
           col.isVisible !== false,
       ) || []
 
+    const flattenCols = (cols = []) => {
+      const result = []
+      const traverse = (items) => {
+        items?.forEach((c) => {
+          if (c.children && Array.isArray(c.children)) {
+            traverse(c.children)
+          } else if (!hiddenFields.includes(c.field) && !c.hidden && c.isVisible !== false) {
+            result.push(c)
+          }
+        })
+      }
+      traverse(cols)
+      return result
+    }
+    const leafColumns = flattenCols(columns)
+    const exportMonthCols = leafColumns.slice(2).filter((c) => {
+      const f = (c.field || '').toLowerCase()
+      return f && !f.includes('remark') && !f.includes('action')
+    })
+
     options.sheets.forEach((sheet) => {
       let maxCols = 1
 
@@ -735,15 +755,18 @@ const AdvanceKendoTable = ({
           // -----------------------------
           if (isHeader) {
             const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
-            const col = visibleColumns[cIdx]
-            const isGroupedMonthCol = Boolean(
-              col?.group ||
-              (col?.field && col.field.includes('~')) ||
-              /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(col?.title || col?.field || '')
-            )
-            if (isSignOff && row.type === 'header' && isGroupedMonthCol) {
+
+            if (typeof cell.value === 'string' && cell.value.includes('~')) {
+              cell.value = cell.value.split('~')[0].replace(/_/g, ' ').trim()
+            }
+
+            const cellValStr = String(cell.value || '').trim()
+            const isMonthHeader = /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(cellValStr)
+            const isSubHeaderCell = headerRowCount > 1 && rIdx > 0 && (!cell.rowSpan || cell.rowSpan === 1)
+
+            if (isSignOff && (isMonthHeader || isSubHeaderCell)) {
               cell.background = '#CCFFFF'
-            } else if (row.type === 'group-header' && cell.value) {
+            } else if (cell.value && (row.type === 'group-header' || Number(cell.colSpan) > 1 || rIdx === 0)) {
               cell.background = '#DFDFDF'
             } else {
               cell.background = cell.value ? '#DFDFDF' : '#ffffff'
@@ -761,10 +784,6 @@ const AdvanceKendoTable = ({
             cell.background = '#ffffff'
           }
 
-          if (row.type === 'header' && typeof cell.value === 'string' && cell.value.includes('~')) {
-            cell.value = cell.value.split('~')[0].replace(/_/g, ' ').trim()
-          }
-
           // -----------------------------
           // Data styling
           // -----------------------------
@@ -773,27 +792,34 @@ const AdvanceKendoTable = ({
             const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
             const rawUom = dataRow?.UOM ?? dataRow?.uom
             const isUomBlank = rawUom === undefined || rawUom === null || String(rawUom).trim() === ''
-            const labelField = visibleColumns[0]?.field
+            const labelField = leafColumns[0]?.field || visibleColumns[0]?.field
             const labelVal = dataRow ? dataRow[labelField] : ''
             const hasLabel = labelVal !== undefined && labelVal !== null && String(labelVal).trim() !== ''
 
-            // Category Header detection: (UOM blank + Rest All Keys-Values are Blank)
-            const isRestAllBlank = Boolean(
+            // Category Header detection: (UOM blank + Rest All Month Keys-Values are Blank)
+            const isAllMonthValuesBlank = Boolean(
               isSignOff &&
               dataRow &&
-              visibleColumns.slice(2).every((c) => {
-                const val = dataRow[c.field]
-                return val === undefined || val === null || String(val).trim() === ''
-              })
+              (exportMonthCols.length > 0
+                ? exportMonthCols.every((c) => {
+                    const val = dataRow[c.field]
+                    return val === undefined || val === null || String(val).trim() === ''
+                  })
+                : Object.keys(dataRow)
+                    .filter((k) => k.includes('~') || /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(k))
+                    .every((k) => {
+                      const val = dataRow[k]
+                      return val === undefined || val === null || String(val).trim() === ''
+                    })
+              )
             )
-            const isCategoryHeader = isSignOff && isUomBlank && isRestAllBlank && hasLabel
+            const isCategoryHeader = isSignOff && isUomBlank && isAllMonthValuesBlank && hasLabel
 
             // Parameter & UOM header row detection
             const isParameterHeaderRow = Boolean(
               isSignOff &&
               dataRow &&
-              String(labelVal).trim().toLowerCase() === 'parameter' &&
-              String(rawUom).trim().toLowerCase() === 'uom'
+              String(labelVal).trim().toLowerCase() === 'parameter'
             )
 
             if (isCategoryHeader) {
@@ -813,7 +839,7 @@ const AdvanceKendoTable = ({
               if (isRowNonEditable) {
                 cell.disabled = true
               } else {
-                const col = visibleColumns[cIdx]
+                const col = leafColumns[cIdx] || visibleColumns[cIdx]
                 cell.disabled = col?.editable === false
               }
             }
@@ -3169,38 +3195,57 @@ const AdvanceKendoTable = ({
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
     const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
-    const visibleCols =
-      columns?.filter(
-        (c) =>
-          !hiddenFields.includes(c.field) &&
-          !c.hidden &&
-          c.isVisible !== false,
-      ) || []
-    const isFirstCol = props.field === visibleCols[0]?.field
-    const isSecondCol = props.field === visibleCols[1]?.field
+
+    const leafCols = []
+    const traverseLeafs = (items) => {
+      items?.forEach((c) => {
+        if (c.children && Array.isArray(c.children)) {
+          traverseLeafs(c.children)
+        } else if (!hiddenFields.includes(c.field) && !c.hidden && c.isVisible !== false) {
+          leafCols.push(c)
+        }
+      })
+    }
+    traverseLeafs(columns || [])
+
+    const isFirstCol = props.field === leafCols[0]?.field
+    const isSecondCol = props.field === leafCols[1]?.field
     const rawUom = props.dataItem?.UOM ?? props.dataItem?.uom
     const isUomBlank = rawUom === undefined || rawUom === null || String(rawUom).trim() === ''
-    const labelField = visibleCols[0]?.field
+    const labelField = leafCols[0]?.field
     const labelVal = props.dataItem ? props.dataItem[labelField] : ''
     const hasLabel = labelVal !== undefined && labelVal !== null && String(labelVal).trim() !== ''
 
-    // Category Header detection: (UOM blank + Rest All Keys-Values are Blank)
-    const isRestAllBlank = Boolean(
+    // Month-wise columns: all leaf columns after leading label & UOM, excluding remarks/actions
+    const cellMonthCols = leafCols.slice(2).filter((c) => {
+      const f = (c.field || '').toLowerCase()
+      return f && !f.includes('remark') && !f.includes('action')
+    })
+
+    // Category Header detection: (UOM blank + Rest All Month Keys-Values are Blank)
+    const isAllMonthValuesBlank = Boolean(
       isSignOff &&
       props.dataItem &&
-      visibleCols.slice(2).every((c) => {
-        const val = props.dataItem[c.field]
-        return val === undefined || val === null || String(val).trim() === ''
-      })
+      (cellMonthCols.length > 0
+        ? cellMonthCols.every((c) => {
+            const val = props.dataItem[c.field]
+            return val === undefined || val === null || String(val).trim() === ''
+          })
+        : Object.keys(props.dataItem)
+            .filter((k) => k.includes('~') || /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(k))
+            .every((k) => {
+              const val = props.dataItem[k]
+              return val === undefined || val === null || String(val).trim() === ''
+            })
+      )
     )
-    const isCategoryHeader = isSignOff && isUomBlank && isRestAllBlank && hasLabel
+    const isCategoryHeader = isSignOff && isUomBlank && isAllMonthValuesBlank && hasLabel
     const isCategoryHeaderCell = isCategoryHeader && isFirstCol
 
     const isParameterHeaderRow = Boolean(
       isSignOff &&
       props.dataItem &&
-      String(labelVal).trim().toLowerCase() === 'parameter' &&
-      String(rawUom).trim().toLowerCase() === 'uom'
+      String(labelVal).trim().toLowerCase() === 'parameter'
     )
     const isParameterHeaderCell = isParameterHeaderRow && (isFirstCol || isSecondCol)
 
