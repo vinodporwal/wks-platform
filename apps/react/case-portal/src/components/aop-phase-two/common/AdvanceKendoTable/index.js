@@ -734,10 +734,23 @@ const AdvanceKendoTable = ({
           // Header styling
           // -----------------------------
           if (isHeader) {
-            cell.background = '#DFDFDF'
+            const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
+            const col = visibleColumns[cIdx]
+            const isGroupedMonthCol = Boolean(
+              col?.group ||
+              (col?.field && col.field.includes('~')) ||
+              /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(col?.title || col?.field || '')
+            )
+            if (isSignOff && row.type === 'header' && isGroupedMonthCol) {
+              cell.background = '#CCFFFF'
+            } else if (row.type === 'group-header' && cell.value) {
+              cell.background = '#DFDFDF'
+            } else {
+              cell.background = cell.value ? '#DFDFDF' : '#ffffff'
+            }
+
             cell.color = '#000000'
             cell.bold = true
-
             cell.textAlign = 'center'
             cell.verticalAlign = 'center'
             cell.wrap = true
@@ -759,18 +772,41 @@ const AdvanceKendoTable = ({
             cell.verticalAlign = 'center'
             const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
             const rawUom = dataRow?.UOM ?? dataRow?.uom
-            const isNoUom =
+            const isUomBlank = rawUom === undefined || rawUom === null || String(rawUom).trim() === ''
+            const labelField = visibleColumns[0]?.field
+            const labelVal = dataRow ? dataRow[labelField] : ''
+            const hasLabel = labelVal !== undefined && labelVal !== null && String(labelVal).trim() !== ''
+
+            // Category Header detection: (UOM blank + Rest All Keys-Values are Blank)
+            const isRestAllBlank = Boolean(
               isSignOff &&
               dataRow &&
-              (dataRow.isNoUom ||
-                (('uom' in dataRow || 'UOM' in dataRow) &&
-                  (rawUom === undefined || rawUom === null || String(rawUom).trim() === '')))
-            if (isNoUom) {
+              visibleColumns.slice(2).every((c) => {
+                const val = dataRow[c.field]
+                return val === undefined || val === null || String(val).trim() === ''
+              })
+            )
+            const isCategoryHeader = isSignOff && isUomBlank && isRestAllBlank && hasLabel
+
+            // Parameter & UOM header row detection
+            const isParameterHeaderRow = Boolean(
+              isSignOff &&
+              dataRow &&
+              String(labelVal).trim().toLowerCase() === 'parameter' &&
+              String(rawUom).trim().toLowerCase() === 'uom'
+            )
+
+            if (isCategoryHeader) {
               if (cIdx === 0) {
                 cell.bold = true
-              } else if (cIdx === 1) {
-                cell.bold = true
                 cell.background = '#F7C7AC'
+                cell.color = '#000000'
+              }
+            } else if (isParameterHeaderRow) {
+              if (cIdx === 0 || cIdx === 1) {
+                cell.bold = true
+                cell.background = '#DAE9F8'
+                cell.color = '#000000'
               }
             }
             if (cell.disabled === undefined) {
@@ -3143,13 +3179,30 @@ const AdvanceKendoTable = ({
     const isFirstCol = props.field === visibleCols[0]?.field
     const isSecondCol = props.field === visibleCols[1]?.field
     const rawUom = props.dataItem?.UOM ?? props.dataItem?.uom
-    const isNoUom =
+    const isUomBlank = rawUom === undefined || rawUom === null || String(rawUom).trim() === ''
+    const labelField = visibleCols[0]?.field
+    const labelVal = props.dataItem ? props.dataItem[labelField] : ''
+    const hasLabel = labelVal !== undefined && labelVal !== null && String(labelVal).trim() !== ''
+
+    // Category Header detection: (UOM blank + Rest All Keys-Values are Blank)
+    const isRestAllBlank = Boolean(
       isSignOff &&
-      (props.dataItem?.isNoUom ||
-        (('uom' in (props.dataItem || {}) || 'UOM' in (props.dataItem || {})) &&
-          (rawUom === undefined || rawUom === null || String(rawUom).trim() === '')))
-    const isNoUomFirstCol = isNoUom && isFirstCol
-    const isNoUomSecondCol = isNoUom && isSecondCol
+      props.dataItem &&
+      visibleCols.slice(2).every((c) => {
+        const val = props.dataItem[c.field]
+        return val === undefined || val === null || String(val).trim() === ''
+      })
+    )
+    const isCategoryHeader = isSignOff && isUomBlank && isRestAllBlank && hasLabel
+    const isCategoryHeaderCell = isCategoryHeader && isFirstCol
+
+    const isParameterHeaderRow = Boolean(
+      isSignOff &&
+      props.dataItem &&
+      String(labelVal).trim().toLowerCase() === 'parameter' &&
+      String(rawUom).trim().toLowerCase() === 'uom'
+    )
+    const isParameterHeaderCell = isParameterHeaderRow && (isFirstCol || isSecondCol)
 
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
@@ -3166,13 +3219,15 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''} ${isNoUomFirstCol ? 'cell-no-uom-first-col' : ''} ${isNoUomSecondCol ? 'cell-no-uom-header' : ''}`.trim()}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''} ${isCategoryHeaderCell ? 'cell-category-header cell-no-uom-header' : ''} ${isParameterHeaderCell ? 'cell-parameter-header' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
-          ...(isNoUomFirstCol ? { fontWeight: 'bold' } : {}),
-          ...(isNoUomSecondCol
+          ...(isCategoryHeaderCell
             ? { fontWeight: 'bold', backgroundColor: '#F7C7AC' }
+            : {}),
+          ...(isParameterHeaderCell
+            ? { fontWeight: 'bold', backgroundColor: '#DAE9F8' }
             : {}),
         }}
       >

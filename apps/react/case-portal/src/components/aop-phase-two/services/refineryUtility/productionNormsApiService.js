@@ -72,7 +72,12 @@ export const ProductionNormsApiService = {
  //Resin Consumption
   getResinConsumptionData,
   saveResinConsumption,
-
+  getAntiScalantData,
+  saveAntiScalantData,
+  getAntiFoamData,
+  saveAntiFoamData,
+  getResignRequiredData,
+  saveResignRequiredData,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -1194,5 +1199,122 @@ async function saveResinConsumption(keycloak, year, payload) {
   } catch (e) {
     console.error('Error in saveResinConsumption:', e)
     return Promise.reject(e)
+  }
+}
+async function getAntiScalantData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/antiscalant?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// renamed + year added
+async function saveAntiScalantData(keycloak, plantId, year, payload) {
+  const url = `${Config.CaseEngineUrl}/task/antiscalant?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    const result = await json(keycloak, resp)
+    return result || { code: 200 }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getAntiFoamData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/antifoam?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// renamed + year added
+async function saveAntiFoamData(keycloak, plantId, year, payload) {
+  const url = `${Config.CaseEngineUrl}/task/antifoam?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    const result = await json(keycloak, resp)
+    return result || { code: 200 }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getResignRequiredData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/resign-required?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// renamed + year added
+async function saveResignRequiredData(keycloak, plantId, year, payload) {
+  const url = `${Config.CaseEngineUrl}/task/resign-required?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`)
+    const result = await json(keycloak, resp)
+    return result || { code: 200 }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
