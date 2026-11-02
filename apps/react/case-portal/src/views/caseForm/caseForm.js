@@ -577,7 +577,16 @@ return {
             }
             const caseDetails0 = caseDetails?.components?.[0];
             if (caseDetails0) {
-              caseDetails0.disabled = true;
+              const isCaseOverdue =
+                caseData?.isDraft === 'o' ||
+                aCase?.isDraft === 'o' ||
+                parsedAttributeValue?.caseStatus === 4 ||
+                parsedAttributeValue?.caseStatus === '4';
+
+              caseDetails0.disabled = false;
+              caseDetails0.columns?.[0]?.components?.forEach((c) => (c.disabled = true)); // Created On locked
+              caseDetails0.columns?.[1]?.components?.forEach((c) => (c.disabled = true)); // Due Date locked
+              caseDetails0.columns?.[2]?.components?.forEach((c) => (c.disabled = false)); // End Date editable for Assigned, Under Analysis, and Overdue
             }
 
             const caseDetails1 = caseDetails?.components?.[1];
