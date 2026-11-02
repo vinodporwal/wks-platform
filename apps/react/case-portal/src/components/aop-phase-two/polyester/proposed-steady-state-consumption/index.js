@@ -11,6 +11,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import { useSelector } from 'react-redux'
 import { ProposedAopApiService } from 'components/aop-phase-two/services/polyester/proposed-aop-api-service'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import GetFinancialYear from 'components/Utilities/GetFinancialYear'
 
 const ProposedSteadyStateConsumption = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -43,7 +44,7 @@ const ProposedSteadyStateConsumption = () => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const { previousFYFormatted } = GetFinancialYear(AOP_YEAR)
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -293,7 +294,7 @@ const ProposedSteadyStateConsumption = () => {
     },
     {
       field: 'lastFY',
-      title: 'Last FY',
+      title: `Budget ${previousFYFormatted}`,
       editable: false,
       type: 'number',
       minWidth: 110,
@@ -302,7 +303,7 @@ const ProposedSteadyStateConsumption = () => {
     },
     {
       field: 'actualLastFY',
-      title: 'Actual Last FY',
+      title: `Actual ${previousFYFormatted}`,
       editable: false,
       type: 'number',
       minWidth: 110,
