@@ -1746,6 +1746,8 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     SRMappingQtyDTO dto = new SRMappingQtyDTO();
 
                     dto.setId                    (toLong  (row, "id"));
+                    // CPP_GetSRMappingQTY does not return dataType column; hardcode as "Utility"
+                    dto.setDataType              ("Utility");
                     dto.setCppPlantId            (str     (row, "cppPlantId"));
                     dto.setCppPlantName          (str     (row, "cppPlantName"));
 
@@ -1790,6 +1792,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     dto.setJan(toDouble(row, "jan"));
                     dto.setFeb(toDouble(row, "feb"));
                     dto.setMar(toDouble(row, "mar"));
+
+                    Boolean isCalc = toBool(row, "is_calculated");
+                    if (isCalc == null) isCalc = toBool(row, "isCalculated");
+                    dto.setIsCalculated(isCalc);
 
                     data.add(dto);
                 }
@@ -1841,9 +1847,14 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
         String[] monthHeaders = FiscalYearMonths.getMonthHeaders(financialYear);
 
+        boolean hasDataType = dtoList.stream().anyMatch(d -> d.getDataType() != null && !d.getDataType().isEmpty());
+
         // Header row
         List<String> headers = new ArrayList<>();
         headers.add("CPP Plant Id");
+        if (hasDataType) {
+            headers.add("Data Type");
+        }
         headers.add("CPP Plant Name");
         headers.add("Sender Plant Name");
         headers.add("Sender Plant Code");
@@ -1878,6 +1889,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             int col = 0;
 
             ExcelCells.setString(row.createCell(col++), dto.getCppPlantId(),           dataStyle);
+            if (hasDataType) {
+                ExcelCells.setString(row.createCell(col++), dto.getDataType(),         dataStyle);
+            }
             ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(),         dataStyle);
             ExcelCells.setString(row.createCell(col++), dto.getSenderPlantName(),      dataStyle);
             ExcelCells.setString(row.createCell(col++), dto.getSenderPlantCode(),      dataStyle);
@@ -1956,6 +1970,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     SRMappingQtyDTO dto = new SRMappingQtyDTO();
 
                     dto.setId                    (toLong  (row, "id"));
+                    String dt = str(row, "dataType");
+                    if (dt == null) dt = str(row, "DataType");
+                    dto.setDataType              (dt != null ? dt : "Utility");
                     dto.setCppPlantId            (str     (row, "cppPlantId"));
                     dto.setCppPlantName          (str     (row, "cppPlantName"));
 
@@ -2000,6 +2017,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     dto.setJan(toDouble(row, "jan"));
                     dto.setFeb(toDouble(row, "feb"));
                     dto.setMar(toDouble(row, "mar"));
+
+                    Boolean isCalc = toBool(row, "is_calculated");
+                    if (isCalc == null) isCalc = toBool(row, "isCalculated");
+                    dto.setIsCalculated(isCalc);
 
                     data.add(dto);
                 }

@@ -105,6 +105,14 @@ const SRMapping = () => {
   const baseColumns = useMemo(
     () => [
       {
+        field: 'dataType',
+        title: 'Data Type',
+        widthT: 180,
+        minWidth: 180,
+        type: 'text',
+        editable: false,
+      },
+      {
         field: 'cppPlantName',
         title: 'CPP Plant',
         widthT: 200,
@@ -331,6 +339,7 @@ const SRMapping = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        groupBy={['cppPlantName','dataType']}
         customHeight={65}
         pagable={false}
       />

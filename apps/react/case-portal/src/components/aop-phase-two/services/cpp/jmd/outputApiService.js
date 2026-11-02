@@ -197,7 +197,7 @@ async function exportAverageAssetLoadingExcel(
 //         CPP_GetSRPlantFixedSummary (dataType=all — JMD: utility+process+fixed).
 // Returns SR mapping output rows with monthly QTY values for the given plant(s).
 // Field names follow SenderReceiverMapping.js convention:
-//   id, cppPlantId, cppPlantName,
+//   id, dataType, cppPlantId, cppPlantName,
 //   senderPlantName, senderPlantCode, senderPlantId,
 //   senderUtilityId, senderUtilityName, senderUtilityCode, senderUtilityUOM,
 //   senderCostCenterId, senderCostCenterName, senderCostCenterCode,
