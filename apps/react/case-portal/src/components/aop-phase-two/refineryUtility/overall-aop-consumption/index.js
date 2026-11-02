@@ -75,7 +75,10 @@ const isSezCtPlant=siteName === 'SEZ' &&
   plantName.toLowerCase() === 'ct4 (z734)' ||
   plantName.toLowerCase() === 'ct8 (z761)' ||
   plantName.toLowerCase() === 'ct3 (z733)' ||
-  plantName.toLowerCase() === 'ct2 (z732)' 
+  plantName.toLowerCase() === 'ct2 (z732)' ||
+  plantName.toLowerCase() === 'ct6 (z736)'||
+  plantName.toLowerCase() === 'ct7 (z737)'||
+  plantName.toLowerCase() === 'ct9 px4 (z739)'
 )
 const isDtaUnitPlant =
   siteName === 'DTA' &&
