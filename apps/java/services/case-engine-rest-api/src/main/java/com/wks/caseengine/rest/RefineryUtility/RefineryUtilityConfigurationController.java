@@ -27,6 +27,7 @@ import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionMonth
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.ResignRequiredDTO;
 import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
@@ -264,4 +265,20 @@ public class RefineryUtilityConfigurationController {
 			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
 		}
 	}
+
+	@GetMapping("/resign-required")
+	public ResponseEntity<AOPMessageVM> getResignRequiredData(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getResignRequiredData(year, plantFKId));
+	}
+
+	@PostMapping("/resign-required")
+	public ResponseEntity<AOPMessageVM> saveResignRequiredData(@RequestBody List<ResignRequiredDTO> resignRequiredDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<ResignRequiredDTO> failedList = refineryUtilityConfigurationService.saveResignRequiredInDB(resignRequiredDTOList, plantFKId, year);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
+
 }
