@@ -82,17 +82,51 @@ const AverageAssetLoading = () => {
     'mar',
   ]
 
-  // Month columns (Apr → Mar) using generateHeaderNames format (e.g., Apr-26)
+  // Each month column becomes a parent group with 4 sub-columns:
+  //   Gen.Qty | Op. Hours | Avg. Loading | Heat Rate
   const MONTH_COLUMNS = useMemo(
     () =>
       MONTH_FIELDS.map((mon) => ({
-        field: mon,
-        title: headerMap[MONTH_TO_INDEX[mon]],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormatTwo,
+        title: headerMap[MONTH_TO_INDEX[mon]], // e.g. "Apr-26"
+        children: [
+          {
+            field: `${mon}GenQty`,
+            title: 'Gen.Qty',
+            widthT: 130,
+            minWidth: 130,
+            type: 'number1',
+            editable: false,
+            format: valueFormatTwo,
+          },
+          {
+            field: `${mon}OpHours`,
+            title: 'Op. Hours',
+            widthT: 120,
+            minWidth: 120,
+            type: 'number1',
+            editable: false,
+            format: valueFormatTwo,
+          },
+          {
+            field: `${mon}AvgLoading`,
+            title: 'Avg. Loading',
+            subtitle: '(MW/TPH)',
+            widthT: 130,
+            minWidth: 130,
+            type: 'number1',
+            editable: false,
+            format: valueFormatTwo,
+          },
+          {
+            field: `${mon}HeatRate`,
+            title: 'Heat Rate',
+            widthT: 120,
+            minWidth: 120,
+            type: 'number1',
+            editable: false,
+            format: valueFormatTwo,
+          },
+        ],
       })),
     [headerMap, valueFormatTwo],
   )
@@ -127,23 +161,6 @@ const AverageAssetLoading = () => {
         editable: false,
       },
       {
-        field: 'assetCategory',
-        title: 'Asset Category',
-        widthT: 130,
-        minWidth: 130,
-        type: 'text',
-        editable: false,
-      },
-      {
-        field: 'generatingPlantName',
-        title: 'Generating Plant',
-        widthT: 180,
-        minWidth: 180,
-        type: 'text',
-        editable: false,
-        locked: true,
-      },
-      {
         field: 'utilityName',
         title: 'Gen. Utility',
         widthT: 150,
@@ -159,44 +176,11 @@ const AverageAssetLoading = () => {
         type: 'text',
         editable: false,
       },
-      {
-        field: 'materialName',
-        title: 'Issuing Material',
-        widthT: 150,
-        minWidth: 150,
-        type: 'text',
-        editable: false,
-      },
-      {
-        field: 'issuingPlantName',
-        title: 'Issuing Plant',
-        widthT: 180,
-        minWidth: 180,
-        type: 'text',
-        editable: false,
-        locked: true,
-      },
-      {
-        field: 'issuingUom',
-        title: 'Issuing UOM',
-        widthT: 110,
-        minWidth: 110,
-        type: 'text',
-        editable: false,
-      },
-      {
-        field: 'loadingUom',
-        title: 'Loading UOM',
-        widthT: 120,
-        minWidth: 120,
-        type: 'text',
-        editable: false,
-      },
     ],
     [],
   )
 
-  // Full column list: base columns + month columns
+  // Full column list: base columns + grouped month columns (each with 4 sub-columns)
   const columns = useMemo(
     () => [...baseColumns, ...MONTH_COLUMNS],
     [baseColumns, MONTH_COLUMNS],
@@ -296,7 +280,7 @@ const AverageAssetLoading = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['cppPlantName','assetType']}
+        groupBy={['cppPlantName', 'assetType']}
         customHeight={65}
         pagable={false}
       />
