@@ -28,4 +28,14 @@ public interface InterSitePowerTransferService {
             List<UUID> plantIds,
             String financialYear,
             MultipartFile file);
+
+    // ── Power Demand ──────────────────────────────────────────────────
+    AOPMessageVM getPowerDemand(
+            List<UUID> plantIds,
+            String financialYear);
+
+    byte[] exportPowerDemand(
+            List<UUID> plantIds,
+            String financialYear);
 }
+

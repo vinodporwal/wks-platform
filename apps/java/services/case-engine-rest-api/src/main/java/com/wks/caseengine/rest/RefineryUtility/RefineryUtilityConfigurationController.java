@@ -21,10 +21,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 
+import com.wks.caseengine.RefineryUtility.dto.AntifoamDTO;
+import com.wks.caseengine.RefineryUtility.dto.AntiscalantDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommodityChemicalsConsumptionMonthlyDTO;
 import com.wks.caseengine.RefineryUtility.dto.CommoditySelectionDTO;
 import com.wks.caseengine.RefineryUtility.dto.ConsumerDemandDTO;
 import com.wks.caseengine.RefineryUtility.dto.MonthWiseConstantsDTO;
+import com.wks.caseengine.RefineryUtility.dto.ResignRequiredDTO;
 import com.wks.caseengine.RefineryUtility.dto.ResinConsumptionDTO;
 import com.wks.caseengine.RefineryUtility.dto.SelectedPlantOwnerDTO;
 import com.wks.caseengine.RefineryUtility.dto.TreatmentVendorConsumptionDTO;
@@ -232,4 +235,50 @@ public class RefineryUtilityConfigurationController {
 			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
 		}
 	}
+
+	@GetMapping("/antiscalant")
+	public ResponseEntity<AOPMessageVM> getAntiscalantData(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getAntiscalantData(year, plantFKId));
+	}
+
+	@PostMapping("/antiscalant")
+	public ResponseEntity<AOPMessageVM> saveAntiscalantData(@RequestBody List<AntiscalantDTO> antiscalantDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<AntiscalantDTO> failedList = refineryUtilityConfigurationService.saveAntiscalantInDB(antiscalantDTOList, plantFKId, year);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
+
+	@GetMapping("/antifoam")
+	public ResponseEntity<AOPMessageVM> getAntifoamData(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getAntifoamData(year, plantFKId));
+	}
+
+	@PostMapping("/antifoam")
+	public ResponseEntity<AOPMessageVM> saveAntifoamData(@RequestBody List<AntifoamDTO> antifoamDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<AntifoamDTO> failedList = refineryUtilityConfigurationService.saveAntifoamInDB(antifoamDTOList, plantFKId, year);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
+
+	@GetMapping("/resign-required")
+	public ResponseEntity<AOPMessageVM> getResignRequiredData(@RequestParam String year, @RequestParam String plantFKId) {
+		return ResponseEntity.ok(refineryUtilityConfigurationService.getResignRequiredData(year, plantFKId));
+	}
+
+	@PostMapping("/resign-required")
+	public ResponseEntity<AOPMessageVM> saveResignRequiredData(@RequestBody List<ResignRequiredDTO> resignRequiredDTOList, @RequestParam String year, @RequestParam String plantFKId) {
+		List<ResignRequiredDTO> failedList = refineryUtilityConfigurationService.saveResignRequiredInDB(resignRequiredDTOList, plantFKId, year);
+		if(failedList.isEmpty()) {
+			return ResponseEntity.ok(new AOPMessageVM(200, "Data saved successfully", null));
+		} else {
+			return ResponseEntity.ok(new AOPMessageVM(400, "Partial Data Updated", failedList));
+		}
+	}
+
 }

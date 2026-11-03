@@ -41,9 +41,9 @@
    to header cells in rows with siblings (nested/spanned headers).
    Override here to remove the unwanted left border line. */
 .k-grid-header-wrap .k-table-row:not(:only-child) .k-table-th,
-.k-grid-header-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n+2),
+.k-grid-header-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n + 2),
 .k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-th,
-.k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n+2) {
+.k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n + 2) {
   border-inline-start-width: 0 !important;
 }
 
@@ -53,14 +53,18 @@
   border-inline-start-width: 0 !important;
 }
 
-/* Cell styling for rows without UOM on SignOffReport screen */
-.kendo-data-grid tr td.cell-no-uom-first-col,
-.kendo-data-grid tr.custom-disabled-row td.cell-no-uom-first-col {
-  font-weight: bold !important;
-}
-
+/* Cell styling for category headers (e.g. KPIs) on SignOffReport screen */
+.kendo-data-grid tr td.cell-category-header,
+.kendo-data-grid tr.custom-disabled-row td.cell-category-header,
 .kendo-data-grid tr td.cell-no-uom-header,
 .kendo-data-grid tr.custom-disabled-row td.cell-no-uom-header {
   background-color: #F7C7AC !important;
+  font-weight: bold !important;
+}
+
+/* Cell styling for parameter headers (Parameter & UOM) on SignOffReport screen */
+.kendo-data-grid tr td.cell-parameter-header,
+.kendo-data-grid tr.custom-disabled-row td.cell-parameter-header {
+  background-color: #DAE9F8 !important;
   font-weight: bold !important;
 }

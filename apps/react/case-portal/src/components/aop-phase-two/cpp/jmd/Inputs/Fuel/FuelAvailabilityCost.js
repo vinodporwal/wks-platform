@@ -192,7 +192,7 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0, exchangeRate }) => {
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: `Fuel Cost (In INR , ${exchangeRate !== '' && exchangeRate != null ? ` 1$=${exchangeRate}` : ''})`,
+    titleName: `Fuel Cost (In INR , ${exchangeRate !== '' && exchangeRate != null ? ` 1$ = ${exchangeRate} INR` : ''})`,
   }
 
   const saveChanges = async () => {

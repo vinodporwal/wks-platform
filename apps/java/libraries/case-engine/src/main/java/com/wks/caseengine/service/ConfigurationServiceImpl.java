@@ -6413,8 +6413,8 @@ else {
 				headerNames.add("Error Description");
 			}
 
-			Workbook workbook = new XSSFWorkbook();
-			Sheet sheet = workbook.createSheet("OtherCost");
+			XSSFWorkbook workbook = new XSSFWorkbook();
+			XSSFSheet sheet = workbook.createSheet("OtherCost");
 
 			// Locked (read-only) style – grey background
 			CellStyle lockedStyle = workbook.createCellStyle();
@@ -6551,6 +6551,27 @@ else {
 			// Hide internal-use columns
 			sheet.setColumnHidden(15, true);
 			sheet.setColumnHidden(16, true);
+
+			// Pad widths for the filter arrow and keep empty cells editable once protected.
+			for (int col = 0; col < totalCols; col++) {
+				if (col != 15 && col != 16) {
+					sheet.setColumnWidth(col, Math.min(sheet.getColumnWidth(col) + FILTER_ARROW_PADDING, 60 * 256));
+				}
+				sheet.setDefaultColumnStyle(col, unlockedStyle);
+			}
+
+			sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, totalCols - 1));
+
+			// Protection keeps "Format columns" locked, which stops Excel from
+			// unhiding the hidden columns when the neighbouring column is resized.
+			sheet.protectSheet("password");
+			sheet.lockFormatColumns(true);
+			sheet.lockAutoFilter(false);
+			sheet.lockSort(false);
+			sheet.lockInsertRows(false);
+			sheet.lockDeleteRows(false);
+			sheet.lockSelectLockedCells(false);
+			sheet.lockSelectUnlockedCells(false);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);

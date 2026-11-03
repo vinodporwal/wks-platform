@@ -2,8 +2,11 @@ package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.InterSitePowerTransferDTO;
 import com.wks.caseengine.cpp.dto.InterSitePowerTransferProjection;
+import com.wks.caseengine.cpp.dto.JMDPowerDemandDTO;
+import com.wks.caseengine.cpp.dto.JMDPowerDemandProjection;
 import com.wks.caseengine.cpp.entity.CPPInterSitePowerTransfer;
 import com.wks.caseengine.cpp.repository.InterSitePowerTransferRepository;
+import com.wks.caseengine.cpp.repository.JMDPowerDemandRepository;
 import com.wks.caseengine.cpp.service.InterSitePowerTransferService;
 import com.wks.caseengine.cpp.utility.ExcelCells;
 import com.wks.caseengine.cpp.utility.ExcelColumns;
@@ -41,6 +44,9 @@ public class InterSitePowerTransferServiceImpl implements InterSitePowerTransfer
 
     @Autowired
     private InterSitePowerTransferRepository repository;
+
+    @Autowired
+    private JMDPowerDemandRepository powerDemandRepository;
 
     // ──────────────────────────────────────────────────────────────────────
     //  GET
@@ -622,6 +628,197 @@ public class InterSitePowerTransferServiceImpl implements InterSitePowerTransfer
         }
 
         ExcelColumns.autoSize(sheet, headers.size(), -1);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        workbook.write(baos);
+        workbook.close();
+        return baos.toByteArray();
+    }
+    // ──────────────────────────────────────────────────────────────────────
+    //  GET POWER DEMAND
+    // ──────────────────────────────────────────────────────────────────────
+    @Override
+    public AOPMessageVM getPowerDemand(List<UUID> plantIds, String financialYear) {
+        logger.info("[GetPowerDemand] plantIds: {}, financialYear: {}", plantIds, financialYear);
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (plantIds == null || plantIds.isEmpty()) {
+                logger.warn("[GetPowerDemand] plantIds is null or empty");
+                vm.setCode(400);
+                vm.setMessage("Plant IDs are required");
+                vm.setData(null);
+                return vm;
+            }
+
+            if (financialYear == null || financialYear.trim().isEmpty()) {
+                logger.warn("[GetPowerDemand] financialYear is null or empty");
+                vm.setCode(400);
+                vm.setMessage("Financial Year is required");
+                vm.setData(null);
+                return vm;
+            }
+
+            String plantIdsCsv = plantIds.stream()
+                    .map(UUID::toString)
+                    .collect(Collectors.joining(","));
+
+            logger.info("[GetPowerDemand] Executing SP CPP_GetJMDPowerDemand with plantIds: {}, financialYear: {}",
+                    plantIdsCsv, financialYear);
+
+            List<JMDPowerDemandProjection> projections =
+                    powerDemandRepository.getPowerDemand(plantIdsCsv, financialYear);
+
+            logger.info("[GetPowerDemand] SP returned {} rows", projections != null ? projections.size() : 0);
+
+            List<JMDPowerDemandDTO> dtoList = projections == null
+                    ? new ArrayList<>()
+                    : projections.stream()
+                            .map(this::mapToPowerDemandDto)
+                            .collect(Collectors.toList());
+
+            logger.info("[GetPowerDemand] Returning {} records", dtoList.size());
+
+            vm.setCode(200);
+            vm.setMessage("Power demand data fetched successfully");
+            vm.setData(dtoList);
+
+        } catch (Exception e) {
+            logger.error("[GetPowerDemand] Error fetching power demand: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Failed to fetch power demand data: " + e.getMessage());
+            vm.setData(null);
+        }
+
+        return vm;
+    }
+
+    private JMDPowerDemandDTO mapToPowerDemandDto(JMDPowerDemandProjection p) {
+        JMDPowerDemandDTO dto = new JMDPowerDemandDTO();
+        dto.setId(p.getId());
+        dto.setCppPlantId(p.getCppPlantId());
+        dto.setCppPlantName(p.getCppPlantName());
+        dto.setNormParameterId(p.getNormParameterId());
+        dto.setUtilityName(p.getUtilityName());
+        dto.setUtilityId(p.getUtilityId());
+        dto.setUtilityUOM(p.getUtilityUOM());
+        dto.setFinancialYear(p.getFinancialYear());
+        dto.setType(p.getType());
+        dto.setApr(p.getApr());
+        dto.setMay(p.getMay());
+        dto.setJun(p.getJun());
+        dto.setJul(p.getJul());
+        dto.setAug(p.getAug());
+        dto.setSep(p.getSep());
+        dto.setOct(p.getOct());
+        dto.setNov(p.getNov());
+        dto.setDec(p.getDec());
+        dto.setJan(p.getJan());
+        dto.setFeb(p.getFeb());
+        dto.setMar(p.getMar());
+        dto.setRemarks(p.getRemarks());
+        return dto;
+    }
+    // ──────────────────────────────────────────────────────────────────────
+    //  EXPORT POWER DEMAND
+    // ──────────────────────────────────────────────────────────────────────
+    @Override
+    public byte[] exportPowerDemand(List<UUID> plantIds, String financialYear) {
+        logger.info("[ExportPowerDemand] plantIds: {}, financialYear: {}", plantIds, financialYear);
+        try {
+            AOPMessageVM response = getPowerDemand(plantIds, financialYear);
+
+            @SuppressWarnings("unchecked")
+            List<JMDPowerDemandDTO> dtoList = (List<JMDPowerDemandDTO>) response.getData();
+            if (dtoList == null) {
+                dtoList = new ArrayList<>();
+            }
+
+            logger.info("[ExportPowerDemand] Building Excel for {} rows", dtoList.size());
+            return buildPowerDemandExcel(dtoList, financialYear);
+        } catch (Exception e) {
+            logger.error("[ExportPowerDemand] Error: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private byte[] buildPowerDemandExcel(List<JMDPowerDemandDTO> dtoList, String financialYear) throws Exception {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Power Demand");
+
+        CellStyle headerStyle   = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle lockedStyle   = ExcelStyles.createLockedStyle(workbook);
+        CellStyle unlockedStyle = ExcelStyles.createUnlockedStyle(workbook);
+        CellStyle remarksStyle  = ExcelStyles.createEditableRemarksStyle(workbook);
+
+        String[] monthHeaders = FiscalYearMonths.getMonthHeaders(financialYear);
+
+        // ── Header row ────────────────────────────────────────────────────
+        List<String> headers = new ArrayList<>();
+        headers.add("Plant Name");
+        headers.add("Utility Name");
+        headers.add("UOM");
+        headers.add("Type");
+        for (String mh : monthHeaders) {
+            headers.add(mh);
+        }
+        headers.add("Remarks");
+        // Hidden identifier columns (must be last)
+        headers.add("id");
+        headers.add("normParameterId");
+
+        Row headerRow = sheet.createRow(0);
+        for (int c = 0; c < headers.size(); c++) {
+            ExcelCells.setString(headerRow.createCell(c), headers.get(c), headerStyle);
+        }
+
+        // ── Data rows ─────────────────────────────────────────────────────
+        int rowNum = 1;
+        for (JMDPowerDemandDTO dto : dtoList) {
+            Row row = sheet.createRow(rowNum++);
+            int col = 0;
+
+            // Locked (read-only) descriptor columns
+            ExcelCells.setString(row.createCell(col++), dto.getCppPlantName(), lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUtilityName(),  lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getUtilityUOM(),   lockedStyle);
+            ExcelCells.setString(row.createCell(col++), dto.getType(),         lockedStyle);
+
+            // Unlocked (editable) monthly values
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getApr(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getMay(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getJun(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getJul(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getAug(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getSep(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getOct(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getNov(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getDec(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getJan(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getFeb(), unlockedStyle);
+            ExcelCells.setBigDecimal(row.createCell(col++), dto.getMar(), unlockedStyle);
+
+            // Editable remarks
+            ExcelCells.setString(row.createCell(col++), dto.getRemarks(), remarksStyle);
+
+            // Hidden identifier columns (locked)
+            ExcelCells.setString(row.createCell(col++),
+                    dto.getId() != null ? dto.getId().toString() : "", lockedStyle);
+            ExcelCells.setString(row.createCell(col++),
+                    dto.getNormParameterId() != null ? dto.getNormParameterId().toString() : "", lockedStyle);
+        }
+
+        // ── Hide identifier columns ───────────────────────────────────────
+        int idColIndex             = headers.size() - 2;
+        int normParamIdColIndex    = headers.size() - 1;
+        ExcelColumns.hideColumns(sheet, idColIndex, normParamIdColIndex);
+
+        // ── Auto-size all columns except hidden + remarks ─────────────────
+        int remarksColIndex = headers.size() - 3;
+        ExcelColumns.autoSize(sheet, headers.size(), remarksColIndex);
+
+        // ── Sheet protection: locked = read-only, unlocked = editable ─────
+        ExcelStyles.applySheetProtectionWithAutoFilter(sheet, headers.size());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         workbook.write(baos);

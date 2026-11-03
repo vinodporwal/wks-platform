@@ -38,6 +38,10 @@ const SRMapping = () => {
     [jmdSelectedPlants, lowerSiteName, PLANT_ID],
   )
 
+  // JMD needs utility + process + fixed data (CPP_GetSRPlantFixedSummary)
+  // Other sites use utility-only data (CPP_GetSRMappingQTY)
+  const DATA_TYPE = lowerSiteName === 'jmd' ? 'all' : 'utility'
+
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -100,6 +104,14 @@ const SRMapping = () => {
   // Base columns copied from SenderReceiverMapping.js (read-only for output grid)
   const baseColumns = useMemo(
     () => [
+      {
+        field: 'dataType',
+        title: 'Data Type',
+        widthT: 180,
+        minWidth: 180,
+        type: 'text',
+        editable: false,
+      },
       {
         field: 'cppPlantName',
         title: 'CPP Plant',
@@ -238,6 +250,7 @@ const SRMapping = () => {
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        DATA_TYPE,
       )
       const data = response?.data || []
       const rowsWithId = data?.map((row, index) => ({
@@ -251,7 +264,7 @@ const SRMapping = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, DATA_TYPE])
 
   useDebounce(
     () => {
@@ -290,6 +303,7 @@ const SRMapping = () => {
         PLANT_ID_LIST,
         AOP_YEAR,
         EXCEL_NAME,
+        DATA_TYPE,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -325,6 +339,7 @@ const SRMapping = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        groupBy={['cppPlantName','dataType']}
         customHeight={65}
         pagable={false}
       />

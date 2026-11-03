@@ -3,11 +3,19 @@ package com.wks.caseengine.cpp.serviceimpl;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -24,8 +32,13 @@ import jakarta.persistence.Query;
 import jakarta.persistence.StoredProcedureQuery;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.FuelAvailabilityTransactionDTO;
@@ -40,17 +53,42 @@ import com.wks.caseengine.cpp.utility.ExcelRows;
 import com.wks.caseengine.cpp.utility.ExcelStyles;
 import com.wks.caseengine.cpp.utility.FiscalYearMonths;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.FinancialYearMonthRepository;
 
 @Service
 public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityService {
 
     private static final Logger logger = LoggerFactory.getLogger(JMDFuelAvailabilityServiceImpl.class);
 
+    private static final int[] FINANCIAL_MONTHS = {4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3};
+
     @Autowired
     private JMDFuelAvailabilityRepository repository;
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    @Qualifier("db1JdbcTemplate")
+    private JdbcTemplate db1JdbcTemplate;
+
+    @Autowired
+    private FinancialYearMonthRepository financialYearMonthRepository;
+
+    @Autowired
+    @Qualifier("db1TransactionManager")
+    private PlatformTransactionManager transactionManager;
+
+    private TransactionTemplate transactionTemplate;
+
+    private TransactionTemplate getTransactionTemplate() {
+        if (transactionTemplate == null && transactionManager != null) {
+            TransactionTemplate tt = new TransactionTemplate(transactionManager);
+            tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            this.transactionTemplate = tt;
+        }
+        return transactionTemplate;
+    }
 
     @Override
     @Transactional
@@ -145,22 +183,354 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
     }
 
     @Override
-    @Transactional
     public AOPMessageVM saveFuelAvailability(List<UUID> plantIds, String financialYear,
                                              List<FuelAvailabilityTransactionDTO> dtoList) {
-        return saveInternal(dtoList, false);
+        return saveInternal(dtoList, false, financialYear, plantIds);
     }
 
     @Override
-    @Transactional
     public AOPMessageVM saveFuelAvailabilityCost(List<UUID> plantIds, String financialYear,
                                                  List<FuelAvailabilityTransactionDTO> dtoList) {
-        return saveInternal(dtoList, true);
+        return saveInternal(dtoList, true, financialYear, plantIds);
     }
 
-    private AOPMessageVM saveInternal(List<FuelAvailabilityTransactionDTO> dtoList, boolean includeCost) {
-        logger.info("[JMDFuelAvailability] SAVE - includeCost: {}, records: {}",
-                includeCost, dtoList.size());
+    public record FinancialYearRange(int startYear, int endYear) {}
+
+    public FinancialYearRange parseAndValidateFinancialYear(String financialYear) {
+        if (financialYear == null || financialYear.isBlank()) {
+            throw new IllegalArgumentException("Financial year cannot be null or blank");
+        }
+        String trimmed = financialYear.trim();
+        Pattern pattern = Pattern.compile("^(\\d{4})-(\\d{2}|\\d{4})$");
+        Matcher matcher = pattern.matcher(trimmed);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid financial year format: '" + financialYear +
+                    "'. Expected format 'YYYY-YY' (e.g. '2026-27') or 'YYYY-YYYY' (e.g. '2026-2027').");
+        }
+
+        int startYear = Integer.parseInt(matcher.group(1));
+        String secondPart = matcher.group(2);
+        int expectedEndYear = startYear + 1;
+
+        if (startYear < 1900 || startYear > 2100) {
+            throw new IllegalArgumentException("Financial year out of supported range (1900-2100): " + startYear);
+        }
+
+        if (secondPart.length() == 2) {
+            int endTwoDigits = Integer.parseInt(secondPart);
+            int expectedTwoDigits = expectedEndYear % 100;
+            if (endTwoDigits != expectedTwoDigits) {
+                throw new IllegalArgumentException("Invalid financial year sequence: '" + financialYear +
+                        "'. End year digits (" + secondPart + ") must be consecutive to start year (" + startYear + "). Expected: " +
+                        String.format("%02d", expectedTwoDigits));
+            }
+        } else {
+            int endFourDigits = Integer.parseInt(secondPart);
+            if (endFourDigits != expectedEndYear) {
+                throw new IllegalArgumentException("Invalid financial year sequence: '" + financialYear +
+                        "'. End year (" + endFourDigits + ") must be consecutive to start year (" + startYear + "). Expected: " + expectedEndYear);
+            }
+        }
+
+        return new FinancialYearRange(startYear, expectedEndYear);
+    }
+
+    private Map<Integer, UUID> resolveFinancialYearMonths(String financialYear) {
+        FinancialYearRange range = parseAndValidateFinancialYear(financialYear);
+        List<Object[]> fyMonths = financialYearMonthRepository.findFinancialYearMonths(range.startYear(), range.endYear());
+        Map<Integer, UUID> monthIdMap = new LinkedHashMap<>();
+        for (Object[] row : fyMonths) {
+            if (row.length < 2 || row[0] == null || row[1] == null) {
+                continue;
+            }
+            Integer month = Integer.parseInt(row[0].toString());
+            UUID monthId = UUID.fromString(row[1].toString());
+            monthIdMap.put(month, monthId);
+        }
+        return monthIdMap;
+    }
+
+    private UUID resolveProcurementPlantId(UUID cppPlantFkId, Map<UUID, UUID> procurementPlantCache) {
+        if (cppPlantFkId == null) {
+            return null;
+        }
+        if (procurementPlantCache.containsKey(cppPlantFkId)) {
+            return procurementPlantCache.get(cppPlantFkId);
+        }
+
+        // 1. Query CPPPlantFuelSourceMapping
+        String mappingSql = "SELECT CAST(FuelAvailablePlantFKId AS varchar(36)) FROM dbo.CPPPlantFuelSourceMapping WHERE CPPPlantFKId = ?";
+        List<String> mappingResults = db1JdbcTemplate.queryForList(mappingSql, String.class, cppPlantFkId.toString());
+
+        String sourcePlantId = (!mappingResults.isEmpty() && mappingResults.get(0) != null)
+                ? mappingResults.get(0)
+                : cppPlantFkId.toString();
+
+        // 2. Query Plants where SourceName matches sourcePlantId and BusinessCategoryName = 'Import'
+        String plantSql = "SELECT CAST(Id AS varchar(36)) FROM dbo.Plants " +
+                          "WHERE (SourceName = ? OR TRY_CONVERT(UNIQUEIDENTIFIER, SourceName) = TRY_CONVERT(UNIQUEIDENTIFIER, ?)) " +
+                          "  AND BusinessCategoryName = 'Import' " +
+                          "ORDER BY DisplayOrder ASC, DisplayName ASC";
+        List<String> plantResults = db1JdbcTemplate.queryForList(plantSql, String.class, sourcePlantId, sourcePlantId);
+
+        // If not found with mapped plant and sourcePlantId != cppPlantFkId, try cppPlantFkId directly
+        if (plantResults.isEmpty() && !sourcePlantId.equals(cppPlantFkId.toString())) {
+            plantResults = db1JdbcTemplate.queryForList(plantSql, String.class, cppPlantFkId.toString(), cppPlantFkId.toString());
+        }
+
+        if (plantResults.isEmpty()) {
+            logger.warn("resolveProcurementPlantId: No Import plant found in dbo.Plants for CPPPlantFKId: {}", cppPlantFkId);
+            return null;
+        }
+
+        UUID procurementPlantId = UUID.fromString(plantResults.get(0));
+        logger.debug("resolveProcurementPlantId: cppPlantFkId={} resolved to procurementPlantId={}", cppPlantFkId, procurementPlantId);
+        procurementPlantCache.put(cppPlantFkId, procurementPlantId);
+        return procurementPlantId;
+    }
+
+    private String resolveFuelCode(FuelAvailabilityTransactionDTO dto, Map<UUID, String> fuelCodeCache) {
+        if (dto.getFuelCode() != null && !dto.getFuelCode().trim().isEmpty()) {
+            return dto.getFuelCode().trim();
+        }
+        if (dto.getFuelId() != null) {
+            if (fuelCodeCache.containsKey(dto.getFuelId())) {
+                return fuelCodeCache.get(dto.getFuelId());
+            }
+            String sql = "SELECT FuelCode FROM dbo.CPP_FuelMaster WHERE Id = ?";
+            List<String> codes = db1JdbcTemplate.queryForList(sql, String.class, dto.getFuelId().toString());
+            if (!codes.isEmpty() && codes.get(0) != null && !codes.get(0).trim().isEmpty()) {
+                String code = codes.get(0).trim();
+                fuelCodeCache.put(dto.getFuelId(), code);
+                return code;
+            }
+        }
+        return null;
+    }
+
+    private record NormParamLookupResult(UUID normParamId, String message) {}
+
+    private NormParamLookupResult findFuelNormParameter(String fuelCode, UUID procurementPlantId) {
+        String findSql = "SELECT CAST(Id AS varchar(36)) AS Id FROM dbo.NormParameters " +
+                         "WHERE SAPMaterialCode = ? " +
+                         "  AND Plant_FK_Id = ? " +
+                         "  AND NormType_FK_Id = 2 " +
+                         "  AND [Type] = 'CPPFuel'";
+        List<String> normParamIds = db1JdbcTemplate.queryForList(findSql, String.class, fuelCode, procurementPlantId.toString());
+
+        if (normParamIds.isEmpty()) {
+            return new NormParamLookupResult(null, "No NormParameters record found for fuelCode '" + fuelCode +
+                    "', procurementPlantId " + procurementPlantId + " (NormType_FK_Id=2, Type='CPPFuel')");
+        }
+        if (normParamIds.size() > 1) {
+            return new NormParamLookupResult(null, "Ambiguous NormParameters records found (" + normParamIds.size() +
+                    ") for fuelCode '" + fuelCode + "', procurementPlantId " + procurementPlantId + " (NormType_FK_Id=2, Type='CPPFuel')");
+        }
+        return new NormParamLookupResult(UUID.fromString(normParamIds.get(0)), null);
+    }
+
+    private List<UUID> findMatchingNormsHeaderIds(UUID normParameterId, UUID procurementPlantId) {
+        String headerSql = "SELECT CAST(Id AS varchar(36)) AS Id FROM dbo.NormsHeader " +
+                           "WHERE NormParameter_FK_Id = ? " +
+                           "  AND (IssuingPlant_FK_Id = ? OR IssuingPlant_FK_Id IS NULL)";
+        List<String> headerIdStrs = db1JdbcTemplate.queryForList(headerSql, String.class,
+                normParameterId.toString(), procurementPlantId.toString());
+        List<UUID> headerIds = new ArrayList<>();
+        for (String idStr : headerIdStrs) {
+            headerIds.add(UUID.fromString(idStr));
+        }
+        return headerIds;
+    }
+
+    private Double getCostForMonth(FuelAvailabilityTransactionDTO dto, int month) {
+        return switch (month) {
+            case 4 -> dto.getCostApr();
+            case 5 -> dto.getCostMay();
+            case 6 -> dto.getCostJun();
+            case 7 -> dto.getCostJul();
+            case 8 -> dto.getCostAug();
+            case 9 -> dto.getCostSep();
+            case 10 -> dto.getCostOct();
+            case 11 -> dto.getCostNov();
+            case 12 -> dto.getCostDec();
+            case 1 -> dto.getCostJan();
+            case 2 -> dto.getCostFeb();
+            case 3 -> dto.getCostMar();
+            default -> null;
+        };
+    }
+
+    private String getCppMonthWisePriceColumn(int month) {
+        return switch (month) {
+            case 4 -> "Apr_Price";
+            case 5 -> "May_Price";
+            case 6 -> "Jun_Price";
+            case 7 -> "Jul_Price";
+            case 8 -> "Aug_Price";
+            case 9 -> "Sep_Price";
+            case 10 -> "Oct_Price";
+            case 11 -> "Nov_Price";
+            case 12 -> "Dec_Price";
+            case 1 -> "Jan_Price";
+            case 2 -> "Feb_Price";
+            case 3 -> "Mar_Price";
+            default -> null;
+        };
+    }
+
+    private int syncNormsMonthDetailPrices(UUID normsHeaderId, FuelAvailabilityTransactionDTO dto,
+                                           Map<Integer, UUID> monthIdMap) {
+        String updateSql = "UPDATE dbo.NormsMonthDetail SET Price = ? " +
+                           "WHERE NormsHeader_FK_Id = ? AND FinancialYearMonth_FK_Id = ?";
+        int updatedTotal = 0;
+        for (int month : FINANCIAL_MONTHS) {
+            Double costVal = getCostForMonth(dto, month);
+            if (costVal != null) {
+                UUID fymId = monthIdMap.get(month);
+                if (fymId != null) {
+                    updatedTotal += db1JdbcTemplate.update(updateSql, BigDecimal.valueOf(costVal),
+                            normsHeaderId.toString(), fymId.toString());
+                }
+            }
+        }
+        return updatedTotal;
+    }
+
+    private int syncCppMonthWisePrice(UUID normsHeaderId, String financialYear, FuelAvailabilityTransactionDTO dto,
+                                      List<String> warnings) {
+        String checkSql = "SELECT CAST(Id AS varchar(36)) FROM dbo.CPPMonthWisePrice " +
+                          "WHERE NormsHeader_FK_Id = ? AND (FinancialYear = ? OR (FinancialYear IS NULL AND AOPYear = ?))";
+        List<String> existing = db1JdbcTemplate.queryForList(checkSql, String.class,
+                normsHeaderId.toString(), financialYear, financialYear);
+
+        if (existing.isEmpty()) {
+            logger.info("syncCppMonthWisePrice: No existing CPPMonthWisePrice record for NormsHeader={}, financialYear={} — skipping update",
+                    normsHeaderId, financialYear);
+            return 0;
+        }
+
+        if (existing.size() > 1) {
+            String warning = "Ambiguous CPPMonthWisePrice records (" + existing.size() +
+                    ") found for NormsHeader " + normsHeaderId + ", financialYear " + financialYear + " — skipped CPPMonthWisePrice update";
+            logger.warn(warning);
+            warnings.add(warning);
+            return 0;
+        }
+
+        List<String> setClauses = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        for (int month : FINANCIAL_MONTHS) {
+            Double costVal = getCostForMonth(dto, month);
+            if (costVal != null) {
+                setClauses.add(getCppMonthWisePriceColumn(month) + " = ?");
+                params.add(BigDecimal.valueOf(costVal));
+            }
+        }
+
+        if (setClauses.isEmpty()) {
+            return 0;
+        }
+
+        setClauses.add("UpdatedDate = GETDATE()");
+        String updateSql = "UPDATE dbo.CPPMonthWisePrice SET " + String.join(", ", setClauses) +
+                           " WHERE NormsHeader_FK_Id = ? AND (FinancialYear = ? OR (FinancialYear IS NULL AND AOPYear = ?))";
+        params.add(normsHeaderId.toString());
+        params.add(financialYear);
+        params.add(financialYear);
+        return db1JdbcTemplate.update(updateSql, params.toArray());
+    }
+
+    private record SyncResult(boolean success, String message) {}
+
+    private SyncResult synchronizeFuelAvailabilityCost(
+            FuelAvailabilityTransactionDTO dto,
+            String financialYear,
+            Map<Integer, UUID> monthIdMap,
+            Map<UUID, UUID> procurementPlantCache,
+            Map<UUID, String> fuelCodeCache) {
+
+        // 1. Resolve procurement/import plant
+        UUID procurementPlantId = resolveProcurementPlantId(dto.getCppPlantFkId(), procurementPlantCache);
+        if (procurementPlantId == null) {
+            String msg = "Transaction saved, but synchronization skipped: Could not resolve procurement/import plant for CPPPlantFKId " + dto.getCppPlantFkId();
+            logger.warn(msg);
+            return new SyncResult(true, msg);
+        }
+
+        // 2. Resolve fuel code
+        String fuelCode = resolveFuelCode(dto, fuelCodeCache);
+        if (fuelCode == null || fuelCode.isBlank()) {
+            String msg = "Transaction saved, but synchronization skipped: FuelCode is missing for fuel ID " + dto.getFuelId();
+            logger.warn(msg);
+            return new SyncResult(true, msg);
+        }
+
+        // 3. Find NormParameters record
+        NormParamLookupResult normParamResult = findFuelNormParameter(fuelCode, procurementPlantId);
+        if (normParamResult.normParamId() == null) {
+            String msg = "Transaction saved, but synchronization skipped: " + normParamResult.message();
+            logger.warn(msg);
+            return new SyncResult(true, msg);
+        }
+        UUID normParamId = normParamResult.normParamId();
+
+        // 4. Find all matching NormsHeader records
+        List<UUID> normsHeaderIds = findMatchingNormsHeaderIds(normParamId, procurementPlantId);
+        if (normsHeaderIds.isEmpty()) {
+            String msg = "Transaction saved, but synchronization skipped: No NormsHeader found for NormParameter ID " + normParamId + " (fuelCode '" + fuelCode + "')";
+            logger.info(msg);
+            return new SyncResult(true, msg);
+        }
+
+        // 5. Update NormsMonthDetail and CPPMonthWisePrice for all matching headers
+        List<String> warnings = new ArrayList<>();
+        int totalNmdUpdated = 0;
+        int totalPriceUpdated = 0;
+
+        for (UUID headerId : normsHeaderIds) {
+            totalNmdUpdated += syncNormsMonthDetailPrices(headerId, dto, monthIdMap);
+            totalPriceUpdated += syncCppMonthWisePrice(headerId, financialYear, dto, warnings);
+        }
+
+        logger.info("synchronizeFuelAvailabilityCost: Synced fuelCode='{}', normParamId={}, headers={}, nmdRows={}, priceRows={}",
+                fuelCode, normParamId, normsHeaderIds.size(), totalNmdUpdated, totalPriceUpdated);
+
+        if (totalNmdUpdated == 0 && totalPriceUpdated == 0 && hasAnyCost(dto)) {
+            String notice = "Transaction saved, but synchronization skipped: No existing NormsMonthDetail or CPPMonthWisePrice records found for NormsHeaders " + normsHeaderIds;
+            logger.info(notice);
+            warnings.add(notice);
+        }
+
+        if (!warnings.isEmpty()) {
+            return new SyncResult(true, String.join("; ", warnings));
+        }
+
+        return new SyncResult(true, null);
+    }
+
+    private boolean hasAnyCost(FuelAvailabilityTransactionDTO dto) {
+        for (int month : FINANCIAL_MONTHS) {
+            if (getCostForMonth(dto, month) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private <T> T executeInTransaction(java.util.function.Function<org.springframework.transaction.TransactionStatus, T> action) {
+        TransactionTemplate tt = getTransactionTemplate();
+        if (tt != null) {
+            return tt.execute(action::apply);
+        } else {
+            return action.apply(null);
+        }
+    }
+
+    private AOPMessageVM saveInternal(List<FuelAvailabilityTransactionDTO> dtoList, boolean includeCost,
+                                      String financialYearParam, List<UUID> plantIds) {
+        logger.info("[JMDFuelAvailability] SAVE - includeCost: {}, financialYearParam: {}, records: {}",
+                includeCost, financialYearParam, dtoList != null ? dtoList.size() : 0);
         AOPMessageVM vm = new AOPMessageVM();
 
         try {
@@ -170,93 +540,194 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
                 return vm;
             }
 
+            // Financial year validation & month resolution
+            String authoritativeFy = null;
+            if (financialYearParam != null && !financialYearParam.isBlank()) {
+                authoritativeFy = financialYearParam.trim();
+            } else if (dtoList != null) {
+                // Fallback to the first nonblank DTO financial year when request param is blank
+                for (FuelAvailabilityTransactionDTO dto : dtoList) {
+                    if (dto.getFinancialYear() != null && !dto.getFinancialYear().isBlank()) {
+                        authoritativeFy = dto.getFinancialYear().trim();
+                        break;
+                    }
+                }
+            }
+
+            Map<Integer, UUID> monthIdMap = Collections.emptyMap();
+            if (includeCost) {
+                if (authoritativeFy == null || authoritativeFy.isBlank()) {
+                    vm.setCode(400);
+                    vm.setMessage("financialYear is required for cost synchronization (neither query parameter nor payload financialYear was supplied)");
+                    return vm;
+                }
+
+                try {
+                    parseAndValidateFinancialYear(authoritativeFy);
+                    monthIdMap = resolveFinancialYearMonths(authoritativeFy);
+
+                    // Validate that all 12 required financial-year months (April=4 through March=3) are available
+                    List<Integer> missingMonths = new ArrayList<>();
+                    for (int month : FINANCIAL_MONTHS) {
+                        if (!monthIdMap.containsKey(month) || monthIdMap.get(month) == null) {
+                            missingMonths.add(month);
+                        }
+                    }
+                    if (!missingMonths.isEmpty() || monthIdMap.size() != 12) {
+                        vm.setCode(400);
+                        vm.setMessage("Incomplete financial-year month mapping for financial year '" + authoritativeFy +
+                                "': expected 12 months (April-March), but found " + monthIdMap.size() +
+                                (missingMonths.isEmpty() ? "" : ". Missing month(s): " + missingMonths));
+                        return vm;
+                    }
+                } catch (IllegalArgumentException e) {
+                    vm.setCode(400);
+                    vm.setMessage("Invalid financialYear: " + e.getMessage());
+                    return vm;
+                }
+            }
+
             int successCount = 0;
             int errorCount = 0;
             List<String> errorMessages = new ArrayList<>();
 
+            Map<UUID, UUID> procurementPlantCache = new HashMap<>();
+            Map<UUID, String> fuelCodeCache = new HashMap<>();
+
             for (FuelAvailabilityTransactionDTO dto : dtoList) {
                 try {
-                    if (dto.getCppPlantFkId() == null || dto.getFuelId() == null
-                            || dto.getType() == null || dto.getFinancialYear() == null) {
+                    // Fall back to single plantId if dto.cppPlantFkId is null
+                    if (dto.getCppPlantFkId() == null && plantIds != null && plantIds.size() == 1) {
+                        dto.setCppPlantFkId(plantIds.get(0));
+                    }
+
+                    if (dto.getCppPlantFkId() == null || dto.getFuelId() == null) {
                         errorCount++;
-                        errorMessages.add("Record skipped: cppPlantFkId/fuelId/type/financialYear is null");
+                        errorMessages.add("Record skipped: cppPlantFkId/fuelId is null");
                         continue;
                     }
 
-                    if (dto.getId() == null) {
-                        // CREATE via JPA
-                        CPPFuelAvailabilityTransaction entity = new CPPFuelAvailabilityTransaction();
-                        entity.setCppPlantFkId(dto.getCppPlantFkId());
-                        entity.setFuelFkId(dto.getFuelId());
-                        entity.setType(dto.getType());
-                        entity.setUom(dto.getUom());
-                        entity.setCalorificValue(dto.getCalorificValue());
-                        entity.setApr(dto.getApr());
-                        entity.setMay(dto.getMay());
-                        entity.setJun(dto.getJun());
-                        entity.setJul(dto.getJul());
-                        entity.setAug(dto.getAug());
-                        entity.setSep(dto.getSep());
-                        entity.setOct(dto.getOct());
-                        entity.setNov(dto.getNov());
-                        entity.setDec(dto.getDec());
-                        entity.setJan(dto.getJan());
-                        entity.setFeb(dto.getFeb());
-                        entity.setMar(dto.getMar());
-                        if (includeCost) {
-                            entity.setCostApr(dto.getCostApr());
-                            entity.setCostMay(dto.getCostMay());
-                            entity.setCostJun(dto.getCostJun());
-                            entity.setCostJul(dto.getCostJul());
-                            entity.setCostAug(dto.getCostAug());
-                            entity.setCostSep(dto.getCostSep());
-                            entity.setCostOct(dto.getCostOct());
-                            entity.setCostNov(dto.getCostNov());
-                            entity.setCostDec(dto.getCostDec());
-                            entity.setCostJan(dto.getCostJan());
-                            entity.setCostFeb(dto.getCostFeb());
-                            entity.setCostMar(dto.getCostMar());
+                    if (dto.getType() == null) {
+                        dto.setType("FUEL_AVAILABILITY");
+                    }
+
+                    // Validate financial year consistency
+                    if (authoritativeFy != null) {
+                        if (dto.getFinancialYear() != null && !dto.getFinancialYear().isBlank()) {
+                            if (!dto.getFinancialYear().trim().equalsIgnoreCase(authoritativeFy)) {
+                                errorCount++;
+                                errorMessages.add("Record skipped: financialYear mismatch: payload has '" +
+                                        dto.getFinancialYear() + "', expected '" + authoritativeFy + "'");
+                                continue;
+                            }
                         }
-                        entity.setFinancialYear(dto.getFinancialYear());
-                        entity.setRemarks(dto.getRemarks());
-                        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-                        entity.setCreatedDate(now);
-                        entity.setUpdatedDate(now);
-                        repository.save(entity);
-                        successCount++;
-                    } else {
-                        // UPDATE
-                        if (includeCost) {
-                            // Cost path only updates cost columns + remarks — quantity
-                            // fields are owned by the quantity grid/API and left untouched.
-                            repository.updateFuelAvailabilityCost(
-                                    dto.getId(),
-                                    dto.getCostApr(), dto.getCostMay(), dto.getCostJun(), dto.getCostJul(),
-                                    dto.getCostAug(), dto.getCostSep(), dto.getCostOct(), dto.getCostNov(),
-                                    dto.getCostDec(), dto.getCostJan(), dto.getCostFeb(), dto.getCostMar(),
-                                    dto.getRemarks());
+                        dto.setFinancialYear(authoritativeFy);
+                    } else if (dto.getFinancialYear() == null || dto.getFinancialYear().isBlank()) {
+                        errorCount++;
+                        errorMessages.add("Record skipped: financialYear is null or cannot be determined");
+                        continue;
+                    }
+
+                    final String currentFy = includeCost ? authoritativeFy : dto.getFinancialYear().trim();
+                    final Map<Integer, UUID> fymMap = monthIdMap;
+
+                    // Execute each record in its own transaction boundary for consistency & partial-success support
+                    SyncResult recordResult = executeInTransaction(status -> {
+                        if (dto.getId() == null) {
+                            // CREATE via JPA
+                            CPPFuelAvailabilityTransaction entity = new CPPFuelAvailabilityTransaction();
+                            entity.setCppPlantFkId(dto.getCppPlantFkId());
+                            entity.setFuelFkId(dto.getFuelId());
+                            entity.setType(dto.getType());
+                            entity.setUom(dto.getUom());
+                            entity.setCalorificValue(dto.getCalorificValue());
+                            entity.setApr(dto.getApr());
+                            entity.setMay(dto.getMay());
+                            entity.setJun(dto.getJun());
+                            entity.setJul(dto.getJul());
+                            entity.setAug(dto.getAug());
+                            entity.setSep(dto.getSep());
+                            entity.setOct(dto.getOct());
+                            entity.setNov(dto.getNov());
+                            entity.setDec(dto.getDec());
+                            entity.setJan(dto.getJan());
+                            entity.setFeb(dto.getFeb());
+                            entity.setMar(dto.getMar());
+                            if (includeCost) {
+                                entity.setCostApr(dto.getCostApr());
+                                entity.setCostMay(dto.getCostMay());
+                                entity.setCostJun(dto.getCostJun());
+                                entity.setCostJul(dto.getCostJul());
+                                entity.setCostAug(dto.getCostAug());
+                                entity.setCostSep(dto.getCostSep());
+                                entity.setCostOct(dto.getCostOct());
+                                entity.setCostNov(dto.getCostNov());
+                                entity.setCostDec(dto.getCostDec());
+                                entity.setCostJan(dto.getCostJan());
+                                entity.setCostFeb(dto.getCostFeb());
+                                entity.setCostMar(dto.getCostMar());
+                            }
+                            entity.setFinancialYear(currentFy);
+                            entity.setRemarks(dto.getRemarks());
+                            LocalDateTime now = LocalDateTime.now();
+                            entity.setCreatedDate(now);
+                            entity.setUpdatedDate(now);
+                            repository.save(entity);
+                            dto.setId(entity.getId());
                         } else {
-                            repository.updateFuelAvailability(
-                                    dto.getId(),
-                                    // dto.getCppPlantFkId(),
-                                    dto.getFuelId(),
-                                    // dto.getType(),
-                                    dto.getUom(),
-                                    dto.getCalorificValue(),
-                                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
-                                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
-                                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
-                                    // dto.getFinancialYear(),
-                                    dto.getRemarks());
+                            // UPDATE
+                            if (includeCost) {
+                                int affected = repository.updateFuelAvailabilityCost(
+                                        dto.getId(),
+                                        dto.getCostApr(), dto.getCostMay(), dto.getCostJun(), dto.getCostJul(),
+                                        dto.getCostAug(), dto.getCostSep(), dto.getCostOct(), dto.getCostNov(),
+                                        dto.getCostDec(), dto.getCostJan(), dto.getCostFeb(), dto.getCostMar(),
+                                        dto.getRemarks());
+                                if (affected == 0) {
+                                    if (status != null) status.setRollbackOnly();
+                                    return new SyncResult(false, "Fuel availability record not found with id: " + dto.getId());
+                                }
+                            } else {
+                                int affected = repository.updateFuelAvailability(
+                                        dto.getId(),
+                                        dto.getFuelId(),
+                                        dto.getUom(),
+                                        dto.getCalorificValue(),
+                                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                                        dto.getRemarks());
+                                if (affected == 0) {
+                                    if (status != null) status.setRollbackOnly();
+                                    return new SyncResult(false, "Fuel availability record not found with id: " + dto.getId());
+                                }
+                            }
                         }
+
+                        // If includeCost, synchronize target tables
+                        if (includeCost) {
+                            return synchronizeFuelAvailabilityCost(dto, currentFy, fymMap, procurementPlantCache, fuelCodeCache);
+                        }
+
+                        return new SyncResult(true, null);
+                    });
+
+                    if (recordResult != null && !recordResult.success()) {
+                        errorCount++;
+                        errorMessages.add(recordResult.message());
+                    } else {
                         successCount++;
+                        if (recordResult != null && recordResult.message() != null) {
+                            // Informational note / skip notification
+                            errorMessages.add(recordResult.message());
+                        }
                     }
 
                 } catch (Exception e) {
                     errorCount++;
-                    String errorMsg = "Error processing record: " + e.getMessage();
+                    String errorMsg = "Error processing record: Database operation failed";
                     errorMessages.add(errorMsg);
-                    logger.error(errorMsg, e);
+                    logger.error("Error processing record for fuel ID: " + dto.getFuelId(), e);
                 }
             }
 
@@ -266,6 +737,11 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
                 vm.setCode(207);
                 vm.setMessage(String.format("Processed %d records. Success: %d, Errors: %d",
                         dtoList.size(), successCount, errorCount));
+                vm.setData(errorMessages);
+            } else if (!errorMessages.isEmpty()) {
+                // All transactions succeeded, but some had sync skips/notices
+                vm.setCode(207);
+                vm.setMessage(String.format("Processed all %d records with synchronization notices", successCount));
                 vm.setData(errorMessages);
             } else {
                 vm.setCode(200);
@@ -573,7 +1049,7 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
             logger.info("[JMDFuelAvailability] {} unchanged (skipped), {} modified to process",
                     skippedCount, dtoList.size() - skippedCount);
 
-            AOPMessageVM saveResult = saveInternal(validRecords, includeCost);
+            AOPMessageVM saveResult = saveInternal(validRecords, includeCost, financialYear, plantIds);
 
             if (!failedRecords.isEmpty()) {
                 byte[] errorExcel = generateExcel(failedRecords, financialYear, errorMessages, includeCost, minimal);

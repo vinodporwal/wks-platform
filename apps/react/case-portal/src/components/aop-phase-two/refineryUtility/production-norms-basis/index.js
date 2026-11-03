@@ -22,7 +22,9 @@ import OwnerSelection from './OwnerSelection'
 import VendorConsumption from './Vendorconsumption'
 import CommodityConsumption from './CommodityConsumption'
 import ResinConsumption from './ResinConsumption'
-
+import AntiScalant from './AntiScalant'
+import AntiFoam from './AntiFoam'
+import ResignRequired from './ResignRequired'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -264,6 +266,12 @@ const ProductionNormsBasis = () => {
         return <OwnerSelection />
       case 'Resin Consumption':
         return <ResinConsumption />
+      case 'AntiScalant':
+        return <AntiScalant />
+      case 'AntiFoam':
+        return <AntiFoam />
+      case 'Resign Required':
+        return <ResignRequired />
       default:
         return null
     }
