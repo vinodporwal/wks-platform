@@ -38,6 +38,8 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -70,6 +72,7 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class ShutdownNormsServiceImpl implements ShutdownNormsService {
+	private static final int FILTER_ARROW_PADDING = 4 * 256;
 
 	@Autowired
 	private ShutdownNormsRepository shutdownNormsRepository;
@@ -1957,8 +1960,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			colToMonthMap.put(14, "2");  
 			colToMonthMap.put(15, "3");  
 
-			Workbook workbook = new XSSFWorkbook();
-			Sheet sheet = workbook.createSheet("Sheet1");
+			XSSFWorkbook workbook = new XSSFWorkbook();
+			XSSFSheet sheet = workbook.createSheet("Sheet1");
 			sheet.protectSheet("");
 
 			CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
@@ -2075,9 +2078,21 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				if (col != 17 && col != 18) {
 					sheet.autoSizeColumn(col);
 					int currentWidth = sheet.getColumnWidth(col);
-					sheet.setColumnWidth(col, Math.max(currentWidth + 1200, 5000));
+					sheet.setColumnWidth(col, Math.min(Math.max(currentWidth + 1200, 5000) + FILTER_ARROW_PADDING, 60 * 256));
 				}
 			}
+
+			sheet.setAutoFilter(new CellRangeAddress(0, Math.max(currentRow - 1, 0), 0, numCols - 1));
+
+			// Protection keeps "Format columns" locked, which stops Excel from
+			// unhiding the hidden columns when the neighbouring column is resized.
+			sheet.lockFormatColumns(true);
+			sheet.lockAutoFilter(false);
+			sheet.lockSort(false);
+			sheet.lockInsertRows(false);
+			sheet.lockDeleteRows(false);
+			sheet.lockSelectLockedCells(false);
+			sheet.lockSelectUnlockedCells(false);
 
 			try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 				workbook.write(outputStream);

@@ -14,8 +14,8 @@ import lombok.Data;
  * <pre>
  *   cppPlantId, cppPlantName, generatingPlantName,
  *   assetId, assetName, assetType, assetCategory,
- *   utilityName, uom, materialName, issuingPlantName, issuingUom, loadingUom,
- *   Apr..Mar
+ *   utilityName, uom, materialName, issuingPlantName, issuingUom,
+ *   {Mon}_GenQty, {Mon}_OpHours, {Mon}_AvgLoading, {Mon}_HeatRate  (for each of 12 months Apr→Mar)
  * </pre>
  */
 @Data
@@ -47,18 +47,75 @@ public class AverageAssetLoadingDTO {
 
     private String issuingUom;
 
-    private String loadingUom;
+    // ── April ──────────────────────────────────────────────────────────────────
+    private BigDecimal aprGenQty;
+    private BigDecimal aprOpHours;
+    private BigDecimal aprAvgLoading;
+    private BigDecimal aprHeatRate;
 
-    private BigDecimal apr;
-    private BigDecimal may;
-    private BigDecimal jun;
-    private BigDecimal jul;
-    private BigDecimal aug;
-    private BigDecimal sep;
-    private BigDecimal oct;
-    private BigDecimal nov;
-    private BigDecimal dec;
-    private BigDecimal jan;
-    private BigDecimal feb;
-    private BigDecimal mar;
+    // ── May ────────────────────────────────────────────────────────────────────
+    private BigDecimal mayGenQty;
+    private BigDecimal mayOpHours;
+    private BigDecimal mayAvgLoading;
+    private BigDecimal mayHeatRate;
+
+    // ── June ───────────────────────────────────────────────────────────────────
+    private BigDecimal junGenQty;
+    private BigDecimal junOpHours;
+    private BigDecimal junAvgLoading;
+    private BigDecimal junHeatRate;
+
+    // ── July ───────────────────────────────────────────────────────────────────
+    private BigDecimal julGenQty;
+    private BigDecimal julOpHours;
+    private BigDecimal julAvgLoading;
+    private BigDecimal julHeatRate;
+
+    // ── August ─────────────────────────────────────────────────────────────────
+    private BigDecimal augGenQty;
+    private BigDecimal augOpHours;
+    private BigDecimal augAvgLoading;
+    private BigDecimal augHeatRate;
+
+    // ── September ──────────────────────────────────────────────────────────────
+    private BigDecimal sepGenQty;
+    private BigDecimal sepOpHours;
+    private BigDecimal sepAvgLoading;
+    private BigDecimal sepHeatRate;
+
+    // ── October ────────────────────────────────────────────────────────────────
+    private BigDecimal octGenQty;
+    private BigDecimal octOpHours;
+    private BigDecimal octAvgLoading;
+    private BigDecimal octHeatRate;
+
+    // ── November ───────────────────────────────────────────────────────────────
+    private BigDecimal novGenQty;
+    private BigDecimal novOpHours;
+    private BigDecimal novAvgLoading;
+    private BigDecimal novHeatRate;
+
+    // ── December ───────────────────────────────────────────────────────────────
+    private BigDecimal decGenQty;
+    private BigDecimal decOpHours;
+    private BigDecimal decAvgLoading;
+    private BigDecimal decHeatRate;
+
+    // ── January ────────────────────────────────────────────────────────────────
+    private BigDecimal janGenQty;
+    private BigDecimal janOpHours;
+    private BigDecimal janAvgLoading;
+    private BigDecimal janHeatRate;
+
+    // ── February ───────────────────────────────────────────────────────────────
+    private BigDecimal febGenQty;
+    private BigDecimal febOpHours;
+    private BigDecimal febAvgLoading;
+    private BigDecimal febHeatRate;
+
+    // ── March ──────────────────────────────────────────────────────────────────
+    private BigDecimal marGenQty;
+    private BigDecimal marOpHours;
+    private BigDecimal marAvgLoading;
+    private BigDecimal marHeatRate;
 }

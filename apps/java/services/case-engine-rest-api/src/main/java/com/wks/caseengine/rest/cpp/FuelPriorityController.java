@@ -56,6 +56,8 @@ public class FuelPriorityController {
         }
     }
 
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    // Plant Fuel Priority methods
     @GetMapping("/plant-wise-fuel-priority/{plantIds}/{financialYear}")
     public ResponseEntity<AOPMessageVM> getPlantWiseFuelPriority(@PathVariable String plantIds, @PathVariable String financialYear) {
         logger.info("Fetching plant wise fuel priority data for plants: {}, financialYear: {}", plantIds, financialYear);
@@ -148,6 +150,9 @@ public class FuelPriorityController {
         }
     }
 
+
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    // Asset fuel Priority methods
     @GetMapping("/asset-fuel-priority/{plantIds}/{financialYear}")
     public ResponseEntity<AOPMessageVM> getAssetFuelPriority(@PathVariable String plantIds, @PathVariable String financialYear) {
         logger.info("[GET /asset-fuel-priority] plantIds: {}, financialYear: {}", plantIds, financialYear);
@@ -185,6 +190,9 @@ public class FuelPriorityController {
         }
     }
 
+
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    // Asset fuel compatible methods
     @GetMapping("/compatible-fuel-assets")
     public ResponseEntity<AOPMessageVM> getCompatibleFuelAssets(@RequestParam(required = false) String plantIds) {
         logger.info("[GET /compatible-fuel-assets] Fetching compatible fuel assets for plantIds: {}", plantIds);

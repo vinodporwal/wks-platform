@@ -618,6 +618,26 @@ const AdvanceKendoTable = ({
           col.isVisible !== false,
       ) || []
 
+    const flattenCols = (cols = []) => {
+      const result = []
+      const traverse = (items) => {
+        items?.forEach((c) => {
+          if (c.children && Array.isArray(c.children)) {
+            traverse(c.children)
+          } else if (!hiddenFields.includes(c.field) && !c.hidden && c.isVisible !== false) {
+            result.push(c)
+          }
+        })
+      }
+      traverse(cols)
+      return result
+    }
+    const leafColumns = flattenCols(columns)
+    const exportMonthCols = leafColumns.slice(2).filter((c) => {
+      const f = (c.field || '').toLowerCase()
+      return f && !f.includes('remark') && !f.includes('action')
+    })
+
     options.sheets.forEach((sheet) => {
       let maxCols = 1
 
@@ -734,10 +754,26 @@ const AdvanceKendoTable = ({
           // Header styling
           // -----------------------------
           if (isHeader) {
-            cell.background = '#DFDFDF'
+            const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
+
+            if (typeof cell.value === 'string' && cell.value.includes('~')) {
+              cell.value = cell.value.split('~')[0].replace(/_/g, ' ').trim()
+            }
+
+            const cellValStr = String(cell.value || '').trim()
+            const isMonthHeader = /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(cellValStr)
+            const isSubHeaderCell = headerRowCount > 1 && rIdx > 0 && (!cell.rowSpan || cell.rowSpan === 1)
+
+            if (isSignOff && (isMonthHeader || isSubHeaderCell)) {
+              cell.background = '#CCFFFF'
+            } else if (cell.value && (row.type === 'group-header' || Number(cell.colSpan) > 1 || rIdx === 0)) {
+              cell.background = '#DFDFDF'
+            } else {
+              cell.background = cell.value ? '#DFDFDF' : '#ffffff'
+            }
+
             cell.color = '#000000'
             cell.bold = true
-
             cell.textAlign = 'center'
             cell.verticalAlign = 'center'
             cell.wrap = true
@@ -748,10 +784,6 @@ const AdvanceKendoTable = ({
             cell.background = '#ffffff'
           }
 
-          if (row.type === 'header' && typeof cell.value === 'string' && cell.value.includes('~')) {
-            cell.value = cell.value.split('~')[0].replace(/_/g, ' ').trim()
-          }
-
           // -----------------------------
           // Data styling
           // -----------------------------
@@ -759,25 +791,55 @@ const AdvanceKendoTable = ({
             cell.verticalAlign = 'center'
             const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
             const rawUom = dataRow?.UOM ?? dataRow?.uom
-            const isNoUom =
+            const isUomBlank = rawUom === undefined || rawUom === null || String(rawUom).trim() === ''
+            const labelField = leafColumns[0]?.field || visibleColumns[0]?.field
+            const labelVal = dataRow ? dataRow[labelField] : ''
+            const hasLabel = labelVal !== undefined && labelVal !== null && String(labelVal).trim() !== ''
+
+            // Category Header detection: (UOM blank + Rest All Month Keys-Values are Blank)
+            const isAllMonthValuesBlank = Boolean(
               isSignOff &&
               dataRow &&
-              (dataRow.isNoUom ||
-                (('uom' in dataRow || 'UOM' in dataRow) &&
-                  (rawUom === undefined || rawUom === null || String(rawUom).trim() === '')))
-            if (isNoUom) {
+              (exportMonthCols.length > 0
+                ? exportMonthCols.every((c) => {
+                    const val = dataRow[c.field]
+                    return val === undefined || val === null || String(val).trim() === ''
+                  })
+                : Object.keys(dataRow)
+                    .filter((k) => k.includes('~') || /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(k))
+                    .every((k) => {
+                      const val = dataRow[k]
+                      return val === undefined || val === null || String(val).trim() === ''
+                    })
+              )
+            )
+            const isCategoryHeader = isSignOff && isUomBlank && isAllMonthValuesBlank && hasLabel
+
+            // Parameter & UOM header row detection
+            const isParameterHeaderRow = Boolean(
+              isSignOff &&
+              dataRow &&
+              String(labelVal).trim().toLowerCase() === 'parameter'
+            )
+
+            if (isCategoryHeader) {
               if (cIdx === 0) {
                 cell.bold = true
-              } else if (cIdx === 1) {
-                cell.bold = true
                 cell.background = '#F7C7AC'
+                cell.color = '#000000'
+              }
+            } else if (isParameterHeaderRow) {
+              if (cIdx === 0 || cIdx === 1) {
+                cell.bold = true
+                cell.background = '#DAE9F8'
+                cell.color = '#000000'
               }
             }
             if (cell.disabled === undefined) {
               if (isRowNonEditable) {
                 cell.disabled = true
               } else {
-                const col = visibleColumns[cIdx]
+                const col = leafColumns[cIdx] || visibleColumns[cIdx]
                 cell.disabled = col?.editable === false
               }
             }
@@ -3133,23 +3195,59 @@ const AdvanceKendoTable = ({
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
     const isSignOff = Boolean(permissions?.isSignOffReport || isSignOffReport)
-    const visibleCols =
-      columns?.filter(
-        (c) =>
-          !hiddenFields.includes(c.field) &&
-          !c.hidden &&
-          c.isVisible !== false,
-      ) || []
-    const isFirstCol = props.field === visibleCols[0]?.field
-    const isSecondCol = props.field === visibleCols[1]?.field
+
+    const leafCols = []
+    const traverseLeafs = (items) => {
+      items?.forEach((c) => {
+        if (c.children && Array.isArray(c.children)) {
+          traverseLeafs(c.children)
+        } else if (!hiddenFields.includes(c.field) && !c.hidden && c.isVisible !== false) {
+          leafCols.push(c)
+        }
+      })
+    }
+    traverseLeafs(columns || [])
+
+    const isFirstCol = props.field === leafCols[0]?.field
+    const isSecondCol = props.field === leafCols[1]?.field
     const rawUom = props.dataItem?.UOM ?? props.dataItem?.uom
-    const isNoUom =
+    const isUomBlank = rawUom === undefined || rawUom === null || String(rawUom).trim() === ''
+    const labelField = leafCols[0]?.field
+    const labelVal = props.dataItem ? props.dataItem[labelField] : ''
+    const hasLabel = labelVal !== undefined && labelVal !== null && String(labelVal).trim() !== ''
+
+    // Month-wise columns: all leaf columns after leading label & UOM, excluding remarks/actions
+    const cellMonthCols = leafCols.slice(2).filter((c) => {
+      const f = (c.field || '').toLowerCase()
+      return f && !f.includes('remark') && !f.includes('action')
+    })
+
+    // Category Header detection: (UOM blank + Rest All Month Keys-Values are Blank)
+    const isAllMonthValuesBlank = Boolean(
       isSignOff &&
-      (props.dataItem?.isNoUom ||
-        (('uom' in (props.dataItem || {}) || 'UOM' in (props.dataItem || {})) &&
-          (rawUom === undefined || rawUom === null || String(rawUom).trim() === '')))
-    const isNoUomFirstCol = isNoUom && isFirstCol
-    const isNoUomSecondCol = isNoUom && isSecondCol
+      props.dataItem &&
+      (cellMonthCols.length > 0
+        ? cellMonthCols.every((c) => {
+            const val = props.dataItem[c.field]
+            return val === undefined || val === null || String(val).trim() === ''
+          })
+        : Object.keys(props.dataItem)
+            .filter((k) => k.includes('~') || /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(k))
+            .every((k) => {
+              const val = props.dataItem[k]
+              return val === undefined || val === null || String(val).trim() === ''
+            })
+      )
+    )
+    const isCategoryHeader = isSignOff && isUomBlank && isAllMonthValuesBlank && hasLabel
+    const isCategoryHeaderCell = isCategoryHeader && isFirstCol
+
+    const isParameterHeaderRow = Boolean(
+      isSignOff &&
+      props.dataItem &&
+      String(labelVal).trim().toLowerCase() === 'parameter'
+    )
+    const isParameterHeaderCell = isParameterHeaderRow && (isFirstCol || isSecondCol)
 
     // Convert boolean values or scientific notation for display in tooltip title
     const displayValue =
@@ -3166,13 +3264,15 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''} ${isNoUomFirstCol ? 'cell-no-uom-first-col' : ''} ${isNoUomSecondCol ? 'cell-no-uom-header' : ''}`.trim()}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''} ${isCategoryHeaderCell ? 'cell-category-header cell-no-uom-header' : ''} ${isParameterHeaderCell ? 'cell-parameter-header' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
-          ...(isNoUomFirstCol ? { fontWeight: 'bold' } : {}),
-          ...(isNoUomSecondCol
+          ...(isCategoryHeaderCell
             ? { fontWeight: 'bold', backgroundColor: '#F7C7AC' }
+            : {}),
+          ...(isParameterHeaderCell
+            ? { fontWeight: 'bold', backgroundColor: '#DAE9F8' }
             : {}),
         }}
       >

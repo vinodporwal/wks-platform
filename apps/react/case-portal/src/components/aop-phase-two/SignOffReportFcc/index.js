@@ -911,7 +911,7 @@ const SignOffReport = () => {
   const handleCalculateGrid = useCallback(
     async (gridKey) => {
       if (!PLANT_ID || !AOP_YEAR) return
-
+      setLoading(true)
       const { periodFrom, periodTo } = await resolvePeriod()
 
       // Step 1: Fire calculate API silently (no notifications, ignore result)

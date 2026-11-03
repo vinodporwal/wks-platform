@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Response DTO for SP: CPP_GetSRMappingQTY
+ * Response DTO for SP: CPP_GetSRMappingQTY / CPP_GetSRPlantFixedSummary
  *
  * <p>Unlike {@link SRMappingDTO}, this DTO carries the monthly QTY values
  * (apr → mar) produced by the SP, and uses a row-number {@code id} (Long)
@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
  *
  * SP columns:
  *   id (ROW_NUMBER),
+ *   dataType,
  *   cppPlantId (ReceiverPlant.SourceName), cppPlantName,
  *   senderPlantName,  senderPlantCode,  senderPlantId,
  *   senderUtilityId,  senderUtilityName,  senderUtilityCode, senderUtilityUOM,
@@ -23,7 +24,8 @@ import lombok.NoArgsConstructor;
  *   receiverUtilityId, receiverUtilityName, receiverUtilityCode, receiverUtilityUOM,
  *   receiverCostCenterId, receiverCostCenterName, receiverCostCenterCode,
  *   remarks,
- *   apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar
+ *   apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar,
+ *   is_calculated
  */
 @Data
 @NoArgsConstructor
@@ -31,6 +33,7 @@ import lombok.NoArgsConstructor;
 public class SRMappingQtyDTO {
 
     private Long   id;
+    private String dataType;
     private String cppPlantId;
     private String cppPlantName;
 
@@ -77,4 +80,6 @@ public class SRMappingQtyDTO {
     private Double jan;
     private Double feb;
     private Double mar;
+
+    private Boolean isCalculated;
 }

@@ -263,8 +263,9 @@ public class VgohtNormBasisController {
         boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
         boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
         boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
+        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
 
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4);
+        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
        
         if(isVgohtWithThreeValues) {
         	return vgohtNormBasisServiceImpl.getConfigurationDataWithThreeValues(year, plantFKId);
@@ -296,8 +297,9 @@ public class VgohtNormBasisController {
         boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
         boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
         boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
+        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
 
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4);
+        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
 
         // Declare variable outside the if/else block so it is accessible in the return check
         List<VgohtNormConfigurationDTO> failedRecords;
@@ -339,8 +341,9 @@ public class VgohtNormBasisController {
         boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
         boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
         boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
+        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
 
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4);
+        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
 
              byte[] excelBytes;
              if(isVgohtWithThreeValues) {
@@ -390,8 +393,9 @@ public class VgohtNormBasisController {
         boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
         boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
         boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
+        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
 
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4);
+        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
                 
                 if(isVgohtWithThreeValues) {
         	 return vgohtNormBasisServiceImpl.importConfigurationDataWithThreeValues(year, plantFKId, file);
