@@ -60,7 +60,8 @@ public class SteadyStateServiceImpl implements SteadyStateService {
 		boolean crude = vertical.getName().equalsIgnoreCase("CRUDE");
 		
 		boolean refineryUtilityDMD = vertical.getName().equalsIgnoreCase("RefineryUtility") && site.getName().equalsIgnoreCase("DMD");
-		boolean siteWiseSp = refineryUtilityDMD;
+		boolean refineryUtilityVMD = vertical.getName().equalsIgnoreCase("RefineryUtility") && site.getName().equalsIgnoreCase("VMD");
+		boolean siteWiseSp = refineryUtilityDMD || refineryUtilityVMD;
 
 		String storedProcedure = "";
 
