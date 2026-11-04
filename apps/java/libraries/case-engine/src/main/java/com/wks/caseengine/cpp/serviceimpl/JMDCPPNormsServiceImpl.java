@@ -290,7 +290,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
             CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
             CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
-            CellStyle numericStyle = ExcelStyles.createNumericStyle(workbook, "#,##0.0000");
+            CellStyle numericStyle = ExcelStyles.createNumericStyle(workbook, "#,##0.0000000000");
 
             int rowNum = 0;
             int col = 0;
@@ -309,7 +309,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             ExcelCells.setString(headerRow.createCell(col++), "Issuing UOM", headerStyle);
             ExcelCells.setString(headerRow.createCell(col++), "AOP Year", headerStyle);
             ExcelCells.setString(headerRow.createCell(col++), "Norm Type", headerStyle);
-            ExcelCells.setString(headerRow.createCell(col++), "Actual Norm", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Proposed Norms", headerStyle);
 
             String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
 
@@ -796,7 +796,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
             CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
             CellStyle dataStyle = ExcelStyles.createDataStyle(workbook);
-            CellStyle numericStyle = ExcelStyles.createNumericStyle(workbook, "#,##0.0000");
+            CellStyle numericStyle = ExcelStyles.createNumericStyle(workbook, "#,##0.0000000000");
             CellStyle errorStyle = ExcelStyles.createErrorStyle(workbook);
 
             int rowNum = 0;
@@ -816,7 +816,7 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
             ExcelCells.setString(headerRow.createCell(col++), "Issuing UOM", headerStyle);
             ExcelCells.setString(headerRow.createCell(col++), "AOP Year", headerStyle);
             ExcelCells.setString(headerRow.createCell(col++), "Norm Type", headerStyle);
-            ExcelCells.setString(headerRow.createCell(col++), "Actual Norm", headerStyle);
+            ExcelCells.setString(headerRow.createCell(col++), "Proposed Norms", headerStyle);
 
             String[] months = FiscalYearMonths.getMonthHeaders(financialYear);
 
