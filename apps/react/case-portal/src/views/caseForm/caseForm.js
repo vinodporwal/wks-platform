@@ -1347,7 +1347,12 @@ return {
     if (!dataGrid || dataGrid.length === 0) return '<p class="print-empty">No data available</p>'
 
     const fieldsToSkip = [
-      // 'textField1',
+      'textField1',
+      'textField2',
+      'textField3',
+      'textField4',
+      'btnEventTrend',
+      'btnEventLink',
       'RecommendationSubmit',
       'recommendationAssignedTo1',
       'deleteRowButton4',
