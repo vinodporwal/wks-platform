@@ -507,4 +507,36 @@ public class VgohtNormBasisController {
         }
     }
 
+    @GetMapping(value = "/shut-down-cat-chem-export")
+    public ResponseEntity<byte[]> exportShutDownCatChemData(
+            @RequestParam String year,
+            @RequestParam String plantId) {
+        try {
+            byte[] excelBytes = vgohtNormBasisServiceImpl.createShutDownCatChemExcel(year, plantId, false, null);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("ShutDownCatChemData.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/shut-down-cat-chem-import", consumes = "multipart/form-data")
+    public AOPMessageVM importShutDownCatChemData(
+            @RequestParam String year,
+            @RequestParam String plantId,
+            @RequestParam("file") MultipartFile file) {
+        if (plantId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+        return vgohtNormBasisServiceImpl.importShutDownCatChemData(year, plantId, file);
+    }
+
 }

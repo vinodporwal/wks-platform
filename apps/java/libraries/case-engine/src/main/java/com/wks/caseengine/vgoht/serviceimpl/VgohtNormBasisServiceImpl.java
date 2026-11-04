@@ -3202,4 +3202,241 @@ public boolean isVgohtWithThreeValues(String plantId) {
 	return isVgohtWithThreeValues;
 }
 
+// ─── Shutdown CatChem Excel Export ───────────────────────────────────────────
+
+public byte[] createShutDownCatChemExcel(String year, String plantFKId, boolean isAfterSave,
+		List<ShutDownCatChemDTO> dtoList) {
+	try {
+		if (!isAfterSave) {
+			AOPMessageVM result = getShutDownCatChemData(year, UUID.fromString(plantFKId));
+			if (result != null && result.getData() != null) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> dataMap = (Map<String, Object>) result.getData();
+				@SuppressWarnings("unchecked")
+				List<ShutDownCatChemDTO> fetched = (List<ShutDownCatChemDTO>) dataMap.get("Data");
+				dtoList = fetched;
+			}
+		}
+
+		if (dtoList == null) {
+			dtoList = new ArrayList<>();
+		}
+
+		List<String> monthHeaders = buildShutDownMonthHeaders(year);
+		// Column index of normParameterFKId: 3 fixed cols + 12 months + 1 Remarks = 16
+		int normParamColIdx = 16;
+
+		try (Workbook workbook = new XSSFWorkbook();
+			 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+			Sheet sheet = workbook.createSheet("ShutDownCatChem");
+			int currentRow = 0;
+
+			List<String> headers = new ArrayList<>(Arrays.asList("SAP Mat Code", "Particulars", "UOM"));
+			headers.addAll(monthHeaders);
+			headers.add("Remarks");
+			headers.add("normParameterFKId");
+			if (isAfterSave) {
+				headers.add("Status");
+				headers.add("Error Description");
+			}
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headers.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headers.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+
+			for (ShutDownCatChemDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+				List<Object> rowData = new ArrayList<>();
+				rowData.add(dto.getSapMaterialCode());
+				rowData.add(dto.getDisplayName());
+				rowData.add(dto.getUom());
+				// 12 months in fiscal order: Apr → Mar
+				rowData.add(dto.getApr());
+				rowData.add(dto.getMay());
+				rowData.add(dto.getJun());
+				rowData.add(dto.getJul());
+				rowData.add(dto.getAug());
+				rowData.add(dto.getSep());
+				rowData.add(dto.getOct());
+				rowData.add(dto.getNov());
+				rowData.add(dto.getDec());
+				rowData.add(dto.getJan());
+				rowData.add(dto.getFeb());
+				rowData.add(dto.getMar());
+				rowData.add(dto.getRemarks());
+				rowData.add(dto.getNormParameterFKId());
+				if (isAfterSave) {
+					rowData.add(dto.getSaveStatus());
+					rowData.add(dto.getErrDescription());
+				}
+
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+					cell.setCellStyle(borderedStyle);
+				}
+			}
+
+			// Auto-size all visible columns (up to but not including the hidden one)
+			for (int col = 0; col < normParamColIdx; col++) {
+				sheet.autoSizeColumn(col);
+			}
+			// Hide normParameterFKId column
+			sheet.setColumnHidden(normParamColIdx, true);
+
+			workbook.write(outputStream);
+			return outputStream.toByteArray();
+		}
+	} catch (Exception e) {
+		e.printStackTrace();
+		return new byte[0];
+	}
+}
+
+/**
+ * Builds dynamic month header labels for a fiscal year.
+ * Input format: "yyyy-yy" (e.g. "2026-27")
+ * Output: ["Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26","Oct-26","Nov-26","Dec-26","Jan-27","Feb-27","Mar-27"]
+ */
+private List<String> buildShutDownMonthHeaders(String year) {
+	String[] parts = year.split("-");
+	// Last two digits of start year (e.g. "26" from "2026")
+	String startSuffix = parts[0].length() >= 2 ? parts[0].substring(parts[0].length() - 2) : parts[0];
+	// End year suffix (e.g. "27")
+	String endSuffix = parts.length > 1 ? parts[1] : String.valueOf(Integer.parseInt(startSuffix) + 1);
+
+	String[] monthNames = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+	List<String> result = new ArrayList<>();
+	for (int i = 0; i < monthNames.length; i++) {
+		// Indices 0–8 → Apr–Dec → start year; indices 9–11 → Jan–Mar → end year
+		String suffix = (i < 9) ? startSuffix : endSuffix;
+		result.add(monthNames[i] + "-" + suffix);
+	}
+	return result;
+}
+
+// ─── Shutdown CatChem Excel Read ─────────────────────────────────────────────
+
+public List<ShutDownCatChemDTO> readShutDownCatChemExcel(InputStream inputStream) {
+	List<ShutDownCatChemDTO> resultList = new ArrayList<>();
+	try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+		Sheet sheet = workbook.getSheetAt(0);
+		Iterator<Row> rowIterator = sheet.iterator();
+		if (rowIterator.hasNext()) {
+			rowIterator.next(); // skip header row
+		}
+		while (rowIterator.hasNext()) {
+			Row row = rowIterator.next();
+			if (row == null || isRowEmpty(row)) {
+				continue;
+			}
+			ShutDownCatChemDTO dto = new ShutDownCatChemDTO();
+			try {
+				// Col 0: SAP Mat Code
+				dto.setSapMaterialCode(getStringCellValueForShutDown(row.getCell(0)));
+				// Col 1: Particulars (displayName)
+				dto.setDisplayName(getStringCellValueForShutDown(row.getCell(1)));
+				// Col 2: UOM
+				dto.setUom(getStringCellValueForShutDown(row.getCell(2)));
+				// Col 3–14: months in fiscal order Apr → Mar
+				dto.setApr(getNumericCellValueForShutDown(row.getCell(3)));
+				dto.setMay(getNumericCellValueForShutDown(row.getCell(4)));
+				dto.setJun(getNumericCellValueForShutDown(row.getCell(5)));
+				dto.setJul(getNumericCellValueForShutDown(row.getCell(6)));
+				dto.setAug(getNumericCellValueForShutDown(row.getCell(7)));
+				dto.setSep(getNumericCellValueForShutDown(row.getCell(8)));
+				dto.setOct(getNumericCellValueForShutDown(row.getCell(9)));
+				dto.setNov(getNumericCellValueForShutDown(row.getCell(10)));
+				dto.setDec(getNumericCellValueForShutDown(row.getCell(11)));
+				dto.setJan(getNumericCellValueForShutDown(row.getCell(12)));
+				dto.setFeb(getNumericCellValueForShutDown(row.getCell(13)));
+				dto.setMar(getNumericCellValueForShutDown(row.getCell(14)));
+				// Col 15: Remarks
+				dto.setRemarks(getStringCellValueForShutDown(row.getCell(15)));
+				// Col 16: normParameterFKId (hidden)
+				dto.setNormParameterFKId(getStringCellValueForShutDown(row.getCell(16)));
+			} catch (Exception e) {
+				e.printStackTrace();
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+			}
+			resultList.add(dto);
+		}
+	} catch (Exception e) {
+		throw new RuntimeException("Failed to read ShutDown CatChem Excel", e);
+	}
+	return resultList;
+}
+
+// ─── Shutdown CatChem Import ──────────────────────────────────────────────────
+
+@Transactional
+public AOPMessageVM importShutDownCatChemData(String year, String plantFKId, MultipartFile file) {
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	try {
+		List<ShutDownCatChemDTO> data = readShutDownCatChemExcel(file.getInputStream());
+		List<ShutDownCatChemDTO> failedList = saveShutDownCatChemData(year, plantFKId, data);
+
+		if (failedList != null && !failedList.isEmpty()) {
+			byte[] fileByteArray = createShutDownCatChemExcel(year, plantFKId, true, failedList);
+			String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+			aopMessageVM.setData(base64File);
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Partial data has been saved");
+		} else {
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("All data has been saved successfully");
+		}
+		return aopMessageVM;
+	} catch (Exception e) {
+		e.printStackTrace();
+		aopMessageVM.setCode(500);
+		aopMessageVM.setMessage("Error importing data: " + e.getMessage());
+		return aopMessageVM;
+	}
+}
+
+// ─── Shutdown CatChem cell-read helpers ──────────────────────────────────────
+
+private static String getStringCellValueForShutDown(Cell cell) {
+	if (cell == null || cell.getCellType() == CellType.BLANK) {
+		return null;
+	}
+	cell.setCellType(CellType.STRING);
+	String val = cell.getStringCellValue().trim();
+	return val.isEmpty() ? null : val;
+}
+
+private static Double getNumericCellValueForShutDown(Cell cell) {
+	if (cell == null || cell.getCellType() == CellType.BLANK) {
+		return null;
+	}
+	if (cell.getCellType() == CellType.NUMERIC) {
+		return cell.getNumericCellValue();
+	}
+	if (cell.getCellType() == CellType.STRING) {
+		String val = cell.getStringCellValue().trim();
+		if (val.isEmpty()) return null;
+		try {
+			return Double.parseDouble(val);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	return null;
+}
+
 }
