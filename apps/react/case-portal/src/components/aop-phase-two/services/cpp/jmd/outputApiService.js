@@ -34,6 +34,10 @@ export const OutputApiService = {
   // Used in: Outputs/monthly-asset-dispatch/index.js (Monthly Asset Dispatch output grid)
   getMonthlyAssetDispatch,
   exportMonthlyAssetDispatchExcel,
+
+  // Used in: Outputs/fuel-allocation/index.js (Fuel Allocation output grid)
+  getFuelAllocationQuantity,
+  exportFuelAllocationQuantityExcel,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -659,6 +663,84 @@ async function exportMonthlyAssetDispatchExcel(
     return { success: true, message: 'Excel exported successfully' }
   } catch (e) {
     console.error('Error exporting monthly asset dispatch Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || FUEL ALLOCATION QUANTITY OUTPUT APIs || ===================== //
+// GET /task/jmd/fuel-allocation-quantity?plantIds=...&aopYear=...
+// Calls SP dbo.CPP_GetFuelAllocationQuantity.
+// Returns one row per (CPP plant × generating plant × material × issuing plant) combination
+// with per-month GenerationQuantity and AllocationQuantity values.
+// Each row contains: id, cppPlantId, cppPlantName, generatingPlantId, generatingPlantName,
+//   normsHeaderId, assetId, materialName, issuingPlantName, issuingPlantId, issuingUOM,
+//   normParameterId, accountName, financialYear,
+//   and 12 monthly groups ({mon}GenerationQuantity, {mon}AllocationQuantity) for apr → mar.
+async function getFuelAllocationQuantity(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/fuel-allocation-quantity?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching fuel allocation quantity data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/fuel-allocation-quantity/export?plantIds=...&aopYear=...
+async function exportFuelAllocationQuantityExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/fuel-allocation-quantity/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting fuel allocation quantity Excel:', e)
     return Promise.reject(e)
   }
 }

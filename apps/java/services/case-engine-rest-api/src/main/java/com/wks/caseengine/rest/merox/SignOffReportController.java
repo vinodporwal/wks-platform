@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,5 +56,27 @@ public class SignOffReportController {
 
         AOPMessageVM response = signOffReportService.calculateSignOffReport(plantId, year, periodFrom, periodTo);
         return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @GetMapping(value = "/sign-off-report-export")
+    public ResponseEntity<byte[]> exportSignOffReport(
+            @RequestParam String plantId,
+            @RequestParam String year,
+            @RequestParam(value = "periodFrom", required = false) String periodFrom,
+            @RequestParam(value = "periodTo", required = false) String periodTo) {
+        try {
+            byte[] excelBytes = signOffReportService.exportSignOffReportExcel(plantId, year, periodFrom, periodTo);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("sign_off_report.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
