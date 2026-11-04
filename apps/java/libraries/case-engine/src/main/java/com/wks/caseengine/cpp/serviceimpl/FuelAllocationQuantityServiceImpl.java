@@ -143,6 +143,7 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
         dto.setIssuingUOM(rs.getString("IssuingUOM"));
         dto.setNormParameterId(toUUIDObj(rs.getString("NormParameterId")));
         dto.setAccountName(rs.getString("AccountName"));
+        dto.setIsFreeSteamFuel(getBooleanOrNull(rs, "IsFreeSteamFuel"));
         dto.setFinancialYear(rs.getString("FinancialYear"));
 
         // April
@@ -209,6 +210,14 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
         return rs.getBigDecimal(columnLabel);
     }
 
+    private Boolean getBooleanOrNull(ResultSet rs, String columnLabel) throws java.sql.SQLException {
+        Object obj = rs.getObject(columnLabel);
+        if (obj == null) return null;
+        if (obj instanceof Boolean) return (Boolean) obj;
+        if (obj instanceof Number) return ((Number) obj).intValue() == 1;
+        return rs.getBoolean(columnLabel);
+    }
+
     // ── Excel Generation ──────────────────────────────────────────────────────
 
     private byte[] generateExcel(List<FuelAllocationQuantityDTO> dtoList, String aopYear) throws IOException {
@@ -234,7 +243,7 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
         String[] subCols = {"Gen. Qty", "Allocation Qty"};
 
         String[] baseHeaders = {
-            "CPP Plant", "Generating Plant", "Asset Name", "Issuing Plant", "Material"
+            "CPP Plant", "Generating Plant", "Asset Name", "Issuing Plant", "Material", "Free Steam Fuel"
         };
         int baseCount = baseHeaders.length;
 
@@ -288,6 +297,7 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
             setStringCell(row.createCell(col++), dto.getAssetName(), dataStyle);
             setStringCell(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
             setStringCell(row.createCell(col++), dto.getMaterialName(), dataStyle);
+            setStringCell(row.createCell(col++), Boolean.TRUE.equals(dto.getIsFreeSteamFuel()) ? "Yes" : "", dataStyle);
 
             // April
             setBigDecimalCell(row.createCell(col++), dto.getAprGenerationQuantity(), dataStyle);

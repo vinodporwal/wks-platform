@@ -86,7 +86,7 @@ const InterSitePowerTransferGrid = () => {
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = customValueFormatterPhaseTwo(2)
+  const valueFormat = customValueFormatterPhaseTwo(0)
 
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -160,7 +160,7 @@ const InterSitePowerTransferGrid = () => {
     minWidth: 100,
     align: 'left',
     headerAlign: 'left',
-    type: 'number1',
+    type: 'wholeNumber',
     format: valueFormat,
   }
 

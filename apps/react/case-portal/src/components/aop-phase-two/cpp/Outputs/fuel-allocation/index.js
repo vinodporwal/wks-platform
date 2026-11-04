@@ -155,6 +155,14 @@ const FuelAllocation = () => {
         type: 'text',
         editable: false,
       },
+      {
+        field: 'isFreeSteamFuel',
+        title: 'Free Steam Fuel',
+        widthT: 140,
+        minWidth: 140,
+        type: 'text',
+        editable: false,
+      },
      
       // {
       //   field: 'issuingUOM',
@@ -195,6 +203,7 @@ const FuelAllocation = () => {
       const rowsWithId = data?.map((row, index) => ({
         ...row,
         id: row.id || `row_${index}`,
+        isFreeSteamFuel: row.isFreeSteamFuel ? 'Yes' : '',
       }))
       setRows(rowsWithId)
       if (!rowsWithId.length) {
