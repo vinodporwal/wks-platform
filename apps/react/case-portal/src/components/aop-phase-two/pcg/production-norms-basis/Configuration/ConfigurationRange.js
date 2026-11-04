@@ -92,8 +92,14 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         
         return {
           ...configItem, ...apiItem,
-          isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
-          nonEditableFields: configItem.nonEditableFields || [],
+          isEditable: true,
+          isApiEditable: apiItem.isEditable !== false && apiItem.isEditable !== 'false' && apiItem.isEditable !== 0,
+          nonEditableFields: (apiItem.isEditable === false || apiItem.isEditable === 'false' || apiItem.isEditable === 0)
+            ? Array.from(new Set([...(configItem.nonEditableFields || []), 'targetValue', 'range', 'remarks']))
+            : (configItem.nonEditableFields || []),
+          editableFields: (apiItem.isEditable === false || apiItem.isEditable === 'false' || apiItem.isEditable === 0)
+            ? ['selection']
+            : undefined,
           type: configItem.type || 'number1',
           dataType: configItem.type || 'number1',
           options: configItem.options || []
@@ -133,7 +139,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
             const isInline = row.displayName?.includes('AGR C003 Inline')
             const isBypass = row.displayName?.includes('AGR C003 Bypass')
             if (isInline || isBypass) {
-              return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
+              return { ...row, isEditable: row.isApiEditable === false ? false : value === (isInline ? 'Inline' : 'Bypass') }
             }
           }
           return row
@@ -170,6 +176,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     
     const payload = modifiedData.map((rest) => ({
       ...rest,
+      isEditable: rest.isApiEditable !== undefined ? rest.isApiEditable : rest.isEditable,
     }))
 
     try {
@@ -250,7 +257,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
           const isInline = row.displayName?.includes('AGR C003 Inline')
           const isBypass = row.displayName?.includes('AGR C003 Bypass')
           if (isInline || isBypass) {
-            return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
+            return { ...row, isEditable: row.isApiEditable === false ? false : value === (isInline ? 'Inline' : 'Bypass') }
           }
         }
         return row
