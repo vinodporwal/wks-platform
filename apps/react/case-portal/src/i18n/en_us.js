@@ -132,6 +132,7 @@ const defs = {
     jwBudgetSourceDTA: 'DTA Net Throughput',
     throughputNorms: 'SEZ Job Work Norms',
     fixedBedAndLabCost: 'Fixed Bed and Lab Cost',
+    labCost: 'Lab Cost',
 
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
