@@ -131,6 +131,7 @@ public class MonthlyAssetDispatchDTO {
 
     private String aopYear;
     private Integer monthNo;
+    private String month;
 
     /* ── Generation ─────────────────────────────────────────────────────────── */
 

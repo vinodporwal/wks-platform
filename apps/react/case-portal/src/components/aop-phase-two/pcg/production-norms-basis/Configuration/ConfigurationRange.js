@@ -46,6 +46,25 @@ const parseConfig = (config) => {
   catch { return null }
 }
 
+const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => {
+  if (dependentAttributeConfig) {
+    if (typeof dependentAttributeConfig === 'string') {
+      const match = dependentAttributeConfig.match(/["']?isCheckBoxVisible["']?\s*:\s*["']?(true|false)["']?/i)
+      if (match) {
+        return match[1].toLowerCase() === 'false'
+      }
+    } else if (typeof dependentAttributeConfig === 'object') {
+      if (typeof dependentAttributeConfig.isCheckBoxVisible === 'boolean') {
+        return !dependentAttributeConfig.isCheckBoxVisible
+      }
+      if (typeof dependentAttributeConfig.isCheckBoxVisible === 'string') {
+        return dependentAttributeConfig.isCheckBoxVisible.toLowerCase() === 'false'
+      }
+    }
+  }
+  return Boolean(fallbackHideCheckbox)
+}
+
 const formatDate = (val) => {
   if (!val) return val
   const d = new Date(val)
@@ -89,9 +108,18 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       
       const res = apiRes?.length ? apiRes.map((apiItem, index) => {
         const configItem = FILTER_CONFIG.find(d => [apiItem.displayName, apiItem.productName].includes(d.displayName)) || {}
-        
+        const fallbackHideCheckbox =
+          apiItem.hideCheckbox ??
+          apiItem.hideCheckBox ??
+          configItem.hideCheckbox ??
+          configItem.hideCheckBox ??
+          false
+        const hideCheckbox = resolveHideCheckbox(apiItem.dependentAttributeConfig, fallbackHideCheckbox)
+
         return {
           ...configItem, ...apiItem,
+          hideCheckbox,
+          hideCheckBox: hideCheckbox,
           isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
           nonEditableFields: configItem.nonEditableFields || [],
           type: configItem.type || 'number1',
@@ -112,9 +140,13 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         const config = parseConfig(item.config)
         const mappingKeys = config?.valueMapping ? Object.keys(config.valueMapping) : []
         const type = item.dataType || (mappingKeys.length ? 'dropdown' : undefined)
+        const fallbackHideCheckbox = item.hideCheckbox ?? item.hideCheckBox ?? false
+        const hideCheckbox = resolveHideCheckbox(item.dependentAttributeConfig, fallbackHideCheckbox)
         
         return {
           ...item,
+          hideCheckbox,
+          hideCheckBox: hideCheckbox,
           config, type,
           options: item.options?.length ? item.options : mappingKeys,
           remarks: item.remarks || '',

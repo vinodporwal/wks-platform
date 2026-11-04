@@ -184,6 +184,7 @@ public class MonthlyAssetDispatchServiceImpl implements MonthlyAssetDispatchServ
         /* ── Financial year & month ── */
         dto.setAopYear(rs.getString("AOPYear"));
         dto.setMonthNo(getNullableInt(rs, "MonthNo"));
+        dto.setMonth(rs.getString("Month"));
 
         /* ── Generation ── */
         dto.setGenerationQty(rs.getBigDecimal("GenerationQty"));
@@ -227,7 +228,7 @@ public class MonthlyAssetDispatchServiceImpl implements MonthlyAssetDispatchServ
             "Material",
             "Material Code",
             "AOP Year",
-            "Month No",
+            "Month",
             "Priority",
             "Min Loading",
             "Max Loading",
@@ -268,7 +269,7 @@ public class MonthlyAssetDispatchServiceImpl implements MonthlyAssetDispatchServ
             setStr(row, col++, dto.getMaterial(), dataStyle);
             setStr(row, col++, dto.getMaterialCode(), dataStyle);
             setStr(row, col++, dto.getAopYear(), dataStyle);
-            setInt(row, col++, dto.getMonthNo(), dataStyle);
+            setStr(row, col++, dto.getMonth(), dataStyle);
             setInt(row, col++, dto.getPriority(), dataStyle);
             setDec(row, col++, dto.getMinLoading(), dataStyle);
             setDec(row, col++, dto.getMaxLoading(), dataStyle);
