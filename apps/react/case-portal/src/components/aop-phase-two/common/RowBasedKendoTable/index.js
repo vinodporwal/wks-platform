@@ -51,7 +51,8 @@ const RowBasedKendoTable = (props) => {
           )
 
           const value = dataItem?.[field]
-          const inputType = dataItem?.type
+          // Per-field type (if configured) overrides the row-level type
+          const inputType = dataItem?.fieldTypes?.[field] || dataItem?.type
 
           let displayValue = value
 
@@ -145,6 +146,22 @@ const RowBasedKendoTable = (props) => {
                 
                 if (!isColEditable || !isRowEditable || !isCellEditable) {
                   return renderDataCell(currentCellProps, true);
+                }
+
+                // Per-field editor type: e.g. dropdown for targetValue, numeric for range.
+                // The editor sees the overridden type, but onChange gets the ORIGINAL
+                // dataItem back so the row's own `type` is never overwritten/saved.
+                const fieldType = dataItem?.fieldTypes?.[field]
+                if (fieldType) {
+                  return (
+                    <DynamicRowCellEditor
+                      {...currentCellProps}
+                      dataItem={{ ...dataItem, type: fieldType }}
+                      onChange={(e) =>
+                        currentCellProps.onChange?.({ ...e, dataItem })
+                      }
+                    />
+                  )
                 }
                 
                 return <DynamicRowCellEditor {...currentCellProps} />
