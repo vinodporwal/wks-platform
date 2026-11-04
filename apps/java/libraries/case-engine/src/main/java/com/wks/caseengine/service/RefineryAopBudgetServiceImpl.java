@@ -41,6 +41,7 @@ import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.LabCostDTO;
 import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
 import com.wks.caseengine.dto.FixedBedCostCenterDropdownDTO;
 import com.wks.caseengine.dto.SitesDTO;
@@ -2360,6 +2361,224 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete Fixed Bed and Lab Cost transaction", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getLabCostData(String aopYear) {
+        try {
+            String sql = "EXEC dbo.SP_GetLabCostData @AopYear = ?";
+
+            List<LabCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                String id = rs.getString("Id");
+                String costCenterMasterId = rs.getString("CostCenterMasterId");
+                String materialMasterId = rs.getString("MaterialMasterId");
+
+                return LabCostDTO.builder()
+                    .id(id != null ? id : (costCenterMasterId + "_" + (materialMasterId != null ? materialMasterId : "")))
+                    .costCenterMasterId(costCenterMasterId)
+                    .materialMasterId(materialMasterId)
+                    .costCenterDescription(rs.getString("CostCenterDescription"))
+                    .material(rs.getString("Material"))
+                    .uom(rs.getString("UOM"))
+                    .aopYear(aopYear)
+                    .apr(rs.getObject("Apr") != null ? rs.getDouble("Apr") : 0.0)
+                    .may(rs.getObject("May") != null ? rs.getDouble("May") : 0.0)
+                    .jun(rs.getObject("Jun") != null ? rs.getDouble("Jun") : 0.0)
+                    .jul(rs.getObject("Jul") != null ? rs.getDouble("Jul") : 0.0)
+                    .aug(rs.getObject("Aug") != null ? rs.getDouble("Aug") : 0.0)
+                    .sep(rs.getObject("Sep") != null ? rs.getDouble("Sep") : 0.0)
+                    .oct(rs.getObject("Oct") != null ? rs.getDouble("Oct") : 0.0)
+                    .nov(rs.getObject("Nov") != null ? rs.getDouble("Nov") : 0.0)
+                    .dec(rs.getObject("Dec") != null ? rs.getDouble("Dec") : 0.0)
+                    .jan(rs.getObject("Jan") != null ? rs.getDouble("Jan") : 0.0)
+                    .feb(rs.getObject("Feb") != null ? rs.getDouble("Feb") : 0.0)
+                    .mar(rs.getObject("Mar") != null ? rs.getDouble("Mar") : 0.0)
+                    .remarks(rs.getString("Remarks"))
+                    .build();
+            }, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Lab Cost data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<LabCostDTO> saveLabCostData(List<LabCostDTO> dtos, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<LabCostDTO> failedRecords = new ArrayList<>();
+
+        for (LabCostDTO dto : dtos) {
+            try {
+                String costCenterMasterId = dto.getCostCenterMasterId() != null && !dto.getCostCenterMasterId().isEmpty() && !dto.getCostCenterMasterId().startsWith("new_row_")
+                    ? dto.getCostCenterMasterId()
+                    : null;
+                String materialMasterId = dto.getMaterialMasterId() != null && !dto.getMaterialMasterId().isEmpty() && !dto.getMaterialMasterId().startsWith("new_row_")
+                    ? dto.getMaterialMasterId()
+                    : null;
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (year == null) {
+                    continue;
+                }
+
+                // If costCenterMasterId is missing, look up by description
+                if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
+                    String desc = dto.getCostCenterDescription();
+                    if (desc != null && !desc.isEmpty()) {
+                        List<String> existingIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCCostCenterMaster WHERE CostCenterDescription = ? OR CostCenter = ?",
+                            String.class, desc, desc
+                        );
+                        if (!existingIds.isEmpty()) {
+                            costCenterMasterId = existingIds.get(0);
+                        }
+                    }
+                }
+
+                // If materialMasterId is missing, look up by material name
+                if (materialMasterId == null || materialMasterId.isEmpty()) {
+                    String mat = dto.getMaterial();
+                    if (mat != null && !mat.isEmpty()) {
+                        List<String> existingMatIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCMaterialMaster WHERE Material = ?",
+                            String.class, mat
+                        );
+                        if (!existingMatIds.isEmpty()) {
+                            materialMasterId = existingMatIds.get(0);
+                        }
+                    }
+                }
+
+                if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrorMessage("Cost Center Description is required.");
+                    failedRecords.add(dto);
+                    continue;
+                }
+
+                if (materialMasterId == null || materialMasterId.isEmpty()) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrorMessage("Material is required.");
+                    failedRecords.add(dto);
+                    continue;
+                }
+
+                String id = dto.getId();
+                boolean isExistingId = (id != null && !id.trim().isEmpty()
+                    && !id.startsWith("new_row_") && !id.contains("_"));
+
+                // Condition 1: If existing Id is provided, update the record by Id directly
+                if (isExistingId) {
+                    String checkByIdSql = "SELECT COUNT(1) FROM dbo.LabCostTransaction WHERE Id = ?";
+                    int countById = jdbcTemplate.queryForObject(checkByIdSql, Integer.class, id);
+
+                    if (countById > 0) {
+                        String updateSql = "UPDATE dbo.LabCostTransaction " +
+                                           "SET CostCenterMasterId = ?, MaterialMasterId = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                           "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                           "WHERE Id = ?";
+                        jdbcTemplate.update(updateSql,
+                            costCenterMasterId, materialMasterId,
+                            dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                            dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                            dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                            dto.getRemarks(), updatedBy,
+                            id);
+                        continue;
+                    }
+                }
+
+                // Condition 2: Fallback / New record check by (CostCenterMasterId + MaterialMasterId + AopYear)
+                String checkSql = "SELECT COUNT(1) FROM dbo.LabCostTransaction " +
+                                  "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, costCenterMasterId, materialMasterId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.LabCostTransaction " +
+                                       "SET Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                       "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy,
+                        costCenterMasterId, materialMasterId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.LabCostTransaction " +
+                                       "(Id, CostCenterMasterId, MaterialMasterId, AopYear, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, " +
+                                       "Remarks, CreatedAt, CreatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        costCenterMasterId, materialMasterId, year,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM getLabCostCostCenterDropdown() {
+        try {
+            String sql = "EXEC dbo.Sp_GetLabCostCenterDropdown";
+
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Lab Cost Cost Center dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Lab Cost Cost Center dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getLabCostMaterialDropdown() {
+        try {
+            String sql = "EXEC dbo.Sp_GetLabCostMaterialDropdown";
+
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Lab Cost Material dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Lab Cost Material dropdown data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteLabCost(String masterId, String aopYear) {
+        try {
+            String sql = "DELETE FROM dbo.LabCostTransaction WHERE (Id = ? OR CostCenterMasterId = ?) AND AopYear = ?";
+            int rowsAffected = jdbcTemplate.update(sql, masterId, masterId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage(rowsAffected > 0 ? "Record deleted successfully" : "Record not found to delete");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete Lab Cost transaction", e);
         }
     }
 }

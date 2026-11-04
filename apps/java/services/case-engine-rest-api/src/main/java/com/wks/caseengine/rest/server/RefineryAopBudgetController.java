@@ -24,6 +24,7 @@ import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.LabCostDTO;
 import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.service.RefineryAopBudgetService;
@@ -285,6 +286,36 @@ public class RefineryAopBudgetController {
     @DeleteMapping("/fixed-bed-and-lab-cost")
     public AOPMessageVM deleteFixedBedAndLabCost(@RequestParam String masterId, @RequestParam String aopYear) {
         return refineryAopBudgetService.deleteFixedBedAndLabCost(masterId, aopYear);
+    }
+
+    @GetMapping("/lab-cost")
+    public AOPMessageVM getLabCost(@RequestParam String aopYear) {
+        return refineryAopBudgetService.getLabCostData(aopYear);
+    }
+
+    @PostMapping("/lab-cost")
+    public AOPMessageVM saveLabCost(@RequestBody List<LabCostDTO> labCostDTOs, @RequestParam(required = false) String aopYear) {
+        List<LabCostDTO> failedRecords = refineryAopBudgetService.saveLabCostData(labCostDTOs, aopYear);
+        if (failedRecords.isEmpty()) {
+            return new AOPMessageVM(200, "All data has been saved", null);
+        } else {
+            return new AOPMessageVM(400, "Partial data has been saved", failedRecords);
+        }
+    }
+
+    @GetMapping("/lab-cost-cost-center-dropdown")
+    public AOPMessageVM getLabCostCostCenterDropdown() {
+        return refineryAopBudgetService.getLabCostCostCenterDropdown();
+    }
+
+    @GetMapping("/lab-cost-material-dropdown")
+    public AOPMessageVM getLabCostMaterialDropdown() {
+        return refineryAopBudgetService.getLabCostMaterialDropdown();
+    }
+
+    @DeleteMapping("/lab-cost")
+    public AOPMessageVM deleteLabCost(@RequestParam String masterId, @RequestParam String aopYear) {
+        return refineryAopBudgetService.deleteLabCost(masterId, aopYear);
     }
 }
 
