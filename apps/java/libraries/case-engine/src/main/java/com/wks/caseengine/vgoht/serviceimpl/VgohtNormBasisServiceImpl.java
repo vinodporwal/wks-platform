@@ -3182,4 +3182,24 @@ public Double getAttributeValueForShutDownCatChem(ShutDownCatChemDTO shutDownCat
 	return shutDownCatChemDTO.getJan();
 }
 
+public boolean isVgohtWithThreeValues(String plantId) {
+
+	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+	boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
+	boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
+	boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
+	boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
+	boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
+	boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
+	boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
+	boolean KHT = plant.getName().equalsIgnoreCase("KHT");
+	boolean CNHT = plant.getName().equalsIgnoreCase("CNHT");
+
+	boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT || CNHT);
+
+	return isVgohtWithThreeValues;
+}
+
 }

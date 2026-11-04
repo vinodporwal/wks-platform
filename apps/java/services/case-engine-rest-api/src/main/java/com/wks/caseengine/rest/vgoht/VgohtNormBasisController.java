@@ -253,19 +253,8 @@ public class VgohtNormBasisController {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        Plants plant = plantsRepository.findById((plantFKId)).get();
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
        
         if(isVgohtWithThreeValues) {
         	return vgohtNormBasisServiceImpl.getConfigurationDataWithThreeValues(year, plantFKId);
@@ -284,22 +273,7 @@ public class VgohtNormBasisController {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        Plants plant = plantsRepository.findById(plantFKId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
 
         // Declare variable outside the if/else block so it is accessible in the return check
         List<VgohtNormConfigurationDTO> failedRecords;
@@ -327,23 +301,8 @@ public class VgohtNormBasisController {
         }
 
         try {
-        	 Plants plant = plantsRepository.findById(plantFKId)
-                     .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
-             Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-                     .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-
-                     
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
 
              byte[] excelBytes;
              if(isVgohtWithThreeValues) {
@@ -379,23 +338,8 @@ public class VgohtNormBasisController {
         if (plantFKId == null || year == null || year.isEmpty()) {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
-        Plants plant = plantsRepository.findById(plantFKId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-
                 
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
                 
                 if(isVgohtWithThreeValues) {
         	 return vgohtNormBasisServiceImpl.importConfigurationDataWithThreeValues(year, plantFKId, file);
