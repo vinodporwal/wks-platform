@@ -8,12 +8,12 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const COLUMNS = [
-  { field: 'displayName', title: 'Data Filters', widthT: 250, minWidth: 200, type: 'text', editable: false },
+  { field: 'displayName', title: 'Data Filters', widthT: 300, minWidth: 300, type: 'text', editable: false },
   { field: 'uom', title: 'UOM', widthT: 80, minWidth: 60, type: 'text', editable: false },
   { field: 'targetValue', title: 'Target Value', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
   { field: 'range', title: 'Range', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
   { field: 'selection', title: 'Selection', editable: true, widthT: 80, minWidth: 80, type: 'checkbox' },
-  { field: 'remarks', title: 'Criteria', widthT: 250, type: 'textarea', editable: false, minWidth: 250, showPlaceholder: false },
+  { field: 'remarks', title: 'Criteria', widthT: 200, type: 'textarea', editable: false, minWidth: 200, showPlaceholder: false },
   { field: 'dependantAttributeId', title: 'Applicable Utilities & Cat-Chems', widthT: 250, minWidth: 200, type: 'text', editable: false },
 ]
 
@@ -46,6 +46,25 @@ const parseConfig = (config) => {
   catch { return null }
 }
 
+const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => {
+  if (dependentAttributeConfig) {
+    if (typeof dependentAttributeConfig === 'string') {
+      const match = dependentAttributeConfig.match(/["']?isCheckBoxVisible["']?\s*:\s*["']?(true|false)["']?/i)
+      if (match) {
+        return match[1].toLowerCase() === 'false'
+      }
+    } else if (typeof dependentAttributeConfig === 'object') {
+      if (typeof dependentAttributeConfig.isCheckBoxVisible === 'boolean') {
+        return !dependentAttributeConfig.isCheckBoxVisible
+      }
+      if (typeof dependentAttributeConfig.isCheckBoxVisible === 'string') {
+        return dependentAttributeConfig.isCheckBoxVisible.toLowerCase() === 'false'
+      }
+    }
+  }
+  return Boolean(fallbackHideCheckbox)
+}
+
 const formatDate = (val) => {
   if (!val) return val
   const d = new Date(val)
@@ -56,7 +75,7 @@ const formatDate = (val) => {
 const Configuration = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
   const { plantObject, year } = useSelector((state) => state.dataGridStore)
-  
+
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const [modifiedCells, setModifiedCells] = useState({})
@@ -86,14 +105,29 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     setLoading(true)
     try {
       const apiRes = await ProductionNormsApiService.getConfigurationData(keycloak, PLANT_ID, AOP_YEAR)
-      
+
       const res = apiRes?.length ? apiRes.map((apiItem, index) => {
         const configItem = FILTER_CONFIG.find(d => [apiItem.displayName, apiItem.productName].includes(d.displayName)) || {}
-        
+        const fallbackHideCheckbox =
+          apiItem.hideCheckbox ??
+          apiItem.hideCheckBox ??
+          configItem.hideCheckbox ??
+          configItem.hideCheckBox ??
+          false
+        const hideCheckbox = resolveHideCheckbox(apiItem.dependentAttributeConfig, fallbackHideCheckbox)
+
         return {
           ...configItem, ...apiItem,
-          isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
-          nonEditableFields: configItem.nonEditableFields || [],
+          hideCheckbox,
+          hideCheckBox: hideCheckbox,
+          isEditable: true,
+          isApiEditable: apiItem.isEditable !== false && apiItem.isEditable !== 'false' && apiItem.isEditable !== 0,
+          nonEditableFields: (apiItem.isEditable === false || apiItem.isEditable === 'false' || apiItem.isEditable === 0)
+            ? Array.from(new Set([...(configItem.nonEditableFields || []), 'targetValue', 'range', 'remarks']))
+            : (configItem.nonEditableFields || []),
+          editableFields: (apiItem.isEditable === false || apiItem.isEditable === 'false' || apiItem.isEditable === 0)
+            ? ['selection']
+            : undefined,
           type: configItem.type || 'number1',
           dataType: configItem.type || 'number1',
           options: configItem.options || []
@@ -102,17 +136,17 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
       if (!res.length) {
         showSnackbar('No data found')
-        setLoading(false) 
+        setLoading(false)
         setRows([])
         setOriginalRows([])
-        return 
+        return
       }
 
       let formattedData = res.map((item, index) => {
         const config = parseConfig(item.config)
         const mappingKeys = config?.valueMapping ? Object.keys(config.valueMapping) : []
         const type = item.dataType || (mappingKeys.length ? 'dropdown' : undefined)
-        
+
         return {
           ...item,
           config, type,
@@ -133,7 +167,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
             const isInline = row.displayName?.includes('AGR C003 Inline')
             const isBypass = row.displayName?.includes('AGR C003 Bypass')
             if (isInline || isBypass) {
-              return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
+              return { ...row, isEditable: row.isApiEditable === false ? false : value === (isInline ? 'Inline' : 'Bypass') }
             }
           }
           return row
@@ -142,11 +176,11 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
       setRows(formattedData)
       setOriginalRows(formattedData)
-      setLoading(false) 
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
       showSnackbar('Error fetching data', 'error')
-      setLoading(false) 
+      setLoading(false)
     }
   }
 
@@ -167,15 +201,16 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     // if (validationError) return showSnackbar(validationError, 'error')
 
     setLoading(true)
-    
+
     const payload = modifiedData.map((rest) => ({
       ...rest,
+      isEditable: rest.isApiEditable !== undefined ? rest.isApiEditable : rest.isEditable,
     }))
 
     try {
       const response = await ProductionNormsApiService.saveConfigurationData(keycloak, AOP_YEAR, payload, PLANT_ID)
       setModifiedCells({})
-      
+
       showSnackbar(`Successfully saved ${modifiedData.length} changes!`, 'success')
       if (response?.code === 422) {
         setTimeout(() => showSnackbar(response.message || 'Validation error occurred.', 'error', false), 1000)
@@ -184,7 +219,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     } catch (error) {
       console.error('Error saving data:', error)
       showSnackbar('Failed to save changes. Please try again.', 'error')
-      setLoading(false) 
+      setLoading(false)
     }
   }
 
@@ -193,7 +228,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     setLoading(true)
     try {
       const response = await ProductionNormsApiService.importConfigurationExcel(file, keycloak, PLANT_ID, AOP_YEAR)
-      
+
       if (response?.code === 200) {
         showSnackbar(response.message || 'Excel file imported successfully!', 'success')
         await fetchConfigurationData()
@@ -207,7 +242,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     } catch (error) {
       showSnackbar(`Failed to import Excel file: ${error.message}`, 'error')
     } finally {
-      setLoading(false) 
+      setLoading(false)
     }
   }
 
@@ -216,7 +251,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       const binaryString = window.atob(base64Data)
       const bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i)
-      
+
       const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -250,7 +285,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
           const isInline = row.displayName?.includes('AGR C003 Inline')
           const isBypass = row.displayName?.includes('AGR C003 Bypass')
           if (isInline || isBypass) {
-            return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
+            return { ...row, isEditable: row.isApiEditable === false ? false : value === (isInline ? 'Inline' : 'Bypass') }
           }
         }
         return row
@@ -269,7 +304,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         setModifiedCells={setModifiedCells}
         title={PERMISSIONS.showTitle ? PERMISSIONS.titleName : ''}
         permissions={{ ...PERMISSIONS, ExcelName: `${PERMISSIONS.ExcelName}_${AOP_YEAR}` }}
-        handleRemarkCellClick={(row) => {setCurrentRemark(row.remarks || ''); setCurrentRowId(row.id); setRemarkDialogOpen(true)}}
+        handleRemarkCellClick={(row) => { setCurrentRemark(row.remarks || ''); setCurrentRowId(row.id); setRemarkDialogOpen(true) }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

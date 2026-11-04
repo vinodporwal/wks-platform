@@ -74,7 +74,7 @@ const MonthlyAssetDispatch = () => {
       },
       {
         field: 'utilityPlantCode',
-        title: 'Utility Plant Code',
+        title: 'Plant Code',
         widthT: 140,
         minWidth: 140,
         type: 'text',
@@ -93,8 +93,8 @@ const MonthlyAssetDispatch = () => {
       {
         field: 'utilityCode',
         title: 'Utility Code',
-        widthT: 120,
-        minWidth: 120,
+        widthT: 130,
+        minWidth: 130,
         type: 'text',
         editable: false,
       },
@@ -103,8 +103,8 @@ const MonthlyAssetDispatch = () => {
       {
         field: 'asset',
         title: 'Asset',
-        widthT: 200,
-        minWidth: 200,
+        widthT: 130,
+        minWidth: 130,
         type: 'text',
         editable: false,
       },
@@ -129,7 +129,7 @@ const MonthlyAssetDispatch = () => {
       },
       {
         field: 'materialPlantCode',
-        title: 'Material Plant Code',
+        title: 'Plant Code',
         widthT: 145,
         minWidth: 145,
         type: 'text',
@@ -148,8 +148,8 @@ const MonthlyAssetDispatch = () => {
       {
         field: 'materialCode',
         title: 'Material Code',
-        widthT: 120,
-        minWidth: 120,
+        widthT: 130,
+        minWidth: 130,
         type: 'text',
         editable: false,
       },
@@ -165,13 +165,22 @@ const MonthlyAssetDispatch = () => {
         locked: true,
       },
       {
+        field: 'month',
+        title: 'Month',
+        widthT: 110,
+        minWidth: 110,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
         field: 'monthNo',
         title: 'Month No',
         widthT: 95,
         minWidth: 95,
         type: 'wholeNumber',
         editable: false,
-        locked: true,
+        hidden: true,
       },
 
       /* ── Dispatch Details ── */

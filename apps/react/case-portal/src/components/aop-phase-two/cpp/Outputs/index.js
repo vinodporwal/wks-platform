@@ -15,6 +15,7 @@ import MonthlyCalculatedNorms from './monthly-calculated-norms'
 import SpinningMarginReport from './spinning-margin-report'
 import PurchasePowerAndSell from './power-purchase-sell'
 import MonthlyAssetDispatch from './monthly-asset-dispatch/index'
+import FuelAllocation from './fuel-allocation'
 
 const Outputs = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -56,6 +57,8 @@ const Outputs = () => {
         return <SpinningMarginReport />
       case 'Monthly Asset Dispatch':
         return <MonthlyAssetDispatch />
+      case 'Fuel Allocation':
+        return <FuelAllocation />
 
       default:
         return null

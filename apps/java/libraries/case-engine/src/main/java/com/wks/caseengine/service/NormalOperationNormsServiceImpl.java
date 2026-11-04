@@ -3089,11 +3089,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 			// sp call for refinery sites
 			boolean refineryUtility = vertical.getName().equalsIgnoreCase("RefineryUtility");
-			boolean refineryUtilityDta = refineryUtility && site.getName().equalsIgnoreCase("DTA");
-			boolean refineryUtilityDta_Pcg = refineryUtility && site.getName().equalsIgnoreCase("DTA_PCG");
-			boolean refineryUtilitySez_Pcg = refineryUtility && site.getName().equalsIgnoreCase("SEZ_PCG");
 
-			if(refineryUtilityDta || refineryUtilityDta_Pcg || refineryUtilitySez_Pcg) { 
+			if(refineryUtility) { 
 				String calculatestoredProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"_SteadyStateCalculation_Save";
 				executeSteadyStateCalculateSP(calculatestoredProcedure, plantFKId.toString(), site.getId().toString(), vertical.getId().toString(), year);
 			}

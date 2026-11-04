@@ -253,19 +253,8 @@ public class VgohtNormBasisController {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        Plants plant = plantsRepository.findById((plantFKId)).get();
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
        
         if(isVgohtWithThreeValues) {
         	return vgohtNormBasisServiceImpl.getConfigurationDataWithThreeValues(year, plantFKId);
@@ -284,22 +273,7 @@ public class VgohtNormBasisController {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
 
-        Plants plant = plantsRepository.findById(plantFKId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
 
         // Declare variable outside the if/else block so it is accessible in the return check
         List<VgohtNormConfigurationDTO> failedRecords;
@@ -327,23 +301,8 @@ public class VgohtNormBasisController {
         }
 
         try {
-        	 Plants plant = plantsRepository.findById(plantFKId)
-                     .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
-             Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-                     .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-
-                     
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
 
              byte[] excelBytes;
              if(isVgohtWithThreeValues) {
@@ -379,23 +338,8 @@ public class VgohtNormBasisController {
         if (plantFKId == null || year == null || year.isEmpty()) {
             throw new IllegalArgumentException("Plant ID and AOP Year are required");
         }
-        Plants plant = plantsRepository.findById(plantFKId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID associated with the plant"));
-
                 
-        boolean vgoht = vertical.getName().equalsIgnoreCase("VGOHT");
-        boolean dht1 = plant.getName().equalsIgnoreCase("DHT1");
-        boolean dht2 = plant.getName().equalsIgnoreCase("DHT2");
-        boolean VGOHT1 = plant.getName().equalsIgnoreCase("VGOHT1");
-        boolean VGOHT2 = plant.getName().equalsIgnoreCase("VGOHT2");
-        boolean VGOHT3 = plant.getName().equalsIgnoreCase("VGOHT3");
-        boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
-        boolean KHT = plant.getName().equalsIgnoreCase("KHT");
-
-        boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT);
+        boolean isVgohtWithThreeValues = vgohtNormBasisServiceImpl.isVgohtWithThreeValues(plantFKId.toString());
                 
                 if(isVgohtWithThreeValues) {
         	 return vgohtNormBasisServiceImpl.importConfigurationDataWithThreeValues(year, plantFKId, file);
@@ -561,6 +505,38 @@ public class VgohtNormBasisController {
         } else {
             return new AOPMessageVM(400, "Partial Data Saved", failedRecords);
         }
+    }
+
+    @GetMapping(value = "/shut-down-cat-chem-export")
+    public ResponseEntity<byte[]> exportShutDownCatChemData(
+            @RequestParam String year,
+            @RequestParam String plantId) {
+        try {
+            byte[] excelBytes = vgohtNormBasisServiceImpl.createShutDownCatChemExcel(year, plantId, false, null);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("ShutDownCatChemData.xlsx")
+                    .build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/shut-down-cat-chem-import", consumes = "multipart/form-data")
+    public AOPMessageVM importShutDownCatChemData(
+            @RequestParam String year,
+            @RequestParam String plantId,
+            @RequestParam("file") MultipartFile file) {
+        if (plantId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+        return vgohtNormBasisServiceImpl.importShutDownCatChemData(year, plantId, file);
     }
 
 }

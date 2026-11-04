@@ -11,8 +11,8 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface OtherCostsTransactionService {
 	
-	public AOPMessageVM getOtherCostsTransaction(String plantId,String year);
+	public AOPMessageVM getOtherCostsTransaction(String plantId,String year, String type);
 	public AOPMessageVM saveOtherCostsTransaction( String year, String plantFKId, List<OtherCostsTransactionDto> otherCostsTransactionDTOs);
-	public byte[] exportOtherCostsTransaction(String year, String plantFKId,boolean isAfterSave,List<OtherCostsTransactionDto> dtoList);
-	public AOPMessageVM importOtherCostsTransaction(String year,UUID plantId,MultipartFile file);
+	public byte[] exportOtherCostsTransaction(String year, String plantFKId, String type, boolean isAfterSave,List<OtherCostsTransactionDto> dtoList);
+	public AOPMessageVM importOtherCostsTransaction(String year,UUID plantId,String type,MultipartFile file);
 }

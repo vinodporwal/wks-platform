@@ -26,6 +26,7 @@ const SIX_DECIMAL_NORM_TYPES=[
 'Cooling Water Norms',
 ].map(normalizeKey)
 const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
+const THREE_DECIMAL_NORM_TYPESVMD=['Raw water', 'Effluent Treated', 'IOP Compressed Air'].map(normalizeKey)
 const OverallAopConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -91,6 +92,7 @@ const isDtaUnitPlant =
     plantName.toLowerCase() === 'spent_caustic (palpro)' ||
     plantName.toLowerCase() === 'wao_unit (672)')
 const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
+const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -158,10 +160,23 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
         }
         return Math.trunc(num).toString()
       }
+      if(ISVMD_Plants){
+        const typeKeys = [
+          normalizeKey(row?.normParameterTypeName),
+          normalizeKey(row?.normParameterTypeDisplayName),
+        ]
+        const isThreeDecimal = typeKeys.some((k) =>
+          THREE_DECIMAL_NORM_TYPESVMD.includes(k),
+        )
+        if (isThreeDecimal) {
+          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
   
         return Math.trunc(num).toString()
       },
-      [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, isSezCtPlant, isDtaUnitPlant],
+      [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant],
     )
 
   const columns = useMemo(() => {
@@ -315,13 +330,13 @@ const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
         format: valueFormat,
       },
     ]
-  }, [AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame, isDtapcgCtPlant, isSezpcgCtPlant, ISDMD_Plants, isSezCtPlant, isDtaUnitPlant])
+  }, [AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame, isDtapcgCtPlant, isSezpcgCtPlant, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame, isDtapcgCtPlant, isSezpcgCtPlant, ISDMD_Plants, isSezCtPlant, isDtaUnitPlant])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame, isDtapcgCtPlant, isSezpcgCtPlant, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant])
 
   const fetchData = async () => {
     setLoading(true)

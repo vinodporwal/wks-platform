@@ -14,4 +14,6 @@ public interface SignOffReportService {
 
     AOPMessageVM calculateSignOffReport(String plantId, String aopYear, String periodFrom, String periodTo);
 
+    byte[] exportSignOffReportExcel(String plantId, String aopYear, String periodFrom, String periodTo);
+
 }

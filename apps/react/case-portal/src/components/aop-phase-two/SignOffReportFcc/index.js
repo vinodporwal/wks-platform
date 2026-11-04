@@ -140,7 +140,7 @@ const SignOffReport = () => {
 
   const isFirstTwoColColor = useMemo(() => {
     if (site === 'dta' && ['dht1'].includes(plant)) return true
-    return false
+    return true
   }, [site, plant])
 
   // 5 Decimal place formatter for numeric columns

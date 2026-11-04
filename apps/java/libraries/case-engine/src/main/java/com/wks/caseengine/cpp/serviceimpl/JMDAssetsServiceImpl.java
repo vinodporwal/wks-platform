@@ -14,6 +14,7 @@ import com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository;
 import com.wks.caseengine.cpp.repository.CPPSteamAssetsOperationalHoursRepository;
 import com.wks.caseengine.cpp.repository.CppSteamGenerationAssetRepository;
 import com.wks.caseengine.cpp.service.JMDAssetsService;
+import com.wks.caseengine.cpp.utility.ExcelStyles;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.*;
@@ -1188,9 +1189,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         }
         
 
-        XSSFSheet xssSheet = (XSSFSheet) sheet;
-        xssSheet.protectSheet("");
-        xssSheet.lockFormatColumns(false);  // allow column width changes + unhide
+        // Apply sheet protection while enabling AutoFilter on sub-header row (row 1),
+        // sorting, selecting locked/unlocked cells (for copy-paste), and column/row resizing
+        ExcelStyles.applySheetProtectionWithAutoFilter(sheet, 1, totalColumns);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
@@ -1377,10 +1378,8 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             sheet.autoSizeColumn(i);
         }
 
-        // Protect sheet – allow column resizing/unhiding but keep cell edits locked
-        XSSFSheet xssErrorSheet = (XSSFSheet) sheet;
-        xssErrorSheet.protectSheet("");
-        xssErrorSheet.lockFormatColumns(false);
+        // Protect sheet – allow filtering, sorting, selecting/copying, and column resizing
+        ExcelStyles.applySheetProtectionWithAutoFilter(sheet, 1, totalColumns);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);

@@ -41,6 +41,7 @@ import com.wks.caseengine.dto.ProfitCenterDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.LabCostDTO;
 import com.wks.caseengine.dto.FixedBedAndLabCostDTO;
 import com.wks.caseengine.dto.FixedBedCostCenterDropdownDTO;
 import com.wks.caseengine.dto.SitesDTO;
@@ -213,7 +214,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         return;
     }
 
-    // --- Plant Capacities Export --------------------------------------------------
+    // ─── Plant Capacities Export ──────────────────────────────────────────────────
 
     @Override
     @SuppressWarnings("unchecked")
@@ -251,53 +252,53 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 Row row = sheet.createRow(currentRow++);
                 boolean isEditable = Boolean.TRUE.equals(dto.getIsEditable());
 
-                // Col 0  Site (always grey/locked)
+                // Col 0 – Site (always grey/locked)
                 Cell siteCell = row.createCell(0);
                 siteCell.setCellValue(dto.getSiteName() != null ? dto.getSiteName() : "");
                 siteCell.setCellStyle(greyStyle);
 
-                // Col 1  Plant (always grey/locked)
+                // Col 1 – Plant (always grey/locked)
                 Cell plantCell = row.createCell(1);
                 plantCell.setCellValue(dto.getPlantName() != null ? dto.getPlantName() : "");
                 plantCell.setCellStyle(greyStyle);
 
-                // Col 2  UOM (always grey/locked)
+                // Col 2 – UOM (always grey/locked)
                 Cell uomCell = row.createCell(2);
                 uomCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
                 uomCell.setCellStyle(greyStyle);
 
-                // Col 3  Min (editable only for editable rows)
+                // Col 3 – Min (editable only for editable rows)
                 Cell minCell = row.createCell(3);
                 minCell.setCellValue(dto.getMin() != null ? String.valueOf(dto.getMin()) : "");
                 minCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 4  Max (editable only for editable rows)
+                // Col 4 – Max (editable only for editable rows)
                 Cell maxCell = row.createCell(4);
                 maxCell.setCellValue(dto.getMax() != null ? String.valueOf(dto.getMax()) : "");
                 maxCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 5  Remarks (editable only for editable rows, wrapped)
+                // Col 5 – Remarks (editable only for editable rows, wrapped)
                 Cell remarksCell = row.createCell(5);
                 remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
                 remarksCell.setCellStyle(isEditable ? editableWrapStyle : greyStyle);
 
-                // Col 6  TransactionId (hidden; present means update on import)
+                // Col 6 – TransactionId (hidden; present means update on import)
                 Cell txnIdCell = row.createCell(6);
                 txnIdCell.setCellValue(dto.getTransactionId() != null ? dto.getTransactionId() : "");
                 txnIdCell.setCellStyle(greyStyle);
 
-                // Col 7  MasterId (hidden; used for insert when transactionId is absent)
+                // Col 7 – MasterId (hidden; used for insert when transactionId is absent)
                 Cell masterIdCell = row.createCell(7);
                 masterIdCell.setCellValue(dto.getMasterId() != null ? dto.getMasterId() : "");
                 masterIdCell.setCellStyle(greyStyle);
 
                 if (isAfterSave) {
-                    // Col 8  Status
+                    // Col 8 – Status
                     Cell statusCell = row.createCell(8);
                     statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                     statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-                    // Col 9  Error Description
+                    // Col 9 – Error Description
                     Cell errCell = row.createCell(9);
                     errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
                     errCell.setCellStyle(Utility.createBorderedStyle(workbook));
@@ -336,7 +337,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
-    // --- Plant Capacities Import  Excel Reader -----------------------------------
+    // ─── Plant Capacities Import – Excel Reader ───────────────────────────────────
 
     private List<PlantCapacitiesTranscationDTO> readPlantCapacitiesExcel(InputStream inputStream, String plantId, String aopYear) {
         List<PlantCapacitiesTranscationDTO> resultList = new ArrayList<>();
@@ -391,7 +392,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setUom(uom.isEmpty() ? null : uom);
                     }
 
-                    // Col 3  Min
+                    // Col 3 – Min
                     Cell minCell = row.getCell(3);
                     if (minCell != null) {
                         minCell.setCellType(CellType.STRING);
@@ -399,7 +400,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setMin(minStr.isEmpty() ? null : Double.parseDouble(minStr));
                     }
 
-                    // Col 4  Max
+                    // Col 4 – Max
                     Cell maxCell = row.getCell(4);
                     if (maxCell != null) {
                         maxCell.setCellType(CellType.STRING);
@@ -407,14 +408,14 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setMax(maxStr.isEmpty() ? null : Double.parseDouble(maxStr));
                     }
 
-                    // Col 5  Remarks
+                    // Col 5 – Remarks
                     Cell remarksCell = row.getCell(5);
                     if (remarksCell != null) {
                         remarksCell.setCellType(CellType.STRING);
                         dto.setRemarks(remarksCell.getStringCellValue().trim());
                     }
 
-                    // Col 6  TransactionId (hidden; present ? update, absent ? insert)
+                    // Col 6 – TransactionId (hidden; present → update, absent → insert)
                     Cell txnIdCell = row.getCell(6);
                     if (txnIdCell != null) {
                         txnIdCell.setCellType(CellType.STRING);
@@ -422,7 +423,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setTransactionId(txnId.isEmpty() ? null : txnId);
                     }
 
-                    // Col 7  MasterId (hidden; required for insert)
+                    // Col 7 – MasterId (hidden; required for insert)
                     Cell masterIdCell = row.getCell(7);
                     if (masterIdCell != null) {
                         masterIdCell.setCellType(CellType.STRING);
@@ -445,7 +446,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         return resultList;
     }
 
-    // --- Plant Capacities Import  API -------------------------------------------
+    // ─── Plant Capacities Import – API ───────────────────────────────────────────
 
     @Override
     @Transactional
@@ -715,7 +716,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
-    // --- Refinery Shutdown Export -------------------------------------------------
+    // ─── Refinery Shutdown Export ─────────────────────────────────────────────────
 
     @Override
     @SuppressWarnings("unchecked")
@@ -757,53 +758,53 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 Row row = sheet.createRow(currentRow++);
                 boolean isEditable = Boolean.TRUE.equals(dto.getIsEditable());
 
-                // Col 0  Site (always locked)
+                // Col 0 – Site (always locked)
                 Cell siteCell = row.createCell(0);
                 siteCell.setCellValue(dto.getSiteName() != null ? dto.getSiteName() : "");
                 siteCell.setCellStyle(greyStyle);
 
-                // Col 1  Plant (always locked)
+                // Col 1 – Plant (always locked)
                 Cell plantCell = row.createCell(1);
                 plantCell.setCellValue(dto.getPlantName() != null ? dto.getPlantName() : "");
                 plantCell.setCellStyle(greyStyle);
 
-                // Col 2  SD Total duration in days
+                // Col 2 – SD Total duration in days
                 Cell sdCell = row.createCell(2);
                 sdCell.setCellValue(dto.getSdTotalDurationDays() != null ? String.valueOf(dto.getSdTotalDurationDays()) : "");
                 sdCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 3  Date of Commencement
+                // Col 3 – Date of Commencement
                 Cell dateCell = row.createCell(3);
                 dateCell.setCellValue(dto.getDateOfCommencement() != null ? sdf.format(dto.getDateOfCommencement()) : "");
                 dateCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 4  Purpose of Shutdown (remark, wrapped)
+                // Col 4 – Purpose of Shutdown (remark, wrapped)
                 Cell remarkCell = row.createCell(4);
                 remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
                 remarkCell.setCellStyle(isEditable ? editableWrapStyle : greyStyle);
 
-                // Col 5  Id (hidden; present means update on import)
+                // Col 5 – Id (hidden; present means update on import)
                 Cell idCell = row.createCell(5);
                 idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
                 idCell.setCellStyle(greyStyle);
 
-                // Col 6  SiteFkId (hidden)
+                // Col 6 – SiteFkId (hidden)
                 Cell siteFkIdCell = row.createCell(6);
                 siteFkIdCell.setCellValue(dto.getSiteFkId() != null ? dto.getSiteFkId() : "");
                 siteFkIdCell.setCellStyle(greyStyle);
 
-                // Col 7  PlantFkId (hidden)
+                // Col 7 – PlantFkId (hidden)
                 Cell plantFkIdCell = row.createCell(7);
                 plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId() : "");
                 plantFkIdCell.setCellStyle(greyStyle);
 
                 if (isAfterSave) {
-                    // Col 8  Status
+                    // Col 8 – Status
                     Cell statusCell = row.createCell(8);
                     statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                     statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-                    // Col 9  Error Description
+                    // Col 9 – Error Description
                     Cell errCell = row.createCell(9);
                     errCell.setCellValue(dto.getErrorMessage() != null ? dto.getErrorMessage() : "");
                     errCell.setCellStyle(Utility.createBorderedStyle(workbook));
@@ -843,7 +844,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
-    // --- Refinery Shutdown Import  Excel Reader ----------------------------------
+    // ─── Refinery Shutdown Import – Excel Reader ──────────────────────────────────
 
     private List<RefineryShutdownDTO> readRefineryShutdownExcel(InputStream inputStream, String plantId, String aopYear) {
         List<RefineryShutdownDTO> resultList = new ArrayList<>();
@@ -888,7 +889,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                 RefineryShutdownDTO dto = new RefineryShutdownDTO();
                 try {
-// Col 0  Site
+// Col 0 – Site
                     Cell siteCell = row.getCell(0);
                     if (siteCell != null) {
                         siteCell.setCellType(CellType.STRING);
@@ -896,7 +897,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setSiteName(siteStr.isEmpty() ? null : siteStr);
                     }
                     
-                    // Col 1  Plant
+                    // Col 1 – Plant
                     Cell plantCell = row.getCell(1);
                     if (plantCell != null) {
                         plantCell.setCellType(CellType.STRING);
@@ -904,7 +905,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setPlantName(plantStr.isEmpty() ? null : plantStr);
                     }
 
-                    // Col 2  SD Total duration in days
+                    // Col 2 – SD Total duration in days
                     Cell sdCell = row.getCell(2);
                     if (sdCell != null) {
                         sdCell.setCellType(CellType.STRING);
@@ -925,7 +926,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         }
                     }
 
-                    // Col 3  Date of Commencement
+                    // Col 3 – Date of Commencement
                     
                     Cell dateCell = row.getCell(3);
                     if (dateCell != null) {
@@ -934,7 +935,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                         if (dateCell.getCellType() == CellType.NUMERIC
                                 && DateUtil.isCellDateFormatted(dateCell)) {
-                            // Native Excel date cell  read directly, no string conversion needed.
+                            // Native Excel date cell – read directly, no string conversion needed.
                             parsedDate = dateCell.getDateCellValue();
                         } else {
                             // Text cell (Google Sheets export or manually typed value).
@@ -977,7 +978,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                     // Cross-field validation: SD Total Duration Days must not exceed the
                     // remaining days in the month of the Date of Commencement.
-                    // Remaining Days = Total Days in Month - Day of Month
+                    // Remaining Days = Total Days in Month − Day of Month
                     if (dto.getDateOfCommencement() != null
                             && dto.getSdTotalDurationDays() != null
                             && !"Failed".equals(dto.getSaveStatus())) {
@@ -995,14 +996,14 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         }
                     }
 
-                    // Col 4  Purpose of Shutdown (remark)
+                    // Col 4 – Purpose of Shutdown (remark)
                     Cell remarkCell = row.getCell(4);
                     if (remarkCell != null) {
                         remarkCell.setCellType(CellType.STRING);
                         dto.setRemark(remarkCell.getStringCellValue().trim());
                     }
 
-                    // Col 5  Id (hidden; present ? update, absent ? insert)
+                    // Col 5 – Id (hidden; present → update, absent → insert)
                     Cell idCell = row.getCell(5);
                     if (idCell != null) {
                         idCell.setCellType(CellType.STRING);
@@ -1010,7 +1011,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setId(id.isEmpty() ? null : id);
                     }
 
-                    // Col 6  SiteFkId (hidden)
+                    // Col 6 – SiteFkId (hidden)
                     Cell siteFkIdCell = row.getCell(6);
                     if (siteFkIdCell != null) {
                         siteFkIdCell.setCellType(CellType.STRING);
@@ -1018,7 +1019,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setSiteFkId(siteFkId.isEmpty() ? null : siteFkId);
                     }
 
-                    // Col 7  PlantFkId (hidden)
+                    // Col 7 – PlantFkId (hidden)
                     Cell plantFkIdCell = row.getCell(7);
                     if (plantFkIdCell != null) {
                         plantFkIdCell.setCellType(CellType.STRING);
@@ -1045,7 +1046,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         return resultList;
     }
 
-    // --- Refinery Shutdown Import  API ------------------------------------------
+    // ─── Refinery Shutdown Import – API ──────────────────────────────────────────
 
     @Override
     @Transactional
@@ -1240,7 +1241,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         return;
     }
 
-    // --- Refinery Slowdown Export -------------------------------------------------
+    // ─── Refinery Slowdown Export ─────────────────────────────────────────────────
 
     @Override
     @SuppressWarnings("unchecked")
@@ -1282,32 +1283,32 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 Row row = sheet.createRow(currentRow++);
                 boolean isEditable = Boolean.TRUE.equals(dto.getIsEditable());
 
-                // Col 0  Site (always locked)
+                // Col 0 – Site (always locked)
                 Cell siteCell = row.createCell(0);
                 siteCell.setCellValue(dto.getSiteName() != null ? dto.getSiteName() : "");
                 siteCell.setCellStyle(greyStyle);
 
-                // Col 1  Plant (always locked)
+                // Col 1 – Plant (always locked)
                 Cell plantCell = row.createCell(1);
                 plantCell.setCellValue(dto.getPlantName() != null ? dto.getPlantName() : "");
                 plantCell.setCellStyle(greyStyle);
 
-                // Col 2  Tentative Duration in days
+                // Col 2 – Tentative Duration in days
                 Cell durationCell = row.createCell(2);
                 durationCell.setCellValue(dto.getTentativeDurationDays() != null ? String.valueOf(dto.getTentativeDurationDays()) : "");
                 durationCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 3  Throughput during the Slowdown
+                // Col 3 – Throughput during the Slowdown
                 Cell throughputCell = row.createCell(3);
                 throughputCell.setCellValue(dto.getThroughputDuringTheSlowdown() != null ? String.valueOf(dto.getThroughputDuringTheSlowdown()) : "");
                 throughputCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 4  Throughput UOM
+                // Col 4 – Throughput UOM
                 Cell uomCell = row.createCell(4);
                 uomCell.setCellValue(dto.getThroughputUom() != null ? dto.getThroughputUom() : "");
                 uomCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 5  Tentative Month
+                // Col 5 – Tentative Month
                 Cell monthCell = row.createCell(5);
                 String monthName = "";
                 if (dto.getTentativeMonth() != null) {
@@ -1316,33 +1317,33 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 monthCell.setCellValue(monthName);
                 monthCell.setCellStyle(isEditable ? editableStyle : greyStyle);
 
-                // Col 6  Purpose of Slowdown (remark, wrapped)
+                // Col 6 – Purpose of Slowdown (remark, wrapped)
                 Cell remarkCell = row.createCell(6);
                 remarkCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
                 remarkCell.setCellStyle(isEditable ? editableWrapStyle : greyStyle);
 
-                // Col 7  Id (hidden; present means update on import)
+                // Col 7 – Id (hidden; present means update on import)
                 Cell idCell = row.createCell(7);
                 idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
                 idCell.setCellStyle(greyStyle);
 
-                // Col 8  SiteFkId (hidden)
+                // Col 8 – SiteFkId (hidden)
                 Cell siteFkIdCell = row.createCell(8);
                 siteFkIdCell.setCellValue(dto.getSiteFkId() != null ? dto.getSiteFkId() : "");
                 siteFkIdCell.setCellStyle(greyStyle);
 
-                // Col 9  PlantFkId (hidden)
+                // Col 9 – PlantFkId (hidden)
                 Cell plantFkIdCell = row.createCell(9);
                 plantFkIdCell.setCellValue(dto.getPlantFkId() != null ? dto.getPlantFkId() : "");
                 plantFkIdCell.setCellStyle(greyStyle);
 
                 if (isAfterSave) {
-                    // Col 10  Status
+                    // Col 10 – Status
                     Cell statusCell = row.createCell(10);
                     statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                     statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-                    // Col 11  Error Description
+                    // Col 11 – Error Description
                     Cell errCell = row.createCell(11);
                     errCell.setCellValue(dto.getErrorMessage() != null ? dto.getErrorMessage() : "");
                     errCell.setCellStyle(Utility.createBorderedStyle(workbook));
@@ -1382,7 +1383,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
-    // --- Refinery Slowdown Import  Excel Reader ----------------------------------
+    // ─── Refinery Slowdown Import – Excel Reader ──────────────────────────────────
 
     private List<RefinerySlowdownTranscationDTO> readRefinerySlowdownExcel(InputStream inputStream, String plantId, String aopYear) {
         List<RefinerySlowdownTranscationDTO> resultList = new ArrayList<>();
@@ -1432,7 +1433,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                 RefinerySlowdownTranscationDTO dto = new RefinerySlowdownTranscationDTO();
                 try {
-                    // Col 0  Site
+                    // Col 0 – Site
                     Cell siteCell = row.getCell(0);
                     if (siteCell != null) {
                         siteCell.setCellType(CellType.STRING);
@@ -1440,7 +1441,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setSiteName(siteStr.isEmpty() ? null : siteStr);
                     }
 
-                    // Col 1  Plant
+                    // Col 1 – Plant
                     Cell plantCell = row.getCell(1);
                     if (plantCell != null) {
                         plantCell.setCellType(CellType.STRING);
@@ -1448,7 +1449,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setPlantName(plantStr.isEmpty() ? null : plantStr);
                     }
 
-                    // Col 2  Tentative Duration in days
+                    // Col 2 – Tentative Duration in days
                     Cell durationCell = row.getCell(2);
                     if (durationCell != null) {
                         durationCell.setCellType(CellType.STRING);
@@ -1473,7 +1474,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         }
                     }
 
-                    // Col 3  Throughput during the Slowdown (optional)
+                    // Col 3 – Throughput during the Slowdown (optional)
                     Cell throughputCell = row.getCell(3);
                     if (throughputCell != null) {
                         throughputCell.setCellType(CellType.STRING);
@@ -1492,7 +1493,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setThroughputDuringTheSlowdown(null);
                     }
 
-                    // Col 4  Throughput UOM (optional)
+                    // Col 4 – Throughput UOM (optional)
                     Cell uomCell = row.getCell(4);
                     if (uomCell != null) {
                         uomCell.setCellType(CellType.STRING);
@@ -1509,7 +1510,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setThroughputUom(null);
                     }
 
-                    // Col 5  Tentative Month
+                    // Col 5 – Tentative Month
                     Cell monthCell = row.getCell(5);
                     if (monthCell == null || monthCell.getCellType() == CellType.BLANK) {
                         dto.setSaveStatus("Failed");
@@ -1544,14 +1545,14 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         }
                     }
 
-                    // Col 6  Purpose of Slowdown (remark)
+                    // Col 6 – Purpose of Slowdown (remark)
                     Cell remarkCell = row.getCell(6);
                     if (remarkCell != null) {
                         remarkCell.setCellType(CellType.STRING);
                         dto.setRemark(remarkCell.getStringCellValue().trim());
                     }
 
-                    // Col 7  Id (hidden; present ? update, absent ? insert)
+                    // Col 7 – Id (hidden; present → update, absent → insert)
                     Cell idCell = row.getCell(7);
                     if (idCell != null) {
                         idCell.setCellType(CellType.STRING);
@@ -1559,7 +1560,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setId(id.isEmpty() ? null : id);
                     }
 
-                    // Col 8  SiteFkId (hidden)
+                    // Col 8 – SiteFkId (hidden)
                     Cell siteFkIdCell = row.getCell(8);
                     if (siteFkIdCell != null) {
                         siteFkIdCell.setCellType(CellType.STRING);
@@ -1567,7 +1568,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                         dto.setSiteFkId(siteFkId.isEmpty() ? null : siteFkId);
                     }
 
-                    // Col 9  PlantFkId (hidden)
+                    // Col 9 – PlantFkId (hidden)
                     Cell plantFkIdCell = row.getCell(9);
                     if (plantFkIdCell != null) {
                         plantFkIdCell.setCellType(CellType.STRING);
@@ -1645,7 +1646,7 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
         }
     }
 
-    // --- Refinery Slowdown Import  API ------------------------------------------
+    // ─── Refinery Slowdown Import – API ──────────────────────────────────────────
 
     @Override
     @Transactional
@@ -2360,6 +2361,224 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete Fixed Bed and Lab Cost transaction", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getLabCostData(String aopYear) {
+        try {
+            String sql = "EXEC dbo.SP_GetLabCostData @AopYear = ?";
+
+            List<LabCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
+                String id = rs.getString("Id");
+                String costCenterMasterId = rs.getString("CostCenterMasterId");
+                String materialMasterId = rs.getString("MaterialMasterId");
+
+                return LabCostDTO.builder()
+                    .id(id != null ? id : (costCenterMasterId + "_" + (materialMasterId != null ? materialMasterId : "")))
+                    .costCenterMasterId(costCenterMasterId)
+                    .materialMasterId(materialMasterId)
+                    .costCenterDescription(rs.getString("CostCenterDescription"))
+                    .material(rs.getString("Material"))
+                    .uom(rs.getString("UOM"))
+                    .aopYear(aopYear)
+                    .apr(rs.getObject("Apr") != null ? rs.getDouble("Apr") : 0.0)
+                    .may(rs.getObject("May") != null ? rs.getDouble("May") : 0.0)
+                    .jun(rs.getObject("Jun") != null ? rs.getDouble("Jun") : 0.0)
+                    .jul(rs.getObject("Jul") != null ? rs.getDouble("Jul") : 0.0)
+                    .aug(rs.getObject("Aug") != null ? rs.getDouble("Aug") : 0.0)
+                    .sep(rs.getObject("Sep") != null ? rs.getDouble("Sep") : 0.0)
+                    .oct(rs.getObject("Oct") != null ? rs.getDouble("Oct") : 0.0)
+                    .nov(rs.getObject("Nov") != null ? rs.getDouble("Nov") : 0.0)
+                    .dec(rs.getObject("Dec") != null ? rs.getDouble("Dec") : 0.0)
+                    .jan(rs.getObject("Jan") != null ? rs.getDouble("Jan") : 0.0)
+                    .feb(rs.getObject("Feb") != null ? rs.getDouble("Feb") : 0.0)
+                    .mar(rs.getObject("Mar") != null ? rs.getDouble("Mar") : 0.0)
+                    .remarks(rs.getString("Remarks"))
+                    .build();
+            }, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Data fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Lab Cost data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<LabCostDTO> saveLabCostData(List<LabCostDTO> dtos, String aopYear) {
+        String updatedBy = Utility.getUserName();
+        List<LabCostDTO> failedRecords = new ArrayList<>();
+
+        for (LabCostDTO dto : dtos) {
+            try {
+                String costCenterMasterId = dto.getCostCenterMasterId() != null && !dto.getCostCenterMasterId().isEmpty() && !dto.getCostCenterMasterId().startsWith("new_row_")
+                    ? dto.getCostCenterMasterId()
+                    : null;
+                String materialMasterId = dto.getMaterialMasterId() != null && !dto.getMaterialMasterId().isEmpty() && !dto.getMaterialMasterId().startsWith("new_row_")
+                    ? dto.getMaterialMasterId()
+                    : null;
+                String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
+
+                if (year == null) {
+                    continue;
+                }
+
+                // If costCenterMasterId is missing, look up by description
+                if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
+                    String desc = dto.getCostCenterDescription();
+                    if (desc != null && !desc.isEmpty()) {
+                        List<String> existingIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCCostCenterMaster WHERE CostCenterDescription = ? OR CostCenter = ?",
+                            String.class, desc, desc
+                        );
+                        if (!existingIds.isEmpty()) {
+                            costCenterMasterId = existingIds.get(0);
+                        }
+                    }
+                }
+
+                // If materialMasterId is missing, look up by material name
+                if (materialMasterId == null || materialMasterId.isEmpty()) {
+                    String mat = dto.getMaterial();
+                    if (mat != null && !mat.isEmpty()) {
+                        List<String> existingMatIds = jdbcTemplate.queryForList(
+                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCMaterialMaster WHERE Material = ?",
+                            String.class, mat
+                        );
+                        if (!existingMatIds.isEmpty()) {
+                            materialMasterId = existingMatIds.get(0);
+                        }
+                    }
+                }
+
+                if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrorMessage("Cost Center Description is required.");
+                    failedRecords.add(dto);
+                    continue;
+                }
+
+                if (materialMasterId == null || materialMasterId.isEmpty()) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrorMessage("Material is required.");
+                    failedRecords.add(dto);
+                    continue;
+                }
+
+                String id = dto.getId();
+                boolean isExistingId = (id != null && !id.trim().isEmpty()
+                    && !id.startsWith("new_row_") && !id.contains("_"));
+
+                // Condition 1: If existing Id is provided, update the record by Id directly
+                if (isExistingId) {
+                    String checkByIdSql = "SELECT COUNT(1) FROM dbo.LabCostTransaction WHERE Id = ?";
+                    int countById = jdbcTemplate.queryForObject(checkByIdSql, Integer.class, id);
+
+                    if (countById > 0) {
+                        String updateSql = "UPDATE dbo.LabCostTransaction " +
+                                           "SET CostCenterMasterId = ?, MaterialMasterId = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                           "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                           "WHERE Id = ?";
+                        jdbcTemplate.update(updateSql,
+                            costCenterMasterId, materialMasterId,
+                            dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                            dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                            dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                            dto.getRemarks(), updatedBy,
+                            id);
+                        continue;
+                    }
+                }
+
+                // Condition 2: Fallback / New record check by (CostCenterMasterId + MaterialMasterId + AopYear)
+                String checkSql = "SELECT COUNT(1) FROM dbo.LabCostTransaction " +
+                                  "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, costCenterMasterId, materialMasterId, year);
+
+                if (count > 0) {
+                    String updateSql = "UPDATE dbo.LabCostTransaction " +
+                                       "SET Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                       "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
+                                       "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                    jdbcTemplate.update(updateSql,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy,
+                        costCenterMasterId, materialMasterId, year);
+                } else {
+                    String insertSql = "INSERT INTO dbo.LabCostTransaction " +
+                                       "(Id, CostCenterMasterId, MaterialMasterId, AopYear, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, " +
+                                       "Remarks, CreatedAt, CreatedBy) " +
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
+                    jdbcTemplate.update(insertSql,
+                        costCenterMasterId, materialMasterId, year,
+                        dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                        dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
+                        dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
+                        dto.getRemarks(), updatedBy);
+                }
+            } catch (Exception e) {
+                dto.setSaveStatus("Failed");
+                dto.setErrorMessage(e.getMessage());
+                failedRecords.add(dto);
+            }
+        }
+        return failedRecords;
+    }
+
+    @Override
+    public AOPMessageVM getLabCostCostCenterDropdown() {
+        try {
+            String sql = "EXEC dbo.Sp_GetLabCostCenterDropdown";
+
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Lab Cost Cost Center dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Lab Cost Cost Center dropdown data", e);
+        }
+    }
+
+    @Override
+    public AOPMessageVM getLabCostMaterialDropdown() {
+        try {
+            String sql = "EXEC dbo.Sp_GetLabCostMaterialDropdown";
+
+            List<Map<String, Object>> data = jdbcTemplate.queryForList(sql);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(data);
+            response.setMessage("Lab Cost Material dropdown fetched successfully");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch Lab Cost Material dropdown data", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteLabCost(String masterId, String aopYear) {
+        try {
+            String sql = "DELETE FROM dbo.LabCostTransaction WHERE (Id = ? OR CostCenterMasterId = ?) AND AopYear = ?";
+            int rowsAffected = jdbcTemplate.update(sql, masterId, masterId, aopYear);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage(rowsAffected > 0 ? "Record deleted successfully" : "Record not found to delete");
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete Lab Cost transaction", e);
         }
     }
 }

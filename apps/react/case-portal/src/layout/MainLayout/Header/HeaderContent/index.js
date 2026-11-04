@@ -190,6 +190,7 @@ export default function HeaderContent({ keycloak, navigation }) {
     '/jw-budget/jw-budget-source-dta',
     '/jw-budget/jw-budget-source',
     '/jw-budget/fixed-bed-and-lab-cost',
+    '/jw-budget/lab-cost',
   ].includes(location.pathname)
 
   // Individual dropdown visibility ? extends HIDE_DASHBOARD_DROPDOWN with utils.js config

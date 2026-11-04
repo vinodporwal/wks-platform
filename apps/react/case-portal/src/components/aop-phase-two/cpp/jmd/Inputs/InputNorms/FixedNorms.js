@@ -54,8 +54,7 @@ const FixedNorms = () => {
     [jmdSelectedPlants],
   )
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
-  const customFormatFive = customValueFormatterPhaseTwo(5)
+  const valueFormat = customValueFormatterPhaseTwo(6)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -161,7 +160,7 @@ const FixedNorms = () => {
       type: 'proposedNorm',
       editable: true,
       isNumberEditable: false,
-      format: customFormatFive,
+      format: valueFormat,
       minWidth: 200,
       alwaysEditable: true,
     },

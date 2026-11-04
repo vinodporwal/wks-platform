@@ -79,7 +79,7 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 	private OtherCostsTransactionRepository otherCostsTransactionRepository;
 
 	@Override
-	public AOPMessageVM getOtherCostsTransaction(String plantId, String year) {
+	public AOPMessageVM getOtherCostsTransaction(String plantId, String year, String type) {
 		
 		try {
 			List<Object[]> obj = new ArrayList<>();
@@ -93,7 +93,11 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 			
 				String procedureName = vertical.getName()+"_"+site.getName()+"_GetOtherCostsTransaction";
-				obj = findByYearAndPlantId(year, UUID.fromString(plantId), procedureName);
+				if(type != null && !type.isEmpty()) {
+					obj = findByYearAndPlantIdAndType(year, UUID.fromString(plantId), type, procedureName);
+				} else {
+					obj = findByYearAndPlantId(year, UUID.fromString(plantId), procedureName);
+				}
 			
 			List<OtherCostsTransactionDto> otherCostsTransactionDtos = new ArrayList<>();
 			for (Object[] row : obj) {
@@ -150,13 +154,24 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
-
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	public List<Object[]> findByYearAndPlantIdAndType(String aopYear, UUID plantId, String type, String procedureName) {		
+
+			String sql = "EXEC " +  "[" + procedureName + "]"
+					+ " @PlantId = :plantId, @AOPYear = :aopYear, @Type = :type";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("type", type);
+			return query.getResultList();
 	}
 	
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -242,10 +257,10 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 		}
 	}
 	
-	public byte[] exportOtherCostsTransaction(String year, String plantId, boolean isAfterSave, List<OtherCostsTransactionDto> dtoList) {
+	public byte[] exportOtherCostsTransaction(String year, String plantId, String type, boolean isAfterSave, List<OtherCostsTransactionDto> dtoList) {
 	    try {   
 	        if (!isAfterSave) {
-	        	AOPMessageVM aopMessageVM = getOtherCostsTransaction(plantId,year);
+	        	AOPMessageVM aopMessageVM = getOtherCostsTransaction(plantId,year, type);
 	        	Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
 
 		        if (innerMap != null) {
@@ -367,14 +382,14 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 	}
 
 	@Override
-	public AOPMessageVM importOtherCostsTransaction(String year,UUID plantId,MultipartFile file) {
+	public AOPMessageVM importOtherCostsTransaction(String year,UUID plantId,String type,MultipartFile file) {
 		try {
 			List<OtherCostsTransactionDto> data = readOtherCostsTransaction(file.getInputStream(), plantId, year);
 			 AOPMessageVM aopMessageVM = saveOtherCostsTransaction(year, plantId.toString(),data);
 			 List<OtherCostsTransactionDto> failedList = (List<OtherCostsTransactionDto>) aopMessageVM.getData();
 			
 			if (failedList != null && failedList.size() > 0) {
-				byte[] fileByteArray = exportOtherCostsTransaction(year, plantId.toString(), true, failedList);
+				byte[] fileByteArray = exportOtherCostsTransaction(year, plantId.toString(), type, true, failedList);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);

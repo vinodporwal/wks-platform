@@ -41,6 +41,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
       '/jw-budget/jw-budget-source-dta',
       '/jw-budget/jw-budget-source',
       '/jw-budget/fixed-bed-and-lab-cost',
+      '/jw-budget/lab-cost'
     ].includes(location?.pathname)
 
   if (!keycloak || !authenticated) return null
