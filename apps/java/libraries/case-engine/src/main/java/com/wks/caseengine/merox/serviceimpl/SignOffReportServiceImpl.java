@@ -1,15 +1,41 @@
 package com.wks.caseengine.merox.serviceimpl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -241,6 +267,289 @@ public class SignOffReportServiceImpl implements SignOffReportService {
                                 + ". SQL Error: " + e.getMessage(), e);
             }
         });
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] exportSignOffReportExcel(String plantId, String aopYear, String periodFrom, String periodTo) {
+
+        AOPMessageVM report = getSignOffReport(plantId, aopYear, periodFrom, periodTo);
+        if (report.getCode() != 200 || report.getData() == null) {
+            throw new RuntimeException("Unable to export sign-off report: " + report.getMessage());
+        }
+        List<Map<String, Object>> grids = (List<Map<String, Object>>) report.getData();
+
+        record ExportColumn(String field, String header, String group, YearMonth month, boolean dynamic, int sourceIndex) {}
+
+        // Technical columns returned by the SP that are never shown in the grid.
+        Set<String> nonExportedColumns = Set.of("id", "unitno", "iseditable", "isvisible", "grid_type");
+        DateTimeFormatter monthKeyFormat = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern("MMM_yyyy")
+                .toFormatter(Locale.ENGLISH);
+
+        // Natural ordering so that Group2 sorts before Group10; ungrouped columns come first.
+        Pattern trailingNumber = Pattern.compile("^(.*?)(\\d+)$");
+        Comparator<String> groupComparator = (a, b) -> {
+            if (Objects.equals(a, b)) return 0;
+            if (a == null) return -1;
+            if (b == null) return 1;
+            Matcher ma = trailingNumber.matcher(a);
+            Matcher mb = trailingNumber.matcher(b);
+            if (ma.matches() && mb.matches() && ma.group(1).equalsIgnoreCase(mb.group(1))) {
+                return Long.compare(Long.parseLong(ma.group(2)), Long.parseLong(mb.group(2)));
+            }
+            return a.compareToIgnoreCase(b);
+        };
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+            // ── Styles ──
+            Font boldFont = workbook.createFont();
+            boldFont.setBold(true);
+            boldFont.setColor(IndexedColors.BLACK.getIndex());
+
+            XSSFCellStyle groupHeaderStyle = (XSSFCellStyle) Utility.createBorderedStyle(workbook);
+            groupHeaderStyle.setFillForegroundColor(new XSSFColor(new byte[] { (byte) 0xD9, (byte) 0xD9, (byte) 0xD9 }, null));
+            groupHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            groupHeaderStyle.setFont(boldFont);
+            groupHeaderStyle.setAlignment(HorizontalAlignment.CENTER);
+            groupHeaderStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            groupHeaderStyle.setWrapText(true);
+            groupHeaderStyle.setLocked(true);
+
+            XSSFCellStyle monthHeaderStyle = workbook.createCellStyle();
+            monthHeaderStyle.cloneStyleFrom(groupHeaderStyle);
+            monthHeaderStyle.setFillForegroundColor(new XSSFColor(new byte[] { (byte) 0x00, (byte) 0xFF, (byte) 0xFF }, null));
+
+            CellStyle dataEditableStyle = Utility.createBorderedUnlockedStyle(workbook);
+            CellStyle dataReadOnlyStyle = Utility.createBorderedLockedNoFillStyle(workbook);
+
+            XSSFCellStyle sectionReadOnlyStyle = (XSSFCellStyle) Utility.createBorderedStyle(workbook);
+            sectionReadOnlyStyle.setFillForegroundColor(new XSSFColor(new byte[] { (byte) 0xF7, (byte) 0xC7, (byte) 0xAC }, null));
+            sectionReadOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            sectionReadOnlyStyle.setFont(boldFont);
+            sectionReadOnlyStyle.setLocked(true);
+
+            XSSFCellStyle sectionEditableStyle = workbook.createCellStyle();
+            sectionEditableStyle.cloneStyleFrom(sectionReadOnlyStyle);
+            sectionEditableStyle.setLocked(false);
+
+            Set<String> usedSheetNames = new HashSet<>();
+
+            for (Map<String, Object> grid : grids) {
+
+                List<Map<String, Object>> columnMetadata = (List<Map<String, Object>>) grid.get("columns");
+                List<Map<String, Object>> rows = grid.get("data") != null
+                        ? (List<Map<String, Object>>) grid.get("data")
+                        : new ArrayList<>();
+
+                // ── Sheet name (unique per grid when there are multiple grids) ──
+                String sheetName = "Sign Off Report";
+                if (grids.size() > 1) {
+                    String baseName = Utility.sanitizeSheetName(Objects.toString(grid.get("gridName"), sheetName));
+                    sheetName = baseName;
+                    int suffix = 2;
+                    while (!usedSheetNames.add(sheetName.toLowerCase(Locale.ROOT))) {
+                        String suffixText = "_" + suffix++;
+                        sheetName = baseName.substring(0, Math.min(baseName.length(), 31 - suffixText.length())) + suffixText;
+                    }
+                }
+                XSSFSheet sheet = workbook.createSheet(sheetName);
+
+                // ── Column order and visibility ──
+                List<String> fields = new ArrayList<>();
+                Set<String> hiddenFields = new HashSet<>();
+                if (columnMetadata != null && !columnMetadata.isEmpty()) {
+                    for (Map<String, Object> meta : columnMetadata) {
+                        String field = (String) meta.get("field");
+                        if (field == null) {
+                            continue;
+                        }
+                        fields.add(field);
+                        Object visible = meta.containsKey("isVisible") ? meta.get("isVisible") : meta.get("IsVisible");
+                        String visibleText = visible == null ? "" : visible.toString().trim();
+                        if (!visibleText.isEmpty() && !"true".equalsIgnoreCase(visibleText) && !"1".equals(visibleText)) {
+                            hiddenFields.add(field);
+                        }
+                    }
+                } else if (!rows.isEmpty()) {
+                    fields.addAll(rows.get(0).keySet());
+                }
+
+                // ── Classify columns: leading static | month (dynamic) | trailing static ──
+                List<ExportColumn> leadingStatic = new ArrayList<>();
+                List<ExportColumn> dynamicColumns = new ArrayList<>();
+                List<ExportColumn> trailingStatic = new ArrayList<>();
+
+                for (int i = 0; i < fields.size(); i++) {
+                    String field = fields.get(i);
+                    if (hiddenFields.contains(field) || nonExportedColumns.contains(field.toLowerCase(Locale.ROOT))) {
+                        continue;
+                    }
+
+                    String monthKey = field;
+                    String group = null;
+                    int delimiterIdx = field.indexOf('~');
+                    if (delimiterIdx >= 0) {
+                        monthKey = field.substring(0, delimiterIdx).trim();
+                        group = field.substring(delimiterIdx + 1).trim();
+                    }
+
+                    YearMonth month = null;
+                    try {
+                        month = YearMonth.parse(monthKey, monthKeyFormat);
+                    } catch (DateTimeParseException e) {
+                        // not a month column
+                    }
+
+                    boolean dynamic = group != null || month != null;
+                    ExportColumn column = new ExportColumn(field,
+                            dynamic ? monthKey.replace("_", " ") : formatTitle(field),
+                            group, month, dynamic, i);
+
+                    if (dynamic) {
+                        dynamicColumns.add(column);
+                    } else if (dynamicColumns.isEmpty()) {
+                        leadingStatic.add(column);
+                    } else {
+                        trailingStatic.add(column);
+                    }
+                }
+
+                dynamicColumns.sort(Comparator
+                        .comparing(ExportColumn::group, groupComparator)
+                        .thenComparing(ExportColumn::month, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparingInt(ExportColumn::sourceIndex));
+
+                List<ExportColumn> columns = new ArrayList<>(leadingStatic);
+                columns.addAll(dynamicColumns);
+                columns.addAll(trailingStatic);
+                if (columns.isEmpty()) {
+                    continue;
+                }
+
+                boolean grouped = dynamicColumns.stream().anyMatch(c -> c.group() != null);
+                int headerRowCount = grouped ? 2 : 1;
+
+                // ── Header rows ──
+                Row groupRow = sheet.createRow(0);
+                Row monthRow = grouped ? sheet.createRow(1) : groupRow;
+                int groupStart = 0;
+
+                for (int col = 0; col < columns.size(); col++) {
+                    ExportColumn column = columns.get(col);
+
+                    if (!column.dynamic()) {
+                        Cell headerCell = groupRow.createCell(col);
+                        headerCell.setCellValue(Utility.sanitizeCellString(column.header()));
+                        headerCell.setCellStyle(groupHeaderStyle);
+                        if (grouped) {
+                            monthRow.createCell(col).setCellStyle(groupHeaderStyle);
+                            sheet.addMergedRegion(new CellRangeAddress(0, 1, col, col));
+                        }
+                        continue;
+                    }
+
+                    Cell monthCell = monthRow.createCell(col);
+                    monthCell.setCellValue(Utility.sanitizeCellString(column.header()));
+                    monthCell.setCellStyle(monthHeaderStyle);
+
+                    if (grouped) {
+                        ExportColumn prev = col > 0 ? columns.get(col - 1) : null;
+                        ExportColumn next = col < columns.size() - 1 ? columns.get(col + 1) : null;
+                        boolean firstInGroup = prev == null || !prev.dynamic() || !Objects.equals(prev.group(), column.group());
+                        boolean lastInGroup = next == null || !next.dynamic() || !Objects.equals(next.group(), column.group());
+
+                        Cell groupCell = groupRow.createCell(col);
+                        groupCell.setCellStyle(groupHeaderStyle);
+                        if (firstInGroup) {
+                            groupStart = col;
+                            if (column.group() != null) {
+                                groupCell.setCellValue(Utility.sanitizeCellString(column.group()));
+                            }
+                        }
+                        if (lastInGroup && col > groupStart) {
+                            sheet.addMergedRegion(new CellRangeAddress(0, 0, groupStart, col));
+                        }
+                    }
+                }
+
+                // ── Data rows ──
+                int rowIdx = headerRowCount;
+                for (Map<String, Object> rowData : rows) {
+
+                    Object editableValue = null;
+                    Object uomValue = null;
+                    for (Map.Entry<String, Object> entry : rowData.entrySet()) {
+                        if ("IsEditable".equalsIgnoreCase(entry.getKey())) {
+                            editableValue = entry.getValue();
+                        } else if ("UOM".equalsIgnoreCase(entry.getKey())) {
+                            uomValue = entry.getValue();
+                        }
+                    }
+
+                    String editableText = editableValue == null ? "" : editableValue.toString().trim();
+                    boolean editable = editableText.isEmpty()
+                            || "true".equalsIgnoreCase(editableText)
+                            || "1".equals(editableText);
+
+                    // A section row has no UOM and no month values; it acts as a sub-heading in the report.
+                    boolean sectionRow = (uomValue == null || uomValue.toString().trim().isEmpty())
+                            && dynamicColumns.stream().allMatch(c -> {
+                                Object v = rowData.get(c.field());
+                                return v == null || v.toString().trim().isEmpty();
+                            });
+
+                    Row row = sheet.createRow(rowIdx++);
+                    for (int col = 0; col < columns.size(); col++) {
+                        Object value = rowData.get(columns.get(col).field());
+                        Cell cell = row.createCell(col);
+
+                        if (value instanceof Number) {
+                            cell.setCellValue(((Number) value).doubleValue());
+                        } else if (value instanceof Boolean) {
+                            cell.setCellValue((Boolean) value);
+                        } else if (value != null) {
+                            cell.setCellValue(Utility.sanitizeCellString(value.toString()));
+                        }
+
+                        if (col == 0 && sectionRow) {
+                            cell.setCellStyle(editable ? sectionEditableStyle : sectionReadOnlyStyle);
+                        } else {
+                            cell.setCellStyle(editable ? dataEditableStyle : dataReadOnlyStyle);
+                        }
+                    }
+                }
+
+                // ── Column widths, freeze panes, protection ──
+                for (int col = 0; col < columns.size(); col++) {
+                    if ("Remarks".equalsIgnoreCase(columns.get(col).field())) {
+                        sheet.setColumnWidth(col, 15000);
+                    } else {
+                        sheet.autoSizeColumn(col, true);
+                        sheet.setColumnWidth(col, Math.min(sheet.getColumnWidth(col) + 512, 20000));
+                    }
+                }
+
+                sheet.createFreezePane(leadingStatic.size(), headerRowCount);
+
+                sheet.protectSheet("");
+                sheet.lockFormatColumns(false);
+                sheet.lockFormatRows(false);
+            }
+
+            if (workbook.getNumberOfSheets() == 0) {
+                workbook.createSheet("Sign Off Report");
+            }
+
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate sign-off report Excel", e);
+        }
     }
 
     // ── Utility helpers ──────────────────────────────────────────────────────

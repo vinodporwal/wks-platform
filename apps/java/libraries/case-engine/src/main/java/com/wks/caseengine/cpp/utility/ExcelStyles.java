@@ -155,9 +155,9 @@ public final class ExcelStyles {
 
     /**
      * Protects the sheet so locked/unlocked cell styles take effect, while keeping
-     * common user actions allowed: column/row resizing, AutoFilter dropdowns, and
-     * sorting. Also enables AutoFilter on the header row so filter dropdowns appear
-     * when the file is opened in Excel.
+     * common user actions allowed: selecting cells (copy-paste), column/row resizing,
+     * AutoFilter dropdowns, and sorting. Also enables AutoFilter on the top header row
+     * (row 0) so filter dropdowns appear when the file is opened in Excel.
      *
      * <p>Call this once per sheet, after all data has been written and column widths
      * have been set, just before writing the workbook to the output stream.</p>
@@ -166,14 +166,32 @@ public final class ExcelStyles {
      * @param totalColumns  total number of columns in the sheet (used for the AutoFilter range)
      */
     public static void applySheetProtectionWithAutoFilter(Sheet sheet, int totalColumns) {
+        applySheetProtectionWithAutoFilter(sheet, 0, totalColumns);
+    }
+
+    /**
+     * Protects the sheet so locked/unlocked cell styles take effect, while keeping
+     * common user actions allowed: selecting cells (copy-paste), column/row resizing,
+     * AutoFilter dropdowns, and sorting. Also enables AutoFilter on the specified header row
+     * (e.g. row 1 for 2-row multi-level headers) so filter dropdowns appear when the file is opened in Excel.
+     *
+     * @param sheet         the sheet to protect (must be an XSSF sheet)
+     * @param headerRow     the 0-based header row index on which to apply AutoFilter
+     * @param totalColumns  total number of columns in the sheet (used for the AutoFilter range)
+     */
+    public static void applySheetProtectionWithAutoFilter(Sheet sheet, int headerRow, int totalColumns) {
+        if (totalColumns > 0) {
+            int lastRow = Math.max(sheet.getLastRowNum(), headerRow);
+            sheet.setAutoFilter(new CellRangeAddress(headerRow, lastRow, 0, totalColumns - 1));
+        }
         sheet.protectSheet("");
         XSSFSheet xssfSheet = (XSSFSheet) sheet;
-        xssfSheet.lockFormatColumns(false);  // allow column width changes + unhide
-        xssfSheet.lockFormatRows(false);     // allow row height changes
-        xssfSheet.lockAutoFilter(false);     // allow filter dropdowns on protected sheet
-        xssfSheet.lockSort(false);           // allow sorting on protected sheet
-        if (totalColumns > 0) {
-            sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, totalColumns - 1));
-        }
+        xssfSheet.enableLocking();
+        xssfSheet.lockSelectLockedCells(false);  // allow selecting locked cells (enables copy)
+        xssfSheet.lockSelectUnlockedCells(false);// allow selecting unlocked cells (enables edit/paste)
+        xssfSheet.lockAutoFilter(false);         // allow filter dropdowns on protected sheet
+        xssfSheet.lockSort(false);               // allow sorting on protected sheet
+        xssfSheet.lockFormatColumns(false);      // allow column width changes + unhide
+        xssfSheet.lockFormatRows(false);         // allow row height changes
     }
 }

@@ -96,7 +96,7 @@ const SignOffReport = () => {
   const IS_FCC_SEZ_FCC2= vertical==='fcc'&& site=== 'sez' && plant==='fcc-2'
   const isFirstTwoColColor = useMemo(() => {
     if (site === 'dta' && ['dht1'].includes(plant)) return true
-    return false
+    return true
   }, [site, plant])
 
   // 5 Decimal place formatter for numeric columns

@@ -31,8 +31,8 @@ public class OtherCostsTransactionController {
 	private OtherCostsTransactionService otherCostsTransactionService;
 	
 	@GetMapping(value="/other-costs-transaction")
-	public AOPMessageVM getOtherCostsTransaction(@RequestParam String plantId,@RequestParam String year){
-		 return  otherCostsTransactionService.getOtherCostsTransaction(plantId,year);
+	public AOPMessageVM getOtherCostsTransaction(@RequestParam String plantId,@RequestParam String year,@RequestParam (required = false) String type){
+		 return  otherCostsTransactionService.getOtherCostsTransaction(plantId,year,type);
 	}
 	
 	@PostMapping(value="/other-costs-transaction")
@@ -44,11 +44,12 @@ public class OtherCostsTransactionController {
 	@GetMapping(value = "/other-costs-transaction-export")
 	public ResponseEntity<byte[]> exportQualityTransaction(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,
+			@RequestParam(required = false) String type
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = otherCostsTransactionService.exportOtherCostsTransaction(year,plantId,false,null); 
+	        byte[] excelBytes = otherCostsTransactionService.exportOtherCostsTransaction(year,plantId,type,false,null); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -68,9 +69,10 @@ public class OtherCostsTransactionController {
 	public AOPMessageVM importQualityTransaction(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
+			@RequestParam(required = false) String type,
 			@RequestParam("file") MultipartFile file
 	        ) {
-			return	otherCostsTransactionService.importOtherCostsTransaction(year,UUID.fromString(plantId), file); 
+			return	otherCostsTransactionService.importOtherCostsTransaction(year,UUID.fromString(plantId), type, file); 
 	}
 	
 }

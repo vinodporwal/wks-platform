@@ -238,7 +238,7 @@ const HistoricalMonths = ({ refreshData, onLoadNormCalculation }) => {
       })
       setModifiedCells({})
       setOriginalRows([])
-      await onLoadNormCalculation()
+      await fetchData()
     } catch (error) {
       console.error('Error saving manual entry data:', error)
       setLoading(false)

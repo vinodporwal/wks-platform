@@ -628,10 +628,10 @@ const FixedBedAndLabCostScreen = () => {
     showExport: false,
     showImport: false,
     showCalculate: false,
-    ExcelName: `Fixed_Bed_And_Lab_Cost_${AOP_YEAR}`,
+    ExcelName: `Fixed_Bed_${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fixed Bed and Lab Cost',
+    titleName: 'Fixed Bed',
     showDropdown: false,
     remarksEditable: true,
   }
@@ -644,7 +644,7 @@ const FixedBedAndLabCostScreen = () => {
         rows={rows}
         setRows={setRows}
         loading={loading}
-        title={permissions.showTitle ? permissions.titleName : 'Fixed Bed and Lab Cost'}
+        title={permissions.showTitle ? permissions.titleName : 'Fixed Bed'}
         permissions={permissions}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

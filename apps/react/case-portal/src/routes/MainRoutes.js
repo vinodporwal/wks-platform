@@ -208,12 +208,20 @@ import TabManagement from 'components/aop-phase-two/cpp/common/TabManagement'
 import ThroughputNormsScreen from 'components/aop-phase-two/refineryAopBudget/ThroughputNorms.js/index'
 import JwUnitScreen from 'components/aop-phase-two/refineryAopBudget/JwUnit/index'
 import FixedBedAndLabCostScreen from 'components/aop-phase-two/refineryAopBudget/FixedBedAndLabCost/index'
+import LabCostScreen from 'components/aop-phase-two/refineryAopBudget/LabCost/index'
 import ConsumerDemand from 'components/aop-phase-two/refineryUtility/Consumer_Demand/index'
 
 // Naphthasplitter Ended
 
 // SignOffReport
 import SignOffReport from 'components/aop-phase-two/SignOffReport/index'
+
+// Sulphur
+import SteadyStateConsumptionSulphur from 'components/aop-phase-two/sulphur/steady-state-consumption'
+import OverallAopConsumptionSulphur from 'components/aop-phase-two/sulphur/overall-aop-consumption'
+import ProductionNormsBasisSulphur from 'components/aop-phase-two/sulphur/production-norms-basis'
+
+// Sulphur Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -463,6 +471,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='fixed-bed-and-lab-cost'>
                 <FixedBedAndLabCostScreen />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'lab-cost',
+            element: (
+              <PrivateRoute routeId='lab-cost'>
+                <LabCostScreen />
               </PrivateRoute>
             ),
           },
@@ -1354,6 +1370,33 @@ export const MainRoutes = (
             ),
           },
           //Vertical Naphthasplitter Ended
+
+          //Vertical Sulphur Started
+          {
+            path: 'production-norms-basis-sulphur',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-sulphur'>
+                <ProductionNormsBasisSulphur />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-sulphur',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-sulphur'>
+                <SteadyStateConsumptionSulphur />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-sulphur',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-sulphur'>
+                <OverallAopConsumptionSulphur />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Sulphur Ended
         ],
       },
 
