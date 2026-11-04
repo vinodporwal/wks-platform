@@ -1345,6 +1345,42 @@ return {
   // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
   const formatDataGrid = (dataGrid, getLabel, isAssetGrid = false) => {
     if (!dataGrid || dataGrid.length === 0) return '<p class="print-empty">No data available</p>'
+    // For Associated Faults, force the EXACT fixed order for every row
+    if (isAssetGrid) {
+      return dataGrid
+        .map((item) => {
+          const subAsset = item.subAsset || item.textField1 || '-'
+          const events = item.events || item.textField3 || '-'
+          const eventCategory = item.eventCategory || item.textField4 || '-'
+          const startTime = item.TextFaultStartTimeDate || item.faultStartTimeDate || item.startTime || '-'
+          const endTime = item.TextFaultEndTimeDate || item.faultEndTimeDate || item.endTime || '-'
+          return `
+      <div class="print-grid-row print-asset-record">
+        <div class="print-grid-cell">
+          <p class="print-grid-label">Sub Asset</p>
+          <p class="print-grid-value">${subAsset}</p>
+        </div>
+        <div class="print-grid-cell">
+          <p class="print-grid-label">Events</p>
+          <p class="print-grid-value">${events}</p>
+        </div>
+        <div class="print-grid-cell">
+          <p class="print-grid-label">Event Category</p>
+          <p class="print-grid-value">${eventCategory}</p>
+        </div>
+        <div class="print-grid-cell">
+          <p class="print-grid-label">Fault Start Time Date</p>
+          <p class="print-grid-value">${startTime}</p>
+        </div>
+        <div class="print-grid-cell">
+          <p class="print-grid-label">Fault EndTime Date</p>
+          <p class="print-grid-value">${endTime}</p>
+        </div>
+      </div>
+    `
+        })
+        .join('')
+    }
 
     const fieldsToSkip = [
       'textField1',
