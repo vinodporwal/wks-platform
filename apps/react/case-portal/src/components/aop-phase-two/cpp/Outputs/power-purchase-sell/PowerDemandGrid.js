@@ -18,7 +18,7 @@ const PowerDemandGrid = () => {
 
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Demand')
-  const valueFormat = customValueFormatterPhaseTwo(2)
+  const valueFormat = customValueFormatterPhaseTwo(0)
   // Build plant ID list: JMD uses selected plants, otherwise single plantObject
   const PLANT_ID_LIST = useMemo(() => {
     if (jmdSelectedPlants?.length) {
@@ -51,10 +51,25 @@ const PowerDemandGrid = () => {
         AOP_YEAR,
       )
       const data = response?.data || []
-      const rowsWithId = data?.map((row, index) => ({
-        ...row,
-        id: row.id || `row_${index}`,
-      }))
+      const rowsWithId = data?.map((row, index) => {
+        const formattedRow = {
+          ...row,
+          id: row.id || `row_${index}`,
+        }
+        MONTH_FIELDS.forEach((mon) => {
+          if (
+            formattedRow[mon] !== null &&
+            formattedRow[mon] !== undefined &&
+            formattedRow[mon] !== ''
+          ) {
+            const num = Number(formattedRow[mon])
+            if (!isNaN(num)) {
+              formattedRow[mon] = Math.round(num)
+            }
+          }
+        })
+        return formattedRow
+      })
       setRows(rowsWithId)
       if (!rowsWithId.length) {
         setSnackbarOpen(true)
@@ -161,11 +176,12 @@ const PowerDemandGrid = () => {
         title: headerMap[MONTH_TO_INDEX[mon]],
         widthT: 120,
         minWidth: 120,
-        type: 'number1',
+        type: 'wholeNumber',
+        wholeNumberOnly: true,
         editable: false,
         format: valueFormat,
       })),
-    [headerMap],
+    [headerMap, valueFormat],
   )
 
   // Base columns (read-only for output grid)

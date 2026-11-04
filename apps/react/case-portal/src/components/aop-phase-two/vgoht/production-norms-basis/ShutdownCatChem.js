@@ -8,6 +8,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useSession } from 'SessionStoreContext'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
   const keycloak = useSession()
@@ -31,6 +32,8 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const ExcelName = generateExcelName(dataGridStore, 'Production_Norms_Shutdown_Cat_Chem')
 
   const columns = [
     {
@@ -244,9 +247,9 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showExport: false,
+    showExport: true,
     ExcelName: `Production_Norms_Shutdown_Cat_Chem`,
-    showImport: false,
+    showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: `Shutdown Cat Chem`,
@@ -377,7 +380,7 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
           link.click()
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-
+          setLoading(false)
           setSnackbarOpen(true)
           setSnackbarData({
             message:
@@ -385,8 +388,8 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchData()
         } catch (downloadError) {
+          setLoading(false)
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
           setSnackbarData({
@@ -395,6 +398,7 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
           })
         }
       } else {
+        setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Failed to import Excel file.',
@@ -402,14 +406,13 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
         })
       }
     } catch (error) {
+      setLoading(false)
       console.error('Error uploading Excel file:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Failed to import Excel file: ${error.message}`,
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -425,6 +428,7 @@ const ShutdownCatChem = ({ refreshData, startDate, endDate }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        ExcelName
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

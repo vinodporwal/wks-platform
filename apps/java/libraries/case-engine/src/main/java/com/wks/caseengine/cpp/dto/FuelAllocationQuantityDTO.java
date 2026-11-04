@@ -53,6 +53,9 @@ public class FuelAllocationQuantityDTO {
 
     private String accountName;
 
+    @JsonProperty("isFreeSteamFuel")
+    private Boolean isFreeSteamFuel;
+
     private String financialYear;
 
     // ── April ──────────────────────────────────────────────────────────────────

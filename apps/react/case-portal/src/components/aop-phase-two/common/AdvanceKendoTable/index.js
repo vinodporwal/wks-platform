@@ -154,6 +154,11 @@ const applyKendoNumberFormat = (value, format) => {
 
   if (isNaN(numValue)) return value
 
+  // Handle whole number format like '0', 'n0', 'd'
+  if (formatSpec.match(/^0+$/) || formatSpec === 'n0' || formatSpec === '0.' || formatSpec === 'd') {
+    return Math.round(numValue).toString()
+  }
+
   // Handle decimal format like '0.00' or '0.0000'
   if (formatSpec.match(/^0+\.0+$/)) {
     const decimalPlaces = formatSpec.split('.')[1].length

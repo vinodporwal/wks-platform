@@ -890,6 +890,6 @@ async function exportShutdownCatChemExcel(keycloak, plantId, year, fileName) {
     endpoint: 'shut-down-cat-chem-export',
     queryParams: { year: year, plantId: plantId },
     fileName: fileName || `VGOHT_Shutdown_Cat_Chem_${year}.xlsx`,
-    method: 'POST',
+    method: 'GET',
   })
 }

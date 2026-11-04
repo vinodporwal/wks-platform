@@ -85,7 +85,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
 
     private record NormsHeaderKey(
         UUID assetFkId,
-        UUID normParameterFkId
+        UUID normParameterFkId,
+        boolean isFreeSteam
     ) {}
 
     private record NormsHeaderBaseRow(
@@ -479,8 +480,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             for (UUID fuelId : uniqueFuelIds) {
                 FuelMasterDetails fuelDetails = getFuelDetails(fuelId, fuelMasterCache);
                 ResolvedNormParameter normParam = findOrCreateNormParameter(fuelDetails, procurementPlantId, rawMaterialTypeId, 2, normParameterCache);
-                findOrCreateNormsHeader(assetId, normParam, plantNameCache, normsHeaderCache);
-                ensureLinkedHrsgFreeSteamHeaders(dto, fuelId, fuelDetails, procurementPlantId, rawMaterialTypeId,
+                findOrCreateNormsHeader(assetId, normParam, plantNameCache, normsHeaderCache, false);
+                ensureLinkedHrsgFreeSteamHeaders(dto, fuelId, normParam,
                         plantNameCache, normsHeaderCache);
                 fuelToNormParamMap.put(fuelId, normParam.id());
             }
@@ -492,17 +493,21 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         return assetToFuelNormParams;
     }
 
-    /** Creates the free-steam companion header for each linked HRSG that has a generation-side header. */
+    /**
+     * Creates the free-steam companion NormsHeader (IsFreeSteamFuel=1) for each linked HRSG
+     * that has a generation-side header, using the same NormParameter as the GT asset.
+     * Child records (NormsMonthDetail, CPPNorms, CPPMonthWisePrice) are also ensured.
+     */
     private void ensureLinkedHrsgFreeSteamHeaders(
             AssetFuelPriorityDto dto,
             UUID fuelId,
-            FuelMasterDetails fuelDetails,
-            UUID procurementPlantId,
-            UUID rawMaterialTypeId,
+            ResolvedNormParameter normParam,
             Map<UUID, String> plantNameCache,
             Map<NormsHeaderKey, UUID> normsHeaderCache) {
         UUID gtAssetId = dto.getAssetId();
         UUID cppPlantId = dto.getCppPlantFkId();
+
+        // Find linked HRSG assets that already have a generation-side NormsHeader (SHP/HP utility)
         String linkedHrsgSql = "SELECT CAST(s.AssetId AS varchar(36)) " +
                 "FROM dbo.CPPSteamGenerationAsset s " +
                 "WHERE s.LinkedPowerAsset_FK_ID = ? AND s.CPPPLANT_FK_Id = ? " +
@@ -515,26 +520,11 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             return;
         }
 
-        String freeName = fuelDetails.fuelName() + " (Free steam)";
-        String freeParamSql = "SELECT CAST(Id AS varchar(36)) AS Id, Name, UOM, SAPMaterialCode, " +
-                "CAST(Plant_FK_Id AS varchar(36)) AS Plant_FK_Id FROM dbo.NormParameters " +
-                "WHERE Plant_FK_Id = ? AND SAPMaterialCode = ? AND NormParameterType_FK_Id = ? " +
-                "AND NormType_FK_Id = 2 AND [Type] = 'CPPFuel' AND Name = ?";
-        List<ResolvedNormParameter> freeParams = db1JdbcTemplate.query(freeParamSql, (rs, rowNum) ->
-                new ResolvedNormParameter(UUID.fromString(rs.getString("Id")), rs.getString("Name"),
-                        rs.getString("UOM"), rs.getString("SAPMaterialCode"),
-                        UUID.fromString(rs.getString("Plant_FK_Id"))), procurementPlantId.toString(),
-                fuelDetails.fuelCode(), rawMaterialTypeId.toString(), freeName);
-        if (freeParams.size() != 1) {
-            throw new IllegalStateException("Expected exactly one free-steam NormParameter for fuel '" +
-                    fuelDetails.fuelName() + "' (SAP code " + fuelDetails.fuelCode() + ") at procurement plant " +
-                    procurementPlantId + ", found " + freeParams.size());
-        }
-
-        ResolvedNormParameter freeParam = freeParams.get(0);
+        // Use the same NormParameter as the GT asset — no separate "(Free steam)" lookup needed
         for (String hrsgId : hrsgIds) {
             UUID hrsgAssetId = UUID.fromString(hrsgId);
-            UUID headerId = findOrCreateNormsHeader(hrsgAssetId, freeParam, plantNameCache, normsHeaderCache);
+            // Create/find NormsHeader for the HRSG with IsFreeSteamFuel = 1
+            UUID headerId = findOrCreateNormsHeader(hrsgAssetId, normParam, plantNameCache, normsHeaderCache, true);
             String financialYear = dto.getFinancialYear();
             if (financialYear != null && !financialYear.isBlank()) {
                 ensureNormMonthDetails(headerId, financialYear);
@@ -792,7 +782,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             UUID assetId,
             ResolvedNormParameter normParam,
             Map<UUID, String> plantNameCache,
-            Map<NormsHeaderKey, UUID> normsHeaderCache) {
+            Map<NormsHeaderKey, UUID> normsHeaderCache,
+            boolean isFreeSteam) {
 
         if (assetId == null) {
             throw new IllegalArgumentException("Asset ID cannot be null when creating NormsHeader");
@@ -801,27 +792,28 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             throw new IllegalArgumentException("NormParameter cannot be null when creating NormsHeader");
         }
 
-        NormsHeaderKey key = new NormsHeaderKey(assetId, normParam.id());
+        NormsHeaderKey key = new NormsHeaderKey(assetId, normParam.id(), isFreeSteam);
         if (normsHeaderCache.containsKey(key)) {
-            logger.debug("findOrCreateNormsHeader: cache hit for assetId={}, normParameterId={}", assetId, normParam.id());
+            logger.debug("findOrCreateNormsHeader: cache hit for assetId={}, normParameterId={}, isFreeSteam={}", assetId, normParam.id(), isFreeSteam);
             return normsHeaderCache.get(key);
         }
 
-        // 2. Duplicate check: AssetFKId = @AssetFKId AND NormParameter_FK_Id = @NormParameterId
+        // Duplicate check: AssetFKId = ? AND NormParameter_FK_Id = ? AND ISNULL(IsFreeSteamFuel, 0) = ?
+        int isFreeSteamInt = isFreeSteam ? 1 : 0;
         String checkSql = "SELECT CAST(Id AS varchar(36)) FROM dbo.NormsHeader " +
-                          "WHERE AssetFKId = ? AND NormParameter_FK_Id = ?";
+                          "WHERE AssetFKId = ? AND NormParameter_FK_Id = ? AND ISNULL(IsFreeSteamFuel, 0) = ?";
         List<String> existing = db1JdbcTemplate.queryForList(checkSql, String.class,
-                assetId.toString(), normParam.id().toString());
+                assetId.toString(), normParam.id().toString(), isFreeSteamInt);
 
         if (!existing.isEmpty()) {
             UUID existingId = UUID.fromString(existing.get(0));
-            logger.info("findOrCreateNormsHeader: reusing existing NormsHeader ID={} for assetId={}, normParameterId={}",
-                    existingId, assetId, normParam.id());
+            logger.info("findOrCreateNormsHeader: reusing existing NormsHeader ID={} for assetId={}, normParameterId={}, isFreeSteam={}",
+                    existingId, assetId, normParam.id(), isFreeSteam);
             normsHeaderCache.put(key, existingId);
             return existingId;
         }
 
-        // 3. Select base row: TOP 1 from dbo.NormsHeader for the same AssetFKId
+        // Select base row: TOP 1 from dbo.NormsHeader for the same AssetFKId
         String baseSql = "SELECT TOP 1 CAST(Plant_FK_Id AS varchar(36)) AS Plant_FK_Id, " +
                          "UtilityName, UtilityId, UtilityUOM, DisplayOrder, plantCode, " +
                          "CAST(Utility_NormParameter_FK_Id AS varchar(36)) AS Utility_NormParameter_FK_Id, " +
@@ -845,7 +837,7 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         }
         NormsHeaderBaseRow base = baseRows.get(0);
 
-        // 4. Resolve plant name from dbo.Plants for NormParameters.Plant_FK_Id
+        // Resolve plant name from dbo.Plants for NormParameters.Plant_FK_Id
         String issuingPlantName = plantNameCache.computeIfAbsent(normParam.plantFkId(), pid -> {
             String plantSql = "SELECT Name FROM dbo.Plants WHERE Id = ?";
             List<String> names = db1JdbcTemplate.queryForList(plantSql, String.class, pid.toString());
@@ -855,15 +847,15 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
             return names.get(0);
         });
 
-        // 5. Populate and insert NormsHeader
+        // Insert NormsHeader — IsFreeSteamFuel = 1 for HRSG free-steam headers, 0 for GT
         UUID newId = UUID.randomUUID();
         String insertSql = "INSERT INTO dbo.NormsHeader " +
                 "(Id, Plant_FK_Id, UtilityName, UtilityId, UtilityUOM, AccountName, " +
                 " MaterialName, IssuingPlantName, IssuingPlant_FK_Id, NormParameter_FK_Id, " +
                 " IsActive, IssuingUOM, DisplayOrder, MaterialId, Remarks, plantCode, " +
                 " CPP_SR_Mapping_Master_Fk_Id, Utility_NormParameter_FK_Id, UtilityActivity, " +
-                " MaterialActivity, AssetFKId) " +
-                "VALUES (?, ?, ?, ?, ?, 'Raw Material', ?, ?, ?, ?, 1, ?, ?, ?, 'Fuel added', ?, NULL, ?, ?, NULL, ?)";
+                " MaterialActivity, AssetFKId, IsFreeSteamFuel) " +
+                "VALUES (?, ?, ?, ?, ?, 'Raw Material', ?, ?, ?, ?, 1, ?, ?, ?, 'Fuel added', ?, NULL, ?, ?, NULL, ?, ?)";
 
         try {
             int inserted = db1JdbcTemplate.update(insertSql,
@@ -882,7 +874,8 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                     base.plantCode(),
                     base.utilityNormParameterFkId(),
                     base.utilityActivity(),
-                    assetId.toString()
+                    assetId.toString(),
+                    isFreeSteamInt
             );
 
             if (inserted <= 0) {
@@ -890,16 +883,16 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                         ", NormParameter_FK_Id: " + normParam.id());
             }
 
-            logger.info("findOrCreateNormsHeader: inserted new NormsHeader ID={} for assetId={}, normParameterId={}",
-                    newId, assetId, normParam.id());
+            logger.info("findOrCreateNormsHeader: inserted new NormsHeader ID={} for assetId={}, normParameterId={}, isFreeSteam={}",
+                    newId, assetId, normParam.id(), isFreeSteam);
             normsHeaderCache.put(key, newId);
             return newId;
 
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-            logger.warn("findOrCreateNormsHeader: DataIntegrityViolationException on insert for assetId={}, normParameterId={}. Re-checking existing...",
-                    assetId, normParam.id());
+            logger.warn("findOrCreateNormsHeader: DataIntegrityViolationException on insert for assetId={}, normParameterId={}, isFreeSteam={}. Re-checking existing...",
+                    assetId, normParam.id(), isFreeSteam);
             List<String> recheck = db1JdbcTemplate.queryForList(checkSql, String.class,
-                    assetId.toString(), normParam.id().toString());
+                    assetId.toString(), normParam.id().toString(), isFreeSteamInt);
             if (!recheck.isEmpty()) {
                 UUID existingId = UUID.fromString(recheck.get(0));
                 logger.info("findOrCreateNormsHeader: recovered from concurrent insert, reusing existing ID={}", existingId);
@@ -1118,7 +1111,7 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                     continue;
                 }
 
-                NormsHeaderKey key = new NormsHeaderKey(assetId, normParamId);
+                NormsHeaderKey key = new NormsHeaderKey(assetId, normParamId, false);
                 List<UUID> normsHeaderIds = headerLookupCache.computeIfAbsent(key, k -> getNormsHeaderIds(assetId, normParamId));
                 if (normsHeaderIds.isEmpty()) {
                     logger.warn("processFuelPriorityNormMonthDetails: no NormsHeader found for assetId={}, normParameterId={}",
@@ -1260,7 +1253,7 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                     continue;
                 }
 
-                NormsHeaderKey key = new NormsHeaderKey(assetId, normParamId);
+                NormsHeaderKey key = new NormsHeaderKey(assetId, normParamId, false);
                 List<UUID> normsHeaderIds = headerLookupCache.computeIfAbsent(key, k -> getNormsHeaderIds(assetId, normParamId));
                 if (normsHeaderIds.isEmpty()) {
                     logger.warn("processFuelPriorityCppNorms: no NormsHeader found for assetId={}, normParameterId={}",
@@ -1488,7 +1481,7 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                         ? getMonthlyFuelPrices(fuelAvailablePlantFkId, fuelId, financialYear)
                         : MonthlyFuelPrices.zero();
 
-                NormsHeaderKey key = new NormsHeaderKey(assetId, normParamId);
+                NormsHeaderKey key = new NormsHeaderKey(assetId, normParamId, false);
                 List<UUID> normsHeaderIds = headerLookupCache.computeIfAbsent(key, k -> getNormsHeaderIds(assetId, normParamId));
                 if (normsHeaderIds.isEmpty()) {
                     logger.warn("processFuelPriorityCppMonthWisePrices: no NormsHeader found for assetId={}, normParameterId={}",
@@ -1530,7 +1523,7 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
                 "  CAST(fm.Id AS varchar(36)) AS FuelId, " +
                 "  fm.FuelCode, " +
                 "  np.Name AS NormParamName, " +
-                "  CASE WHEN np.Name LIKE '% (Free steam)' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS FreeSteam " +
+                "  CAST(ISNULL(nh.IsFreeSteamFuel, 0) AS bit) AS FreeSteam " +
                 "FROM dbo.NormsHeader nh WITH(NOLOCK) " +
                 "INNER JOIN dbo.NormParameters np WITH(NOLOCK) ON nh.NormParameter_FK_Id = np.Id " +
                 "LEFT JOIN dbo.CPP_FuelMaster fm WITH(NOLOCK) ON fm.FuelCode = np.SAPMaterialCode " +
