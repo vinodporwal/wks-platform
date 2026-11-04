@@ -101,6 +101,15 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			dto.setNormParameterTypeDisplayName(row[8] != null ? row[8].toString() : "");
 			dto.setDataType(row[9] != null ? row[9].toString() : "");
 			dto.setDependentAttributeConfig(row[10] != null ? row[10].toString() : "");
+			boolean isEditable = false;
+			if (row.length > 11 && row[11] != null) {
+				if (row[11] instanceof Boolean) {
+					isEditable = (Boolean) row[11];
+				} else if (row[11] instanceof Number) {
+					isEditable = ((Number) row[11]).intValue() == 1;
+				}
+			}
+			dto.setIsEditable(isEditable);
 
 			resultList.add(dto);
 		}

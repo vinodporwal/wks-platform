@@ -27,5 +27,6 @@ public class NormBasisPCGDTO {
     private String normParameterTypeDisplayName;
     private String dataType;
     private String dependentAttributeConfig;
+    private Boolean isEditable;
 
 }
