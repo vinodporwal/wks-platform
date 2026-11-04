@@ -11,6 +11,7 @@ import com.wks.caseengine.dto.RefinerySlowdownTranscationDTO;
 import com.wks.caseengine.dto.NormsMaterialDropdownDTO;
 import com.wks.caseengine.dto.ThroughputNormsDTO;
 import com.wks.caseengine.dto.JwUnitDTO;
+import com.wks.caseengine.dto.LabCostDTO;
 import com.wks.caseengine.dto.UomDropdownDTO;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -52,5 +53,10 @@ public interface RefineryAopBudgetService {
     public AOPMessageVM getFBSCMaterialDropdown();
     public List<FixedBedAndLabCostDTO> saveFixedBedAndLabCostData(List<FixedBedAndLabCostDTO> dtos, String aopYear);
     public AOPMessageVM deleteFixedBedAndLabCost(String masterId, String aopYear);
+    public AOPMessageVM getLabCostData(String aopYear);
+    public List<LabCostDTO> saveLabCostData(List<LabCostDTO> dtos, String aopYear);
+    public AOPMessageVM getLabCostCostCenterDropdown();
+    public AOPMessageVM getLabCostMaterialDropdown();
+    public AOPMessageVM deleteLabCost(String masterId, String aopYear);
 }
 
