@@ -303,8 +303,13 @@ async function calculatePackagingData(keycloak, plantId, year) {
 
 // ========================|| Other Cost APIs ||=====================================//
 
-async function getOtherCost(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/other-costs-transaction?plantId=${plantId}&year=${year}`
+async function getOtherCost(keycloak, plantId, year, type) {
+  const queryParams = new URLSearchParams({
+    plantId: plantId,
+    year: year,
+  })
+  if (type) queryParams.append('type', type)
+  const url = `${Config.CaseEngineUrl}/task/other-costs-transaction?${queryParams.toString()}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -339,8 +344,13 @@ async function saveOtherCost(keycloak, plantId, year, payload) {
   }
 }
 
-async function exportOtherCost(keycloak, plantId, year, excelName) {
-  const url = `${Config.CaseEngineUrl}/task/other-costs-transaction-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+async function exportOtherCost(keycloak, plantId, year, excelName, type) {
+  const queryParams = new URLSearchParams({
+    plantId: plantId,
+    year: year,
+  })
+  if (type) queryParams.append('type', type)
+  const url = `${Config.CaseEngineUrl}/task/other-costs-transaction-export?${queryParams.toString()}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -366,8 +376,13 @@ async function exportOtherCost(keycloak, plantId, year, excelName) {
   }
 }
 
-async function importOtherCost(keycloak, plantId, year, file) {
-  const url = `${Config.CaseEngineUrl}/task/other-costs-transaction-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+async function importOtherCost(keycloak, plantId, year, file, type) {
+  const queryParams = new URLSearchParams({
+    plantId: plantId,
+    year: year,
+  })
+  if (type) queryParams.append('type', type)
+  const url = `${Config.CaseEngineUrl}/task/other-costs-transaction-import?${queryParams.toString()}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {

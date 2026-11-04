@@ -215,6 +215,13 @@ import ConsumerDemand from 'components/aop-phase-two/refineryUtility/Consumer_De
 // SignOffReport
 import SignOffReport from 'components/aop-phase-two/SignOffReport/index'
 
+// Sulphur
+import SteadyStateConsumptionSulphur from 'components/aop-phase-two/sulphur/steady-state-consumption'
+import OverallAopConsumptionSulphur from 'components/aop-phase-two/sulphur/overall-aop-consumption'
+import ProductionNormsBasisSulphur from 'components/aop-phase-two/sulphur/production-norms-basis'
+
+// Sulphur Ended
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -1354,6 +1361,33 @@ export const MainRoutes = (
             ),
           },
           //Vertical Naphthasplitter Ended
+
+          //Vertical Sulphur Started
+          {
+            path: 'production-norms-basis-sulphur',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-sulphur'>
+                <ProductionNormsBasisSulphur />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-sulphur',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-sulphur'>
+                <SteadyStateConsumptionSulphur />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-sulphur',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-sulphur'>
+                <OverallAopConsumptionSulphur />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Sulphur Ended
         ],
       },
 
