@@ -97,8 +97,8 @@ const SpinningMargin = () => {
 
   const columns = [
     {
-      field: 'cppPlantName',
-      title: 'CPP Plant',
+      field: 'displayName',
+      title: 'Name',
       type: 'text',
       editable: false,
       locked: true,
@@ -388,7 +388,7 @@ const SpinningMargin = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['cppPlantName']}
+        groupBy={['displayName']}
       />
     </Box>
   )

@@ -38,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.cpp.dto.SpinningMarginDTO;
 import com.wks.caseengine.cpp.repository.JMDSpinningMarginRepository;
 import com.wks.caseengine.cpp.service.JMDSpinningMarginService;
+import com.wks.caseengine.cpp.utility.CPPUserContext;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 @Service
@@ -125,6 +126,14 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
                 return vm;
             }
 
+            // Resolve user from JWT token - using preferred_username
+            CPPUserContext user = CPPUserContext.current();
+            String currentUsername = user.getPreferredUsername();
+            if (currentUsername == null || currentUsername.trim().isEmpty()) {
+                currentUsername = "SYSTEM";
+            }
+            logger.info("[SpinningMargin] Resolved preferred_username for ModifiedBy: {}", currentUsername);
+
             int successCount = 0;
             int errorCount = 0;
             List<String> errorMessages = new ArrayList<>();
@@ -136,6 +145,8 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
                         errorMessages.add("Record skipped: id is null");
                         continue;
                     }
+
+                    dto.setModifiedBy(currentUsername);
 
                     repository.updateSpinningMargin(
                             dto.getId(),
@@ -151,7 +162,8 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
                             dto.getJan(),
                             dto.getFeb(),
                             dto.getMar(),
-                            dto.getRemarks());
+                            dto.getRemarks(),
+                            currentUsername);
                     successCount++;
 
                 } catch (Exception e) {
@@ -320,25 +332,30 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
 
     private SpinningMarginDTO mapRowToDto(Object[] row) {
         SpinningMarginDTO dto = new SpinningMarginDTO();
+        if (row == null || row.length == 0) return dto;
+
         dto.setId(row[0] != null ? UUID.fromString(row[0].toString()) : null);
-        dto.setCppPlantName(row[1] != null ? row[1].toString() : null);
-        dto.setUtilityName(row[2] != null ? row[2].toString() : null);
-        dto.setUtilityCode(row[3] != null ? row[3].toString() : null);
-        dto.setUom(row[4] != null ? row[4].toString() : null);
-        dto.setApr(toDoubleObj(row[5]));
-        dto.setMay(toDoubleObj(row[6]));
-        dto.setJun(toDoubleObj(row[7]));
-        dto.setJul(toDoubleObj(row[8]));
-        dto.setAug(toDoubleObj(row[9]));
-        dto.setSep(toDoubleObj(row[10]));
-        dto.setOct(toDoubleObj(row[11]));
-        dto.setNov(toDoubleObj(row[12]));
-        dto.setDec(toDoubleObj(row[13]));
-        dto.setJan(toDoubleObj(row[14]));
-        dto.setFeb(toDoubleObj(row[15]));
-        dto.setMar(toDoubleObj(row[16]));
-        dto.setAopYear(row[17] != null ? row[17].toString() : null);
-        dto.setRemarks(row[18] != null ? row[18].toString() : null);
+        if (row.length > 1) dto.setCppPlantName(row[1] != null ? row[1].toString() : null);
+        if (row.length > 2) dto.setUtilityName(row[2] != null ? row[2].toString() : null);
+        if (row.length > 3) dto.setUtilityCode(row[3] != null ? row[3].toString() : null);
+        if (row.length > 4) dto.setUom(row[4] != null ? row[4].toString() : null);
+        if (row.length > 5) dto.setDisplayName(row[5] != null ? row[5].toString() : null);
+        if (row.length > 6) dto.setApr(toDoubleObj(row[6]));
+        if (row.length > 7) dto.setMay(toDoubleObj(row[7]));
+        if (row.length > 8) dto.setJun(toDoubleObj(row[8]));
+        if (row.length > 9) dto.setJul(toDoubleObj(row[9]));
+        if (row.length > 10) dto.setAug(toDoubleObj(row[10]));
+        if (row.length > 11) dto.setSep(toDoubleObj(row[11]));
+        if (row.length > 12) dto.setOct(toDoubleObj(row[12]));
+        if (row.length > 13) dto.setNov(toDoubleObj(row[13]));
+        if (row.length > 14) dto.setDec(toDoubleObj(row[14]));
+        if (row.length > 15) dto.setJan(toDoubleObj(row[15]));
+        if (row.length > 16) dto.setFeb(toDoubleObj(row[16]));
+        if (row.length > 17) dto.setMar(toDoubleObj(row[17]));
+        if (row.length > 18) dto.setAopYear(row[18] != null ? row[18].toString() : null);
+        if (row.length > 19) dto.setRemarks(row[19] != null ? row[19].toString() : null);
+        if (row.length > 20) dto.setModifiedBy(row[20] != null ? row[20].toString() : null);
+
         return dto;
     }
 
@@ -414,7 +431,7 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
         int col = 0;
 
         Row headerRow = sheet.createRow(rowNum++);
-        String[] baseHeaders = {"CPP Plant", "Utility Name", "Utility Code", "UOM"};
+        String[] baseHeaders = {"Name", "Utility Name", "Utility Code", "UOM"};
         for (String header : baseHeaders) {
             headerRow.createCell(col).setCellValue(header);
             headerRow.getCell(col++).setCellStyle(headerStyle);
@@ -455,7 +472,7 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
             Row row = sheet.createRow(rowNum++);
             col = 0;
 
-            setStringCell(row.createCell(col++), dto.getCppPlantName(), dataStyle);
+            setStringCell(row.createCell(col++), dto.getDisplayName(), dataStyle);
             setStringCell(row.createCell(col++), dto.getUtilityName(), dataStyle);
             setStringCell(row.createCell(col++), dto.getUtilityCode(), dataStyle);
             setStringCell(row.createCell(col++), dto.getUom(), dataStyle);
@@ -541,8 +558,8 @@ public class JMDSpinningMarginServiceImpl implements JMDSpinningMarginService {
             SpinningMarginDTO dto = new SpinningMarginDTO();
             dto.setAopYear(aopYear);
 
-            // Parse text columns (0=CPP Plant, 1=Utility Name, 2=Utility Code, 3=UOM)
-            dto.setCppPlantName(toStringVal(row.getCell(0)));
+            // Parse text columns (0=Name, 1=Utility Name, 2=Utility Code, 3=UOM)
+            dto.setDisplayName(toStringVal(row.getCell(0)));
             dto.setUtilityName(toStringVal(row.getCell(1)));
             dto.setUtilityCode(toStringVal(row.getCell(2)));
             dto.setUom(toStringVal(row.getCell(3)));
