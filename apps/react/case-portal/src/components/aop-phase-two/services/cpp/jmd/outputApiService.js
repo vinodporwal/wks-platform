@@ -25,6 +25,9 @@ export const OutputApiService = {
   // Used in: Outputs/spinning-margin-report/index.js (Spinning Margin report grid)
   getSpinningMarginReport,
   exportSpinningMarginReportExcel,
+  saveSpinningMarginReport,
+  importSpinningMarginReportExcel,
+  saveSpinningMarginReportExcel: importSpinningMarginReportExcel,
 
   // Used in: Outputs/power-purchase-sell/PowerDemandGrid.js (Power Demand output grid)
   getPowerDemand,
@@ -461,17 +464,20 @@ async function getSpinningMarginReport(keycloak, plantIds, aopYear) {
   }
 }
 
-// GET /task/jmd/spinning-margin-report/export?aopYear=...[&plantIds=...]
+// GET /task/jmd/spinning-margin-report/export?aopYear=...[&plantIds=...][&showMaintained=...]
 async function exportSpinningMarginReportExcel(
   keycloak,
   plantIds,
   aopYear,
   EXCEL_NAME,
+  showMaintained = true,
 ) {
   const plantParams = plantIds?.length
     ? `&plantIds=${buildPlantIdsParam(plantIds)}`
     : ''
-  const url = `${Config.CaseEngineUrl}/task/jmd/spinning-margin-report/export?aopYear=${aopYear}${plantParams}`
+  const showMaintainedParam =
+    showMaintained !== undefined ? `&showMaintained=${showMaintained}` : ''
+  const url = `${Config.CaseEngineUrl}/task/jmd/spinning-margin-report/export?aopYear=${aopYear}${plantParams}${showMaintainedParam}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -508,6 +514,74 @@ async function exportSpinningMarginReportExcel(
     return { success: true, message: 'Excel exported successfully' }
   } catch (e) {
     console.error('Error exporting Spinning Margin report Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/spinning-margin-report?aopYear=...[&plantIds=...]
+async function saveSpinningMarginReport(keycloak, plantIds, aopYear, payload) {
+  const plantParams = plantIds?.length
+    ? `&plantIds=${buildPlantIdsParam(plantIds)}`
+    : ''
+  const url = `${Config.CaseEngineUrl}/task/jmd/spinning-margin-report?aopYear=${aopYear}${plantParams}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving Spinning Margin report data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/spinning-margin-report/import?aopYear=...[&plantIds=...] (multipart)
+async function importSpinningMarginReportExcel(
+  file,
+  keycloak,
+  plantIds,
+  aopYear,
+) {
+  const plantParams = plantIds?.length
+    ? `&plantIds=${buildPlantIdsParam(plantIds)}`
+    : ''
+  const url = `${Config.CaseEngineUrl}/task/jmd/spinning-margin-report/import?aopYear=${aopYear}${plantParams}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const responseData = await json(keycloak, resp)
+
+    if (resp.status === 400 || resp.status === 200 || resp.status === 207) {
+      return responseData
+    }
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    return responseData
+  } catch (e) {
+    console.error('Error importing Spinning Margin report Excel:', e)
     return Promise.reject(e)
   }
 }

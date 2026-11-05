@@ -129,6 +129,12 @@ export const InputApiService = {
   exportEdRpoMappingExcel,
   saveEdRpoMappingExcel,
 
+  // Used in: common/Prices/RpoMonthlyConfig.js
+  getRPOMonthlyConfig,
+  saveRPOMonthlyConfig,
+  exportRPOMonthlyConfigExcel,
+  saveRPOMonthlyConfigExcel,
+
   // Used in: ImportPowerMain/InterSitePowerTransferGrid.js
   // NOTE: Backend endpoints pending DB table. Methods are ready to wire up.
   getInterSitePowerTransfer,
@@ -2157,4 +2163,69 @@ async function saveEdRpoMappingExcel(file, keycloak, plantIds, aopYear) {
     plantIds: plantIdArray.join(','),
     aopYear,
   })
+}
+
+// ========================|| CPP RPO Monthly Config APIs ||=====================================//
+
+// GET /task/jmd/rpo-monthly-config?aopYear=2026-27[&plantId=UUID]
+async function getRPOMonthlyConfig(keycloak, aopYear, plantId) {
+  let url = `${Config.CaseEngineUrl}/task/jmd/rpo-monthly-config?aopYear=${aopYear}`
+  if (plantId) url += `&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('[RpoMonthlyConfig] Error fetching RPO Monthly Config data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/rpo-monthly-config?aopYear=2026-27[&plantId=UUID]
+async function saveRPOMonthlyConfig(keycloak, aopYear, plantId, payload) {
+  let url = `${Config.CaseEngineUrl}/task/jmd/rpo-monthly-config?aopYear=${aopYear}`
+  if (plantId) url += `&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('[RpoMonthlyConfig] Error saving RPO Monthly Config data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/rpo-monthly-config/export?aopYear=2026-27[&plantId=UUID]
+async function exportRPOMonthlyConfigExcel(keycloak, aopYear, plantId, EXCEL_NAME) {
+  const queryParams = { aopYear }
+  if (plantId) queryParams.plantId = plantId
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd/rpo-monthly-config/export',
+    queryParams,
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/jmd/rpo-monthly-config/import?aopYear=2026-27[&plantId=UUID] (multipart)
+async function saveRPOMonthlyConfigExcel(file, keycloak, aopYear, plantId) {
+  const customParams = { aopYear }
+  if (plantId) customParams.plantId = plantId
+  return saveExcelData(file, keycloak, 'jmd/rpo-monthly-config/import', null, null, customParams)
 }

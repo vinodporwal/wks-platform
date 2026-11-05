@@ -140,10 +140,18 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
         dto.setMaterialName(rs.getString("MaterialName"));
         dto.setIssuingPlantName(rs.getString("IssuingPlantName"));
         dto.setIssuingPlantId(toUUIDObj(rs.getString("IssuingPlantId")));
-        dto.setIssuingUOM(rs.getString("IssuingUOM"));
+        String issuingUom = rs.getString("IssuingUOM");
+        dto.setIssuingUOM(issuingUom);
         dto.setNormParameterId(toUUIDObj(rs.getString("NormParameterId")));
         dto.setAccountName(rs.getString("AccountName"));
-        dto.setIsFreeSteamFuel(getBooleanOrNull(rs, "IsFreeSteamFuel"));
+
+        Boolean isFreeSteamFuel = getBooleanOrNull(rs, "IsFreeSteamFuel");
+        String freeSteamFuelValue = "";
+        if (issuingUom != null && "MMBTU".equalsIgnoreCase(issuingUom.trim())) {
+            freeSteamFuelValue = Boolean.TRUE.equals(isFreeSteamFuel) ? "Free" : "Fired";
+        }
+        dto.setIsFreeSteamFuel(freeSteamFuelValue);
+
         dto.setFinancialYear(rs.getString("FinancialYear"));
 
         // April
@@ -243,7 +251,7 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
         String[] subCols = {"Gen. Qty", "Allocation Qty"};
 
         String[] baseHeaders = {
-            "CPP Plant", "Generating Plant", "Asset Name", "Issuing Plant", "Material", "Free Steam Fuel"
+            "CPP Plant", "Generating Plant", "Asset Name", "Issuing Plant", "Material", "Fuel Allocation"
         };
         int baseCount = baseHeaders.length;
 
@@ -297,7 +305,7 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
             setStringCell(row.createCell(col++), dto.getAssetName(), dataStyle);
             setStringCell(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
             setStringCell(row.createCell(col++), dto.getMaterialName(), dataStyle);
-            setStringCell(row.createCell(col++), Boolean.TRUE.equals(dto.getIsFreeSteamFuel()) ? "Yes" : "", dataStyle);
+            setStringCell(row.createCell(col++), dto.getIsFreeSteamFuel() != null ? dto.getIsFreeSteamFuel() : "", dataStyle);
 
             // April
             setBigDecimalCell(row.createCell(col++), dto.getAprGenerationQuantity(), dataStyle);
@@ -351,6 +359,9 @@ public class FuelAllocationQuantityServiceImpl implements FuelAllocationQuantity
         for (int i = 0; i < totalColumns; i++) {
             sheet.autoSizeColumn(i);
         }
+
+        // Set wider width for "Fuel Allocation" column (col 5) so header and values are not truncated
+        sheet.setColumnWidth(5, 22 * 256);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
