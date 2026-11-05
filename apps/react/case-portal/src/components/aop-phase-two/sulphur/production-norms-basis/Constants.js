@@ -36,7 +36,24 @@ const Constants = ({ startDate, endDate }) => {
 
 
   const ExcelName = generateExcelName(dataGridStore, `Production_Norms_Constant`)
-
+  const DUMMY_DATA = [
+    {
+      id:1,
+      productName: 'Sour water Specific density',
+      uom: '',
+      value: '1',
+      remarks: 'Power Consumption CBA',
+      dependantAttributeId: 'Power Consumption CBA',
+    },
+    {
+      id:2,
+      productName: 'Rich Amine Specific density',
+      uom: '',
+      value: '1.015',
+      remarks: 'Power Consumption CBA',
+      dependantAttributeId: 'Power Consumption CBA',
+    }
+  ]
   const columns = [
     {
       field: 'productName',
@@ -74,6 +91,13 @@ const Constants = ({ startDate, endDate }) => {
       editable: true,
       minWidth: 300,
     },
+    {
+      field: 'dependantAttributeId',
+      title: 'Applicable Utilities and Cat-chems',
+      widthT: 350,
+      minWidth: 300,
+      editable: false,
+    },
   ]
 
   useEffect(() => {
@@ -90,18 +114,17 @@ const Constants = ({ startDate, endDate }) => {
         PLANT_ID,
         AOP_YEAR,
       )
-
       if (res?.data?.length === 0) {
         setRows([])
         return
       }
 
-      console.log('Constants data:', res)
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
       }))
+      
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {

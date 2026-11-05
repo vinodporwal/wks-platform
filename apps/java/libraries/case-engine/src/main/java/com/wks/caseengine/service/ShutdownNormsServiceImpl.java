@@ -2015,7 +2015,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			innerHeaders.add("Type");
 			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+			innerHeaders.add("UOM / MT");
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			innerHeaders.add("Remarks");
