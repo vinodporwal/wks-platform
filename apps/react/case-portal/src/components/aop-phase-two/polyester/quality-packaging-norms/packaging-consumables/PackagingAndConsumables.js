@@ -337,7 +337,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Packaging & Consumables`
+      const EXCEL_EXPORT_TITLE = `${vertName}_${SITE_NAME}_${PLANT_NAME}_Packaging`
       await QualityPackagingNormsApiService.exportPackagingConsumables(
         keycloak,
         PLANT_ID,
@@ -374,10 +374,10 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
     allAction: true,
     saveBtn: true,
     showTitleNameBusiness: true,
-    titleName: 'Packaging & Consumables',
+    titleName: 'Packaging',
     showExport: true,
     showImport: true,
-    ExcelName: `${lowerVertName}_Packaging & Consumables`,
+    ExcelName: `${lowerVertName}_Packaging`,
     addButton: false,
     deleteButton: false,
     showCalculate: true,
@@ -393,7 +393,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='Packaging & Consumables'
+        title='Packaging'
         loading={loading}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
