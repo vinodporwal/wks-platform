@@ -887,7 +887,7 @@ private boolean isRemarkValidationPassed(String newValue, String existingValue, 
 
    String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadFactors";
 
-   executeCokerSezLoadFactors(storedProcedure, plantId, siteId, periodFrom, periodTo, aopYear);
+ //  executeCokerSezLoadFactors(storedProcedure, plantId, siteId, periodFrom, periodTo, aopYear);
 
    return failedList;
 }
