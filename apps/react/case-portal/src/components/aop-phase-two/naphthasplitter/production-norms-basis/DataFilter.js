@@ -46,7 +46,7 @@ const DataFilter = () => {
         minWidth: 200,
       },
       {
-        field: 'uom',
+        field: 'UOM',
         title: 'UOM',
         type: 'text',
         editable: false,
@@ -137,9 +137,9 @@ const DataFilter = () => {
             id: item?.id || index + 1,
             idFromApi: item?.id || null,
             normParameterId: item?.normParameterId || null,
-            particulars: item?.displayName || 'DAF Throughput',
-            displayName: item?.displayName || 'DAF Throughput',
-            uom: item?.uom || 'TPH',
+            particulars: item?.displayName,
+            displayName: item?.displayName,
+            UOM: item?.UOM,
             targetValue: targetVal,
             range: rangeVal,
             remarks: remarksVal,
@@ -153,26 +153,8 @@ const DataFilter = () => {
         setRows(formattedRows)
         setOriginalRows(formattedRows)
       } else {
-        const defaultData = [
-          {
-            id: 1,
-            idFromApi: null,
-            normParameterId: null,
-            particulars: 'DAF Throughput',
-            displayName: 'DAF Throughput',
-            uom: 'TPH',
-            targetValue: 0,
-            range: 0,
-            remarks: '',
-            remark: '',
-            aopYear: AOP_YEAR,
-            plantId: PLANT_ID,
-            isEditable: !READ_ONLY,
-            inEdit: false,
-          },
-        ]
-        setRows(defaultData)
-        setOriginalRows(defaultData)
+        setRows()
+        setOriginalRows()
       }
     } catch (error) {
       console.error('Error fetching Data Filter data:', error)

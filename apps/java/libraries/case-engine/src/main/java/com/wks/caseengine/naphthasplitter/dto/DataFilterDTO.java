@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class DataFilterDTO {
     private UUID normParameterId;
     private String displayName;
+    private String UOM;
     private Double targetValue;
     private Double range;
     private String remarks;

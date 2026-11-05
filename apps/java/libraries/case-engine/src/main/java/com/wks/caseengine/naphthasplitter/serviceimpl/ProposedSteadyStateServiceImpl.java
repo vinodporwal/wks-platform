@@ -51,8 +51,8 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
             Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
             Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-            String procedureName = vertical.getName()  + "_GetEnergyFactor";
-            String sql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+            String procedureName = vertical.getName() + "_GetEnergyFactor";
+            String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
             List<EnergyFactorDTO> dtoList = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 EnergyFactorDTO dto = new EnergyFactorDTO();
                 dto.setNormParameterFKId(rs.getString("NormParameter_FK_Id"));
@@ -77,16 +77,15 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
         }
     }
 
-
     @Override
     public AOPMessageVM getNormsRationalizationFactor(String year, String plantFKId) {
         try {
             Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
             Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-            String procedureName = vertical.getName()  + "_GetNormsRationalizationFactor";
-            String sql = "EXEC " +  "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
-            
+            String procedureName = vertical.getName() + "_GetNormsRationalizationFactor";
+            String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
             List<NormsRationalizationFactorDTO> dtoList = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 NormsRationalizationFactorDTO dto = new NormsRationalizationFactorDTO();
                 dto.setNormParameterFKId(rs.getString("NormParameter_FK_Id"));
@@ -103,7 +102,7 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
             aopMessageVM.setData(dtoList);
-            return aopMessageVM;   
+            return aopMessageVM;
         } catch (IllegalArgumentException e) {
             throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
         } catch (Exception ex) {
@@ -111,16 +110,16 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
         }
     }
 
-            @Override
-            @Transactional 
-            public List<EnergyFactorDTO> saveEnergyFactor(String plantId, String aopYear, List<EnergyFactorDTO> dtos) {
+    @Override
+    @Transactional
+    public List<EnergyFactorDTO> saveEnergyFactor(String plantId, String aopYear, List<EnergyFactorDTO> dtos) {
 
-                List<EnergyFactorDTO> failedList = new ArrayList<>();
+        List<EnergyFactorDTO> failedList = new ArrayList<>();
 
-                for(EnergyFactorDTO dto : dtos) {
-                UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKId());
-                String attributeValue = dto.getValue();
-                String remark = dto.getRemarks();
+        for (EnergyFactorDTO dto : dtos) {
+            UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKId());
+            String attributeValue = dto.getValue();
+            String remark = dto.getRemarks();
 
             Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
                     .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, aopYear);
@@ -131,8 +130,9 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
                 normAttributeTransactions = existingRecord.get();
                 normAttributeTransactions.setModifiedOn(new Date());
                 String existingValue = normAttributeTransactions.getAttributeValue();
-                boolean isRemarkValidationPassed = isRemarkValidationPassed(attributeValue, existingValue, remark, normAttributeTransactions.getRemarks());
-                if(!isRemarkValidationPassed) { 
+                boolean isRemarkValidationPassed = isRemarkValidationPassed(attributeValue, existingValue, remark,
+                        normAttributeTransactions.getRemarks());
+                if (!isRemarkValidationPassed) {
                     dto.setSaveStatus("Failed");
                     dto.setErrDescription("Please update remark");
                     failedList.add(dto);
@@ -154,83 +154,89 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
             normAttributeTransactionsRepository.save(normAttributeTransactions);
 
         }
-        
-        return failedList;
-        }
 
-        private boolean isRemarkValidationPassed(String newValue, String existingValue, String newRemark, String existingRemark) {
-        
-            if(existingValue == null || newValue == null) {
-                return true;
-            }
-            // Check if the value has changed (null-safe)
-            boolean valueChanged = !Objects.equals(newValue, existingValue);
-            
-            if (valueChanged) {
-                // If the value changed, the remark must be updated (must not be null/empty and must differ from the existing remark)
-                boolean isRemarkUpdated = newRemark != null 
-                        && !newRemark.trim().isEmpty() 
-                        && !Objects.equals(newRemark, existingRemark);
-                return isRemarkUpdated;
-            }
-            
-        // return true if values not changed
+        return failedList;
+    }
+
+    private boolean isRemarkValidationPassed(String newValue, String existingValue, String newRemark,
+            String existingRemark) {
+
+        if (existingValue == null || newValue == null) {
             return true;
         }
+        // Check if the value has changed (null-safe)
+        boolean valueChanged = !Objects.equals(newValue, existingValue);
 
-        @Override
-        @Transactional 
-        public List<NormsRationalizationFactorDTO> saveNormsRationalizationFactor(String plantId, String aopYear, List<NormsRationalizationFactorDTO> dtos) {
+        if (valueChanged) {
+            // If the value changed, the remark must be updated (must not be null/empty and
+            // must differ from the existing remark)
+            boolean isRemarkUpdated = newRemark != null
+                    && !newRemark.trim().isEmpty()
+                    && !Objects.equals(newRemark, existingRemark);
+            return isRemarkUpdated;
+        }
 
-            List<NormsRationalizationFactorDTO> failedList = new ArrayList<>();
+        // return true if values not changed
+        return true;
+    }
 
-            for(NormsRationalizationFactorDTO dto : dtos) {
+    @Override
+    @Transactional
+    public List<NormsRationalizationFactorDTO> saveNormsRationalizationFactor(String plantId, String aopYear,
+            List<NormsRationalizationFactorDTO> dtos) {
+
+        List<NormsRationalizationFactorDTO> failedList = new ArrayList<>();
+
+        for (NormsRationalizationFactorDTO dto : dtos) {
             UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKId());
             String attributeValue = dto.getValue();
             String remark = dto.getRemarks();
 
-        Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
-                .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, aopYear);
+            Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+                    .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, 4, aopYear);
 
-        NormAttributeTransactions normAttributeTransactions;
+            NormAttributeTransactions normAttributeTransactions;
 
-        if (existingRecord.isPresent()) {
-            normAttributeTransactions = existingRecord.get();
-            normAttributeTransactions.setModifiedOn(new Date());
-            String existingValue = normAttributeTransactions.getAttributeValue();
-            boolean isRemarkValidationPassed = isRemarkValidationPassed(attributeValue, existingValue, remark, normAttributeTransactions.getRemarks());
-            if(!isRemarkValidationPassed) { 
-                dto.setSaveStatus("Failed");
-                dto.setErrDescription("Please update remark");
-                failedList.add(dto);
-                continue;
+            if (existingRecord.isPresent()) {
+                normAttributeTransactions = existingRecord.get();
+                normAttributeTransactions.setModifiedOn(new Date());
+                String existingValue = normAttributeTransactions.getAttributeValue();
+                boolean isRemarkValidationPassed = isRemarkValidationPassed(attributeValue, existingValue, remark,
+                        normAttributeTransactions.getRemarks());
+                if (!isRemarkValidationPassed) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription("Please update remark");
+                    failedList.add(dto);
+                    continue;
+                }
+            } else {
+
+                normAttributeTransactions = new NormAttributeTransactions();
+                normAttributeTransactions.setCreatedOn(new Date());
+                normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+                normAttributeTransactions.setAopMonth(4);
+                normAttributeTransactions.setAuditYear(aopYear);
             }
-        } else {
 
-            normAttributeTransactions = new NormAttributeTransactions();
-            normAttributeTransactions.setCreatedOn(new Date());
-            normAttributeTransactions.setNormParameterFKId(normParameterFKId);
-            normAttributeTransactions.setAopMonth(4);
-            normAttributeTransactions.setAuditYear(aopYear);
-        }
-
-        normAttributeTransactions
-                .setAttributeValue(attributeValue != null ? attributeValue : "0.0");
-        normAttributeTransactions.setRemarks(remark);
-        normAttributeTransactions.setUserName(Utility.getUserName());
-        normAttributeTransactionsRepository.save(normAttributeTransactions);
+            normAttributeTransactions
+                    .setAttributeValue(attributeValue != null ? attributeValue : "0.0");
+            normAttributeTransactions.setRemarks(remark);
+            normAttributeTransactions.setUserName(Utility.getUserName());
+            normAttributeTransactionsRepository.save(normAttributeTransactions);
 
         }
 
         return failedList;
-        }
+    }
 
     @Override
     public List<DataFilterDTO> getDataFilter(UUID plantId, String aopYear) {
 
         Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
-        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
-        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId())
+                .orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId())
+                .orElseThrow(() -> new RuntimeException("Site not found")).getName();
 
         String procedureName = verticalName + "_" + siteName + "_GetDataFilter";
 
@@ -242,73 +248,76 @@ public class ProposedSteadyStateServiceImpl implements ProposedSteadyStateServic
 
             return DataFilterDTO.builder()
                     .normParameterId(normParamIdStr != null && !normParamIdStr.isBlank()
-                            ? UUID.fromString(normParamIdStr) : null)
+                            ? UUID.fromString(normParamIdStr)
+                            : null)
                     .displayName(rs.getString("DisplayName"))
+                    .UOM(rs.getString("UOM"))
                     .targetValue(rs.getObject("TargetValue") != null
-                            ? rs.getDouble("TargetValue") : null)
+                            ? rs.getDouble("TargetValue")
+                            : null)
                     .range(rs.getObject("Range") != null
-                            ? rs.getDouble("Range") : null)
+                            ? rs.getDouble("Range")
+                            : null)
                     .remarks(rs.getString("Remarks"))
                     .aopYear(rs.getString("aopYear"))
                     .plantId(plantIdStr != null && !plantIdStr.isBlank()
-                            ? UUID.fromString(plantIdStr) : null)
+                            ? UUID.fromString(plantIdStr)
+                            : null)
                     .build();
         }, plantId.toString(), aopYear);
     }
 
-@Transactional
-@Override
-public AOPMessageVM saveDataFilter(List<DataFilterDTO> dataFilterDTOList, String year) {
+    @Transactional
+    @Override
+    public AOPMessageVM saveDataFilter(List<DataFilterDTO> dataFilterDTOList, String year) {
 
-    for (DataFilterDTO dataFilterDTO : dataFilterDTOList) {
-        Double targetValue = dataFilterDTO.getTargetValue();
-        Double range = dataFilterDTO.getRange();
-        String remarks = dataFilterDTO.getRemarks();
+        for (DataFilterDTO dataFilterDTO : dataFilterDTOList) {
+            Double targetValue = dataFilterDTO.getTargetValue();
+            Double range = dataFilterDTO.getRange();
+            String remarks = dataFilterDTO.getRemarks();
 
-        saveDataFilterData(targetValue, 4, year, dataFilterDTO.getNormParameterId(), remarks);
-        saveDataFilterData(range, 5, year, dataFilterDTO.getNormParameterId(), remarks);
+            saveDataFilterData(targetValue, 4, year, dataFilterDTO.getNormParameterId(), remarks);
+            saveDataFilterData(range, 5, year, dataFilterDTO.getNormParameterId(), remarks);
+        }
+
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setMessage("Data Filter Saved Successfully");
+        return aopMessageVM;
+
     }
 
-    AOPMessageVM aopMessageVM = new AOPMessageVM();
-    aopMessageVM.setCode(200);
-    aopMessageVM.setMessage("Data Filter Saved Successfully");
-    return aopMessageVM;
+    public AOPMessageVM saveDataFilterData(Double attributeValue, Integer month, String year, UUID normParameterFKId,
+            String remarks) {
 
+        Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+                .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
 
-}
+        NormAttributeTransactions normAttributeTransactions;
 
-public AOPMessageVM saveDataFilterData(Double attributeValue, Integer month, String year, UUID normParameterFKId, String remarks) {
+        if (existingRecord.isPresent()) {
+            normAttributeTransactions = existingRecord.get();
+            normAttributeTransactions.setModifiedOn(new Date());
 
-    Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
-            .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
+        } else {
 
-    NormAttributeTransactions normAttributeTransactions;
+            normAttributeTransactions = new NormAttributeTransactions();
+            normAttributeTransactions.setCreatedOn(new Date());
+            normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+            normAttributeTransactions.setAopMonth(month);
+            normAttributeTransactions.setAuditYear(year);
+        }
 
-    if (existingRecord.isPresent()) {
-        normAttributeTransactions = existingRecord.get();
-        normAttributeTransactions.setModifiedOn(new Date());
-        
-    } else {
+        normAttributeTransactions
+                .setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+        normAttributeTransactions.setRemarks(remarks != null ? remarks : "");
+        normAttributeTransactions.setUserName(Utility.getUserName());
+        normAttributeTransactionsRepository.save(normAttributeTransactions);
 
-        normAttributeTransactions = new NormAttributeTransactions();
-        normAttributeTransactions.setCreatedOn(new Date());
-        normAttributeTransactions.setNormParameterFKId(normParameterFKId);
-        normAttributeTransactions.setAopMonth(month);
-        normAttributeTransactions.setAuditYear(year);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setCode(200);
+        aopMessageVM.setMessage("Data Filter Data Saved Successfully");
+        return aopMessageVM;
     }
 
-    normAttributeTransactions
-            .setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
-    normAttributeTransactions.setRemarks(remarks != null ? remarks : "");
-    normAttributeTransactions.setUserName(Utility.getUserName());
-    normAttributeTransactionsRepository.save(normAttributeTransactions);
-
-    AOPMessageVM aopMessageVM = new AOPMessageVM();
-    aopMessageVM.setCode(200);
-    aopMessageVM.setMessage("Data Filter Data Saved Successfully");
-    return aopMessageVM;
-    }
-
-
- 
 }

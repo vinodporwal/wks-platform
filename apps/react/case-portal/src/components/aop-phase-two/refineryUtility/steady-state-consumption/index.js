@@ -49,7 +49,7 @@ const SIX_DECIMAL_NORM_TYPES=[
 ].map(normalizeKey)
 
 const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
-const THREE_DECIMAL_NORM_TYPESVMD=['Raw water', 'Effluent Treated', 'IOP Compressed Air'].map(normalizeKey)
+const THREE_DECIMAL_NORM_TYPESVMD=['Utility Consumption'].map(normalizeKey)
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
