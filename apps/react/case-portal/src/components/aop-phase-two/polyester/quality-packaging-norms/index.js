@@ -8,7 +8,7 @@ import PPADC from './ppaDC/index'
 
 const QualityPackagingNorms = () => {
   const [tabIndex, setTabIndex] = useState(0)
-  const defaultTabs = ['Quality', 'Packaging & Consumables', 'Stores & Spares', 'PPA DC'] //, 'Other Cost'
+  const defaultTabs = ['Quality', 'Packaging', 'Stores & Spares', 'PPA DC'] //, 'Other Cost'
 
   return (
     <Box>

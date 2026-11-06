@@ -12,10 +12,29 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 const SpinningMarginReport = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { year, screenTitle } = dataGridStore
+  const {
+    plantObject,
+    siteObject,
+    year,
+    screenTitle,
+    jmdSelectedPlants,
+  } = dataGridStore
 
+  const PLANT_ID = plantObject?.id
+  const lowerSiteName = siteObject?.name?.toLowerCase()
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Spinning_Margin_Report')
+
+  // Build plant ID list: JMD uses all selected plants, otherwise single plant (or null for all)
+  const PLANT_ID_LIST = useMemo(
+    () =>
+      lowerSiteName === 'jmd'
+        ? jmdSelectedPlants?.map((plant) => plant.id) || []
+        : PLANT_ID
+        ? [PLANT_ID]
+        : [],
+    [jmdSelectedPlants, lowerSiteName, PLANT_ID],
+  )
 
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -59,16 +78,29 @@ const SpinningMarginReport = () => {
     'mar',
   ]
 
-  // Month columns (Apr → Mar) using generateHeaderNames format (e.g., Apr-26)
+  // Month columns: each month has 2 sub-columns: Maintained | Target
   const MONTH_COLUMNS = useMemo(
     () =>
       MONTH_FIELDS.map((mon) => ({
-        field: mon,
-        title: headerMap[MONTH_TO_INDEX[mon]],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
+        title: headerMap[MONTH_TO_INDEX[mon]], // e.g. "Apr-26"
+        children: [
+          {
+            field: mon,
+            title: 'Maintained',
+            widthT: 130,
+            minWidth: 130,
+            type: 'number1',
+            editable: false,
+          },
+          {
+            field: `${mon}Target`,
+            title: 'Target',
+            widthT: 130,
+            minWidth: 130,
+            type: 'number1',
+            editable: false,
+          },
+        ],
       })),
     [headerMap],
   )
@@ -94,22 +126,61 @@ const SpinningMarginReport = () => {
         editable: false,
         locked: true,
       },
+      {
+        field: 'utilityName',
+        title: 'Utility Name',
+        widthT: 180,
+        minWidth: 180,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
+      {
+        field: 'utilityCode',
+        title: 'Utility Code',
+        widthT: 150,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+        locked: true,
+      },
     ],
     [],
   )
 
-  // Full column list: base columns + month columns
+  const trailingColumns = useMemo(
+    () => [
+      {
+        field: 'remarks',
+        title: 'Remarks',
+        widthT: 250,
+        minWidth: 250,
+        type: 'textarea',
+        editable: false,
+      },
+      {
+        field: 'modifiedBy',
+        title: 'Modified By',
+        widthT: 180,
+        minWidth: 180,
+        type: 'text',
+        editable: false,
+        hidden:true
+      },
+    ],
+    [],
+  )
+
+  // Full column list: base columns + 12 monthly columns (each with Maintained | Target) + remarks & modifiedBy
   const columns = useMemo(
-    () => [...baseColumns, ...MONTH_COLUMNS],
-    [baseColumns, MONTH_COLUMNS],
+    () => [...baseColumns, ...MONTH_COLUMNS, ...trailingColumns],
+    [baseColumns, MONTH_COLUMNS, trailingColumns],
   )
 
   const fetchData = useCallback(async () => {
     if (!AOP_YEAR) return
     setLoading(true)
     try {
-      // plantIds passed as null → fetch all rows for the year; pass a plant
-      // id list here to enable plant-wise filtering in future
       const response = await OutputApiService.getSpinningMarginReport(
         keycloak,
         null,
@@ -122,6 +193,9 @@ const SpinningMarginReport = () => {
         // Rows with no plant id are common to all plants
         plantName:
           row.plantFkId == null ? 'Combined/All Plant' : row.plantName || '',
+        utilityName: row.utilityName || '',
+        utilityCode: row.utilityCode || '',
+        remarks: row.remarks || '',
       }))
       setRows(rowsWithId)
       if (!rowsWithId.length) {
@@ -175,6 +249,7 @@ const SpinningMarginReport = () => {
         null,
         AOP_YEAR,
         EXCEL_NAME,
+        true, // show maintained columns for report export
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -203,8 +278,6 @@ const SpinningMarginReport = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['plantName']}
-        customHeight={65}
         pagable={false}
       />
     </Box>

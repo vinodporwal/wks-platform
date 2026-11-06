@@ -22,22 +22,23 @@ public interface JMDSpinningMarginRepository extends JpaRepository<DummyEntity, 
         "  Apr = :apr, May = :may, Jun = :jun, Jul = :jul, " +
         "  Aug = :aug, Sep = :sep, Oct = :oct, Nov = :nov, " +
         "  Dec = :dec, Jan = :jan, Feb = :feb, Mar = :mar, " +
-        "  Remarks = :remarks, ModifiedOn = GETDATE() " +
+        "  Remarks = :remarks, ModifiedBy = :modifiedBy, ModifiedOn = GETDATE() " +
         "WHERE Id = :id",
         nativeQuery = true)
     int updateSpinningMargin(
-            @Param("id")      UUID id,
-            @Param("apr")     Double apr,
-            @Param("may")     Double may,
-            @Param("jun")     Double jun,
-            @Param("jul")     Double jul,
-            @Param("aug")     Double aug,
-            @Param("sep")     Double sep,
-            @Param("oct")     Double oct,
-            @Param("nov")     Double nov,
-            @Param("dec")     Double dec,
-            @Param("jan")     Double jan,
-            @Param("feb")     Double feb,
-            @Param("mar")     Double mar,
-            @Param("remarks") String remarks);
+            @Param("id")         UUID id,
+            @Param("apr")        Double apr,
+            @Param("may")        Double may,
+            @Param("jun")        Double jun,
+            @Param("jul")        Double jul,
+            @Param("aug")        Double aug,
+            @Param("sep")        Double sep,
+            @Param("oct")        Double oct,
+            @Param("nov")        Double nov,
+            @Param("dec")        Double dec,
+            @Param("jan")        Double jan,
+            @Param("feb")        Double feb,
+            @Param("mar")        Double mar,
+            @Param("remarks")    String remarks,
+            @Param("modifiedBy") String modifiedBy);
 }

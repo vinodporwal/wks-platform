@@ -17,7 +17,11 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 // so quantity data is never touched here.
 const DATA_TYPE = 'FUEL_AVAILABILITY'
 
-const FuelAvailabilityCost = ({ refreshTrigger = 0, exchangeRate }) => {
+const FuelAvailabilityCost = ({
+  refreshTrigger = 0,
+  exchangeRate,
+  onRowsLoaded,
+}) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, year, jmdSelectedPlants } = dataGridStore
@@ -146,6 +150,7 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0, exchangeRate }) => {
       if (!data || data.length === 0) {
         setRows([])
         setOriginalRows([])
+        onRowsLoaded?.([])
         return
       }
 
@@ -156,6 +161,7 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0, exchangeRate }) => {
       }))
       setRows(rowsWithId)
       setOriginalRows(rowsWithId)
+      onRowsLoaded?.(rowsWithId)
     } catch (error) {
       console.error('Error fetching fuel availability cost data:', error)
       setRows([])
@@ -165,7 +171,7 @@ const FuelAvailabilityCost = ({ refreshTrigger = 0, exchangeRate }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, SITE_ID])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, SITE_ID, onRowsLoaded])
 
   useDebounce(
     () => {

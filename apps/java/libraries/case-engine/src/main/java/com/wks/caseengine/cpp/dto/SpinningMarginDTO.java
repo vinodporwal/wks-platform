@@ -2,6 +2,7 @@ package com.wks.caseengine.cpp.dto;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -41,6 +42,14 @@ public class SpinningMarginDTO {
 
     @JsonProperty("remarks")
     private String remarks;
+
+    @JsonProperty("displayName")
+    @JsonAlias({"DisplayName"})
+    private String displayName;
+
+    @JsonProperty("modifiedBy")
+    @JsonAlias({"ModifiedBy"})
+    private String modifiedBy;
 
     @JsonProperty("dataHash")
     private String dataHash;

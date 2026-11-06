@@ -32,7 +32,15 @@ const MONTH_FIELDS = [
 ]
 
 const CoolingTowerUom=['Kg/Km3', 'kWh/km3', 'm3/km3', 'Nm3/Km3']
-
+const ThreeDecimalUomM3= [
+    'Kg/m3',
+    'km3/m3',
+    'KW/m3',
+    'KWH/m3',
+    'm3/m3',
+    'MT/m3',
+    'Nm3/m3'
+]
 const normalizeKey = (s) =>
   String(s ?? '')
     .replace(/\s+/g, '')
@@ -49,7 +57,7 @@ const SIX_DECIMAL_NORM_TYPES=[
 ].map(normalizeKey)
 
 const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
-const THREE_DECIMAL_NORM_TYPESVMD=['Raw water', 'Effluent Treated', 'IOP Compressed Air'].map(normalizeKey)
+const THREE_DECIMAL_NORM_TYPESVMD=['Utility Consumption'].map(normalizeKey)
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -65,6 +73,20 @@ const SteadyStateConsumption = () => {
 
   const siteName = (siteObject?.name || '').trim().toUpperCase()
   const plantName = (plantObject?.name || '').trim()
+  const isDtaUnitPlants=siteName.toLowerCase() === 'dta' &&
+(
+    plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+    plantName.toLowerCase() === 'cpu_unit (722)' ||
+    plantName.toLowerCase() === 'passivation_unit (712)' ||
+    plantName.toLowerCase() === 'wao_unit (672)' ||
+    plantName.toLowerCase() === 'med_unit (927/711)' ||
+    plantName.toLowerCase() === 'dm_unit (721)'
+)
+const isC2UnitPlants= siteName.toLowerCase() === 'c2' &&
+(
+    plantName.toLowerCase() === 'cpu_unit (c722)' ||
+    plantName.toLowerCase() === 'dm_unit (c721)'
+)
   const isDtapcgCtPlant =
     siteName.toLowerCase() === 'dta_pcg'  &&
     (plantName.toLowerCase() === 'ct1 (g731)' ||
@@ -160,6 +182,19 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
         }
         return Math.trunc(num).toString()
       }
+      if (isDtaUnitPlants || isC2UnitPlants) {
+        // Decide by normParameterTypeName (or display name), not by UOM
+        const cleanUom = String(uom ?? '')
+          .trim()
+          .toLowerCase()
+        const isThreeDecimal = ThreeDecimalUomM3.some(
+          (u) => u.trim().toLowerCase() === cleanUom,
+        )
+        if (isThreeDecimal) {
+          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
       if (isFCCTame) {
         return (Math.trunc(num * 100000) / 100000).toFixed(5)
       }
@@ -211,7 +246,7 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant],
+    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, , isC2UnitPlants],
   )
 
   const columns = useMemo(() => {
@@ -383,13 +418,13 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant])
+  }, [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants])
 
   const fetchData = async () => {
     setLoading(true)

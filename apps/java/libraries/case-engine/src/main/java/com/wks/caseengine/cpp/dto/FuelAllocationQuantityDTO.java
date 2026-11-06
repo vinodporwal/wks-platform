@@ -54,7 +54,15 @@ public class FuelAllocationQuantityDTO {
     private String accountName;
 
     @JsonProperty("isFreeSteamFuel")
-    private Boolean isFreeSteamFuel;
+    private String isFreeSteamFuel;
+
+    public String getIsFreeSteamFuel() {
+        return isFreeSteamFuel;
+    }
+
+    public void setIsFreeSteamFuel(String isFreeSteamFuel) {
+        this.isFreeSteamFuel = isFreeSteamFuel;
+    }
 
     private String financialYear;
 

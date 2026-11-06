@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -17,7 +16,7 @@ const COLUMNS = [
   { field: 'dependantAttributeId', title: 'Applicable Utilities & Cat-Chems', widthT: 250, minWidth: 200, type: 'text', editable: false },
 ]
 
-// Rows that must be completely read-only (user cannot edit anything)
+// Rows that must be fully disabled (targetValue, range, selection, remarks)
 const PSA_READONLY_ROWS = [
   'Crude-1 311PA651-246 sulphur',
   'Crude-2 312PA651-246 sulphur',
@@ -25,34 +24,24 @@ const PSA_READONLY_ROWS = [
   '395JWALLRW001',
 ]
 
-// Per-row UI config, matched with API rows by displayName.
-// Any API row NOT listed here falls back to a numeric editor (type 'number1').
+const TGC2_TOGGLE_ROW = 'TGC2 Online/Offline'
+const ALL_EDITABLE_FIELDS = ['targetValue', 'range', 'selection', 'remarks']
+
+// Fallback / per-row config (matched by displayName)
 const FILTER_CONFIG = [
-  // Dropdown (Online / Offline) only for the targetValue column of this row
   {
-    displayName: 'TGC2 Online/Offline',
+    displayName: TGC2_TOGGLE_ROW,
+    targetValue: 'Offline',
     type: 'dropdown',
     options: ['Online', 'Offline'],
-    fieldTypes: { targetValue: 'dropdown', range: 'number1' }, // per-column editor type
-    nonEditableFields: [], // range is editable
-    hideCheckbox: false, // show the checkbox
-    isEditable: true,
-  },
-
-  // PSA Product rows: fully disabled
-  ...PSA_READONLY_ROWS.map((name) => ({
-    displayName: name,
-    type: 'number1',
-    options: [],
-    nonEditableFields: [],
+    nonEditableFields: ['range'],
     hideCheckbox: true,
-    isEditable: false,
-  })),
+  },
 ]
 
 const PERMISSIONS = {
   showAction: true, addButton: false, deleteButton: false, editButton: true, saveBtn: true,
-  allAction: true, downloadExcelBtnFromUI: true, ExcelName: 'Production_Norms_Configuration_Range',
+  allAction: true, downloadExcelBtnFromUI: true, ExcelName: 'Production_Norms_Configuration_PSA',
   showImport: false, showTitleNameBusiness: true, showTitle: true, titleName: 'Configuration',
 }
 
@@ -66,9 +55,7 @@ const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => 
   if (dependentAttributeConfig) {
     if (typeof dependentAttributeConfig === 'string') {
       const match = dependentAttributeConfig.match(/["']?isCheckBoxVisible["']?\s*:\s*["']?(true|false)["']?/i)
-      if (match) {
-        return match[1].toLowerCase() === 'false'
-      }
+      if (match) return match[1].toLowerCase() === 'false'
     } else if (typeof dependentAttributeConfig === 'object') {
       if (typeof dependentAttributeConfig.isCheckBoxVisible === 'boolean') {
         return !dependentAttributeConfig.isCheckBoxVisible
@@ -81,33 +68,34 @@ const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => 
   return Boolean(fallbackHideCheckbox)
 }
 
-const formatDate = (val) => {
-  if (!val) return val
-  const d = new Date(val)
-  if (isNaN(d.getTime())) return val
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+// ---- TGC2 Online/Offline helpers ----
+const getTgcType = (row) => {
+  const name = row.displayName?.toLowerCase() || ''
+  if (!name.includes('tgc2') || row.displayName === TGC2_TOGGLE_ROW) return null
+  if (name.includes('online')) return 'Online'
+  if (name.includes('offline')) return 'Offline'
+  return null
 }
 
-const ConfigurationRangePsa = ({ startDate, endDate, refreshData }) => {
-  const keycloak = useSession()
-  const { plantObject, year, verticalObject, siteObject } = useSelector((state) => state.dataGridStore)
+// Enables only the TGC rows matching the dropdown value; the rest are disabled
+const applyTgcToggle = (rows, value) =>
+  rows.map((row) => {
+    const tgcType = getTgcType(row)
+    if (!tgcType) return row
+    return { ...row, isEditable: row.isApiEditable === false ? false : value === tgcType }
+  })
 
-  const vertical = verticalObject?.name?.toLowerCase()?.trim()
-  const site = siteObject?.name?.toLowerCase()?.trim()
-  const plant = plantObject?.name?.toLowerCase()?.trim()
-  const IS_PCG_DTA_PSA = vertical === 'pcg' && site === 'dta' && plant === 'psa'
+const ConfigurationRangePsa = ({ refreshData }) => {
+  const keycloak = useSession()
+  const { plantObject, year } = useSelector((state) => state.dataGridStore)
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({
-    message: '',
-    severity: 'info',
-  })
+  const [snackbarData, setSnackbarData] = useState({ message: '', severity: 'info' })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [rows, setRows] = useState([])
-  const [originalRows, setOriginalRows] = useState([])
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -120,96 +108,69 @@ const ConfigurationRangePsa = ({ startDate, endDate, refreshData }) => {
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) fetchConfigurationData()
-  }, [PLANT_ID, AOP_YEAR, refreshData, IS_PCG_DTA_PSA])
+  }, [PLANT_ID, AOP_YEAR, refreshData])
 
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
       const apiRes = await ProductionNormsApiService.getConfigurationData(keycloak, PLANT_ID, AOP_YEAR)
 
-      // Merge API rows with local per-row config (matched by displayName).
-      // Rows without config => numeric editor, editable (unless API says otherwise)
-      const res = (apiRes || []).map((apiItem) => {
-        const configItem =
-          (IS_PCG_DTA_PSA ? FILTER_CONFIG : []).find(
-            (d) =>
-              d.displayName?.trim() === (apiItem.displayName || apiItem.productName)?.trim()
-          ) || {}
-
-        const fallbackHideCheckbox =
-          apiItem.hideCheckbox ??
-          apiItem.hideCheckBox ??
-          configItem.hideCheckbox ??
-          configItem.hideCheckBox ??
-          false
-        const hideCheckbox = resolveHideCheckbox(apiItem.dependentAttributeConfig, fallbackHideCheckbox)
-
-        return {
-          ...apiItem,
-          ...configItem, // config wins over empty API values
-          isEditable: configItem.isEditable ?? apiItem.isEditable ?? true,
-          nonEditableFields: configItem.nonEditableFields || [],
-          apiDataType: apiItem.dataType ?? '', // original backend dataType (UI overrides dataType below)
-          fieldTypes: configItem.fieldTypes || null, // per-column editor type
-          type: configItem.type || 'number1', // default = numeric
-          dataType: configItem.type || 'number1',
-          options: configItem.options || [],
-          hideCheckbox,
-          hideCheckBox: hideCheckbox,
-        }
-      })
-
-      if (!res.length) {
+      if (!apiRes?.length) {
         showSnackbar('No data found')
-        setLoading(false)
         setRows([])
-        setOriginalRows([])
         return
       }
 
-      let formattedData = res.map((item, index) => {
-        const config = parseConfig(item.config)
-        const mappingKeys = config?.valueMapping ? Object.keys(config.valueMapping) : []
-        const type = item.dataType || (mappingKeys.length ? 'dropdown' : undefined)
-        const fallbackHideCheckbox = item.hideCheckbox ?? item.hideCheckBox ?? false
-        const hideCheckbox = resolveHideCheckbox(item.dependentAttributeConfig, fallbackHideCheckbox)
+      let formattedData = apiRes.map((apiItem, index) => {
+        const configItem = FILTER_CONFIG.find((d) => d.displayName === apiItem.displayName) || {}
+        const isReadonlyRow = PSA_READONLY_ROWS.includes(apiItem.displayName)
+        const isToggleRow = apiItem.displayName === TGC2_TOGGLE_ROW
+
+        // Rows with empty selection from API have no checkbox
+        const fallbackHideCheckbox = configItem.hideCheckbox ?? !apiItem.selection
+        const hideCheckbox = resolveHideCheckbox(apiItem.dependentAttributeConfig, fallbackHideCheckbox)
+
+        // NOTE: API sends isEditable=false for every row, so it is ignored here.
+        // Only the PSA read-only rows are locked; TGC rows are driven by the dropdown.
+        const isApiEditable = !isReadonlyRow
+
+        const nonEditableFields = isReadonlyRow
+          ? ALL_EDITABLE_FIELDS
+          : (configItem.nonEditableFields || [])
+
+        const type = configItem.type || 'number1'
+        const config = parseConfig(apiItem.config)
 
         return {
-          ...item,
+          ...configItem,
+          ...apiItem,
+          config,
+          type,
+          dataType: type,
+          options: configItem.options || [],
           hideCheckbox,
           hideCheckBox: hideCheckbox,
-          config, type,
-          options: item.options?.length ? item.options : mappingKeys,
-          remarks: item.remarks || '',
-          id: item.id || item.normParameterFkId || index + 1,
-          attributeValue: ['date', 'datetime'].includes(type) ? formatDate(item.attributeValue) : item.attributeValue,
-          allowNegative: item.allowNegative,
-          selection: item.selection?.toLowerCase() === 'true' ? true : false
+          isEditable: isApiEditable,
+          isApiEditable,
+          nonEditableFields,
+          editableFields: isReadonlyRow ? [] : undefined,
+          remarks: apiItem.remarks || '',
+          id: apiItem.id || apiItem.normParameterFkId || index + 1,
+          selection: String(apiItem.selection ?? '').toLowerCase() === 'true',
+          // Default the dropdown if the backend sent it empty
+          targetValue: isToggleRow && !apiItem.targetValue ? configItem.targetValue : apiItem.targetValue,
         }
       })
 
-      // (kept from Configuration.js) Inline/Bypass dependency - only applies if such a row exists
-      const inlineBypassRow = formattedData.find(row => row.displayName === 'AGR C003 Inline/Bypass')
-      if (inlineBypassRow) {
-        const value = inlineBypassRow.targetValue
-        formattedData = formattedData.map(row => {
-          if (row.displayName !== 'AGR C003 Inline/Bypass') {
-            const isInline = row.displayName?.includes('AGR C003 Inline')
-            const isBypass = row.displayName?.includes('AGR C003 Bypass')
-            if (isInline || isBypass) {
-              return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
-            }
-          }
-          return row
-        })
-      }
+      // Initial TGC2 Online/Offline toggle state
+      const toggleRow = formattedData.find((row) => row.displayName === TGC2_TOGGLE_ROW)
+      if (toggleRow) formattedData = applyTgcToggle(formattedData, toggleRow.targetValue)
 
       setRows(formattedData)
-      setOriginalRows(formattedData)
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
       showSnackbar('Error fetching data', 'error')
+    } finally {
       setLoading(false)
     }
   }
@@ -217,38 +178,18 @@ const ConfigurationRangePsa = ({ startDate, endDate, refreshData }) => {
   const saveChanges = async () => {
     const modifiedData = Object.values(modifiedCells)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
-    console.log('modifiedData', modifiedData)
-    console.log('dataToSave', dataToSave)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
-
-    // const validationError = validateRowDataWithRemarks(
-    //   dataToSave.filter((item) => item.isEditable),
-    //   originalRows,
-    //   ['targetValue', 'range', 'selection'],
-    //   'displayName'
-    // )
-
-    // if (validationError) return showSnackbar(validationError, 'error')
 
     setLoading(true)
 
-    // Remove UI-only fields and restore the backend's original dataType
-    // (the UI sets dataType = 'dropdown' for rendering, which the backend may reject for targetValue)
-    const payload = modifiedData.map((row) => {
-      const {
-        type,
-        options,
-        fieldTypes,
-        nonEditableFields,
-        hideCheckbox,
-        hideCheckBox,
-        apiDataType,
-        config,
-        inEdit,
-        ...rest
-      } = row
-      return { ...rest, dataType: apiDataType ?? '' }
-    })
+    const payload = modifiedData.map(({
+  type, options, nonEditableFields, editableFields,
+  hideCheckbox, hideCheckBox, isApiEditable,
+  ...rest
+}) => ({
+  ...rest,
+  isEditable: isApiEditable !== undefined ? isApiEditable : rest.isEditable,
+}))
 
     try {
       const response = await ProductionNormsApiService.saveConfigurationData(keycloak, AOP_YEAR, payload, PLANT_ID)
@@ -319,20 +260,12 @@ const ConfigurationRangePsa = ({ startDate, endDate, refreshData }) => {
     }
   }
 
+  // Dropdown change on 'TGC2 Online/Offline' enables/disables the TGC Online/Offline rows
   const handleCustomItemChange = ({ dataItem, field, value }, setRowsCallback) => {
     if (!['targetValue', 'range'].includes(field)) return
 
-    if (dataItem.displayName === 'AGR C003 Inline/Bypass' && field === 'targetValue') {
-      setRowsCallback((currentRows) => currentRows.map((row) => {
-        if (row.displayName !== 'AGR C003 Inline/Bypass') {
-          const isInline = row.displayName?.includes('AGR C003 Inline')
-          const isBypass = row.displayName?.includes('AGR C003 Bypass')
-          if (isInline || isBypass) {
-            return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
-          }
-        }
-        return row
-      }))
+    if (dataItem.displayName === TGC2_TOGGLE_ROW && field === 'targetValue') {
+      setRowsCallback((currentRows) => applyTgcToggle(currentRows, value))
     }
   }
 
@@ -347,7 +280,7 @@ const ConfigurationRangePsa = ({ startDate, endDate, refreshData }) => {
         setModifiedCells={setModifiedCells}
         title={PERMISSIONS.showTitle ? PERMISSIONS.titleName : ''}
         permissions={{ ...PERMISSIONS, ExcelName: `${PERMISSIONS.ExcelName}_${AOP_YEAR}` }}
-        handleRemarkCellClick={(row) => {setCurrentRemark(row.remarks || ''); setCurrentRowId(row.id); setRemarkDialogOpen(true)}}
+        handleRemarkCellClick={(row) => { setCurrentRemark(row.remarks || ''); setCurrentRowId(row.id); setRemarkDialogOpen(true) }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

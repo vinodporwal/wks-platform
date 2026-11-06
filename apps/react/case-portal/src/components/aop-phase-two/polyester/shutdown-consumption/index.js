@@ -118,9 +118,9 @@ const ShutdownConsumption = () => {
     },
     {
       field: 'uom',
-      title: 'UOM',
-      widthT: 80,
-      minWidth: 80,
+      title: 'UOM / MT',
+      widthT: 100,
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
