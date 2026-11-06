@@ -57,7 +57,11 @@ public interface CPPPowerSourceOperationHoursRepository extends JpaRepository<CP
             2 AS categoryOrder,
             importPlant.DisplayName AS sortDisplayName,
             importPlant.DisplayName AS namePrefix,
-            0 AS nameNumber
+            0 AS nameNumber,
+
+            CAST(NULL AS UNIQUEIDENTIFIER) AS linkedPowerAssetFkId,
+            CAST(NULL AS UNIQUEIDENTIFIER) AS linkedSteamAssetFkId,
+            CAST(NULL AS NVARCHAR(200))    AS linkedSteamAssetName
 
         FROM dbo.CPPPowerSourceOperationHours psoh WITH (NOLOCK)
 
@@ -126,7 +130,10 @@ public interface CPPPowerSourceOperationHoursRepository extends JpaRepository<CP
             2                             AS categoryOrder,
             importPlant.DisplayName       AS sortDisplayName,
             importPlant.DisplayName       AS namePrefix,
-            0                             AS nameNumber
+            0                             AS nameNumber,
+            CAST(NULL AS UNIQUEIDENTIFIER) AS linkedPowerAssetFkId,
+            CAST(NULL AS UNIQUEIDENTIFIER) AS linkedSteamAssetFkId,
+            CAST(NULL AS NVARCHAR(200))    AS linkedSteamAssetName
         FROM [dbo].[CPPImportPower] ip WITH(NOLOCK)
         LEFT JOIN Plants pl3 WITH(NOLOCK) ON pl3.Id = ip.CPPPlant_FK_ID
         LEFT JOIN Plants importPlant WITH(NOLOCK) ON importPlant.Id = ip.ImportPlantFK_ID

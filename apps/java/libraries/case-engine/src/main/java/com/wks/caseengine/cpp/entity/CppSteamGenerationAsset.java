@@ -75,6 +75,11 @@ public class CppSteamGenerationAsset {
     @Column(name = "LinkedPowerAsset_FK_ID")
     private UUID linkedPowerAssetFkId;
 
+    // Points to the parent steam asset (CPPSteamGenerationAsset.AssetId) whose
+    // operational hours this asset follows — e.g. LP STEAM follows HP/SHP STEAM.
+    @Column(name = "LinkedSteamAsset_FK_ID")
+    private UUID linkedSteamAssetFkId;
+
     @Column(name = "CompatibleFuel", length = 300)
     private String compatibleFuel;
 }

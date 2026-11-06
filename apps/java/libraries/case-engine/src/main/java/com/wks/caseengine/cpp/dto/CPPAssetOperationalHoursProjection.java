@@ -38,4 +38,10 @@ public interface CPPAssetOperationalHoursProjection {
     String getAssetType();
     String getPlantName();
     String getAssetCategory();
+
+    // Asset links. When either is set the row is dependent — read-only in
+    // UI/Excel and its hours are synced from the linked parent asset.
+    UUID getLinkedPowerAssetFkId();
+    UUID getLinkedSteamAssetFkId();
+    String getLinkedSteamAssetName();
 }
