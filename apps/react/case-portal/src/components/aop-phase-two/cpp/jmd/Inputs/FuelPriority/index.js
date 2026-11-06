@@ -8,29 +8,8 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/input
 import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
 import { useDebounce } from 'hooks/useDebounce'
 
-const MONTH_FIELDS = [
-  'apr',
-  'may',
-  'jun',
-  'jul',
-  'aug',
-  'sep',
-  'oct',
-  'nov',
-  'dec',
-  'jan',
-  'feb',
-  'mar',
-]
-
 // Type used to filter fuel availability transaction rows (same as Fuel tab)
 const DATA_TYPE = 'FUEL_AVAILABILITY'
-
-// Decides whether a fuel availability row counts for a given month.
-// Currently every declared fuel is available in all months.
-// To only allow months with quantity, change to:
-//   (row, mon) => row[mon] !== null && row[mon] !== undefined && row[mon] !== ''
-const isFuelAvailableForMonth = () => true
 
 const FuelPriority = () => {
   const keycloak = useSession()
@@ -102,8 +81,10 @@ const FuelPriority = () => {
     [PLANT_ID_LIST, AOP_YEAR, fetchAvailability],
   )
 
-  // plantFuelMap = { plantName -> { apr: [fuelOption], may: [...], ... } }
+  // plantFuelMap = { plantName -> [fuelOption, ...] }
   // built from the Fuel Availability rows (cppPlantFkId + fuelId per row).
+  // The fuel list is the same for every month — months in the availability
+  // grid only carry quantities, not per-month fuel restrictions.
   // Keyed under both the selected-plant name and the stored cppPlantName so
   // lookups by asset rows' plantName always hit.
   const plantFuelMap = useMemo(() => {
@@ -119,18 +100,19 @@ const FuelPriority = () => {
       )
       const keys = [
         ...new Set(
-          [plant?.name, plant?.displayName, row.cppPlantName].filter(Boolean),
+          [
+            plant?.name,
+            plant?.displayName,
+            row.cppPlantName,
+            row.cppPlantFkId,
+          ].filter(Boolean),
         ),
       ]
       keys.forEach((key) => {
-        if (!map[key]) map[key] = {}
-        MONTH_FIELDS.forEach((mon) => {
-          if (!isFuelAvailableForMonth(row, mon)) return
-          if (!map[key][mon]) map[key][mon] = []
-          if (!map[key][mon].some((o) => o.value === fuel.value)) {
-            map[key][mon].push(fuel)
-          }
-        })
+        if (!map[key]) map[key] = []
+        if (!map[key].some((o) => o.value === fuel.value)) {
+          map[key].push(fuel)
+        }
       })
     })
     return map

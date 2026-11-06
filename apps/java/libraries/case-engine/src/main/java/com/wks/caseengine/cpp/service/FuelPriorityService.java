@@ -1,8 +1,11 @@
 package com.wks.caseengine.cpp.service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
@@ -21,6 +24,8 @@ public interface FuelPriorityService {
     AOPMessageVM deletePlantFuelAvailabilityMonthly(UUID id);
     List<AssetFuelPriorityDto> getAssetFuelPriority(String plantIds, String financialYear);
     AOPMessageVM updateAssetFuelPriority(List<AssetFuelPriorityDto> payload);
+    byte[] exportAssetFuelPriorityExcel(List<UUID> plantIds, String financialYear, String fileName) throws IOException;
+    AOPMessageVM importAssetFuelPriority(List<UUID> plantIds, String financialYear, MultipartFile file) throws IOException;
     Map<UUID, Map<UUID, UUID>> processFuelPriorityNormParameters(List<AssetFuelPriorityDto> payload);
     List<UUID> getNormsHeaderIds(UUID assetId, UUID normParameterId);
     UUID getNormsHeaderId(UUID assetId, UUID normParameterId);

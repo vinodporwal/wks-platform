@@ -87,6 +87,8 @@ export const InputApiService = {
   // Used in: Inputs/FuelPriority/AssetFuelPriority.js
   getAssetFuelPriority,
   saveAssetFuelPriority,
+  exportAssetFuelPriorityExcel,
+  importAssetFuelPriorityExcel,
 
   // Used in: Inputs/FuelPriority/AssetWiseCompatibleFuel.js
   getCompatibleFuelAssets,
@@ -1598,6 +1600,39 @@ async function getAssetFuelPriority(keycloak, plantIds, financialYear) {
     console.error('Error fetching asset fuel priority data:', e)
     return await Promise.reject(e)
   }
+}
+
+// GET /task/asset-fuel-priority/export?plantIds=...&financialYear=...&fileName=...
+async function exportAssetFuelPriorityExcel(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  return exportExcelData(keycloak, {
+    endpoint: `asset-fuel-priority/export`,
+    plantIds,
+    financialYear,
+    queryParams: { fileName: EXCEL_NAME },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// POST /task/asset-fuel-priority/import?plantIds=...&financialYear=... (multipart)
+async function importAssetFuelPriorityExcel(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  return saveExcelData(
+    file,
+    keycloak,
+    'asset-fuel-priority/import',
+    plantIds,
+    financialYear,
+  )
 }
 
 // PUT /task/asset-fuel-priority
