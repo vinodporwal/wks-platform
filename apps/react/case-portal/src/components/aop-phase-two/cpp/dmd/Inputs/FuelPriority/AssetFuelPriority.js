@@ -71,7 +71,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   const PLANT_ID = plantObject?.id
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
 
-  const PLANT_ID_LIST = useMemo(() => [PLANT_ID], [PLANT_ID])
+  const PLANT_ID_LIST = useMemo(() => (PLANT_ID ? [PLANT_ID] : []), [PLANT_ID])
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -79,11 +79,15 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Create a per-month getOptions function that returns only fuels available
-  // for that plant in that specific month. No fallback — if the plant has no
-  // fuels declared in Fuel Availability, the dropdown is empty.
-  const getOptionsForMonth = useCallback(
-    (mon) => (dataItem) => plantFuelMap[dataItem?.plantName]?.[mon] || [],
+  // Fuel options per plant — same list for every month (months only carry
+  // quantities in Fuel Availability). Lookup by cppPlantFkId first (immune to
+  // plant-name mismatches), plantName as fallback. No fallback to all fuels —
+  // empty means the plant has no fuels declared in Fuel Availability.
+  const getOptions = useCallback(
+    (dataItem) =>
+      plantFuelMap[dataItem?.cppPlantFkId] ||
+      plantFuelMap[dataItem?.plantName] ||
+      [],
     [plantFuelMap],
   )
 
@@ -99,7 +103,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
           minWidth: 160,
           type: 'select',
           dynamicOptions: true,
-          getOptions: getOptionsForMonth(mon),
+          getOptions,
           displayMode: 'label',
           editable: true,
           returnFullObject: true,
@@ -108,7 +112,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
           title,
         })),
       })),
-    [getOptionsForMonth, headerMap],
+    [getOptions, headerMap],
   )
 
   // Column definitions — memoized so AdvanceKendoTable doesn't rebuild on unrelated renders
@@ -224,6 +228,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     showTitleNameBusiness: true,
     titleName: screenTitle?.title,
     showImport: false,
+    showExport: false,
     ExcelName: EXCEL_NAME,
     showTitle: true,
   }
@@ -381,6 +386,107 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
+  const handleExcelUpload = async (file) => {
+    if (!file) return
+    setLoading(true)
+    try {
+      const response = await InputApiService.importAssetFuelPriorityExcel(
+        file,
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Excel file imported successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        await fetchAssetPriorityData()
+      } else if (response?.code === 400 && response?.data) {
+        try {
+          const base64Data = response.data
+          const binaryString = window.atob(base64Data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          const blob = new Blob([bytes], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `Asset_Priority_Errors_${new Date().getTime()}.xlsx`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message:
+              response?.message ||
+              'Import failed with errors. Please check the downloaded file.',
+            severity: 'error',
+          })
+          await fetchAssetPriorityData()
+        } catch (downloadError) {
+          console.error('Error downloading error file:', downloadError)
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Import failed but could not download error file.',
+            severity: 'error',
+          })
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Failed to import Excel file.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error uploading Excel file:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Failed to import Excel file: ${error.message}`,
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExport = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'info',
+    })
+
+    try {
+      await InputApiService.exportAssetFuelPriorityExcel(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+        EXCEL_NAME,
+      )
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting Asset Fuel Priority data:', error)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -401,6 +507,8 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
         currentRowId={currentRowId}
         setCurrentRowId={() => {}}
         saveChanges={saveChanges}
+        handleExcelUpload={handleExcelUpload}
+        handleExport={handleExport}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
