@@ -253,7 +253,7 @@ const STGGrid = ({
     ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: false,
-    note: " Linked assets follow their respective assets' operational hours.",
+    note: " Linked assets are synchronized with their respective assets' operational hours.",
   }
 
   const saveChanges = async () => {
