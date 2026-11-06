@@ -12,7 +12,7 @@ import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/Va
 import { generateExcelNameWithoutExt } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 
-const ManualEntryFactors = ({ startDate, endDate, refreshData }) => {
+const ManualEntryFactors = ({ startDate, endDate, refreshData, onLoadNormCalculation }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -263,7 +263,7 @@ const ManualEntryFactors = ({ startDate, endDate, refreshData }) => {
           response?.message || `Successfully saved ${modifiedData.length} changes!`,
         severity: response?.code === 400 ? 'warning' : 'success',
       })
-      fetchFactorsData()
+      onLoadNormCalculation()
     } catch (error) {
       console.error('Error saving manual entry factors data:', error)
       setSnackbarOpen(true)

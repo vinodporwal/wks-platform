@@ -31,9 +31,11 @@ import com.wks.caseengine.cpp.dto.norm.CPPActualRateEDRPODTO;
 import com.wks.caseengine.cpp.dto.norm.CPPActualRateEDRPORequestDTO;
 import com.wks.caseengine.cpp.dto.norm.CPPEdRpoMappingDTO;
 import com.wks.caseengine.cpp.dto.norm.CPPEdRpoMappingRequestDTO;
+import com.wks.caseengine.cpp.dto.norm.CPPRPOMonthlyConfigRequestDTO;
 import com.wks.caseengine.cpp.dto.norm.JMDCPPNormPricesRequestDTO;
 import com.wks.caseengine.cpp.dto.norm.JMDCPPNormPricesResponseDTO;
 import com.wks.caseengine.cpp.service.JMDCPPNormPricesService;
+import com.wks.caseengine.cpp.utility.CPPUserContext;
 import com.wks.caseengine.cpp.utility.ExcelStyles;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.FinancialYearMonthRepository;
@@ -2273,6 +2275,517 @@ public class JMDCPPNormPricesServiceImpl implements JMDCPPNormPricesService {
             }
         } catch (Exception e) {
             log.error("[CPPEdRpoMapping] Error reading Excel file", e);
+        }
+
+        return dataList;
+    }
+
+
+    /*********************************************************************************/
+    // CPP RPO Monthly Configuration APIS Starting here.....
+
+    // ── GET ───────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM getRPOMonthlyConfig(String aopYear, UUID plantId) {
+        log.info("[RPOMonthlyConfig] GET - aopYear: {}, plantId: {}", aopYear, plantId);
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (aopYear == null || aopYear.trim().isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("aopYear cannot be null or empty");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            boolean hasRemarks = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "Remarks");
+            boolean hasModifiedBy = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "ModifiedBy");
+
+            StringBuilder sql = new StringBuilder(
+                    "SELECT Id, CPPPlantId, Name, DisplayName, Type, AOPYear, " +
+                    "Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec], Jan, Feb, Mar, " +
+                    "IsActive, CreatedAt, UpdatedAt" +
+                    (hasRemarks ? ", Remarks" : "") +
+                    (hasModifiedBy ? ", ModifiedBy" : "") + " " +
+                    "FROM dbo.CPP_RPOMonthlyConfiguration " +
+                    "WHERE AOPYear = ? AND IsActive = 1");
+
+            List<Object> params = new ArrayList<>();
+            params.add(aopYear);
+
+            if (plantId != null) {
+                sql.append(" AND CPPPlantId = ?");
+                params.add(plantId.toString());
+            } else {
+                sql.append(" AND CPPPlantId IS NULL");
+            }
+
+            sql.append(" ORDER BY Name");
+
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql.toString(), params.toArray());
+            log.info("[RPOMonthlyConfig] GET - query returned {} records", rows.size());
+
+            List<CPPRPOMonthlyConfigRequestDTO> dtoList = new ArrayList<>();
+            for (Map<String, Object> row : rows) {
+                dtoList.add(mapRowToRPOMonthlyConfigDto(row));
+            }
+
+            vm.setCode(200);
+            vm.setMessage("Success");
+            vm.setData(dtoList);
+
+        } catch (Exception e) {
+            log.error("[RPOMonthlyConfig] GET error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+            vm.setData(new ArrayList<>());
+        }
+
+        return vm;
+    }
+
+    // ── SAVE / UPDATE ─────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM saveOrUpdateRPOMonthlyConfig(String aopYear, UUID plantId, List<CPPRPOMonthlyConfigRequestDTO> dtoList) {
+        log.info("[RPOMonthlyConfig] SAVE - aopYear: {}, plantId: {}, records: {}", aopYear, plantId, dtoList != null ? dtoList.size() : 0);
+        AOPMessageVM vm = new AOPMessageVM();
+
+        // Resolve user from JWT token - using preferred_username
+        CPPUserContext user = CPPUserContext.current();
+        String currentUsername = user.getPreferredUsername();
+        if (currentUsername == null || currentUsername.trim().isEmpty()) {
+            currentUsername = "SYSTEM";
+        }
+        log.info("[RPOMonthlyConfig] Resolved preferred_username for ModifiedBy: {}", currentUsername);
+
+        boolean hasRemarks = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "Remarks");
+        boolean hasModifiedBy = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "ModifiedBy");
+        boolean hasCreatedBy = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "CreatedBy");
+
+        int successCount = 0;
+        int failCount = 0;
+        List<String> errors = new ArrayList<>();
+
+        try {
+            for (CPPRPOMonthlyConfigRequestDTO dto : dtoList) {
+                try {
+                    String recordUser = (dto.getModifiedBy() != null && !dto.getModifiedBy().trim().isEmpty())
+                            ? dto.getModifiedBy().trim()
+                            : currentUsername;
+                    dto.setModifiedBy(recordUser);
+
+                    if (dto.getId() == null) {
+                        // INSERT
+                        StringBuilder insertCols = new StringBuilder(
+                                "Id, CPPPlantId, Name, DisplayName, Type, AOPYear, " +
+                                "Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec], Jan, Feb, Mar, IsActive, CreatedAt");
+                        StringBuilder insertVals = new StringBuilder(
+                                "NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, GETDATE()");
+
+                        List<Object> insertParams = new ArrayList<>();
+                        insertParams.add(plantId != null ? plantId.toString() : null);
+                        insertParams.add(dto.getName());
+                        insertParams.add(dto.getDisplayName());
+                        insertParams.add(dto.getType());
+                        insertParams.add(aopYear);
+                        insertParams.add(dto.getApr());
+                        insertParams.add(dto.getMay());
+                        insertParams.add(dto.getJun());
+                        insertParams.add(dto.getJul());
+                        insertParams.add(dto.getAug());
+                        insertParams.add(dto.getSep());
+                        insertParams.add(dto.getOct());
+                        insertParams.add(dto.getNov());
+                        insertParams.add(dto.getDec());
+                        insertParams.add(dto.getJan());
+                        insertParams.add(dto.getFeb());
+                        insertParams.add(dto.getMar());
+
+                        if (hasRemarks) {
+                            insertCols.append(", Remarks");
+                            insertVals.append(", ?");
+                            insertParams.add(dto.getRemarks());
+                        }
+                        if (hasCreatedBy) {
+                            insertCols.append(", CreatedBy");
+                            insertVals.append(", ?");
+                            insertParams.add(recordUser);
+                        }
+                        if (hasModifiedBy) {
+                            insertCols.append(", ModifiedBy");
+                            insertVals.append(", ?");
+                            insertParams.add(recordUser);
+                        }
+
+                        String insertSql = "INSERT INTO dbo.CPP_RPOMonthlyConfiguration (" + insertCols + ") VALUES (" + insertVals + ")";
+                        jdbcTemplate.update(insertSql, insertParams.toArray());
+                    } else {
+                        // UPDATE
+                        StringBuilder updateSql = new StringBuilder(
+                                "UPDATE dbo.CPP_RPOMonthlyConfiguration SET " +
+                                "Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, " +
+                                "Oct = ?, Nov = ?, [Dec] = ?, Jan = ?, Feb = ?, Mar = ?");
+
+                        List<Object> updateParams = new ArrayList<>();
+                        updateParams.add(dto.getApr());
+                        updateParams.add(dto.getMay());
+                        updateParams.add(dto.getJun());
+                        updateParams.add(dto.getJul());
+                        updateParams.add(dto.getAug());
+                        updateParams.add(dto.getSep());
+                        updateParams.add(dto.getOct());
+                        updateParams.add(dto.getNov());
+                        updateParams.add(dto.getDec());
+                        updateParams.add(dto.getJan());
+                        updateParams.add(dto.getFeb());
+                        updateParams.add(dto.getMar());
+
+                        if (hasRemarks) {
+                            updateSql.append(", Remarks = ?");
+                            updateParams.add(dto.getRemarks());
+                        }
+                        if (hasModifiedBy) {
+                            updateSql.append(", ModifiedBy = ?");
+                            updateParams.add(recordUser);
+                        }
+
+                        updateSql.append(", UpdatedAt = GETDATE() WHERE Id = ? AND AOPYear = ?");
+                        updateParams.add(dto.getId().toString());
+                        updateParams.add(aopYear);
+
+                        jdbcTemplate.update(updateSql.toString(), updateParams.toArray());
+                    }
+                    successCount++;
+                } catch (Exception e) {
+                    failCount++;
+                    errors.add("Row '" + dto.getName() + "': " + e.getMessage());
+                    log.error("[RPOMonthlyConfig] SAVE error for record {}: {}", dto.getName(), e.getMessage());
+                }
+            }
+
+            if (failCount == 0) {
+                vm.setCode(200);
+                vm.setMessage("Successfully saved " + successCount + " record(s).");
+            } else if (successCount > 0) {
+                vm.setCode(207);
+                vm.setMessage("Partially saved: " + successCount + " success, " + failCount + " failed. Errors: " + String.join("; ", errors));
+            } else {
+                vm.setCode(500);
+                vm.setMessage("All records failed. Errors: " + String.join("; ", errors));
+            }
+
+        } catch (Exception e) {
+            log.error("[RPOMonthlyConfig] SAVE error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+        }
+
+        return vm;
+    }
+
+    // ── EXPORT ────────────────────────────────────────────────────────────────
+
+    @Override
+    public byte[] exportRPOMonthlyConfig(String aopYear, UUID plantId) throws IOException {
+        log.info("[RPOMonthlyConfig] EXPORT - aopYear: {}, plantId: {}", aopYear, plantId);
+
+        AOPMessageVM dataVm = getRPOMonthlyConfig(aopYear, plantId);
+        @SuppressWarnings("unchecked")
+        List<CPPRPOMonthlyConfigRequestDTO> dtoList =
+                dataVm.getData() instanceof List ? (List<CPPRPOMonthlyConfigRequestDTO>) dataVm.getData() : new ArrayList<>();
+
+        return buildRPOMonthlyConfigExcel(dtoList, false);
+    }
+
+    // ── IMPORT ────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM importRPOMonthlyConfig(String aopYear, UUID plantId, MultipartFile file) throws IOException {
+        log.info("[RPOMonthlyConfig] IMPORT - aopYear: {}, plantId: {}, file: {}", aopYear, plantId, file.getOriginalFilename());
+        AOPMessageVM vm = new AOPMessageVM();
+
+        List<CPPRPOMonthlyConfigRequestDTO> importedList = readRPOMonthlyConfigExcel(file.getInputStream());
+        if (importedList.isEmpty()) {
+            vm.setCode(400);
+            vm.setMessage("No data found in the uploaded file.");
+            return vm;
+        }
+
+        // Set aopYear and plantId on each row from query params
+        importedList.forEach(dto -> {
+            dto.setAopYear(aopYear);
+            if (dto.getCppPlantId() == null && plantId != null) {
+                dto.setCppPlantId(plantId);
+            }
+        });
+
+        return saveOrUpdateRPOMonthlyConfig(aopYear, plantId, importedList);
+    }
+
+    // ── Helper: map DB row to DTO ─────────────────────────────────────────────
+
+    private CPPRPOMonthlyConfigRequestDTO mapRowToRPOMonthlyConfigDto(Map<String, Object> row) {
+        CPPRPOMonthlyConfigRequestDTO dto = new CPPRPOMonthlyConfigRequestDTO();
+
+        Object idObj = row.get("Id");
+        if (idObj != null) {
+            try { dto.setId(UUID.fromString(idObj.toString())); } catch (Exception ignored) {}
+        }
+
+        Object plantIdObj = row.get("CPPPlantId");
+        if (plantIdObj != null) {
+            try { dto.setCppPlantId(UUID.fromString(plantIdObj.toString())); } catch (Exception ignored) {}
+        }
+
+        dto.setName(getStringValue(row, "Name"));
+        dto.setDisplayName(getStringValue(row, "DisplayName"));
+        dto.setType(getStringValue(row, "Type"));
+        dto.setAopYear(getStringValue(row, "AOPYear"));
+
+        dto.setApr(getBigDecimalValue(row, "Apr"));
+        dto.setMay(getBigDecimalValue(row, "May"));
+        dto.setJun(getBigDecimalValue(row, "Jun"));
+        dto.setJul(getBigDecimalValue(row, "Jul"));
+        dto.setAug(getBigDecimalValue(row, "Aug"));
+        dto.setSep(getBigDecimalValue(row, "Sep"));
+        dto.setOct(getBigDecimalValue(row, "Oct"));
+        dto.setNov(getBigDecimalValue(row, "Nov"));
+        dto.setDec(getBigDecimalValue(row, "Dec"));
+        dto.setJan(getBigDecimalValue(row, "Jan"));
+        dto.setFeb(getBigDecimalValue(row, "Feb"));
+        dto.setMar(getBigDecimalValue(row, "Mar"));
+
+        Object isActive = row.get("IsActive");
+        if (isActive != null) {
+            try { dto.setIsActive(Integer.parseInt(isActive.toString())); } catch (Exception ignored) {}
+        }
+
+        String remarks = getStringValue(row, "Remarks");
+        if (remarks == null) {
+            remarks = getStringValue(row, "remarks");
+        }
+        dto.setRemarks(remarks);
+
+        dto.setModifiedBy(getStringValue(row, "ModifiedBy"));
+
+        return dto;
+    }
+
+    private boolean isColumnPresent(String tableName, String columnName) {
+        try {
+            Integer len = jdbcTemplate.queryForObject(
+                    "SELECT COL_LENGTH(?, ?)", Integer.class, tableName, columnName);
+            if (len != null) return true;
+        } catch (Exception ignored) {}
+
+        try {
+            String cleanTable = tableName.replace("dbo.", "").replace("[", "").replace("]", "");
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(1) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ?",
+                    Integer.class, cleanTable, columnName);
+            return count != null && count > 0;
+        } catch (Exception e) {
+            log.debug("Could not check if column {} exists in {}: {}", columnName, tableName, e.getMessage());
+            return false;
+        }
+    }
+
+    private String getStringValue(Map<String, Object> row, String key) {
+        Object v = row.get(key);
+        return v != null ? v.toString() : null;
+    }
+
+    private BigDecimal getBigDecimalValue(Map<String, Object> row, String key) {
+        Object v = row.get(key);
+        if (v == null) return null;
+        try { return new BigDecimal(v.toString()); } catch (Exception e) { return null; }
+    }
+
+    // ── Helper: build Excel ───────────────────────────────────────────────────
+
+    private byte[] buildRPOMonthlyConfigExcel(List<CPPRPOMonthlyConfigRequestDTO> dtoList, boolean isErrorExcel) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("RPO Monthly Config");
+
+            CellStyle headerStyle   = ExcelStyles.createHeaderStyle(workbook);
+            CellStyle lockedStyle   = ExcelStyles.createLockedStyle(workbook);
+            CellStyle unlockedStyle = ExcelStyles.createUnlockedStyle(workbook);
+            CellStyle remarksStyle  = ExcelStyles.createEditableRemarksStyle(workbook);
+
+            String[] months = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+
+            // Header row
+            Row headerRow = sheet.createRow(0);
+            int col = 0;
+
+            String[] fixedHeaders = {"Name", "Display Name", "Type", "AOPYear"};
+            for (String h : fixedHeaders) {
+                headerRow.createCell(col).setCellValue(h);
+                headerRow.getCell(col++).setCellStyle(headerStyle);
+            }
+
+            int monthStartCol = col;
+            for (String month : months) {
+                headerRow.createCell(col).setCellValue(month);
+                headerRow.getCell(col++).setCellStyle(headerStyle);
+            }
+
+            int remarksCol = col;
+            headerRow.createCell(col).setCellValue("Remarks");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int idCol = col;
+            headerRow.createCell(col).setCellValue("id");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int plantIdCol = col;
+            headerRow.createCell(col).setCellValue("cppPlantId");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int totalColumns = col;
+
+            int rowNum = 1;
+            for (CPPRPOMonthlyConfigRequestDTO dto : dtoList) {
+                Row row = sheet.createRow(rowNum++);
+                col = 0;
+
+                setStringCellValue(row.createCell(col++), dto.getName(), lockedStyle);
+                setStringCellValue(row.createCell(col++), dto.getDisplayName(), lockedStyle);
+                setStringCellValue(row.createCell(col++), dto.getType(), lockedStyle);
+                setStringCellValue(row.createCell(col++), dto.getAopYear(), lockedStyle);
+
+                setBigDecimalCellValue(row.createCell(monthStartCol + 0),  dto.getApr(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 1),  dto.getMay(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 2),  dto.getJun(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 3),  dto.getJul(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 4),  dto.getAug(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 5),  dto.getSep(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 6),  dto.getOct(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 7),  dto.getNov(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 8),  dto.getDec(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 9),  dto.getJan(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFeb(), unlockedStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMar(), unlockedStyle);
+                col = monthStartCol + 12;
+
+                setStringCellValue(row.createCell(col++), dto.getRemarks(), remarksStyle);
+
+                setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, lockedStyle);
+                setStringCellValue(row.createCell(col++), dto.getCppPlantId() != null ? dto.getCppPlantId().toString() : null, lockedStyle);
+            }
+
+            sheet.setColumnHidden(idCol, true);
+            sheet.setColumnHidden(plantIdCol, true);
+
+            for (int i = 0; i < totalColumns; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ExcelStyles.applySheetProtectionWithAutoFilter(sheet, totalColumns);
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    // ── Helper: read Excel ────────────────────────────────────────────────────
+
+    private List<CPPRPOMonthlyConfigRequestDTO> readRPOMonthlyConfigExcel(InputStream inputStream) {
+        List<CPPRPOMonthlyConfigRequestDTO> dataList = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            if (!rowIterator.hasNext()) return dataList;
+
+            Row headerRow = rowIterator.next();
+            int numCols = headerRow.getLastCellNum();
+
+            // Detect column positions from header
+            int nameColIdx       = -1;
+            int displayNameColIdx = -1;
+            int typeColIdx       = -1;
+            int aopYearColIdx    = -1;
+            int monthStartIdx    = -1;
+            int remarksColIdx    = -1;
+            int idColIdx         = -1;
+            int plantIdColIdx    = -1;
+
+            for (int i = 0; i < numCols; i++) {
+                Cell cell = headerRow.getCell(i);
+                if (cell == null) continue;
+                String header = cell.getStringCellValue().trim().toLowerCase();
+                switch (header) {
+                    case "name"         -> nameColIdx = i;
+                    case "display name", "displayname" -> displayNameColIdx = i;
+                    case "type"         -> typeColIdx = i;
+                    case "aopyear"      -> aopYearColIdx = i;
+                    case "apr"          -> { if (monthStartIdx < 0) monthStartIdx = i; }
+                    case "remarks"      -> remarksColIdx = i;
+                    case "id"           -> idColIdx = i;
+                    case "cppplantid"   -> plantIdColIdx = i;
+                    default -> { /* ignore */ }
+                }
+            }
+
+            if (monthStartIdx < 0) monthStartIdx = 4; // fallback
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                if (row.getLastCellNum() < monthStartIdx) continue;
+
+                CPPRPOMonthlyConfigRequestDTO dto = new CPPRPOMonthlyConfigRequestDTO();
+                try {
+                    if (nameColIdx >= 0)        dto.setName(getStringCellValue(row.getCell(nameColIdx)));
+                    if (displayNameColIdx >= 0) dto.setDisplayName(getStringCellValue(row.getCell(displayNameColIdx)));
+                    if (typeColIdx >= 0)        dto.setType(getStringCellValue(row.getCell(typeColIdx)));
+                    if (aopYearColIdx >= 0)     dto.setAopYear(getStringCellValue(row.getCell(aopYearColIdx)));
+
+                    dto.setApr(getBigDecimalCellValue(row.getCell(monthStartIdx)));
+                    dto.setMay(getBigDecimalCellValue(row.getCell(monthStartIdx + 1)));
+                    dto.setJun(getBigDecimalCellValue(row.getCell(monthStartIdx + 2)));
+                    dto.setJul(getBigDecimalCellValue(row.getCell(monthStartIdx + 3)));
+                    dto.setAug(getBigDecimalCellValue(row.getCell(monthStartIdx + 4)));
+                    dto.setSep(getBigDecimalCellValue(row.getCell(monthStartIdx + 5)));
+                    dto.setOct(getBigDecimalCellValue(row.getCell(monthStartIdx + 6)));
+                    dto.setNov(getBigDecimalCellValue(row.getCell(monthStartIdx + 7)));
+                    dto.setDec(getBigDecimalCellValue(row.getCell(monthStartIdx + 8)));
+                    dto.setJan(getBigDecimalCellValue(row.getCell(monthStartIdx + 9)));
+                    dto.setFeb(getBigDecimalCellValue(row.getCell(monthStartIdx + 10)));
+                    dto.setMar(getBigDecimalCellValue(row.getCell(monthStartIdx + 11)));
+
+                    if (remarksColIdx >= 0) {
+                        dto.setRemarks(getStringCellValue(row.getCell(remarksColIdx)));
+                    }
+
+                    if (idColIdx >= 0) {
+                        String idStr = getStringCellValue(row.getCell(idColIdx));
+                        if (idStr != null && !idStr.isEmpty()) {
+                            try { dto.setId(UUID.fromString(idStr)); } catch (Exception ignored) {}
+                        }
+                    }
+                    if (plantIdColIdx >= 0) {
+                        String pidStr = getStringCellValue(row.getCell(plantIdColIdx));
+                        if (pidStr != null && !pidStr.isEmpty()) {
+                            try { dto.setCppPlantId(UUID.fromString(pidStr)); } catch (Exception ignored) {}
+                        }
+                    }
+
+                } catch (Exception e) {
+                    log.error("[RPOMonthlyConfig] Error reading Excel row: {}", e.getMessage());
+                }
+
+                dataList.add(dto);
+            }
+        } catch (Exception e) {
+            log.error("[RPOMonthlyConfig] Error reading Excel file", e);
         }
 
         return dataList;

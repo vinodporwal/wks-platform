@@ -157,7 +157,7 @@ const FuelAllocation = () => {
       },
       {
         field: 'isFreeSteamFuel',
-        title: 'Free Steam Fuel',
+        title: 'Fuel Allocation',
         widthT: 140,
         minWidth: 140,
         type: 'text',
@@ -203,7 +203,7 @@ const FuelAllocation = () => {
       const rowsWithId = data?.map((row, index) => ({
         ...row,
         id: row.id || `row_${index}`,
-        isFreeSteamFuel: row.isFreeSteamFuel ? 'Yes' : '',
+        isFreeSteamFuel: row.isFreeSteamFuel ,
       }))
       setRows(rowsWithId)
       if (!rowsWithId.length) {

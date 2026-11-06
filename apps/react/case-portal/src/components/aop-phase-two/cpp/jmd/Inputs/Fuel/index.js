@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import NetCalorificValue from './NetCalorificValue'
 import FuelAvailability from './FuelAvailability'
 import FuelAvailabilityCost from './FuelAvailabilityCost'
+import FuelAvailabilityCostUSD from './FuelAvailabilityCostUSD'
 import FuelExchangeRate from './FuelExchangeRate'
 import { Stack } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
@@ -17,6 +18,9 @@ const Fuel = () => {
   // adds/saves/deletes a fuel row.
   const [costRefreshKey, setCostRefreshKey] = useState(0)
   const refreshCostGrid = useCallback(() => setCostRefreshKey((k) => k + 1), [])
+  // Rows fetched by FuelAvailabilityCost — shared with the read-only USD grid
+  // so the same GET API isn't called twice.
+  const [costRows, setCostRows] = useState([])
 
   // Fetch fuel master data (categories + fuels) once on mount.
   // Both child grids (FuelAvailability + NetCalorificValue) share the
@@ -67,7 +71,9 @@ const Fuel = () => {
         <FuelAvailabilityCost
           refreshTrigger={costRefreshKey}
           exchangeRate={exchangeRate}
+          onRowsLoaded={setCostRows}
         />
+        <FuelAvailabilityCostUSD rows={costRows} exchangeRate={exchangeRate} />
       </Stack>
       {/* <Stack>
         <NetCalorificValue

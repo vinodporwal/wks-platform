@@ -22,7 +22,6 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1409,14 +1408,6 @@ public class JMDFuelAvailabilityServiceImpl implements JMDFuelAvailabilityServic
         if (commentCol >= 0) {
             sheet.setColumnWidth(commentCol, ExcelColumns.DEFAULT_REMARKS_WIDTH);
         }
-
-        // Protect the sheet so locked/unlocked cell styles take effect.
-        // Only Apr–Mar and Remarks columns are unlocked (editable); all other
-        // columns are locked with a grey background.
-        sheet.protectSheet("");
-        XSSFSheet xssfSheet = (XSSFSheet) sheet;
-        xssfSheet.lockFormatColumns(false);  // allow column width changes + unhide
-        xssfSheet.lockFormatRows(false);     // allow row height changes
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);

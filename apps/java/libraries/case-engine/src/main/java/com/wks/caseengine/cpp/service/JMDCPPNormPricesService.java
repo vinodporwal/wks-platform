@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.norm.CPPActualRateEDRPORequestDTO;
 import com.wks.caseengine.cpp.dto.norm.CPPEdRpoMappingRequestDTO;
+import com.wks.caseengine.cpp.dto.norm.CPPRPOMonthlyConfigRequestDTO;
 import com.wks.caseengine.cpp.dto.norm.JMDCPPNormPricesRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -44,4 +45,16 @@ public interface JMDCPPNormPricesService {
     byte[] exportEdRpoMapping(List<UUID> plantIds, String aopYear) throws IOException;
 
     AOPMessageVM importEdRpoMapping(List<UUID> plantIds, String aopYear, MultipartFile file) throws IOException;
+
+
+    /*********************************************************************************/
+    // CPP RPO Monthly Configuration APIS Starting here.....
+
+    AOPMessageVM getRPOMonthlyConfig(String aopYear, UUID plantId);
+
+    AOPMessageVM saveOrUpdateRPOMonthlyConfig(String aopYear, UUID plantId, List<CPPRPOMonthlyConfigRequestDTO> dtoList);
+
+    byte[] exportRPOMonthlyConfig(String aopYear, UUID plantId) throws IOException;
+
+    AOPMessageVM importRPOMonthlyConfig(String aopYear, UUID plantId, MultipartFile file) throws IOException;
 }

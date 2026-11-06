@@ -1,7 +1,13 @@
 package com.wks.caseengine.cpp.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,9 +15,23 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataValidation;
+import org.apache.poi.ss.usermodel.DataValidationConstraint;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellRangeAddressList;
+import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFDataValidationHelper;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +40,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityProjection;
@@ -36,6 +57,11 @@ import com.wks.caseengine.cpp.entity.CPPPlantFuelAvailabilityMonthly;
 import com.wks.caseengine.cpp.repository.CPPAssetFuelPriorityRepository;
 import com.wks.caseengine.cpp.repository.CPPPlantFuelAvailabilityMonthlyRepository;
 import com.wks.caseengine.cpp.repository.FuelPriorityRepository;
+import com.wks.caseengine.cpp.utility.ExcelCells;
+import com.wks.caseengine.cpp.utility.ExcelColumns;
+import com.wks.caseengine.cpp.utility.ExcelRows;
+import com.wks.caseengine.cpp.utility.ExcelStyles;
+import com.wks.caseengine.cpp.utility.FiscalYearMonths;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 @Service
@@ -1913,6 +1939,698 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         response.setCode(200);
         response.setMessage("Compatible fuel assets updated. Updated: " + updated + ", Skipped: " + skipped);
         return response;
+    }
+
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+    // Asset Fuel Priority — Excel export / import
+    //
+    // Layout of the generated workbook:
+    //   Sheet "Asset Fuel Priority" (visible, protected)
+    //     row 0  : merged group headers — "CPP Plant" | "Asset Name" | Apr-25..Mar-26 | "Remarks"
+    //     row 1  : sub headers — Primary/Secondary/Tertiary per month + hidden
+    //              technical columns id / assetId / cppPlantFkId
+    //     row 2+ : one row per asset; fuel cells show the fuel display name and
+    //              have a dropdown fed from the hidden "FuelLists" sheet
+    //   Sheet "FuelLists" (hidden)
+    //     one column per CPP plant; rows hold that plant's available fuel names
+    //     (same source as the UI's plantFuelMap — fuel availability mapped
+    //     through CPPPlantFuelSourceMapping). One list per plant since the fuel
+    //     set is identical across months.
+    //
+    // Columns: 0=CPP Plant, 1=Asset Name,
+    //          fuel cells = 2 + monthIndex*3 + priorityIndex (2..37),
+    //          Remarks = 38, hidden = 39 (id), 40 (assetId), 41 (cppPlantFkId)
+    /* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ */
+
+    private static final String[] EXCEL_PRIORITY_SUFFIX = {"Primary", "Secondary", "Tertiary"};
+    private static final int EXCEL_PLANT_COL = 0;
+    private static final int EXCEL_ASSET_COL = 1;
+    private static final int EXCEL_REMARKS_COL = 38;
+    private static final int EXCEL_ID_COL = 39;
+    private static final int EXCEL_ASSET_ID_COL = 40;
+    private static final int EXCEL_PLANT_ID_COL = 41;
+    private static final int EXCEL_TOTAL_COLS = 42;
+    private static final int EXCEL_FUEL_COL_START = 2;
+    private static final int EXCEL_FUEL_COL_END = 37;
+    private static final int EXCEL_DATA_START_ROW = 2;
+    private static final String EXCEL_LISTS_SHEET = "FuelLists";
+
+    private record AssetPriorityImportRow(
+            UUID id,
+            UUID assetId,
+            UUID cppPlantFkId,
+            String plantName,
+            String assetName,
+            String remarks,
+            String[] fuelNames,
+            List<String> errors
+    ) {}
+
+    @Override
+    public byte[] exportAssetFuelPriorityExcel(List<UUID> plantIds, String financialYear, String fileName) throws IOException {
+        if (plantIds == null || plantIds.isEmpty()) {
+            throw new IllegalArgumentException("plantIds cannot be null or empty");
+        }
+        if (financialYear == null || financialYear.isBlank()) {
+            throw new IllegalArgumentException("financialYear cannot be null or blank");
+        }
+
+        String plantIdsCsv = plantIds.stream().map(UUID::toString).collect(Collectors.joining(","));
+
+        List<AssetFuelPriorityDto> dtos = getAssetFuelPriority(plantIdsCsv, financialYear)
+                .stream()
+                .filter(d -> d.getAssetType() == null
+                        || (!"PRDS".equalsIgnoreCase(d.getAssetType()) && !"STG".equalsIgnoreCase(d.getAssetType())))
+                .toList();
+
+        Map<UUID, String> fuelDisplayNames = loadFuelDisplayNames();
+        Map<UUID, List<String>> plantFuelOptions = loadPlantFuelOptions(plantIdsCsv, financialYear);
+        Map<UUID, List<String>> plantNameVariants = loadPlantNameVariants(plantIdsCsv);
+        Map<UUID, String> plantDisplayNames = plantNameVariants.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0), (a, b) -> a, LinkedHashMap::new));
+
+        return generateAssetPriorityExcel(dtos, fuelDisplayNames, plantFuelOptions, plantDisplayNames, plantNameVariants, financialYear);
+    }
+
+    private Map<UUID, String> loadFuelDisplayNames() {
+        String sql = "SELECT CAST(Id AS varchar(36)), FuelDisplayName, FuelName FROM dbo.CPP_FuelMaster WITH(NOLOCK)";
+        List<Object[]> rows = db1JdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                rs.getString(1), rs.getString(2), rs.getString(3)
+        });
+        Map<UUID, String> map = new LinkedHashMap<>();
+        for (Object[] r : rows) {
+            if (r[0] == null) continue;
+            UUID id = UUID.fromString(r[0].toString());
+            String name = r[1] != null && !r[1].toString().isBlank() ? r[1].toString() : (r[2] != null ? r[2].toString() : null);
+            if (name != null) map.put(id, name);
+        }
+        return map;
+    }
+
+    /** cppPlantFkId -> ordered unique fuel display names available to that plant (same fuels every month). */
+    private Map<UUID, List<String>> loadPlantFuelOptions(String plantIdsCsv, String financialYear) {
+        String sql =
+                "SELECT DISTINCT m.CPPPlantFKId, fm.FuelDisplayName, fm.FuelName " +
+                "FROM dbo.CPPFuelAvailabilityTransaction fat WITH(NOLOCK) " +
+                "JOIN dbo.CPPPlantFuelSourceMapping m WITH(NOLOCK) " +
+                "       ON m.FuelAvailablePlantFKId = fat.CPPPlantFKId " +
+                "JOIN dbo.CPP_FuelMaster fm WITH(NOLOCK) ON fm.Id = fat.Fuel_FK_Id " +
+                "WHERE fat.[Type] = 'FUEL_AVAILABILITY' " +
+                "  AND fat.FinancialYear = ? " +
+                "  AND m.CPPPlantFKId IN (SELECT TRY_CAST(value AS UNIQUEIDENTIFIER) FROM STRING_SPLIT(?, ','))";
+        List<Object[]> rows = db1JdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                rs.getString(1), rs.getString(2), rs.getString(3)
+        }, financialYear, plantIdsCsv);
+        Map<UUID, LinkedHashMap<String, Boolean>> ordered = new LinkedHashMap<>();
+        for (Object[] r : rows) {
+            if (r[0] == null) continue;
+            UUID plantId = UUID.fromString(r[0].toString());
+            String name = r[1] != null && !r[1].toString().isBlank() ? r[1].toString()
+                    : (r[2] != null ? r[2].toString() : null);
+            if (name == null || name.isBlank()) continue;
+            ordered.computeIfAbsent(plantId, k -> new LinkedHashMap<>()).putIfAbsent(name.trim(), Boolean.TRUE);
+        }
+        Map<UUID, List<String>> result = new LinkedHashMap<>();
+        ordered.forEach((k, v) -> result.put(k, new ArrayList<>(v.keySet())));
+        return result;
+    }
+
+    private Map<UUID, String> loadPlantDisplayNames(String plantIdsCsv) {
+        return loadPlantNameVariants(plantIdsCsv).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0), (a, b) -> a, LinkedHashMap::new));
+    }
+
+    /** plantId -> all known name variants (DisplayName preferred first, then Name). */
+    private Map<UUID, List<String>> loadPlantNameVariants(String plantIdsCsv) {
+        String sql = "SELECT CAST(Id AS varchar(36)), DisplayName, Name FROM dbo.Plants WITH(NOLOCK) " +
+                "WHERE Id IN (SELECT TRY_CAST(value AS UNIQUEIDENTIFIER) FROM STRING_SPLIT(?, ','))";
+        List<Object[]> rows = db1JdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                rs.getString(1), rs.getString(2), rs.getString(3)
+        }, plantIdsCsv);
+        Map<UUID, LinkedHashMap<String, Boolean>> variants = new LinkedHashMap<>();
+        for (Object[] r : rows) {
+            if (r[0] == null) continue;
+            UUID id = UUID.fromString(r[0].toString());
+            LinkedHashMap<String, Boolean> names = variants.computeIfAbsent(id, k -> new LinkedHashMap<>());
+            if (r[1] != null && !r[1].toString().isBlank()) names.putIfAbsent(r[1].toString().trim(), Boolean.TRUE);
+            if (r[2] != null && !r[2].toString().isBlank()) names.putIfAbsent(r[2].toString().trim(), Boolean.TRUE);
+            if (names.isEmpty()) names.put(r[0].toString(), Boolean.TRUE);
+        }
+        Map<UUID, List<String>> result = new LinkedHashMap<>();
+        variants.forEach((k, v) -> result.put(k, new ArrayList<>(v.keySet())));
+        return result;
+    }
+
+    /** plantId -> (lower-cased fuel name -> set of fuel ids). Used to resolve dropdown names back to UUIDs on import. */
+    private Map<UUID, Map<String, Set<UUID>>> loadPlantFuelNameIndex(String plantIdsCsv, String financialYear) {
+        String sql =
+                "SELECT DISTINCT m.CPPPlantFKId, fat.Fuel_FK_Id, fm.FuelDisplayName, fm.FuelName " +
+                "FROM dbo.CPPFuelAvailabilityTransaction fat WITH(NOLOCK) " +
+                "JOIN dbo.CPPPlantFuelSourceMapping m WITH(NOLOCK) " +
+                "       ON m.FuelAvailablePlantFKId = fat.CPPPlantFKId " +
+                "JOIN dbo.CPP_FuelMaster fm WITH(NOLOCK) ON fm.Id = fat.Fuel_FK_Id " +
+                "WHERE fat.[Type] = 'FUEL_AVAILABILITY' " +
+                "  AND fat.FinancialYear = ? " +
+                "  AND m.CPPPlantFKId IN (SELECT TRY_CAST(value AS UNIQUEIDENTIFIER) FROM STRING_SPLIT(?, ','))";
+        List<Object[]> rows = db1JdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)
+        }, financialYear, plantIdsCsv);
+        Map<UUID, Map<String, Set<UUID>>> index = new HashMap<>();
+        for (Object[] r : rows) {
+            if (r[0] == null || r[1] == null) continue;
+            UUID plantId = UUID.fromString(r[0].toString());
+            UUID fuelId = UUID.fromString(r[1].toString());
+            addFuelNameKeys(index.computeIfAbsent(plantId, k -> new HashMap<>()), r[2], r[3], fuelId);
+        }
+        return index;
+    }
+
+    /** Global fallback name -> fuel ids (display name + fuel name), used when a name is not in the plant's availability list. */
+    private Map<String, Set<UUID>> loadGlobalFuelNameIndex() {
+        String sql = "SELECT CAST(Id AS varchar(36)), FuelDisplayName, FuelName FROM dbo.CPP_FuelMaster WITH(NOLOCK)";
+        List<Object[]> rows = db1JdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
+                rs.getString(1), rs.getString(2), rs.getString(3)
+        });
+        Map<String, Set<UUID>> index = new HashMap<>();
+        for (Object[] r : rows) {
+            if (r[0] == null) continue;
+            UUID fuelId = UUID.fromString(r[0].toString());
+            addFuelNameKeys(index, r[1], r[2], fuelId);
+        }
+        return index;
+    }
+
+    private void addFuelNameKeys(Map<String, Set<UUID>> index, Object displayName, Object fuelName, UUID fuelId) {
+        for (Object n : new Object[]{displayName, fuelName}) {
+            if (n == null) continue;
+            String key = n.toString().trim().toLowerCase();
+            if (key.isEmpty()) continue;
+            index.computeIfAbsent(key, k -> new LinkedHashSet<>()).add(fuelId);
+        }
+    }
+
+    private static String cap(String s) {
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    private UUID getPriorityFuelId(AssetFuelPriorityDto dto, int monthIdx, int priIdx) {
+        if (dto == null) return null;
+        try {
+            Method getter = AssetFuelPriorityDto.class.getMethod(
+                    "get" + cap(FiscalYearMonths.MONTH_KEYS[monthIdx]) + EXCEL_PRIORITY_SUFFIX[priIdx]);
+            return (UUID) getter.invoke(dto);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void setPriorityFuelId(AssetFuelPriorityDto dto, int monthIdx, int priIdx, UUID fuelId) {
+        try {
+            Method setter = AssetFuelPriorityDto.class.getMethod(
+                    "set" + cap(FiscalYearMonths.MONTH_KEYS[monthIdx]) + EXCEL_PRIORITY_SUFFIX[priIdx], UUID.class);
+            setter.invoke(dto, fuelId);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to set fuel field for month " + monthIdx + " priority " + priIdx, e);
+        }
+    }
+
+    private byte[] generateAssetPriorityExcel(
+            List<AssetFuelPriorityDto> dtos,
+            Map<UUID, String> fuelDisplayNames,
+            Map<UUID, List<String>> plantFuelOptions,
+            Map<UUID, String> plantDisplayNames,
+            Map<UUID, List<String>> plantNameVariants,
+            String financialYear) throws IOException {
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Asset Fuel Priority");
+
+        CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle lockedStyle = ExcelStyles.createLockedStyle(workbook);
+        CellStyle unlockedStyle = ExcelStyles.createUnlockedStyle(workbook);
+        CellStyle remarksStyle = ExcelStyles.createEditableRemarksStyle(workbook);
+        CellStyle listHeaderStyle = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle listDataStyle = ExcelStyles.createDataStyle(workbook);
+
+        String[] monthHeaders = FiscalYearMonths.getMonthHeaders(financialYear);
+
+        // ---- Row 0: merged group headers ----
+        Row groupHeader = sheet.createRow(0);
+        ExcelCells.setString(groupHeader.createCell(EXCEL_PLANT_COL), "CPP Plant", headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, EXCEL_PLANT_COL, EXCEL_PLANT_COL));
+        ExcelCells.setString(groupHeader.createCell(EXCEL_ASSET_COL), "Asset Name", headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, EXCEL_ASSET_COL, EXCEL_ASSET_COL));
+        for (int m = 0; m < 12; m++) {
+            int firstCol = EXCEL_FUEL_COL_START + m * 3;
+            ExcelCells.setString(groupHeader.createCell(firstCol), monthHeaders[m], headerStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, firstCol, firstCol + 2));
+        }
+        ExcelCells.setString(groupHeader.createCell(EXCEL_REMARKS_COL), "Remarks", headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, EXCEL_REMARKS_COL, EXCEL_REMARKS_COL));
+
+        // ---- Row 1: sub headers + hidden technical columns ----
+        Row subHeader = sheet.createRow(1);
+        for (int m = 0; m < 12; m++) {
+            for (int p = 0; p < 3; p++) {
+                ExcelCells.setString(subHeader.createCell(EXCEL_FUEL_COL_START + m * 3 + p),
+                        EXCEL_PRIORITY_SUFFIX[p], headerStyle);
+            }
+        }
+        ExcelCells.setString(subHeader.createCell(EXCEL_ID_COL), "id", headerStyle);
+        ExcelCells.setString(subHeader.createCell(EXCEL_ASSET_ID_COL), "assetId", headerStyle);
+        ExcelCells.setString(subHeader.createCell(EXCEL_PLANT_ID_COL), "cppPlantFkId", headerStyle);
+
+        // ---- Hidden FuelLists sheet: one column per plant ----
+        Sheet listsSheet = workbook.createSheet(EXCEL_LISTS_SHEET);
+        Row listsHeader = listsSheet.createRow(0);
+        ExcelCells.setString(listsHeader.createCell(0), "Plant", listHeaderStyle);
+        Map<UUID, Integer> plantListCol = new LinkedHashMap<>();
+        Map<Integer, List<String>> optionsByCol = new HashMap<>();
+        Map<Integer, Set<String>> namesByCol = new HashMap<>();
+        // lower-cased plant name (every known variant) -> FuelLists column,
+        // used as a fallback when a row's cppPlantFkId doesn't match a
+        // mapping key (mirrors the UI's plantFuelMap plantName fallback)
+        Map<String, Integer> plantListColByName = new HashMap<>();
+        int listCol = 1;
+        for (Map.Entry<UUID, List<String>> e : plantFuelOptions.entrySet()) {
+            plantListCol.put(e.getKey(), listCol);
+            String plantName = plantDisplayNames.getOrDefault(e.getKey(), e.getKey().toString());
+            ExcelCells.setString(listsHeader.createCell(listCol), plantName, listHeaderStyle);
+            List<String> names = e.getValue();
+            optionsByCol.put(listCol, names);
+            Set<String> lowerNames = names.stream()
+                    .filter(Objects::nonNull).map(n -> n.trim().toLowerCase())
+                    .collect(Collectors.toSet());
+            namesByCol.put(listCol, lowerNames);
+            List<String> variants = plantNameVariants.getOrDefault(e.getKey(), List.of(plantName));
+            for (String variant : variants) {
+                plantListColByName.putIfAbsent(variant.trim().toLowerCase(), listCol);
+            }
+            plantListColByName.putIfAbsent(plantName.trim().toLowerCase(), listCol);
+            for (int i = 0; i < names.size(); i++) {
+                Row listRow = listsSheet.getRow(i + 1);
+                if (listRow == null) listRow = listsSheet.createRow(i + 1);
+                ExcelCells.setString(listRow.createCell(listCol), names.get(i), listDataStyle);
+            }
+            listCol++;
+        }
+
+        // ---- Data rows ----
+        XSSFDataValidationHelper dvHelper = new XSSFDataValidationHelper((XSSFSheet) sheet);
+        int rowIdx = EXCEL_DATA_START_ROW;
+        for (AssetFuelPriorityDto dto : dtos) {
+            Row row = sheet.createRow(rowIdx);
+            ExcelCells.setString(row.createCell(EXCEL_PLANT_COL), dto.getPlantName(), lockedStyle);
+            ExcelCells.setString(row.createCell(EXCEL_ASSET_COL), dto.getAssetName(), lockedStyle);
+
+            Set<String> rowFuelNames = new HashSet<>();
+            for (int m = 0; m < 12; m++) {
+                for (int p = 0; p < 3; p++) {
+                    UUID fuelId = getPriorityFuelId(dto, m, p);
+                    String name = fuelId != null ? fuelDisplayNames.get(fuelId) : null;
+                    if (name != null) rowFuelNames.add(name.trim().toLowerCase());
+                    ExcelCells.setString(row.createCell(EXCEL_FUEL_COL_START + m * 3 + p), name, unlockedStyle);
+                }
+            }
+
+            ExcelCells.setString(row.createCell(EXCEL_REMARKS_COL), dto.getRemarks(), remarksStyle);
+            ExcelCells.setString(row.createCell(EXCEL_ID_COL), dto.getId() != null ? dto.getId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(EXCEL_ASSET_ID_COL), dto.getAssetId() != null ? dto.getAssetId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(EXCEL_PLANT_ID_COL), dto.getCppPlantFkId() != null ? dto.getCppPlantFkId().toString() : null, lockedStyle);
+
+            // Dropdown for this row — the plant's fuel list (same for all months).
+            // Resolve the FuelLists column by cppPlantFkId first, then by
+            // plant name (same fallback order as the UI's plantFuelMap lookup).
+            Integer lc = dto.getCppPlantFkId() != null ? plantListCol.get(dto.getCppPlantFkId()) : null;
+            if (lc == null && dto.getPlantName() != null) {
+                lc = plantListColByName.get(dto.getPlantName().trim().toLowerCase());
+            }
+            // Last resort: pick the plant column whose fuel list best matches
+            // the fuels already saved on this row
+            if (lc == null && !rowFuelNames.isEmpty()) {
+                int bestCol = -1, bestMatches = 0;
+                for (Map.Entry<Integer, Set<String>> e : namesByCol.entrySet()) {
+                    int matches = 0;
+                    for (String n : rowFuelNames) if (e.getValue().contains(n)) matches++;
+                    if (matches > bestMatches) { bestMatches = matches; bestCol = e.getKey(); }
+                }
+                if (bestCol > 0) lc = bestCol;
+            }
+            List<String> options = lc != null ? optionsByCol.get(lc) : null;
+            if (options != null && !options.isEmpty()) {
+                String colLetter = CellReference.convertNumToColString(lc);
+                String formula = "'" + EXCEL_LISTS_SHEET + "'!$" + colLetter + "$2:$" + colLetter + "$" + (options.size() + 1);
+                DataValidationConstraint constraint = dvHelper.createFormulaListConstraint(formula);
+                CellRangeAddressList range = new CellRangeAddressList(rowIdx, rowIdx, EXCEL_FUEL_COL_START, EXCEL_FUEL_COL_END);
+                DataValidation validation = dvHelper.createValidation(constraint, range);
+                validation.setShowErrorBox(true);
+                validation.setEmptyCellAllowed(true);
+                sheet.addValidationData(validation);
+            }
+            rowIdx++;
+        }
+
+        ExcelColumns.hideColumns(sheet, EXCEL_ID_COL, EXCEL_ASSET_ID_COL, EXCEL_PLANT_ID_COL);
+        ExcelColumns.autoSize(sheet, EXCEL_TOTAL_COLS, EXCEL_REMARKS_COL);
+
+        // Freeze CPP Plant + Asset Name columns and both header rows so they
+        // stay visible while scrolling the 36 fuel columns
+        sheet.createFreezePane(EXCEL_FUEL_COL_START, EXCEL_DATA_START_ROW);
+
+        // AutoFilter gives sort + filter dropdowns. The range starts at the
+        // sub-header row (row 1) because row 0's merged month-group headers
+        // are incompatible with filtering.
+        int lastDataRow = Math.max(EXCEL_DATA_START_ROW, rowIdx - 1);
+        if (lastDataRow >= EXCEL_DATA_START_ROW) {
+            sheet.setAutoFilter(new CellRangeAddress(
+                    EXCEL_DATA_START_ROW - 1, lastDataRow, 0, EXCEL_TOTAL_COLS - 1));
+        }
+
+        // Protect the main sheet (AutoFilter still works on a protected sheet)
+        sheet.protectSheet("");
+        XSSFSheet xssfSheet = (XSSFSheet) sheet;
+        xssfSheet.enableLocking();
+        xssfSheet.lockSelectLockedCells(false);
+        xssfSheet.lockSelectUnlockedCells(false);
+        xssfSheet.lockFormatColumns(false);
+        xssfSheet.lockFormatRows(false);
+
+        workbook.setSheetHidden(1, true);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        return outputStream.toByteArray();
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM importAssetFuelPriority(List<UUID> plantIds, String financialYear, MultipartFile file) throws IOException {
+        AOPMessageVM vm = new AOPMessageVM();
+
+        if (plantIds == null || plantIds.isEmpty()) {
+            vm.setCode(400);
+            vm.setMessage("plantIds cannot be null or empty");
+            return vm;
+        }
+        if (financialYear == null || financialYear.isBlank()) {
+            vm.setCode(400);
+            vm.setMessage("financialYear cannot be null or empty");
+            return vm;
+        }
+        if (file == null || file.isEmpty()) {
+            vm.setCode(400);
+            vm.setMessage("File cannot be empty");
+            return vm;
+        }
+
+        String plantIdsCsv = plantIds.stream().map(UUID::toString).collect(Collectors.joining(","));
+
+        try (InputStream inputStream = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null || sheet.getRow(0) == null) {
+                vm.setCode(400);
+                vm.setMessage("Invalid Excel file: no header row found");
+                return vm;
+            }
+
+            // ---- Locate columns ----
+            int assetCol = -1, remarksCol = -1, idCol = -1, assetIdCol = -1, plantCol = -1, plantNameCol = -1;
+            Row row0 = sheet.getRow(0);
+            Row row1 = sheet.getRow(1);
+            for (Row headerRow : new Row[]{row0, row1}) {
+                if (headerRow == null) continue;
+                for (int c = 0; c < headerRow.getLastCellNum(); c++) {
+                    String label = ExcelCells.toString(headerRow.getCell(c));
+                    if (label == null) continue;
+                    String l = label.toLowerCase();
+                    if (l.equals("cpp plant")) plantNameCol = c;
+                    else if (l.equals("asset name")) assetCol = c;
+                    else if (l.equals("remarks")) remarksCol = c;
+                    else if (l.equals("id")) idCol = c;
+                    else if (l.equals("assetid")) assetIdCol = c;
+                    else if (l.equals("cppplantfkid")) plantCol = c;
+                }
+            }
+            if (assetCol < 0) {
+                vm.setCode(400);
+                vm.setMessage("Invalid Excel file: 'Asset Name' column not found");
+                return vm;
+            }
+
+            // Fuel columns come from row 1 sub-headers, in column order:
+            // every 3 columns = one month (Primary, Secondary, Tertiary), Apr -> Mar
+            List<int[]> fuelCols = new ArrayList<>(); // {colIndex, monthIdx, priIdx}
+            if (row1 != null) {
+                int seq = 0;
+                for (int c = 0; c < row1.getLastCellNum(); c++) {
+                    String label = ExcelCells.toString(row1.getCell(c));
+                    if (label == null) continue;
+                    String l = label.toLowerCase();
+                    int pri = l.equals("primary") ? 0 : l.equals("secondary") ? 1 : l.equals("tertiary") ? 2 : -1;
+                    if (pri >= 0) {
+                        fuelCols.add(new int[]{c, seq / 3, seq % 3});
+                        seq++;
+                    }
+                }
+            }
+            if (fuelCols.size() != 36) {
+                vm.setCode(400);
+                vm.setMessage("Invalid Excel file: expected 36 fuel columns (12 months x Primary/Secondary/Tertiary), found " + fuelCols.size());
+                return vm;
+            }
+
+            // ---- Lookup indexes ----
+            Map<UUID, Map<String, Set<UUID>>> plantFuelIndex = loadPlantFuelNameIndex(plantIdsCsv, financialYear);
+            Map<String, Set<UUID>> globalFuelIndex = loadGlobalFuelNameIndex();
+            Map<UUID, AssetFuelPriorityDto> existingById = getAssetFuelPriority(plantIdsCsv, financialYear)
+                    .stream()
+                    .filter(d -> d.getId() != null)
+                    .collect(Collectors.toMap(AssetFuelPriorityDto::getId, d -> d, (a, b) -> a));
+
+            List<AssetFuelPriorityDto> validRecords = new ArrayList<>();
+            List<AssetPriorityImportRow> failedRows = new ArrayList<>();
+            List<String> failedMessages = new ArrayList<>();
+            int skippedCount = 0;
+
+            for (Row row : ExcelRows.getDataRows(sheet, EXCEL_DATA_START_ROW)) {
+                UUID id = idCol >= 0 ? ExcelCells.toUUID(row.getCell(idCol)) : null;
+                UUID assetId = assetIdCol >= 0 ? ExcelCells.toUUID(row.getCell(assetIdCol)) : null;
+                UUID plantId = plantCol >= 0 ? ExcelCells.toUUID(row.getCell(plantCol)) : null;
+                String remarks = remarksCol >= 0 ? ExcelCells.toString(row.getCell(remarksCol)) : null;
+                String assetName = ExcelCells.toString(row.getCell(assetCol));
+                String plantName = plantNameCol >= 0 ? ExcelCells.toString(row.getCell(plantNameCol)) : null;
+
+                AssetPriorityImportRow parsed = new AssetPriorityImportRow(
+                        id, assetId, plantId, plantName, assetName, remarks,
+                        new String[36], new ArrayList<>());
+
+                AssetFuelPriorityDto existing = id != null ? existingById.get(id) : null;
+                if (id == null) {
+                    parsed.errors().add("id is missing — import only supports updating existing records");
+                } else if (existing == null) {
+                    parsed.errors().add("No asset fuel priority record found for id: " + id);
+                }
+                if (assetId == null && existing != null) assetId = existing.getAssetId();
+                if (plantId == null && existing != null) plantId = existing.getCppPlantFkId();
+                if (assetId == null) parsed.errors().add("assetId is missing");
+                if (plantId == null) parsed.errors().add("cppPlantFkId is missing");
+
+                // Resolve the 36 fuel-name cells to UUIDs
+                UUID[] resolved = new UUID[36];
+                String[] names = parsed.fuelNames();
+                for (int i = 0; i < fuelCols.size() && i < 36; i++) {
+                    int[] fc = fuelCols.get(i);
+                    String name = ExcelCells.toString(row.getCell(fc[0]));
+                    names[i] = name;
+                    if (name == null || name.isBlank()) continue;
+                    String monthLabel = FiscalYearMonths.MONTH_KEYS[fc[1]];
+                    String priLabel = EXCEL_PRIORITY_SUFFIX[fc[2]];
+                    UUID fuelId = resolveFuelName(plantId, name, plantFuelIndex, globalFuelIndex);
+                    if (fuelId == null) {
+                        parsed.errors().add(cap(monthLabel) + " " + priLabel + ": '" + name + "' is not a valid fuel for this plant");
+                    } else {
+                        resolved[i] = fuelId;
+                    }
+                }
+
+                // Duplicate check within each month (Primary/Secondary/Tertiary must differ)
+                for (int m = 0; m < 12; m++) {
+                    Set<UUID> seen = new HashSet<>();
+                    boolean dup = false;
+                    for (int p = 0; p < 3; p++) {
+                        UUID fu = resolved[m * 3 + p];
+                        if (fu != null && !seen.add(fu)) dup = true;
+                    }
+                    if (dup) {
+                        parsed.errors().add(cap(FiscalYearMonths.MONTH_KEYS[m]) + ": duplicate fuel selected in Primary/Secondary/Tertiary");
+                    }
+                }
+
+                // ---- Change detection vs existing record ----
+                boolean fuelsChanged = false;
+                if (existing != null) {
+                    for (int i = 0; i < 36; i++) {
+                        int m = i / 3, p = i % 3;
+                        UUID oldId = getPriorityFuelId(existing, m, p);
+                        if (!java.util.Objects.equals(oldId, resolved[i])) { fuelsChanged = true; break; }
+                    }
+                } else {
+                    fuelsChanged = true;
+                }
+                String newRemarks = remarks != null ? remarks.trim() : "";
+                String oldRemarks = existing != null && existing.getRemarks() != null ? existing.getRemarks().trim() : "";
+                boolean remarksChanged = !newRemarks.equals(oldRemarks);
+
+                if (!fuelsChanged && !remarksChanged && existing != null) {
+                    skippedCount++;
+                    continue;
+                }
+
+                if (!parsed.errors().isEmpty()) {
+                    failedRows.add(parsed);
+                    failedMessages.add(String.join("; ", parsed.errors()));
+                    continue;
+                }
+
+                // Remarks rule (mirrors UI): required & must differ when fuel data changed
+                if (fuelsChanged && (newRemarks.isEmpty() || newRemarks.equals(oldRemarks))) {
+                    parsed.errors().add("Remarks is required and must be different from previous when fuel priorities are changed");
+                    failedRows.add(parsed);
+                    failedMessages.add(String.join("; ", parsed.errors()));
+                    continue;
+                }
+
+                AssetFuelPriorityDto dto = new AssetFuelPriorityDto();
+                dto.setId(id);
+                dto.setAssetId(assetId);
+                dto.setCppPlantFkId(plantId);
+                dto.setFinancialYear(financialYear);
+                dto.setRemarks(remarks);
+                for (int i = 0; i < 36; i++) {
+                    setPriorityFuelId(dto, i / 3, i % 3, resolved[i]);
+                }
+                validRecords.add(dto);
+            }
+
+            logger.info("[AssetFuelPriority IMPORT] parsed rows - valid: {}, failed: {}, unchanged skipped: {}",
+                    validRecords.size(), failedRows.size(), skippedCount);
+
+            AOPMessageVM saveResult = null;
+            if (!validRecords.isEmpty()) {
+                saveResult = updateAssetFuelPriority(validRecords);
+                if (saveResult.getCode() != 200) {
+                    vm.setCode(saveResult.getCode());
+                    vm.setMessage("Save failed: " + saveResult.getMessage());
+                    return vm;
+                }
+            }
+
+            if (!failedRows.isEmpty()) {
+                byte[] errorExcel = generateAssetPriorityErrorExcel(failedRows, failedMessages, financialYear);
+                vm.setCode(400);
+                vm.setData(Base64.getEncoder().encodeToString(errorExcel));
+                vm.setMessage("Partial data saved. " + validRecords.size() + " saved, " + failedRows.size()
+                        + " failed, " + skippedCount + " unchanged. Please check the downloaded error file.");
+            } else if (validRecords.isEmpty()) {
+                vm.setCode(200);
+                vm.setMessage("No changes detected. All " + skippedCount + " records unchanged.");
+            } else {
+                vm.setCode(200);
+                vm.setMessage((saveResult != null ? saveResult.getMessage() : "Success") + " " + skippedCount + " unchanged.");
+            }
+
+            return vm;
+        } catch (Exception e) {
+            logger.error("[AssetFuelPriority IMPORT] error: {}", e.getMessage(), e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+            return vm;
+        }
+    }
+
+    private UUID resolveFuelName(UUID plantId, String name,
+                                 Map<UUID, Map<String, Set<UUID>>> plantFuelIndex,
+                                 Map<String, Set<UUID>> globalFuelIndex) {
+        String key = name.trim().toLowerCase();
+        Map<String, Set<UUID>> plantMap = plantId != null ? plantFuelIndex.get(plantId) : null;
+        if (plantMap != null) {
+            Set<UUID> ids = plantMap.get(key);
+            if (ids != null && ids.size() == 1) return ids.iterator().next();
+            if (ids != null && ids.size() > 1) return null; // ambiguous within plant
+        }
+        Set<UUID> global = globalFuelIndex.get(key);
+        if (global != null && global.size() == 1) return global.iterator().next();
+        return null;
+    }
+
+    private byte[] generateAssetPriorityErrorExcel(List<AssetPriorityImportRow> failedRows,
+                                                   List<String> errorMessages,
+                                                   String financialYear) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Asset Fuel Priority Errors");
+
+        CellStyle headerStyle = ExcelStyles.createHeaderStyle(workbook);
+        CellStyle lockedStyle = ExcelStyles.createLockedStyle(workbook);
+        CellStyle remarksStyle = ExcelStyles.createEditableRemarksStyle(workbook);
+        CellStyle errorStyle = ExcelStyles.createErrorStyle(workbook);
+
+        String[] monthHeaders = FiscalYearMonths.getMonthHeaders(financialYear);
+
+        Row groupHeader = sheet.createRow(0);
+        ExcelCells.setString(groupHeader.createCell(EXCEL_PLANT_COL), "CPP Plant", headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, EXCEL_PLANT_COL, EXCEL_PLANT_COL));
+        ExcelCells.setString(groupHeader.createCell(EXCEL_ASSET_COL), "Asset Name", headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, EXCEL_ASSET_COL, EXCEL_ASSET_COL));
+        for (int m = 0; m < 12; m++) {
+            int firstCol = EXCEL_FUEL_COL_START + m * 3;
+            ExcelCells.setString(groupHeader.createCell(firstCol), monthHeaders[m], headerStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, firstCol, firstCol + 2));
+        }
+        ExcelCells.setString(groupHeader.createCell(EXCEL_REMARKS_COL), "Remarks", headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, EXCEL_REMARKS_COL, EXCEL_REMARKS_COL));
+
+        Row subHeader = sheet.createRow(1);
+        for (int m = 0; m < 12; m++) {
+            for (int p = 0; p < 3; p++) {
+                ExcelCells.setString(subHeader.createCell(EXCEL_FUEL_COL_START + m * 3 + p),
+                        EXCEL_PRIORITY_SUFFIX[p], headerStyle);
+            }
+        }
+        ExcelCells.setString(subHeader.createCell(EXCEL_ID_COL), "id", headerStyle);
+        ExcelCells.setString(subHeader.createCell(EXCEL_ASSET_ID_COL), "assetId", headerStyle);
+        ExcelCells.setString(subHeader.createCell(EXCEL_PLANT_ID_COL), "cppPlantFkId", headerStyle);
+        int statusCol = EXCEL_TOTAL_COLS;
+        ExcelCells.setString(subHeader.createCell(statusCol), "Status", headerStyle);
+        ExcelCells.setString(subHeader.createCell(statusCol + 1), "Error Message", headerStyle);
+
+        int rowIdx = EXCEL_DATA_START_ROW;
+        for (int i = 0; i < failedRows.size(); i++) {
+            AssetPriorityImportRow pr = failedRows.get(i);
+            Row row = sheet.createRow(rowIdx++);
+            ExcelCells.setString(row.createCell(EXCEL_PLANT_COL), pr.plantName(), errorStyle);
+            ExcelCells.setString(row.createCell(EXCEL_ASSET_COL), pr.assetName(), errorStyle);
+            for (int c = 0; c < 36; c++) {
+                ExcelCells.setString(row.createCell(EXCEL_FUEL_COL_START + c), pr.fuelNames()[c], errorStyle);
+            }
+            ExcelCells.setString(row.createCell(EXCEL_REMARKS_COL), pr.remarks(), remarksStyle);
+            ExcelCells.setString(row.createCell(EXCEL_ID_COL), pr.id() != null ? pr.id().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(EXCEL_ASSET_ID_COL), pr.assetId() != null ? pr.assetId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(EXCEL_PLANT_ID_COL), pr.cppPlantFkId() != null ? pr.cppPlantFkId().toString() : null, lockedStyle);
+            ExcelCells.setString(row.createCell(statusCol), "Failed", errorStyle);
+            ExcelCells.setString(row.createCell(statusCol + 1), errorMessages.get(i), errorStyle);
+        }
+
+        ExcelColumns.hideColumns(sheet, EXCEL_ID_COL, EXCEL_ASSET_ID_COL, EXCEL_PLANT_ID_COL);
+        ExcelColumns.autoSize(sheet, statusCol + 2, EXCEL_REMARKS_COL);
+        sheet.setColumnWidth(statusCol + 1, ExcelColumns.DEFAULT_REMARKS_WIDTH);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        return outputStream.toByteArray();
     }
 
 }

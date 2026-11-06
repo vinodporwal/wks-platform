@@ -2,6 +2,7 @@ package com.wks.caseengine.rest.cpp;
 
 import com.wks.caseengine.cpp.dto.norm.CPPActualRateEDRPORequestDTO;
 import com.wks.caseengine.cpp.dto.norm.CPPEdRpoMappingRequestDTO;
+import com.wks.caseengine.cpp.dto.norm.CPPRPOMonthlyConfigRequestDTO;
 import com.wks.caseengine.cpp.dto.norm.JMDCPPNormPricesRequestDTO;
 import com.wks.caseengine.cpp.service.JMDCPPNormPricesService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -339,6 +340,113 @@ public class JMDCPPNormPricesController {
             return ResponseEntity.ok(result);
         } catch (IOException e) {
             logger.error("[POST /jmd/ed-rpo-mapping/import] Error importing ED RPO Mapping", e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+
+    /*********************************************************************************/
+    // CPP RPO Monthly Configuration APIS Starting here.....
+
+    // GET /task/jmd/rpo-monthly-config?aopYear=...&plantId=... (plantId optional)
+    @GetMapping("/jmd/rpo-monthly-config")
+    public ResponseEntity<?> getRPOMonthlyConfig(
+            @RequestParam String aopYear,
+            @RequestParam(required = false) UUID plantId) {
+        logger.info("[GET /jmd/rpo-monthly-config] aopYear: {}, plantId: {}", aopYear, plantId);
+        try {
+            AOPMessageVM result = jmdCppNormPricesService.getRPOMonthlyConfig(aopYear, plantId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("[GET /jmd/rpo-monthly-config] Error", e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    // POST /task/jmd/rpo-monthly-config?aopYear=...&plantId=... (plantId optional)
+    @PostMapping("/jmd/rpo-monthly-config")
+    public ResponseEntity<?> saveOrUpdateRPOMonthlyConfig(
+            @RequestParam String aopYear,
+            @RequestParam(required = false) UUID plantId,
+            @RequestBody List<CPPRPOMonthlyConfigRequestDTO> payload) {
+        try {
+            if (payload == null || payload.isEmpty()) {
+                AOPMessageVM errorResponse = new AOPMessageVM();
+                errorResponse.setCode(400);
+                errorResponse.setMessage("Request body cannot be empty");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            AOPMessageVM response = jmdCppNormPricesService.saveOrUpdateRPOMonthlyConfig(aopYear, plantId, payload);
+
+            if (response.getCode() == 200 || response.getCode() == 207) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(response.getCode()).body(response);
+            }
+        } catch (Exception e) {
+            logger.error("[POST /jmd/rpo-monthly-config] Error", e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    // GET /task/jmd/rpo-monthly-config/export?aopYear=...&plantId=... (plantId optional)
+    @GetMapping("/jmd/rpo-monthly-config/export")
+    public ResponseEntity<byte[]> exportRPOMonthlyConfig(
+            @RequestParam String aopYear,
+            @RequestParam(required = false) UUID plantId) {
+        logger.info("[GET /jmd/rpo-monthly-config/export] aopYear: {}, plantId: {}", aopYear, plantId);
+        try {
+            byte[] excelData = jmdCppNormPricesService.exportRPOMonthlyConfig(aopYear, plantId);
+
+            if (excelData == null) {
+                logger.error("[GET /jmd/rpo-monthly-config/export] Failed to generate Excel file");
+                return ResponseEntity.status(500).body(null);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "RPOMonthlyConfig_" + aopYear + ".xlsx");
+
+            logger.info("[GET /jmd/rpo-monthly-config/export] Successfully generated Excel, size: {} bytes", excelData.length);
+            return ResponseEntity.ok().headers(headers).body(excelData);
+
+        } catch (Exception e) {
+            logger.error("[GET /jmd/rpo-monthly-config/export] Error exporting RPO Monthly Config", e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    // POST /task/jmd/rpo-monthly-config/import?aopYear=...&plantId=... (plantId optional, multipart)
+    @PostMapping(value = "/jmd/rpo-monthly-config/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AOPMessageVM> importRPOMonthlyConfig(
+            @RequestParam String aopYear,
+            @RequestParam(required = false) UUID plantId,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[POST /jmd/rpo-monthly-config/import] aopYear: {}, plantId: {}, file: {}",
+                aopYear, plantId, file.getOriginalFilename());
+
+        if (file == null || file.isEmpty()) {
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(400);
+            errorResponse.setMessage("File cannot be empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        try {
+            AOPMessageVM result = jmdCppNormPricesService.importRPOMonthlyConfig(aopYear, plantId, file);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            logger.error("[POST /jmd/rpo-monthly-config/import] Error importing RPO Monthly Config", e);
             AOPMessageVM errorResponse = new AOPMessageVM();
             errorResponse.setCode(500);
             errorResponse.setMessage("Error: " + e.getMessage());

@@ -2,54 +2,212 @@ import { useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/sulphur/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const COLUMNS = [
-  { field: 'displayName', title: 'Data Filters', widthT: 250, minWidth: 200, type: 'text', editable: false },
-  { field: 'uom', title: 'UOM', widthT: 80, minWidth: 60, type: 'text', editable: false },
-  { field: 'targetValue', title: 'Target Value', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
-  { field: 'range', title: 'Range', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
-  { field: 'selection', title: 'Selection', editable: true, widthT: 80, minWidth: 80, type: 'checkbox' },
-  { field: 'remarks', title: 'Criteria', widthT: 250, type: 'textarea', editable: false, minWidth: 250, showPlaceholder: false },
-  { field: 'dependantAttributeId', title: 'Applicable Utilities & Cat-Chems', widthT: 250, minWidth: 200, type: 'text', editable: false },
+const monthColumns = [
+  { field: 'apr', headerIndex: 4 },
+  { field: 'may', headerIndex: 5 },
+  { field: 'jun', headerIndex: 6 },
+  { field: 'jul', headerIndex: 7 },
+  { field: 'aug', headerIndex: 8 },
+  { field: 'sep', headerIndex: 9 },
+  { field: 'oct', headerIndex: 10 },
+  { field: 'nov', headerIndex: 11 },
+  { field: 'dec', headerIndex: 12 },
+  { field: 'jan', headerIndex: 1 },
+  { field: 'feb', headerIndex: 2 },
+  { field: 'mar', headerIndex: 3 },
 ]
 
 const FILTER_CONFIG = [
-  { id: 1, displayName: 'Sulphur Production', uom: '', targetValue: 'PIMS Sulphur Production (auto fetch from PIMS throughput tab)', range: '+/- 5%', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['targetValue'], type: 'formula-text' },
-  { id: 2, displayName: 'AGR C003 Inline/Bypass', uom: '', targetValue: 'Bypass', range: '', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'dropdown', options: ['Inline', 'Bypass'] },
-  { id: 3, displayName: 'AGR C003 Inline (G330PI400340 A/B/C)', uom: 'kg/cm2g', targetValue: '1.2', range: '', selection: false, remarks: 'Less than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
-  { id: 4, displayName: 'AGR C003 Inline ( G330FIC400305)', uom: '%', targetValue: '10', range: '', selection: false, remarks: 'more than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
-  { id: 5, displayName: 'AGR C003 Bypass (G330PI400340 A/B/C)', uom: 'kg/cm2g', targetValue: '1.6', range: '', selection: false, remarks: 'more than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
-  { id: 6, displayName: 'AGR C003 Bypass (G330FIC400305)', uom: '%', targetValue: '2', range: '', selection: false, remarks: 'Less than target value', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1', hideCheckbox: true },
-  { id: 7, displayName: 'J1 Acid Gas Flow', uom: 'Nm3/Hr', targetValue: 'Manual input', range: '+/- 500', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: [], type: 'formula-text' },
-  { id: 8, displayName: 'Average J3 Acid Gas H2S Concentration', uom: '%', targetValue: 'Manual input', range: '+/- 2%', selection: false, remarks: '', utilities: 'Fuel, HP Stam, LP Steam, Oxygen, Power, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: [], type: 'formula-text' },
-  { id: 9, displayName: 'Incinerator Temperature (G360TIC000157)', uom: 'Deg C', targetValue: '740', range: '', selection: false, remarks: 'more than target value', utilities: 'Fuel, HP Stam, LP Steam, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1' },
-  { id: 10, displayName: 'Incinerator Temperature (G361TIC000157)', uom: 'Deg C', targetValue: '740', range: '', selection: false, remarks: 'more than target value', utilities: 'Fuel, HP Stam, LP Steam, Return Steam Condensate, BFW', isEditable: true, nonEditableFields: ['range'], type: 'number1' },
-  { id: 11, displayName: 'Average O2 Enrichment', uom: '%', targetValue: 'Manual input', range: '+/- 2%', selection: false, remarks: '', utilities: 'Oxygen, Power', isEditable: true, nonEditableFields: [], type: 'formula-text' },
-  { id: 12, displayName: 'SWS-1 Sour Water Processing Rate', uom: 'M3/Hr', targetValue: '200', range: '', selection: false, remarks: 'More than target value', utilities: 'LP Steam & Return Steam Condensate', isEditable: true, nonEditableFields: ['range'], type: 'number1' },
-  { id: 13, displayName: 'SRU-1 Sulphur production (GSR1PR001)', uom: 'TPD', targetValue: '50', range: '', selection: false, remarks: 'More than target value', utilities: 'LLP N2, LP N2, Instrument Air, DM Water, Utility Water, Plant Air, caustic, CHEM Ammonia, Chem Maxtreat 3223 SJ', isEditable: true, nonEditableFields: ['range'], type: 'number1' },
-  { id: 14, displayName: 'SRU-2 Sulphur production (GSR2PR001)', uom: 'TPD', targetValue: '50', range: '', selection: false, remarks: 'More than target value', utilities: 'LLP N2, LP N2, Instrument Air, DM Water, Utility Water, Plant Air, caustic, CHEM Ammonia, Chem Maxtreat 3223 SJ', isEditable: true, nonEditableFields: ['range'], type: 'number1' }
+  {
+    id: 1,
+    displayName: 'Liquid Sulphur Production Min\nCriteria-More than target value',
+    uom: 'TPD',
+    apr: 1025,
+    may: '',
+    jun: '',
+    jul: '',
+    aug: '',
+    sep: '',
+    oct: '',
+    nov: '',
+    dec: '',
+    jan: '',
+    feb: '',
+    mar: '',
+    remarks: '',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'number1',
+  },
+  {
+    id: 2,
+    displayName: 'Liquid Sulphur Production Max\nLess than target value',
+    uom: 'TPD',
+    apr: 2049,
+    may: '',
+    jun: '',
+    jul: '',
+    aug: '',
+    sep: '',
+    oct: '',
+    nov: '',
+    dec: '',
+    jan: '',
+    feb: '',
+    mar: '',
+    remarks: '',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'number1',
+  },
+  {
+    id: 3,
+    displayName:
+      'Liquid Sulphur Production Norm basis selection\n1. Last 6 months average\n2. Last 12 months average\n3. Last FY Average\n4. Predictor (Based on last 12 months)\n5. Last 4 Years Benchmark Comparison\n6. Manual Entry Norm',
+    uom: 'MTPD',
+    apr: '',
+    may: null,
+    jun: null,
+    jul: null,
+    aug: null,
+    sep: null,
+    oct: null,
+    nov: null,
+    dec: null,
+    jan: null,
+    feb: null,
+    mar: null,
+    remarks: '',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'number1',
+  },
+  {
+    id: 4,
+    displayName: 'Rich Amine processed Min (Lower Bound (SOR))',
+    uom: 'm3/Hr/Train',
+    apr: 350,
+    may: '',
+    jun: '',
+    jul: '',
+    aug: '',
+    sep: '',
+    oct: '',
+    nov: '',
+    dec: '',
+    jan: '',
+    feb: '',
+    mar: '',
+    remarks: '',
+    dependantAttributeId: 'LP steam consumption ATU',
+    isEditable: true,
+    type: 'number1',
+  },
+  {
+    id: 5,
+    displayName: 'Rich Amine processed Max (Upper Bound (EOR))',
+    uom: 'm3/Hr/Train',
+    apr: 600,
+    may: '',
+    jun: '',
+    jul: '',
+    aug: '',
+    sep: '',
+    oct: '',
+    nov: '',
+    dec: '',
+    jan: '',
+    feb: '',
+    mar: '',
+    remarks: '',
+    dependantAttributeId: 'LP steam consumption ATU',
+    isEditable: true,
+    type: 'number1',
+  },
+  {
+    id: 6,
+    displayName: 'Sour water Processing Min (Lower Bound (SOR))',
+    uom: 'MT/M3 Sour water',
+    apr: 140,
+    may: '',
+    jun: '',
+    jul: '',
+    aug: '',
+    sep: '',
+    oct: '',
+    nov: '',
+    dec: '',
+    jan: '',
+    feb: '',
+    mar: '',
+    remarks: '',
+    dependantAttributeId: 'LP steam SWS',
+    isEditable: true,
+    type: 'number1',
+  },
+  {
+    id: 7,
+    displayName: 'Sour water Processing Max (Upper Bound (EOR))',
+    uom: 'MT/M3 Sour water',
+    apr: 260,
+    may: '',
+    jun: '',
+    jul: '',
+    aug: '',
+    sep: '',
+    oct: '',
+    nov: '',
+    dec: '',
+    jan: '',
+    feb: '',
+    mar: '',
+    remarks: '',
+    dependantAttributeId: 'LP steam SWS',
+    isEditable: true,
+    type: 'number1',
+  },
 ]
 
 const PERMISSIONS = {
-  showAction: true, addButton: false, deleteButton: false, editButton: true, saveBtn: true,
-  allAction: true, downloadExcelBtnFromUI: true, ExcelName: 'Production_Norms_Configuration',
-  showImport: false, showTitleNameBusiness: true, showTitle: true, titleName: 'Configuration',
+  showAction: true,
+  addButton: false,
+  deleteButton: false,
+  editButton: true,
+  saveBtn: true,
+  allAction: true,
+  downloadExcelBtnFromUI: true,
+  ExcelName: 'Production_Norms_Configuration',
+  showImport: false,
+  showTitleNameBusiness: true,
+  showTitle: true,
+  titleName: 'Configuration',
 }
 
 const parseConfig = (config) => {
   if (!config) return null
-  try { return typeof config === 'string' ? JSON.parse(config) : config }
-  catch { return null }
+  try {
+    return typeof config === 'string' ? JSON.parse(config) : config
+  } catch {
+    return null
+  }
 }
 
 const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => {
   if (dependentAttributeConfig) {
     if (typeof dependentAttributeConfig === 'string') {
-      const match = dependentAttributeConfig.match(/["']?isCheckBoxVisible["']?\s*:\s*["']?(true|false)["']?/i)
+      const match = dependentAttributeConfig.match(
+        /["']?isCheckBoxVisible["']?\s*:\s*["']?(true|false)["']?/i,
+      )
       if (match) {
         return match[1].toLowerCase() === 'false'
       }
@@ -74,8 +232,9 @@ const formatDate = (val) => {
 
 const Configuration = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
-  const { plantObject, year } = useSelector((state) => state.dataGridStore)
-  
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, year } = dataGridStore
+
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const [modifiedCells, setModifiedCells] = useState({})
@@ -92,6 +251,51 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
+  const valueFormat = customValueFormatterPhaseTwo(5)
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
+  const COLUMNS = [
+    {
+      field: 'displayName',
+      title: 'Data filters',
+      widthT: 320,
+      minWidth: 280,
+      type: 'textarea',
+      editable: false,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 110,
+      minWidth: 90,
+      editable: false,
+    },
+    ...monthColumns.map((month) => ({
+      field: month.field,
+      title: headerMap[month.headerIndex],
+      minWidth: 140,
+      type: 'row-based',
+      editable: true,
+      format: valueFormat,
+    })),
+    {
+      field: 'remarks',
+      title: 'Remark',
+      widthT: 160,
+      type: 'textarea',
+      editable: false,
+      minWidth: 140,
+      showPlaceholder: false,
+    },
+    {
+      field: 'dependantAttributeId',
+      title: 'Applicable Utilities and Cat-chems',
+      widthT: 350,
+      minWidth: 300,
+      editable: false,
+    },
+  ]
+
   const showSnackbar = (message, severity = 'info', autoHide = true) => {
     setSnackbarOpen(true)
     setSnackbarData({ message, severity, autoHide })
@@ -104,81 +308,95 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const apiRes = await ProductionNormsApiService.getConfigurationData(keycloak, PLANT_ID, AOP_YEAR)
-      
-      const res = apiRes?.length ? apiRes.map((apiItem, index) => {
-        const configItem = FILTER_CONFIG.find(d => [apiItem.displayName, apiItem.productName].includes(d.displayName)) || {}
-        const fallbackHideCheckbox =
-          apiItem.hideCheckbox ??
-          apiItem.hideCheckBox ??
-          configItem.hideCheckbox ??
-          configItem.hideCheckBox ??
-          false
-        const hideCheckbox = resolveHideCheckbox(apiItem.dependentAttributeConfig, fallbackHideCheckbox)
+      const apiRes = FILTER_CONFIG
+      // await ProductionNormsApiService.getConfigurationData(
+      //   keycloak,
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      // )
 
-        return {
-          ...configItem, ...apiItem,
-          hideCheckbox,
-          hideCheckBox: hideCheckbox,
-          isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
-          nonEditableFields: configItem.nonEditableFields || [],
-          type: configItem.type || 'number1',
-          dataType: configItem.type || 'number1',
-          options: configItem.options || []
-        }
-      }) : FILTER_CONFIG
+      const res = apiRes?.length
+        ? apiRes.map((apiItem) => {
+            const configItem =
+              FILTER_CONFIG.find((d) =>
+                [apiItem.displayName, apiItem.productName].some(
+                  (name) =>
+                    name &&
+                    (d.displayName.toLowerCase().includes(name.toLowerCase()) ||
+                      name
+                        .toLowerCase()
+                        .includes(d.displayName.split('\n')[0].toLowerCase())),
+                ),
+              ) || {}
+
+            const fallbackHideCheckbox =
+              apiItem.hideCheckbox ??
+              apiItem.hideCheckBox ??
+              configItem.hideCheckbox ??
+              configItem.hideCheckBox ??
+              false
+            const hideCheckbox = resolveHideCheckbox(
+              apiItem.dependentAttributeConfig,
+              fallbackHideCheckbox,
+            )
+
+            return {
+              ...configItem,
+              ...apiItem,
+              hideCheckbox,
+              hideCheckBox: hideCheckbox,
+              isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
+              nonEditableFields: configItem.nonEditableFields || [],
+              type: apiItem.type || configItem.type || 'number1',
+              dataType: apiItem.type || configItem.type || 'number1',
+              options: configItem.options || [],
+            }
+          })
+        : FILTER_CONFIG
 
       if (!res.length) {
         showSnackbar('No data found')
-        setLoading(false) 
+        setLoading(false)
         setRows([])
         setOriginalRows([])
-        return 
+        return
       }
 
       let formattedData = res.map((item, index) => {
         const config = parseConfig(item.config)
         const mappingKeys = config?.valueMapping ? Object.keys(config.valueMapping) : []
-        const type = item.dataType || (mappingKeys.length ? 'dropdown' : undefined)
+        const type =
+          item.type || item.dataType || (mappingKeys.length ? 'dropdown' : undefined)
         const fallbackHideCheckbox = item.hideCheckbox ?? item.hideCheckBox ?? false
-        const hideCheckbox = resolveHideCheckbox(item.dependentAttributeConfig, fallbackHideCheckbox)
-        
+        const hideCheckbox = resolveHideCheckbox(
+          item.dependentAttributeConfig,
+          fallbackHideCheckbox,
+        )
+
         return {
           ...item,
           hideCheckbox,
           hideCheckBox: hideCheckbox,
-          config, type,
+          config,
+          type,
           options: item.options?.length ? item.options : mappingKeys,
           remarks: item.remarks || '',
           id: item.id || index + 1,
-          attributeValue: ['date', 'datetime'].includes(type) ? formatDate(item.attributeValue) : item.attributeValue,
+          attributeValue: ['date', 'datetime'].includes(type)
+            ? formatDate(item.attributeValue)
+            : item.attributeValue,
           allowNegative: item.allowNegative,
-          selection: item.selection?.toLowerCase() === 'true' ? true : false
+          selection: item.selection?.toLowerCase() === 'true' ? true : false,
         }
       })
 
-      const inlineBypassRow = formattedData.find(row => row.displayName === 'AGR C003 Inline/Bypass')
-      if (inlineBypassRow) {
-        const value = inlineBypassRow.targetValue
-        formattedData = formattedData.map(row => {
-          if (row.displayName !== 'AGR C003 Inline/Bypass') {
-            const isInline = row.displayName?.includes('AGR C003 Inline')
-            const isBypass = row.displayName?.includes('AGR C003 Bypass')
-            if (isInline || isBypass) {
-              return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
-            }
-          }
-          return row
-        })
-      }
-
       setRows(formattedData)
       setOriginalRows(formattedData)
-      setLoading(false) 
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
       showSnackbar('Error fetching data', 'error')
-      setLoading(false) 
+      setLoading(false)
     }
   }
 
@@ -189,34 +407,38 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     console.log('dataToSave', dataToSave)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
 
-    // const validationError = validateRowDataWithRemarks(
-    //   dataToSave.filter((item) => item.isEditable),
-    //   originalRows,
-    //   ['targetValue', 'range', 'selection'],
-    //   'displayName'
-    // )
-
-    // if (validationError) return showSnackbar(validationError, 'error')
-
     setLoading(true)
-    
+
     const payload = modifiedData.map((rest) => ({
       ...rest,
     }))
 
     try {
-      const response = await ProductionNormsApiService.saveConfigurationData(keycloak, AOP_YEAR, payload, PLANT_ID)
+      const response = await ProductionNormsApiService.saveConfigurationData(
+        keycloak,
+        AOP_YEAR,
+        payload,
+        PLANT_ID,
+      )
       setModifiedCells({})
-      
+
       showSnackbar(`Successfully saved ${modifiedData.length} changes!`, 'success')
       if (response?.code === 422) {
-        setTimeout(() => showSnackbar(response.message || 'Validation error occurred.', 'error', false), 1000)
+        setTimeout(
+          () =>
+            showSnackbar(
+              response.message || 'Validation error occurred.',
+              'error',
+              false,
+            ),
+          1000,
+        )
       }
       await fetchConfigurationData()
     } catch (error) {
       console.error('Error saving data:', error)
       showSnackbar('Failed to save changes. Please try again.', 'error')
-      setLoading(false) 
+      setLoading(false)
     }
   }
 
@@ -224,14 +446,23 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     if (!file) return
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importConfigurationExcel(file, keycloak, PLANT_ID, AOP_YEAR)
-      
+      const response = await ProductionNormsApiService.importConfigurationExcel(
+        file,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
       if (response?.code === 200) {
         showSnackbar(response.message || 'Excel file imported successfully!', 'success')
         await fetchConfigurationData()
       } else if (response?.code === 400 && response?.data) {
         downloadErrorExcel(response.data)
-        showSnackbar(response.message || 'Import failed with errors. Please check the downloaded file.', 'error')
+        showSnackbar(
+          response.message ||
+            'Import failed with errors. Please check the downloaded file.',
+          'error',
+        )
         await fetchConfigurationData()
       } else {
         showSnackbar(response?.message || 'Failed to import Excel file.', 'error')
@@ -239,7 +470,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     } catch (error) {
       showSnackbar(`Failed to import Excel file: ${error.message}`, 'error')
     } finally {
-      setLoading(false) 
+      setLoading(false)
     }
   }
 
@@ -248,8 +479,10 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       const binaryString = window.atob(base64Data)
       const bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i)
-      
-      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+      const blob = new Blob([bytes], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -266,29 +499,18 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const handleExport = async () => {
     showSnackbar('Excel download started!')
     try {
-      await ProductionNormsApiService.exportConfigurationExcel(keycloak, PLANT_ID, AOP_YEAR)
+      await ProductionNormsApiService.exportConfigurationExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       showSnackbar('Excel download completed successfully!', 'success')
     } catch (error) {
       showSnackbar('Excel download failed. Please try again.', 'error')
     }
   }
 
-  const handleCustomItemChange = ({ dataItem, field, value }, setRowsCallback) => {
-    if (!['targetValue', 'range'].includes(field)) return
-
-    if (dataItem.displayName === 'AGR C003 Inline/Bypass' && field === 'targetValue') {
-      setRowsCallback((currentRows) => currentRows.map((row) => {
-        if (row.displayName !== 'AGR C003 Inline/Bypass') {
-          const isInline = row.displayName?.includes('AGR C003 Inline')
-          const isBypass = row.displayName?.includes('AGR C003 Bypass')
-          if (isInline || isBypass) {
-            return { ...row, isEditable: value === (isInline ? 'Inline' : 'Bypass') }
-          }
-        }
-        return row
-      }))
-    }
-  }
+  const excelExportName = generateExcelName(dataGridStore, 'Production_Norms_Configuration')
 
   return (
     <Box>
@@ -300,8 +522,15 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         title={PERMISSIONS.showTitle ? PERMISSIONS.titleName : ''}
-        permissions={{ ...PERMISSIONS, ExcelName: `${PERMISSIONS.ExcelName}_${AOP_YEAR}` }}
-        handleRemarkCellClick={(row) => {setCurrentRemark(row.remarks || ''); setCurrentRowId(row.id); setRemarkDialogOpen(true)}}
+        permissions={{
+          ...PERMISSIONS,
+          ExcelName: excelExportName,
+        }}
+        handleRemarkCellClick={(row) => {
+          setCurrentRemark(row.remarks || '')
+          setCurrentRowId(row.id)
+          setRemarkDialogOpen(true)
+        }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
@@ -315,10 +544,14 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        customItemChange={handleCustomItemChange}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
-        paginationConfig={{ threshold: 100, buttonCount: 5, pageSizes: [10, 20, 50, 100], defaultPageSize: 100 }}
+        paginationConfig={{
+          threshold: 100,
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
       />
     </Box>
   )
