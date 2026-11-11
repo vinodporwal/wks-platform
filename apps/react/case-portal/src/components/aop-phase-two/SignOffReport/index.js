@@ -99,6 +99,12 @@ const SignOffReport = () => {
     return true
   }, [site, plant])
 
+  const isGroupBy = useMemo(() => {
+    if (site === 'sez' && ['cdu-3', 'cdu-4'].includes(plant)) return true
+    if (site === 'dta' && ['cdu-1', 'cdu-2'].includes(plant)) return true
+    return false
+  }, [site, plant])
+
   // 5 Decimal place formatter for numeric columns
   const numberFormatFiveDecimals = useMemo(
     () => customValueFormatterPhaseTwo(5),
@@ -159,6 +165,10 @@ const SignOffReport = () => {
         'unitno',
         'unit_no',
       ]
+      if(isGroupBy){
+        // excludeColumns.push('sr no')     
+        excludeColumns.push('sr no', 'utility/chemical name')     
+      }
       const mappedCols = backendCols
         .filter((col) => {
           if (!col || !col.field) return false
@@ -325,7 +335,7 @@ const SignOffReport = () => {
 
       return [...leadingCols, ...groupedCols, ...trailingCols]
     },
-    [numberFormatFiveDecimals],
+    [numberFormatFiveDecimals, isGroupBy],
   )
 
   /**
@@ -847,6 +857,13 @@ const SignOffReport = () => {
     return generateExcelNameWithoutExt(dataGridStore, gridTitle)
   }, [dataGridStore, gridTitle])
 
+  const groupBy = useMemo(() => {
+    if(isGroupBy){
+      return {groupBy: ['Sr No', 'Utility/Chemical Name']}
+    }
+    return {}
+  }, [isGroupBy, rows])
+
   const permissions = useMemo(() => {
     return {
       showAction: true,
@@ -869,8 +886,8 @@ const SignOffReport = () => {
   }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor])
  
   if (IS_FCC_SEZ_FCC2) {
-  return <SignOffReportFcc2 />
-}
+    return <SignOffReportFcc2 />
+  }
 
   return (
     <Box sx={{ minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
@@ -908,6 +925,7 @@ const SignOffReport = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        {...groupBy}
         extraExportGrid={{ columns: SIGN_OFF_COLUMNS, rows: signOffRows }}
       />
 
