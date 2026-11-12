@@ -15,13 +15,8 @@ import { generateExcelName } from 'components/aop-phase-two/common/utilities/exc
 const FuelAllocation = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    siteObject,
-    plantObject,
-    year,
-    screenTitle,
-    jmdSelectedPlants,
-  } = dataGridStore
+  const { siteObject, plantObject, year, screenTitle, jmdSelectedPlants } =
+    dataGridStore
 
   const PLANT_ID = plantObject?.id
   const lowerSiteName = siteObject?.name?.toLowerCase()
@@ -139,7 +134,7 @@ const FuelAllocation = () => {
         type: 'text',
         editable: false,
       },
-       {
+      {
         field: 'issuingPlantName',
         title: 'Issuing Plant',
         widthT: 200,
@@ -163,7 +158,7 @@ const FuelAllocation = () => {
         type: 'text',
         editable: false,
       },
-     
+
       // {
       //   field: 'issuingUOM',
       //   title: 'UOM',
@@ -203,7 +198,7 @@ const FuelAllocation = () => {
       const rowsWithId = data?.map((row, index) => ({
         ...row,
         id: row.id || `row_${index}`,
-        isFreeSteamFuel: row.isFreeSteamFuel ,
+        isFreeSteamFuel: row.isFreeSteamFuel,
       }))
       setRows(rowsWithId)
       if (!rowsWithId.length) {
@@ -294,4 +289,3 @@ const FuelAllocation = () => {
 }
 
 export default FuelAllocation
-

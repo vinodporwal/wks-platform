@@ -91,6 +91,16 @@ const SpinningMarginReport = () => {
             minWidth: 130,
             type: 'number1',
             editable: false,
+            // Red text when Maintained < its corresponding Target for the month
+            textColor: (row) => {
+              const maintained = parseFloat(row?.[mon])
+              const target = parseFloat(row?.[`${mon}Target`])
+              return !isNaN(maintained) &&
+                !isNaN(target) &&
+                maintained < target
+                ? '#d32f2f'
+                : undefined
+            },
           },
           {
             field: `${mon}Target`,

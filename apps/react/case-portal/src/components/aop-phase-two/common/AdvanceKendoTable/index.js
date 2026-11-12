@@ -456,6 +456,30 @@ const AdvanceKendoTable = ({
     return allCols
   }, [])
 
+  // Map of field → textColor collected from column configs (supports grouped
+  // children). `textColor` can be a CSS color string or a function
+  // (dataItem, field) => color|undefined for conditional coloring.
+  const textColorByField = useMemo(() => {
+    const map = {}
+    extractAllColumns(columns || []).forEach((col) => {
+      if (col?.field && col?.textColor) {
+        map[col.field] = col.textColor
+      }
+    })
+    return map
+  }, [columns, extractAllColumns])
+
+  // Resolve the effective text color for a cell — supports static strings
+  // and per-row conditional functions from the column config.
+  const getCellTextColor = useCallback(
+    (dataItem, field) => {
+      const cfg = textColorByField[field]
+      if (typeof cfg === 'function') return cfg(dataItem, field)
+      return cfg
+    },
+    [textColorByField],
+  )
+
   // Calculate total minimum width and setup resize listener
   useEffect(() => {
     gridRef.current = gridContainerRef.current?.querySelector('.k-grid')
@@ -1475,6 +1499,8 @@ const AdvanceKendoTable = ({
           }
           style={{
             ...tdProps?.style,
+            color: getCellTextColor(dataItem, field),
+            '--grid-cell-color': getCellTextColor(dataItem, field),
           }}
         >
           {children}
@@ -1505,6 +1531,8 @@ const AdvanceKendoTable = ({
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
+          color: getCellTextColor(dataItem, field),
+          '--grid-cell-color': getCellTextColor(dataItem, field),
         }}
       >
         {formattedValue}
@@ -1553,6 +1581,10 @@ const AdvanceKendoTable = ({
               ? convertFromScientificNotation(value)
               : value
           }
+          style={{
+            color: getCellTextColor(dataItem, field),
+            '--grid-cell-color': getCellTextColor(dataItem, field),
+          }}
         >
           {formattedValue}
         </td>
@@ -1628,7 +1660,8 @@ const AdvanceKendoTable = ({
           color:
             highlightColor && highlightColor !== 'orange'
               ? highlightColor
-              : undefined,
+              : getCellTextColor(dataItem, field) || undefined,
+          '--grid-cell-color': getCellTextColor(dataItem, field) || undefined,
           ...tdProps?.style,
         }}
       >
@@ -2254,7 +2287,12 @@ const AdvanceKendoTable = ({
                       <td
                         style={{
                           backgroundColor: '#f5f5f5',
-                          color: '#999',
+                          color:
+                            getCellTextColor(cellProps.dataItem, col.field) ||
+                            '#999',
+                          '--grid-cell-color':
+                            getCellTextColor(cellProps.dataItem, col.field) ||
+                            undefined,
                           padding: '3px 6px',
                           cursor: 'not-allowed',
                         }}
@@ -2479,7 +2517,12 @@ const AdvanceKendoTable = ({
                       <td
                         style={{
                           backgroundColor: '#f5f5f5',
-                          color: '#999',
+                          color:
+                            getCellTextColor(cellProps.dataItem, col.field) ||
+                            '#999',
+                          '--grid-cell-color':
+                            getCellTextColor(cellProps.dataItem, col.field) ||
+                            undefined,
                           padding: '3px 6px',
                           cursor: 'not-allowed',
                         }}
@@ -3272,6 +3315,8 @@ const AdvanceKendoTable = ({
         className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''} ${isCategoryHeaderCell ? 'cell-category-header cell-no-uom-header' : ''} ${isParameterHeaderCell ? 'cell-parameter-header' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
+          color: getCellTextColor(props.dataItem, props.field),
+          '--grid-cell-color': getCellTextColor(props.dataItem, props.field),
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
           ...(isCategoryHeaderCell
             ? { fontWeight: 'bold', backgroundColor: '#F7C7AC' }

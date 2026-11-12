@@ -56,8 +56,9 @@ const JwBudgetScreen = () => {
     {
       field: 'unit',
       title: 'Unit',
-      widthT: 250,
-      minWidth: 200,
+      widthT: 120,
+      minWidth: 120,
+      width: 120,
       type: 'customSelect',
       cellEditor: JwSelectCellEditor,
       dynamicOptions: true,
@@ -78,8 +79,9 @@ const JwBudgetScreen = () => {
     {
       field: 'uom',
       title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
+      widthT: 80,
+      minWidth: 80,
+      width: 80,
       type: 'text',
       editable: false,
       locked: true,
@@ -218,13 +220,13 @@ const JwBudgetScreen = () => {
       const data = response?.data || response?.result || response || []
       const formattedOptions = Array.isArray(data)
         ? data.map((item) => ({
-            label:
-              item?.Unit || item?.unit || item?.name || item?.displayName || '',
-            value: item?.Unit || item?.unit || item?.id || item?.Id || '',
-            id: item?.Id || item?.id,
-            unitId: item?.Id || item?.id,
-            uom: item?.UOM || item?.uom || '',
-          }))
+          label:
+            item?.Unit || item?.unit || item?.name || item?.displayName || '',
+          value: item?.Unit || item?.unit || item?.id || item?.Id || '',
+          id: item?.Id || item?.id,
+          unitId: item?.Id || item?.id,
+          uom: item?.UOM || item?.uom || '',
+        }))
         : []
       setUnitDropdown(formattedOptions)
     } catch (error) {
@@ -512,6 +514,7 @@ const JwBudgetScreen = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
+    downloadExcelBtnFromUI: true,
     showExport: false,
     showImport: false,
     showCalculate: false,
@@ -521,6 +524,7 @@ const JwBudgetScreen = () => {
     titleName: 'SEZ Job Work Throughput',
     showDropdown: false,
     remarksEditable: true,
+    makePagable: false,
   }
 
   return (
@@ -550,6 +554,8 @@ const JwBudgetScreen = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        pagable={false}
+        customHeight={80}
       />
     </Box>
   )

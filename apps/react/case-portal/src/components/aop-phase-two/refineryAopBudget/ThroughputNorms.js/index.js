@@ -147,8 +147,8 @@ const ThroughputNormsScreen = () => {
     {
       field: 'unit',
       title: 'Unit',
-      widthT: 250,
-      minWidth: 200,
+      widthT: 120,
+      minWidth: 120,
       type: 'customSelect',
       cellEditor: ThroughputNormsSelectCellEditor,
       dynamicOptions: true,
@@ -159,8 +159,8 @@ const ThroughputNormsScreen = () => {
     {
       field: 'displayName',
       title: 'Material Code',
-      widthT: 250,
-      minWidth: 200,
+      widthT: 120,
+      minWidth: 120,
       type: 'customSelect',
       cellEditor: ThroughputNormsSelectCellEditor,
       dynamicOptions: true,
@@ -172,8 +172,9 @@ const ThroughputNormsScreen = () => {
     {
       field: 'uom',
       title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
+      widthT: 80,
+      minWidth: 80,
+      width: 80,
       type: 'text',
       editable: false,
       locked: true,
@@ -644,6 +645,7 @@ const ThroughputNormsScreen = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
+    downloadExcelBtnFromUI: true,
     showExport: false,
     showImport: false,
     showCalculate: false,
@@ -653,6 +655,7 @@ const ThroughputNormsScreen = () => {
     titleName: 'SEZ Job Work Norms',
     showDropdown: false,
     remarksEditable: true,
+    makePagable: false,
   }
 
   return (
@@ -682,6 +685,8 @@ const ThroughputNormsScreen = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        pagable={false}
+        customHeight={80}
       />
     </Box>
   )

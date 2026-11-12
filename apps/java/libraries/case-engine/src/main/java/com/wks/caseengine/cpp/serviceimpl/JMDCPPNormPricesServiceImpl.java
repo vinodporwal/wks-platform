@@ -2327,6 +2327,16 @@ public class JMDCPPNormPricesServiceImpl implements JMDCPPNormPricesService {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql.toString(), params.toArray());
             log.info("[RPOMonthlyConfig] GET - query returned {} records", rows.size());
 
+            // ── CARRY-FORWARD: clone previous FY rows (zeroed monthly values) if requested FY is empty ──
+            if (rows.isEmpty()) {
+                int carried = carryForwardRPOMonthlyConfig(aopYear, plantId);
+                if (carried > 0) {
+                    rows = jdbcTemplate.queryForList(sql.toString(), params.toArray());
+                    log.info("[RPOMonthlyConfig] GET - carry-forward inserted {} records; re-query returned {} rows",
+                            carried, rows.size());
+                }
+            }
+
             List<CPPRPOMonthlyConfigRequestDTO> dtoList = new ArrayList<>();
             for (Map<String, Object> row : rows) {
                 dtoList.add(mapRowToRPOMonthlyConfigDto(row));
@@ -2574,6 +2584,94 @@ public class JMDCPPNormPricesServiceImpl implements JMDCPPNormPricesService {
         dto.setModifiedBy(getStringValue(row, "ModifiedBy"));
 
         return dto;
+    }
+
+    // ── Carry-forward: clone previous FY rows with zeroed monthly values ─────
+
+    private int carryForwardRPOMonthlyConfig(String aopYear, UUID plantId) {
+        String previousYear = derivePreviousFinancialYear(aopYear);
+        if (previousYear == null) {
+            log.warn("[RPOMonthlyConfig] Could not derive previous financial year from '{}'. Skipping carry-forward.", aopYear);
+            return 0;
+        }
+
+        boolean hasRemarks = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "Remarks");
+        boolean hasCreatedBy = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "CreatedBy");
+        boolean hasModifiedBy = isColumnPresent("dbo.CPP_RPOMonthlyConfiguration", "ModifiedBy");
+
+        StringBuilder insertCols = new StringBuilder(
+                "Id, CPPPlantId, Name, DisplayName, Type, AOPYear, " +
+                "Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec], Jan, Feb, Mar, IsActive, CreatedAt");
+        StringBuilder selectCols = new StringBuilder(
+                "NEWID(), prev.CPPPlantId, prev.Name, prev.DisplayName, prev.Type, ?, " +
+                "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, GETDATE()");
+
+        List<Object> params = new ArrayList<>();
+        params.add(aopYear);
+
+        if (hasRemarks) {
+            insertCols.append(", Remarks");
+            selectCols.append(", NULL");
+        }
+        if (hasCreatedBy) {
+            insertCols.append(", CreatedBy");
+            selectCols.append(", NULL");
+        }
+        if (hasModifiedBy) {
+            insertCols.append(", ModifiedBy");
+            selectCols.append(", NULL");
+        }
+
+        StringBuilder sql = new StringBuilder(
+                "INSERT INTO dbo.CPP_RPOMonthlyConfiguration (" + insertCols + ") " +
+                "SELECT " + selectCols + " " +
+                "FROM dbo.CPP_RPOMonthlyConfiguration prev " +
+                "WHERE prev.AOPYear = ? AND prev.IsActive = 1 ");
+        params.add(previousYear);
+
+        if (plantId != null) {
+            sql.append("AND prev.CPPPlantId = ? ");
+            params.add(plantId.toString());
+        } else {
+            sql.append("AND prev.CPPPlantId IS NULL ");
+        }
+
+        sql.append("AND NOT EXISTS ( " +
+                "SELECT 1 FROM dbo.CPP_RPOMonthlyConfiguration curr " +
+                "WHERE curr.AOPYear = ? ");
+        params.add(aopYear);
+        if (plantId != null) {
+            sql.append("AND curr.CPPPlantId = ? ");
+            params.add(plantId.toString());
+        } else {
+            sql.append("AND curr.CPPPlantId IS NULL ");
+        }
+        sql.append(")");
+
+        int inserted = jdbcTemplate.update(sql.toString(), params.toArray());
+        log.info("[RPOMonthlyConfig] Carry-forward from {} to {} inserted {} records (plantId: {})",
+                previousYear, aopYear, inserted, plantId);
+        return inserted;
+    }
+
+    /**
+     * Derives the previous financial year string.
+     * Expected format: "YYYY-YY" (e.g. "2026-27" → "2025-26", "2025-26" → "2024-25").
+     * Returns null if the format is unrecognised.
+     */
+    private String derivePreviousFinancialYear(String financialYear) {
+        try {
+            String[] parts = financialYear.split("-");
+            if (parts.length != 2) return null;
+            int startYear = Integer.parseInt(parts[0]);
+            int prevStart = startYear - 1;
+            int prevEnd = prevStart + 1;
+            String prevEndSuffix = String.format("%02d", prevEnd % 100);
+            return prevStart + "-" + prevEndSuffix;
+        } catch (Exception e) {
+            log.warn("[RPOMonthlyConfig] Could not parse financial year '{}': {}", financialYear, e.getMessage());
+            return null;
+        }
     }
 
     private boolean isColumnPresent(String tableName, String columnName) {

@@ -674,6 +674,12 @@ public class JMDSpinningMarginReportServiceImpl implements JMDSpinningMarginRepo
             CellStyle subHeaderStyle = createSubHeaderStyle(workbook);
             CellStyle textStyle = createDataStyle(workbook);
             CellStyle numericStyle = createNumericStyle(workbook);
+            // Red-font variant of the numeric style — applied to Maintained cells
+            // whose value is below the corresponding Target for that month.
+            CellStyle numericRedStyle = createNumericStyle(workbook);
+            Font redFont = workbook.createFont();
+            redFont.setColor(IndexedColors.RED.getIndex());
+            numericRedStyle.setFont(redFont);
             CellStyle remarksStyle = createRemarksStyle(workbook);
             CellStyle errorStyle = isErrorExcel ? ExcelStyles.createErrorStyle(workbook) : null;
 
@@ -838,11 +844,19 @@ public class JMDSpinningMarginReportServiceImpl implements JMDSpinningMarginRepo
 
                 for (int i = 0; i < 12; i++) {
 
+                    // Maintained < Target → red text (same rule as the UI grid)
+                    Double maintainedVal = maintainedValues[i];
+                    Double targetVal = targetValues[i];
+                    CellStyle maintainedStyle =
+                            (maintainedVal != null && targetVal != null && maintainedVal < targetVal)
+                                    ? numericRedStyle
+                                    : numericStyle;
+
                     createNumericCell(
                             row,
                             dataCol++,
-                            maintainedValues[i],
-                            numericStyle);
+                            maintainedVal,
+                            maintainedStyle);
 
                     createNumericCell(
                             row,
@@ -1308,7 +1322,8 @@ public class JMDSpinningMarginReportServiceImpl implements JMDSpinningMarginRepo
     }
 
     private CellStyle createNumericStyle(Workbook workbook) {
-        CellStyle style = ExcelStyles.createNumericStyle(workbook, "0.##########");
+        CellStyle style = ExcelStyles.createDataStyle(workbook);
+        style.setDataFormat((short) 0);
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
         return style;

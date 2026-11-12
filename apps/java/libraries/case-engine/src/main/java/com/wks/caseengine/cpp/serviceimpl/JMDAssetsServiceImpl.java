@@ -515,6 +515,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         dto.setPlantName(projection.getPlantName());
         dto.setAssetType(projection.getAssetType());
 
+        dto.setLinkedPowerAssetFkId(projection.getLinkedPowerAssetFkId());
+        dto.setLinkedSteamAssetFkId(projection.getLinkedSteamAssetFkId());
+        dto.setLinkedSteamAssetName(projection.getLinkedSteamAssetName());
+
         return dto;
     }
 
@@ -652,10 +656,21 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 logger.info("[POST Service] No steam operational hours to process");
             }
 
-            // Sync linked GT/HRSG operational hours
-            int cascadeSynced = syncLinkedOperationalHours(payload, financialYear);
+            // Sync linked GT/HRSG operational hours (GT → HRSG via LinkedPowerAsset_FK_ID)
+            // syncedSteamKeys collects the plantId:assetFkId of every HRSG updated by the
+            // GT cascade so the steam→steam sync below can propagate those values further.
+            Set<String> syncedSteamKeys = new HashSet<>();
+            int cascadeSynced = syncLinkedOperationalHours(payload, financialYear, syncedSteamKeys);
             if (cascadeSynced > 0) {
                 logger.info("[POST Service] Cascade-synced {} linked operational hours records", cascadeSynced);
+            }
+
+            // Sync linked steam→steam operational hours (e.g. LP STEAM follows HP/SHP STEAM
+            // via LinkedSteamAsset_FK_ID). Runs AFTER the GT→HRSG sync so children of an
+            // HRSG receive the already-synced values.
+            int steamCascadeSynced = syncLinkedSteamOperationalHours(payload, financialYear, syncedSteamKeys);
+            if (steamCascadeSynced > 0) {
+                logger.info("[POST Service] Cascade-synced {} steam→steam operational hours records", steamCascadeSynced);
             }
 
             Map<String, Object> data = new HashMap<>();
@@ -668,6 +683,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             data.put("importAssetsSkipped", importSkipped);
             data.put("totalSkipped", powerSkipped + steamSkipped + importSkipped);
             data.put("cascadeSynced", cascadeSynced);
+            data.put("steamCascadeSynced", steamCascadeSynced);
             
             if (!missingIdRecords.isEmpty()) {
                 data.put("skippedRecords", missingIdRecords);
@@ -788,20 +804,43 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         
         CPPSteamAssetsOperationalHours entity = optionalEntity.get();
 
-        // Skip saving HRSG assets that are linked to a GT via LinkedPowerAsset_FK_ID.
-        // These HRSGs follow their linked GT's operational hours (one-way sync) and
+        // Populate plantFkId and assetFkId on the DTO from the DB entity so that
+        // the steam→steam sync (which indexes by plantId:assetFkId) works for
+        // Excel imports where these fields may not be present in the file.
+        // Done BEFORE the linked-asset skip below so a linked asset that is
+        // itself a parent still propagates its (synced) values to its children.
+        if (dto.getPlantFkId() == null) {
+            dto.setPlantFkId(entity.getPlantFkId());
+        }
+        if (dto.getAssetFkId() == null) {
+            dto.setAssetFkId(entity.getSteamAssetFkId());
+        }
+
+        // Skip saving steam assets that are linked to a parent asset:
+        //  - LinkedPowerAsset_FK_ID → HRSG linked to a GT (GT→HRSG sync)
+        //  - LinkedSteamAsset_FK_ID → steam asset linked to another steam asset
+        //    e.g. LP STEAM follows HP/SHP STEAM (steam→steam sync)
+        // These assets follow their parent's operational hours (one-way sync) and
         // should not be independently updated from grid save or Excel import.
         UUID steamAssetId = entity.getSteamAssetFkId();
         if (steamAssetId != null) {
             try {
                 var linkedAsset = cppSteamGenerationAssetRepository.findById(steamAssetId);
-                if (linkedAsset.isPresent() && linkedAsset.get().getLinkedPowerAssetFkId() != null) {
-                    logger.info("[POST Service - Steam] Skipping HRSG {} (linked to GT {}) — values controlled by GT sync",
-                            steamAssetId, linkedAsset.get().getLinkedPowerAssetFkId());
-                    return true; // return true so it's not counted as skipped/failed
+                if (linkedAsset.isPresent()) {
+                    CppSteamGenerationAsset steamAsset = linkedAsset.get();
+                    if (steamAsset.getLinkedPowerAssetFkId() != null) {
+                        logger.info("[POST Service - Steam] Skipping HRSG {} (linked to GT {}) — values controlled by GT sync",
+                                steamAssetId, steamAsset.getLinkedPowerAssetFkId());
+                        return true; // return true so it's not counted as skipped/failed
+                    }
+                    if (steamAsset.getLinkedSteamAssetFkId() != null) {
+                        logger.info("[POST Service - Steam] Skipping steam asset {} (linked to steam asset {}) — values controlled by steam sync",
+                                steamAssetId, steamAsset.getLinkedSteamAssetFkId());
+                        return true; // return true so it's not counted as skipped/failed
+                    }
                 }
             } catch (Exception ex) {
-                logger.warn("[POST Service - Steam] Could not check linked GT for steam asset {}: {}", steamAssetId, ex.getMessage());
+                logger.warn("[POST Service - Steam] Could not check linked asset for steam asset {}: {}", steamAssetId, ex.getMessage());
             }
         }
 
@@ -833,7 +872,8 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
      * get the same monthly operational hours values.
      * Editing an HRSG directly does NOT cascade back to the GT.
      */
-    private int syncLinkedOperationalHours(JMDOperationalHoursRequestDTO payload, String financialYear) {
+    private int syncLinkedOperationalHours(JMDOperationalHoursRequestDTO payload, String financialYear,
+                                           Set<String> syncedSteamKeys) {
         int cascadeCount = 0;
         Set<String> processedGroups = new HashSet<>();
 
@@ -910,12 +950,137 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                         hrsg.setUpdatedDate(LocalDateTime.now());
                         steamRepository.save(hrsg);
                         cascadeCount++;
+                        // Record this HRSG as changed so steam→steam children can pick up the new values
+                        if (syncedSteamKeys != null) {
+                            syncedSteamKeys.add(plantId + ":" + hrsgId);
+                        }
                         logger.info("[Sync] Updated HRSG {} to match GT {} values", hrsgId, gtAssetId);
                     } else {
                         logger.warn("[Sync] No operational hours record found for HRSG {} plant {} year {}",
                                 hrsgId, plantId, financialYear);
                     }
                 }
+            }
+        }
+
+        return cascadeCount;
+    }
+
+    /**
+     * Sync operational hours from a parent steam asset to its linked child steam
+     * assets — one-way, via CPPSteamGenerationAsset.LinkedSteamAsset_FK_ID.
+     * Example: AUXBOIL1_LP STEAM follows AUXBOIL1_HP STEAM / AUXBOIL1_SHP STEAM.
+     * Editing a child steam asset directly does NOT cascade back to the parent.
+     *
+     * Steps:
+     *  1. Build the set of "changed" steam assets for this request — every steam
+     *     row submitted in payload.steamResponse, plus any HRSG that was just
+     *     cascade-synced from a GT (passed in via gtSyncedSteamKeys).
+     *  2. For each changed asset, resolve its effective monthly values from the
+     *     CURRENT database row. Reading the DB (rather than the request DTO) is
+     *     deliberate: modified parents were already saved, GT-synced HRSGs were
+     *     just overwritten, and linked children whose submitted values were
+     *     skipped keep their synced values — so the DB always holds the truth.
+     *  3. Find child steam assets via LinkedSteamAsset_FK_ID and copy the parent's
+     *     Apr–Mar hours + remarks into each child's CPPSteamAssetsOperationalHours row.
+     *  4. Enqueue each updated child so multi-level chains (child → grandchild)
+     *     propagate within the same request. Iteration is capped to guard against
+     *     circular links; writes are idempotent so re-processing is harmless.
+     */
+    private int syncLinkedSteamOperationalHours(JMDOperationalHoursRequestDTO payload, String financialYear,
+                                                Set<String> gtSyncedSteamKeys) {
+        int cascadeCount = 0;
+
+        // ── Step 1: seed the work queue with changed steam assets ──────────────
+        // Key format: "plantId:assetFkId" (same convention as the GT→HRSG sync).
+        Set<String> queue = new HashSet<>();
+        if (payload.getSteamResponse() != null) {
+            for (CPPAssetOperationalHoursResponseDto dto : payload.getSteamResponse()) {
+                if (dto.getAssetFkId() != null && dto.getPlantFkId() != null) {
+                    queue.add(dto.getPlantFkId() + ":" + dto.getAssetFkId());
+                }
+            }
+        }
+        if (gtSyncedSteamKeys != null) {
+            queue.addAll(gtSyncedSteamKeys);
+        }
+        if (queue.isEmpty()) {
+            return 0;
+        }
+
+        // ── Steps 2–4: propagate parent → child, level by level ────────────────
+        // Cap iterations so a circular link (A→B→A) cannot loop forever.
+        final int MAX_ITERATIONS = 10;
+        for (int iteration = 0; iteration < MAX_ITERATIONS && !queue.isEmpty(); iteration++) {
+            Set<String> nextQueue = new HashSet<>();
+
+            for (String key : queue) {
+                String[] parts = key.split(":", 2);
+                if (parts.length != 2) continue;
+                UUID plantId;
+                UUID steamAssetId;
+                try {
+                    plantId = UUID.fromString(parts[0]);
+                    steamAssetId = UUID.fromString(parts[1]);
+                } catch (IllegalArgumentException ex) {
+                    logger.warn("[Steam Sync] Malformed queue key {}", key);
+                    continue;
+                }
+
+                // Step 2: parent's effective values = its current DB row
+                Optional<CPPSteamAssetsOperationalHours> parentOpt =
+                        steamRepository.findBySteamAssetFkIdAndPlantFkIdAndAopYear(steamAssetId, plantId, financialYear);
+                if (parentOpt.isEmpty()) {
+                    logger.warn("[Steam Sync] No operational hours record for parent steam asset {} plant {} year {}",
+                            steamAssetId, plantId, financialYear);
+                    continue;
+                }
+                CPPSteamAssetsOperationalHours parent = parentOpt.get();
+
+                // Step 3: find child steam assets linked to this parent
+                List<UUID> childIds;
+                try {
+                    childIds = cppSteamGenerationAssetRepository
+                            .findByLinkedSteamAssetFkIdAndCppPlantFkId(steamAssetId, plantId)
+                            .stream()
+                            .map(CppSteamGenerationAsset::getAssetId)
+                            .collect(Collectors.toList());
+                } catch (Exception ex) {
+                    logger.warn("[Steam Sync] Could not query linked steam assets for {} plant {}: {}",
+                            steamAssetId, plantId, ex.getMessage());
+                    continue;
+                }
+                if (childIds == null || childIds.isEmpty()) continue;
+
+                for (UUID childId : childIds) {
+                    Optional<CPPSteamAssetsOperationalHours> childOpt =
+                            steamRepository.findBySteamAssetFkIdAndPlantFkIdAndAopYear(childId, plantId, financialYear);
+                    if (childOpt.isPresent()) {
+                        CPPSteamAssetsOperationalHours child = childOpt.get();
+                        child.setApr(parent.getApr());  child.setMay(parent.getMay());  child.setJun(parent.getJun());
+                        child.setJul(parent.getJul());  child.setAug(parent.getAug());  child.setSep(parent.getSep());
+                        child.setOct(parent.getOct());  child.setNov(parent.getNov());  child.setDec(parent.getDec());
+                        child.setJan(parent.getJan());  child.setFeb(parent.getFeb());  child.setMar(parent.getMar());
+                        child.setRemarks(parent.getRemarks());
+                        child.setUpdatedDate(LocalDateTime.now());
+                        steamRepository.save(child);
+                        cascadeCount++;
+                        logger.info("[Steam Sync] Updated steam asset {} to match parent steam asset {} values",
+                                childId, steamAssetId);
+                    } else {
+                        logger.warn("[Steam Sync] No operational hours record found for steam asset {} plant {} year {}",
+                                childId, plantId, financialYear);
+                    }
+
+                    // Step 4: enqueue the child — if it is itself a parent, its own
+                    // children get the propagated values on the next iteration.
+                    nextQueue.add(plantId + ":" + childId);
+                }
+            }
+
+            queue = nextQueue;
+            if (iteration == MAX_ITERATIONS - 1 && !queue.isEmpty()) {
+                logger.warn("[Steam Sync] Hit iteration cap ({}); possible circular LinkedSteamAsset_FK_ID chain", MAX_ITERATIONS);
             }
         }
 
@@ -1068,7 +1233,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Generated Utility Code", headerStyle);
         col++;
         
-        // Month headers (each month spans 2 columns: Shut Down Hrs, Operational Hrs)
+        // Month headers (each month spans 2 columns: Shutdown Hrs, Operational Hrs)
         String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
                 "Aug-" + startYearSuffix, "Sep-" + startYearSuffix, "Oct-" + startYearSuffix, "Nov-" + startYearSuffix,
                 "Dec-" + startYearSuffix, "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix};
@@ -1104,10 +1269,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         currentRow++;
         col = monthStartCol;
         
-        // Sub-headers for each month (Shut Down Hrs, Operational Hrs)
+        // Sub-headers for each month (Shutdown Hrs, Operational Hrs)
         for (int i = 0; i < 12; i++) {
             Cell cell = subHeaderRow.createCell(col++);
-            cell.setCellValue("Shut Down Hrs");
+            cell.setCellValue("Shutdown Hrs");
             cell.setCellStyle(headerStyle);
             
             cell = subHeaderRow.createCell(col++);
@@ -1129,48 +1294,57 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             col = 0;
             logger.debug("[Excel Generation] Writing row {} for asset: {}", rowCount, dto.getAssetName());
 
-            createCell(row, col++, dto.getAssetName(), dataStyle);
-            createCell(row, col++, dto.getAssetType(), dataStyle);
-            createCell(row, col++, dto.getPlantName(), dataStyle);
-            createCell(row, col++, dto.getUtilityDistributed(), dataStyle);
-            createCell(row, col++, dto.getDistributedSapCode(), dataStyle);
-            createCell(row, col++, dto.getUtilityGenerated(), dataStyle);
-            createCell(row, col++, dto.getGeneratedUtilityCode(), dataStyle);
-            
+            // Only editable cells stay white/unlocked — everything else is
+            // greyed/locked so users can see at a glance what can be changed.
+            // Linked (dependent) assets — HRSG→GT or steam→steam — have NO
+            // editable cells at all, so their entire row is greyed.
+            boolean isLinkedRow = dto.getLinkedPowerAssetFkId() != null
+                    || dto.getLinkedSteamAssetFkId() != null;
+            CellStyle rowDataStyle = lockedStyle;
+            CellStyle shutdownCellStyle = isLinkedRow ? lockedStyle : unlockedStyle;
+
+            createCell(row, col++, dto.getAssetName(), rowDataStyle);
+            createCell(row, col++, dto.getAssetType(), rowDataStyle);
+            createCell(row, col++, dto.getPlantName(), rowDataStyle);
+            createCell(row, col++, dto.getUtilityDistributed(), rowDataStyle);
+            createCell(row, col++, dto.getDistributedSapCode(), rowDataStyle);
+            createCell(row, col++, dto.getUtilityGenerated(), rowDataStyle);
+            createCell(row, col++, dto.getGeneratedUtilityCode(), rowDataStyle);
+
             // Monthly hours with formulas (convert operational to shutdown for export)
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getApr(), totalHoursByMonth.get("apr")), totalHoursByMonth.get("apr"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getApr(), totalHoursByMonth.get("apr")), totalHoursByMonth.get("apr"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getMay(), totalHoursByMonth.get("may")), totalHoursByMonth.get("may"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getMay(), totalHoursByMonth.get("may")), totalHoursByMonth.get("may"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJun(), totalHoursByMonth.get("jun")), totalHoursByMonth.get("jun"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJun(), totalHoursByMonth.get("jun")), totalHoursByMonth.get("jun"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJul(), totalHoursByMonth.get("jul")), totalHoursByMonth.get("jul"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJul(), totalHoursByMonth.get("jul")), totalHoursByMonth.get("jul"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getAug(), totalHoursByMonth.get("aug")), totalHoursByMonth.get("aug"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getAug(), totalHoursByMonth.get("aug")), totalHoursByMonth.get("aug"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getSep(), totalHoursByMonth.get("sep")), totalHoursByMonth.get("sep"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getSep(), totalHoursByMonth.get("sep")), totalHoursByMonth.get("sep"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getOct(), totalHoursByMonth.get("oct")), totalHoursByMonth.get("oct"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getOct(), totalHoursByMonth.get("oct")), totalHoursByMonth.get("oct"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getNov(), totalHoursByMonth.get("nov")), totalHoursByMonth.get("nov"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getNov(), totalHoursByMonth.get("nov")), totalHoursByMonth.get("nov"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getDec(), totalHoursByMonth.get("dec")), totalHoursByMonth.get("dec"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getDec(), totalHoursByMonth.get("dec")), totalHoursByMonth.get("dec"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJan(), totalHoursByMonth.get("jan")), totalHoursByMonth.get("jan"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJan(), totalHoursByMonth.get("jan")), totalHoursByMonth.get("jan"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getFeb(), totalHoursByMonth.get("feb")), totalHoursByMonth.get("feb"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getFeb(), totalHoursByMonth.get("feb")), totalHoursByMonth.get("feb"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getMar(), totalHoursByMonth.get("mar")), totalHoursByMonth.get("mar"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getMar(), totalHoursByMonth.get("mar")), totalHoursByMonth.get("mar"), excelRowNum, shutdownCellStyle, lockedStyle);
             col += 2;
-            
-            createCell(row, col++, dto.getRemarks(), editableRemarksStyle);
-            createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
-            createCell(row, col++, dto.getAssetFkId() != null ? dto.getAssetFkId().toString() : "", dataStyle);
-            createCell(row, col++, dto.getAssetCategory(), dataStyle);
-            
+
+            createCell(row, col++, dto.getRemarks(), isLinkedRow ? lockedStyle : editableRemarksStyle);
+            createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", rowDataStyle);
+            createCell(row, col++, dto.getAssetFkId() != null ? dto.getAssetFkId().toString() : "", rowDataStyle);
+            createCell(row, col++, dto.getAssetCategory(), rowDataStyle);
+
             // Generate and store hashcode from operational hours + remarks
             String dataHash = generateOperationalHoursHash(dto);
-            createCell(row, col++, dataHash, dataStyle);
+            createCell(row, col++, dataHash, rowDataStyle);
         }
 
         // Hide ID columns and hashcode column
@@ -1294,7 +1468,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         
         for (int i = 0; i < 12; i++) {
             Cell cell = subHeaderRow.createCell(col++);
-            cell.setCellValue("Shut Down Hrs");
+            cell.setCellValue("Shutdown Hrs");
             cell.setCellStyle(headerStyle);
             
             cell = subHeaderRow.createCell(col++);

@@ -233,7 +233,10 @@ const STGGrid = ({
       ...row,
       id: row.id || index + 1,
       remarks: row.remarks || '',
-      isEditable: row.assetType === 'HRSG' ? false : true,
+      // Linked (dependent) assets are read-only: linkedPowerAssetFkId → HRSG
+      // follows its GT; linkedSteamAssetFkId → e.g. LP STEAM follows HP/SHP STEAM.
+      isEditable:
+        row.linkedPowerAssetFkId || row.linkedSteamAssetFkId ? false : true,
     }))
     setRows(rowsWithIds)
     setOriginalRows(rowsWithIds)
@@ -252,7 +255,7 @@ const STGGrid = ({
     ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: false,
-    note: ' HRSG operational hours are auto-synced with their linked GT assets.',
+    note: " Linked assets are synchronized with their respective assets' operational hours.",
   }
 
   const saveChanges = async () => {

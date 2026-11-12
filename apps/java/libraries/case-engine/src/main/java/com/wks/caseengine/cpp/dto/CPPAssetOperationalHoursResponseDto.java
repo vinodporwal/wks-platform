@@ -45,4 +45,11 @@ public class CPPAssetOperationalHoursResponseDto {
     private String plantName;
     private String assetType;
     private String assetCategory;
+
+    // Parent assets this asset follows. linkedPowerAssetFkId → GT (HRSG),
+    // linkedSteamAssetFkId → parent steam asset (e.g. LP STEAM → HP/SHP STEAM).
+    // When set, the row is read-only in UI/Excel and its hours are synced.
+    private UUID linkedPowerAssetFkId;
+    private UUID linkedSteamAssetFkId;
+    private String linkedSteamAssetName;
 }
