@@ -71,7 +71,7 @@ const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => 
 // ---- TGC2 Online/Offline helpers ----
 const getTgcType = (row) => {
   const name = row.displayName?.toLowerCase() || ''
-  if (!name.includes('tgc') || row.displayName === TGC2_TOGGLE_ROW) return null
+  if (!name.includes('tgc2') || row.displayName === TGC2_TOGGLE_ROW) return null
   if (name.includes('online')) return 'Online'
   if (name.includes('offline')) return 'Offline'
   return null

@@ -246,7 +246,7 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, , isC2UnitPlants],
+    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, isC2UnitPlants],
   )
 
   const columns = useMemo(() => {
