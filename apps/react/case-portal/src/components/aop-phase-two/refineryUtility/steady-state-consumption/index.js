@@ -39,7 +39,8 @@ const ThreeDecimalUomM3= [
     'KWH/m3',
     'm3/m3',
     'MT/m3',
-    'Nm3/m3'
+    'Nm3/m3',
+    'MW/m3'
 ]
 const normalizeKey = (s) =>
   String(s ?? '')
@@ -146,6 +147,7 @@ const isDtaUnitPlant =
     plantName.toLowerCase() === 'wao_unit (672)')
 const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
 const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
+const ISETP_Plants=siteName.toLowerCase() === 'etp'
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -192,6 +194,19 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
         )
         if (isThreeDecimal) {
           return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
+      if ( ISETP_Plants) {
+        // Decide by normParameterTypeName (or display name), not by UOM
+        const cleanUom = String(uom ?? '')
+          .trim()
+          .toLowerCase()
+        const isThreeDecimal = ThreeDecimalUomM3.some(
+          (u) => u.trim().toLowerCase() === cleanUom,
+        )
+        if (isThreeDecimal) {
+          return (Math.trunc(num * 1000) / 1000).toFixed(5)
         }
         return Math.trunc(num).toString()
       }
@@ -246,7 +261,7 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, , isC2UnitPlants],
+    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants],
   )
 
   const columns = useMemo(() => {
@@ -418,13 +433,13 @@ const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants])
+  }, [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants])
 
   const fetchData = async () => {
     setLoading(true)

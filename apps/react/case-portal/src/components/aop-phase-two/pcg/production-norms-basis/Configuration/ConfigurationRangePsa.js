@@ -71,7 +71,7 @@ const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => 
 // ---- TGC2 Online/Offline helpers ----
 const getTgcType = (row) => {
   const name = row.displayName?.toLowerCase() || ''
-  if (!name.includes('tgc') || row.displayName === TGC2_TOGGLE_ROW) return null
+  if (!name.includes('tgc2') || row.displayName === TGC2_TOGGLE_ROW) return null
   if (name.includes('online')) return 'Online'
   if (name.includes('offline')) return 'Offline'
   return null
@@ -182,14 +182,10 @@ const ConfigurationRangePsa = ({ refreshData }) => {
 
     setLoading(true)
 
-    const payload = modifiedData.map(({
-  type, options, nonEditableFields, editableFields,
-  hideCheckbox, hideCheckBox, isApiEditable,
-  ...rest
-}) => ({
-  ...rest,
-  isEditable: isApiEditable !== undefined ? isApiEditable : rest.isEditable,
-}))
+    const payload = modifiedData.map((rest) => ({
+      ...rest,
+      isEditable: rest.isApiEditable !== undefined ? rest.isApiEditable : rest.isEditable,
+    }))
 
     try {
       const response = await ProductionNormsApiService.saveConfigurationData(keycloak, AOP_YEAR, payload, PLANT_ID)

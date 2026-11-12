@@ -7,25 +7,8 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/input
 import { FuelAvailabilityAPIService } from 'components/aop-phase-two/services/cpp/jmd/fuelAvailabilityAPIService'
 import { useDebounce } from 'hooks/useDebounce'
 
-const MONTH_FIELDS = [
-  'apr',
-  'may',
-  'jun',
-  'jul',
-  'aug',
-  'sep',
-  'oct',
-  'nov',
-  'dec',
-  'jan',
-  'feb',
-  'mar',
-]
-
 // Type used to filter fuel availability transaction rows (same as Fuel tab)
 const DATA_TYPE = 'FUEL_AVAILABILITY'
-
-const isFuelAvailableForMonth = () => true
 
 const FuelPriority = () => {
   const keycloak = useSession()
@@ -95,6 +78,11 @@ const FuelPriority = () => {
     [PLANT_ID_LIST, AOP_YEAR, fetchAvailability],
   )
 
+  // plantFuelMap = { plantName -> [fuelOption, ...] }
+  // The fuel list is the same for every month — months in the availability
+  // grid only carry quantities, not per-month fuel restrictions.
+  // Keyed under the plant name and cppPlantFkId so lookups by asset rows
+  // always hit regardless of name mismatches.
   const plantFuelMap = useMemo(() => {
     if (!fuelOptions.length || !availabilityRows.length) return {}
     const map = {}
@@ -109,18 +97,15 @@ const FuelPriority = () => {
             plantObject?.name,
             plantObject?.displayName,
             row.cppPlantName,
+            row.cppPlantFkId,
           ].filter(Boolean),
         ),
       ]
       keys.forEach((key) => {
-        if (!map[key]) map[key] = {}
-        MONTH_FIELDS.forEach((mon) => {
-          if (!isFuelAvailableForMonth(row, mon)) return
-          if (!map[key][mon]) map[key][mon] = []
-          if (!map[key][mon].some((o) => o.value === fuel.value)) {
-            map[key][mon].push(fuel)
-          }
-        })
+        if (!map[key]) map[key] = []
+        if (!map[key].some((o) => o.value === fuel.value)) {
+          map[key].push(fuel)
+        }
       })
     })
     return map

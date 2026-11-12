@@ -4,6 +4,7 @@ import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/g
 import { useSelector } from 'react-redux'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 // Read-only USD view of the JMD Fuel Cost grid. Receives the already-fetched
 // INR rows + exchange rate from the parent — no API calls here. USD = INR / rate
@@ -12,6 +13,7 @@ const FuelAvailabilityCostUSD = ({ rows = [], exchangeRate }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { year } = dataGridStore
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Fuel_Availability_Cost_USD')
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   // 4 decimals — 2 decimals loses too much precision (e.g. 34/93 = 0.3656
@@ -112,6 +114,7 @@ const FuelAvailabilityCostUSD = ({ rows = [], exchangeRate }) => {
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
+    ExcelName: EXCEL_NAME,
     titleName: `Fuel Cost (In $/MMBTU${rate ? `, 1$ = ${exchangeRate} INR` : ''})`,
   }
 

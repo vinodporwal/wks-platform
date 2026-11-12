@@ -66,7 +66,11 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
             THEN TRY_CAST(RIGHT(pga.DisplayName,
                     LEN(pga.DisplayName) - CHARINDEX('-', pga.DisplayName)) AS INT)
             ELSE 0
-        END AS nameNumber
+        END AS nameNumber,
+
+        CAST(NULL AS UNIQUEIDENTIFIER) AS linkedPowerAssetFkId,
+        CAST(NULL AS UNIQUEIDENTIFIER) AS linkedSteamAssetFkId,
+        CAST(NULL AS NVARCHAR(200))    AS linkedSteamAssetName
 
         FROM [dbo].[CPPAssetOperationalHours] h WITH(NOLOCK)
 
@@ -133,12 +137,20 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
                 THEN TRY_CAST(RIGHT(sga.DisplayName,
                         LEN(sga.DisplayName) - CHARINDEX('-', sga.DisplayName)) AS INT)
                 ELSE 0
-            END AS nameNumber
+            END AS nameNumber,
+
+            sga.LinkedPowerAsset_FK_ID  AS linkedPowerAssetFkId,
+            sga.LinkedSteamAsset_FK_ID  AS linkedSteamAssetFkId,
+            sgp.AssetName               AS linkedSteamAssetName
 
         FROM [dbo].[CPPSteamAssetsOperationalHours] sh WITH(NOLOCK)
 
         LEFT JOIN [dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
             ON sga.AssetId = sh.SteamAsset_FK_Id
+
+        -- Parent steam asset (e.g. HP/SHP STEAM) that this steam asset follows
+        LEFT JOIN [dbo].[CPPSteamGenerationAsset] sgp WITH(NOLOCK)
+            ON sgp.AssetId = sga.LinkedSteamAsset_FK_ID
 
         LEFT JOIN NormParameters npg2 WITH(NOLOCK)
             ON npg2.Id = sga.UtilityGeneration_FK_Id
@@ -182,7 +194,10 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
         assetName,
         assetType,
         plantName,
-        assetCategory
+        assetCategory,
+        linkedPowerAssetFkId,
+        linkedSteamAssetFkId,
+        linkedSteamAssetName
     FROM Combined
     ORDER BY
         categoryOrder,
@@ -243,7 +258,10 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
                     THEN TRY_CAST(RIGHT(pga.DisplayName,
                             LEN(pga.DisplayName) - CHARINDEX('-', pga.DisplayName)) AS INT)
                     ELSE 0
-                END AS nameNumber
+                END AS nameNumber,
+                CAST(NULL AS UNIQUEIDENTIFIER) AS linkedPowerAssetFkId,
+                CAST(NULL AS UNIQUEIDENTIFIER) AS linkedSteamAssetFkId,
+                CAST(NULL AS NVARCHAR(200))    AS linkedSteamAssetName
             FROM PowerGenerationAssets pga WITH(NOLOCK)
             LEFT JOIN Plants pl  WITH(NOLOCK) ON pl.Id  = pga.CPPPLANT_FK_Id
             LEFT JOIN NormParameters npg WITH(NOLOCK) ON npg.Id = pga.UtilityGeneration_FK_Id
@@ -294,8 +312,14 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
                     THEN TRY_CAST(RIGHT(sga.DisplayName,
                             LEN(sga.DisplayName) - CHARINDEX('-', sga.DisplayName)) AS INT)
                     ELSE 0
-                END AS nameNumber
+                END AS nameNumber,
+                sga.LinkedPowerAsset_FK_ID  AS linkedPowerAssetFkId,
+                sga.LinkedSteamAsset_FK_ID  AS linkedSteamAssetFkId,
+                sgp.AssetName               AS linkedSteamAssetName
             FROM [dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
+            -- Parent steam asset (e.g. HP/SHP STEAM) that this steam asset follows
+            LEFT JOIN [dbo].[CPPSteamGenerationAsset] sgp WITH(NOLOCK)
+                ON sgp.AssetId = sga.LinkedSteamAsset_FK_ID
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON pl2.Id = sga.CPPPLANT_FK_Id
             LEFT JOIN NormParameters npg2 WITH(NOLOCK) ON npg2.Id = sga.UtilityGeneration_FK_Id
             LEFT JOIN NormParameters npd2 WITH(NOLOCK) ON npd2.Id = sga.UtilityDistributed_FK_Id
@@ -306,7 +330,8 @@ public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAss
             utilityGenerated, generatedUtilityCode,
             apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar,
             aopYear, remarks, siteFkId, verticalFkId, plantFkId,
-            createdDate, modifiedDate, assetName, assetType, plantName, assetCategory
+            createdDate, modifiedDate, assetName, assetType, plantName, assetCategory,
+            linkedPowerAssetFkId, linkedSteamAssetFkId, linkedSteamAssetName
         FROM AssetBase
         ORDER BY categoryOrder, plantName, namePrefix, nameNumber, sortDisplayName;
         """, nativeQuery = true)
