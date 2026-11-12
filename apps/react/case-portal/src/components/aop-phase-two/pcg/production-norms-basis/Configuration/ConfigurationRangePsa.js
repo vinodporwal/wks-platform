@@ -182,14 +182,10 @@ const ConfigurationRangePsa = ({ refreshData }) => {
 
     setLoading(true)
 
-    const payload = modifiedData.map(({
-  type, options, nonEditableFields, editableFields,
-  hideCheckbox, hideCheckBox, isApiEditable,
-  ...rest
-}) => ({
-  ...rest,
-  isEditable: isApiEditable !== undefined ? isApiEditable : rest.isEditable,
-}))
+    const payload = modifiedData.map((rest) => ({
+      ...rest,
+      isEditable: rest.isApiEditable !== undefined ? rest.isApiEditable : rest.isEditable,
+    }))
 
     try {
       const response = await ProductionNormsApiService.saveConfigurationData(keycloak, AOP_YEAR, payload, PLANT_ID)

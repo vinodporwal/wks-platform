@@ -12,10 +12,11 @@ const Configuration = (props) => {
   const site = siteObject?.name?.toLowerCase()?.trim()
   const plant = plantObject?.name?.toLowerCase()?.trim()
   const IS_PCG_DTA_PSA = vertical === 'pcg' && site === 'dta' && plant === 'psa'
+  const IS_PCG_SEZ_PSA = vertical === 'pcg' && site === 'sez' && plant === 'psa'
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {IS_PCG_DTA_PSA ? (
+      {IS_PCG_DTA_PSA || IS_PCG_SEZ_PSA ? (
         <ConfigurationRangePsa/>
       ) : (
         <ConfigurationRange/>
