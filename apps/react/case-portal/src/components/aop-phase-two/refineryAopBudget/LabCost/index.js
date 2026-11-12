@@ -112,8 +112,8 @@ const LabCostScreen = () => {
     {
       field: 'costCenterDescription',
       title: 'Cost Center Description',
-      widthT: 380,
-      minWidth: 320,
+      widthT: 180,
+      minWidth: 180,
       type: 'customSelect',
       cellEditor: CostCenterSelectCellEditor,
       editable: !READ_ONLY,
@@ -124,8 +124,8 @@ const LabCostScreen = () => {
     {
       field: 'material',
       title: 'Material',
-      widthT: 220,
-      minWidth: 180,
+      widthT: 150,
+      minWidth: 150,
       type: 'customSelect',
       cellEditor: CostCenterSelectCellEditor,
       editable: !READ_ONLY,
@@ -136,8 +136,9 @@ const LabCostScreen = () => {
     {
       field: 'uom',
       title: 'UOM',
-      widthT: 100,
-      minWidth: 90,
+      widthT: 80,
+      minWidth: 80,
+      width: 80,
       type: 'text',
       editable: false,
       locked: true,
@@ -585,6 +586,7 @@ const LabCostScreen = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
+    downloadExcelBtnFromUI: true,
     showExport: false,
     showImport: false,
     showCalculate: false,
@@ -594,6 +596,7 @@ const LabCostScreen = () => {
     titleName: 'Lab Cost',
     showDropdown: false,
     remarksEditable: true,
+    makePagable: false,
   }
 
   return (
@@ -626,6 +629,8 @@ const LabCostScreen = () => {
         openReleaseDialogBox={openReleaseDialogBox}
         setOpenReleaseDialogBox={setOpenReleaseDialogBox}
         isReleaseDisabled={isReleaseDisabled}
+        pagable={false}
+        customHeight={80}
       />
       {openReleaseDialogBox && (
         <ReleaseDialog
