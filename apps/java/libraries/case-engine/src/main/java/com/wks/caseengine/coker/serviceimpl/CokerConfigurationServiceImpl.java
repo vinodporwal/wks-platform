@@ -849,6 +849,23 @@ private boolean isRemarkValidationPassed(String newValue, String existingValue, 
                     }
                 }
                 dto.setIsEditable(isEditable);
+                Integer isColVisible = null;
+                Object colVisibleVal = row.get("IsColVisible") != null ? row.get("IsColVisible") : row.get("isColVisible");
+                if (colVisibleVal != null) {
+                    if (colVisibleVal instanceof Number) {
+                        isColVisible = ((Number) colVisibleVal).intValue();
+                    } else if (colVisibleVal instanceof Boolean) {
+                        isColVisible = ((Boolean) colVisibleVal) ? 1 : 0;
+                    } else if (colVisibleVal instanceof String) {
+                        String str = ((String) colVisibleVal).trim();
+                        if ("1".equals(str) || "true".equalsIgnoreCase(str)) {
+                            isColVisible = 1;
+                        } else if ("0".equals(str) || "false".equalsIgnoreCase(str)) {
+                            isColVisible = 0;
+                        }
+                    }
+                }
+                dto.setIsColVisible(isColVisible);
                 result.add(dto);
             }
 
