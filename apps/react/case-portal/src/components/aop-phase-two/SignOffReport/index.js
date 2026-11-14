@@ -859,7 +859,7 @@ const SignOffReport = () => {
 
   const groupBy = useMemo(() => {
     if(isGroupBy){
-      return {groupBy: ['Sr No', 'Utility/Chemical Name']}
+      return {groupBy: ['Utility/Chemical Name']}
     }
     return {}
   }, [isGroupBy, rows])
@@ -882,8 +882,9 @@ const SignOffReport = () => {
       isDaysUomInInteger: true,
       exportReportGroupWise: true,
       isSignOffReport: isFirstTwoColColor,
+      exportGroupByColumn: Boolean(isGroupBy),
     }
-  }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor])
+  }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor, isGroupBy])
  
   if (IS_FCC_SEZ_FCC2) {
     return <SignOffReportFcc2 />

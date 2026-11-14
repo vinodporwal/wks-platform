@@ -369,6 +369,10 @@ const AdvanceKendoTable = ({
     return extractFlatRowsFromGrouped(processedData.data)
   }, [rows, groupBy, initialGroup, sort, filter])
 
+  const activeRows = useMemo(() => {
+    return groupBy && processedFlatRows?.length > 0 ? processedFlatRows : (rows || [])
+  }, [groupBy, processedFlatRows, rows])
+
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
   }
@@ -639,6 +643,10 @@ const AdvanceKendoTable = ({
       color: '#000000',
     }
     const exportReportGroupWise = Boolean(permissions?.exportReportGroupWise)
+    const shouldExportGroupByColumn = Boolean(
+      groupBy &&
+      (permissions?.exportGroupByColumn || permissions?.exportWithGroupColumn || permissions?.includeGroupColumnInExport)
+    )
     const visibleColumns =
       columns?.filter(
         (col) =>
@@ -756,7 +764,7 @@ const AdvanceKendoTable = ({
       sheet.rows.forEach((row, rIdx) => {
         let rowCols = 0
         const isHeader = row.type === 'header' || row.type === 'group-header'
-        const dataRow = !isHeader ? rows?.[rIdx - headerRowCount] : null
+        const dataRow = !isHeader ? activeRows?.[rIdx - headerRowCount] : null
         const isRowNonEditable = dataRow && dataRow.isEditable === false
 
         row.cells.forEach((cell, cIdx) => {
@@ -879,6 +887,109 @@ const AdvanceKendoTable = ({
           maxCols = rowCols
         }
       })
+
+      if (shouldExportGroupByColumn) {
+        let groupField = null
+        if (Array.isArray(groupBy) && groupBy.length > 0) {
+          groupField = typeof groupBy[0] === 'string' ? groupBy[0] : groupBy[0]?.field
+        } else if (typeof groupBy === 'string') {
+          groupField = groupBy
+        } else if (groupBy && typeof groupBy === 'object') {
+          groupField = groupBy.field
+        }
+
+        if (groupField) {
+          const getGroupVal = (item, field) => {
+            if (!item || !field) return ''
+            if (item[field] !== undefined && item[field] !== null) {
+              return String(item[field]).trim()
+            }
+            const targetLower = String(field).trim().toLowerCase()
+            const matchKey = Object.keys(item).find(
+              (k) => k.trim().toLowerCase() === targetLower,
+            )
+            return matchKey && item[matchKey] !== undefined && item[matchKey] !== null
+              ? String(item[matchKey]).trim()
+              : ''
+          }
+
+          // 1. Determine header title from column definitions or fallback to field name
+          const groupColDef =
+            leafColumns.find(
+              (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
+            ) ||
+            visibleColumns.find(
+              (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
+            ) ||
+            columns?.find(
+              (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
+            )
+          const groupTitle = groupColDef?.title || groupColDef?.headerName || groupField
+
+          // 2. Add header cell to the first header row (spanning all header rows if multiple)
+          const firstHeaderRow = sheet.rows.find(
+            (r) => r.type === 'header' || r.type === 'group-header',
+          )
+          if (firstHeaderRow) {
+            firstHeaderRow.cells.unshift({
+              value: groupTitle,
+              bold: true,
+              textAlign: 'center',
+              verticalAlign: 'center',
+              background: '#DFDFDF',
+              color: '#000000',
+              disabled: true,
+              borderTop: HEADER_BORDER,
+              borderBottom: HEADER_BORDER,
+              borderLeft: HEADER_BORDER,
+              borderRight: HEADER_BORDER,
+              wrap: true,
+              rowSpan: headerRowCount > 1 ? headerRowCount : undefined,
+            })
+          }
+
+          // 3. Add column width definition to sheet.columns
+          if (sheet.columns && Array.isArray(sheet.columns)) {
+            sheet.columns.unshift({ autoWidth: true })
+          }
+
+          // 4. Compute contiguous group ranges from activeRows
+          const groupRanges = []
+          let currGroup = null
+          activeRows.forEach((r, idx) => {
+            const val = getGroupVal(r, groupField)
+            if (currGroup && currGroup.value === val) {
+              currGroup.count += 1
+            } else {
+              currGroup = { value: val, startIndex: idx, count: 1 }
+              groupRanges.push(currGroup)
+            }
+          })
+
+          // 5. Unshift merged group cell into the first row of each group
+          groupRanges.forEach((grp) => {
+            const sheetRowIndex = headerRowCount + grp.startIndex
+            const targetRow = sheet.rows[sheetRowIndex]
+            if (targetRow && targetRow.type === 'data') {
+              targetRow.cells.unshift({
+                value: grp.value,
+                rowSpan: grp.count > 1 ? grp.count : undefined,
+                bold: true,
+                textAlign: 'center',
+                verticalAlign: 'center',
+                background: '#ffffff',
+                color: '#000000',
+                disabled: true,
+                borderTop: CELL_BORDER,
+                borderBottom: CELL_BORDER,
+                borderLeft: CELL_BORDER,
+                borderRight: CELL_BORDER,
+                wrap: true,
+              })
+            }
+          })
+        }
+      }
 
       const targetGrid = extraExportGrid || permissions?.extraExportGrid
       if (targetGrid?.rows && targetGrid?.columns) {
@@ -3679,7 +3790,7 @@ const AdvanceKendoTable = ({
         <div className='kendo-data-grid' ref={gridContainerRef}>
           <Tooltip openDelay={50} position='auto' anchorElement='target'>
             <ExcelExport
-              data={rows}
+              data={activeRows}
               ref={_export}
               fileName={`${permissions?.ExcelName}.xlsx`}
             >
