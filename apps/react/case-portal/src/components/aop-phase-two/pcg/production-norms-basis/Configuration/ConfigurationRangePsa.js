@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -6,10 +6,12 @@ import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTab
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
+const TARGET_VALUE_TITLE = 'Target Value'
+
 const COLUMNS = [
   { field: 'displayName', title: 'Data Filters', widthT: 250, minWidth: 200, type: 'text', editable: false },
   { field: 'uom', title: 'UOM', widthT: 80, minWidth: 60, type: 'text', editable: false },
-  { field: 'targetValue', title: 'Target Value', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
+  { field: 'targetValue', title: TARGET_VALUE_TITLE, editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
   { field: 'range', title: 'Range', editable: true, widthT: 120, minWidth: 100, type: 'row-based' },
   { field: 'selection', title: 'Selection', editable: true, widthT: 80, minWidth: 80, type: 'checkbox' },
   { field: 'remarks', title: 'Criteria', widthT: 250, type: 'textarea', editable: false, minWidth: 250, showPlaceholder: false },
@@ -68,6 +70,54 @@ const resolveHideCheckbox = (dependentAttributeConfig, fallbackHideCheckbox) => 
   return Boolean(fallbackHideCheckbox)
 }
 
+// ---- Target Value must be numeric (Range stays free text) ----
+// Fallback cleanup: keeps digits, one decimal point and a leading minus.
+const sanitizeNumber = (value) => {
+  const str = String(value ?? '')
+  const negative = str.trim().startsWith('-')
+  const cleaned = str.replace(/[^0-9.]/g, '')
+  const [intPart, ...decimalParts] = cleaned.split('.')
+  const result = decimalParts.length ? `${intPart}.${decimalParts.join('')}` : intPart
+  return (negative ? '-' : '') + result
+}
+
+// Final value check (used on save)
+const isNumeric = (value) => {
+  const str = String(value ?? '').trim()
+  return str === '' || /^-?\d+(\.\d+)?$/.test(str)
+}
+
+// Partial value check while typing ("-", "5.", ".5" are allowed while the user is still typing)
+const isTypingNumber = (value) => /^-?\d*\.?\d*$/.test(value)
+
+// Only plain text rows are numeric-restricted; the TGC2 dropdown row is left alone
+const isNumericTargetRow = (row) => row?.type === 'text'
+
+// Finds out whether an input sits in the "Target Value" column by matching its cell
+// position to the grid header title.
+const isTargetValueInput = (input) => {
+  if (!input || input.tagName !== 'INPUT') return false
+  if (input.type === 'checkbox' || input.type === 'radio') return false
+  // Dropdown / combobox editors are not restricted
+  if (input.closest('.k-dropdownlist, .k-combobox, .k-picker, [role="combobox"]')) return false
+
+  const td = input.closest('td')
+  const grid = input.closest('.k-grid')
+  if (!td || !grid) return false
+
+  const ariaIndex = td.getAttribute('aria-colindex')
+  let headerCell = null
+  if (ariaIndex) {
+    headerCell = grid.querySelector(`.k-grid-header th[aria-colindex="${ariaIndex}"]`)
+  }
+  if (!headerCell) {
+    const index = Array.prototype.indexOf.call(td.parentElement.children, td)
+    const headerCells = grid.querySelectorAll('.k-grid-header thead tr:first-child th')
+    headerCell = headerCells[index]
+  }
+  return (headerCell?.textContent || '').trim() === TARGET_VALUE_TITLE
+}
+
 // ---- TGC2 Online/Offline helpers ----
 const getTgcType = (row) => {
   const name = row.displayName?.toLowerCase() || ''
@@ -91,6 +141,7 @@ const ConfigurationRangePsa = ({ refreshData }) => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+  const containerRef = useRef(null)
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({ message: '', severity: 'info' })
@@ -105,6 +156,43 @@ const ConfigurationRangePsa = ({ refreshData }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message, severity, autoHide })
   }
+
+  // Block non-numeric typing / pasting in the Target Value column before it reaches the input
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return undefined
+
+    const getNextValue = (input, insertText) => {
+      const value = input.value ?? ''
+      const start = input.selectionStart ?? value.length
+      const end = input.selectionEnd ?? value.length
+      return value.slice(0, start) + insertText + value.slice(end)
+    }
+
+    const handleBeforeInput = (event) => {
+      const input = event.target
+      if (!isTargetValueInput(input)) return
+      if (!event.inputType || !event.inputType.startsWith('insert')) return
+      if (event.inputType === 'insertFromPaste') return // handled by the paste listener
+      const text = event.data
+      if (text === null || text === undefined) return
+      if (!isTypingNumber(getNextValue(input, text))) event.preventDefault()
+    }
+
+    const handlePaste = (event) => {
+      const input = event.target
+      if (!isTargetValueInput(input)) return
+      const text = event.clipboardData?.getData('text') ?? ''
+      if (!isTypingNumber(getNextValue(input, text))) event.preventDefault()
+    }
+
+    container.addEventListener('beforeinput', handleBeforeInput, true)
+    container.addEventListener('paste', handlePaste, true)
+    return () => {
+      container.removeEventListener('beforeinput', handleBeforeInput, true)
+      container.removeEventListener('paste', handlePaste, true)
+    }
+  }, [])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) fetchConfigurationData()
@@ -138,7 +226,8 @@ const ConfigurationRangePsa = ({ refreshData }) => {
           ? ALL_EDITABLE_FIELDS
           : (configItem.nonEditableFields || [])
 
-        const type = configItem.type || 'number1'
+        // Row type is 'text' so Range accepts +-1, +-5 etc. (Target Value is restricted to numbers)
+        const type = configItem.type || 'text'
         const config = parseConfig(apiItem.config)
 
         return {
@@ -179,6 +268,14 @@ const ConfigurationRangePsa = ({ refreshData }) => {
     const modifiedData = Object.values(modifiedCells)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
+
+    // Target Value must be a number (Range can be free text)
+    const invalidRow = modifiedData.find(
+      (row) => isNumericTargetRow(row) && !isNumeric(row.targetValue),
+    )
+    if (invalidRow) {
+      return showSnackbar(`Target Value must be a number for "${invalidRow.displayName}"`, 'error')
+    }
 
     setLoading(true)
 
@@ -256,17 +353,28 @@ const ConfigurationRangePsa = ({ refreshData }) => {
     }
   }
 
-  // Dropdown change on 'TGC2 Online/Offline' enables/disables the TGC Online/Offline rows
+  // Dropdown change on 'TGC2 Online/Offline' enables/disables the TGC Online/Offline rows.
+  // Fallback cleanup for Target Value in case a non-numeric value still gets through.
   const handleCustomItemChange = ({ dataItem, field, value }, setRowsCallback) => {
     if (!['targetValue', 'range'].includes(field)) return
 
     if (dataItem.displayName === TGC2_TOGGLE_ROW && field === 'targetValue') {
       setRowsCallback((currentRows) => applyTgcToggle(currentRows, value))
+      return
+    }
+
+    if (field === 'targetValue' && isNumericTargetRow(dataItem)) {
+      const cleaned = sanitizeNumber(value)
+      if (cleaned !== String(value ?? '')) {
+        setRowsCallback((currentRows) =>
+          currentRows.map((row) => (row.id === dataItem.id ? { ...row, targetValue: cleaned } : row)),
+        )
+      }
     }
   }
 
   return (
-    <Box>
+    <Box ref={containerRef}>
       <LoaderBackdrop open={loading} />
       <RowBasedKendoTable
         columns={COLUMNS}

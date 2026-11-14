@@ -147,7 +147,19 @@ const isDtaUnitPlant =
     plantName.toLowerCase() === 'wao_unit (672)')
 const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
 const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
-const ISETP_Plants=siteName.toLowerCase() === 'etp'
+
+const ISETP_Plants=(siteName === 'DTA' &&
+  (plantName.toLowerCase() === 'etp-hero (ro-2)' ||
+    plantName.toLowerCase() === 'etp' ||
+    plantName.toLowerCase() === 'etp-ufro (ro-3)')) ||
+    (siteName === 'SEZ' &&
+  (plantName.toLowerCase() === 'etp')) ||
+  (siteName === 'C2' &&
+  (plantName.toLowerCase() === 'complex etp')) ||
+  (siteName === 'MTF' &&
+  (plantName.toLowerCase() === 'etp'))
+
+
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])

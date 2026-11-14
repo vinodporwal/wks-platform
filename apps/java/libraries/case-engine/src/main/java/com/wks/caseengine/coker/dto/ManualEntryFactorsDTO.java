@@ -21,4 +21,5 @@ public class ManualEntryFactorsDTO {
     private String type;
     private Integer displayOrder;
     private Boolean isEditable;
+    private Integer isColVisible;
 }
