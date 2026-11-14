@@ -146,6 +146,7 @@ const ManualEntryFactors = ({ startDate, endDate, refreshData, onLoadNormCalcula
           type: 'number1',
           format: valueFormat,
           isEditable: item?.isEditable,
+          isColVisible: item?.isColVisible,
           allowNegative: true,
         }
       })
@@ -305,7 +306,13 @@ const ManualEntryFactors = ({ startDate, endDate, refreshData, onLoadNormCalcula
 
   const handleDynamicColumnMerger = (dataItem, field) => {
     
-    if (dataItem?.id === 3 || dataItem?.id === 4) {
+    const isColVisible = dataItem?.isColVisible
+    const isMerged =
+      isColVisible !== undefined && isColVisible !== null
+        ? isColVisible === 0 || isColVisible === '0' || isColVisible === false || isColVisible === 'false'
+        : (dataItem?.id === 3 || dataItem?.id === 4)
+
+    if (isMerged) {
       if (field === 'apr') {
         return { hidden: true }
       }
@@ -319,13 +326,23 @@ const ManualEntryFactors = ({ startDate, endDate, refreshData, onLoadNormCalcula
           },
         }
       }
+    } else {
+      // isColVisible 1 = 3 column show: 'apr' is visible with grey background
+      if (field === 'apr') {
+        return {
+          style: {
+            backgroundColor: '#d9d9d9',
+            color: '#2b2b2b',
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            fontWeight: 500,
+          },
+        }
+      }
     }
 
-    // Grey cells: row 1 & 2 achievedTemp, and factor column across all rows
-    if (
-      ((dataItem?.id === 1 || dataItem?.id === 2) && field === 'apr') ||
-      field === 'jun'
-    ) {
+    // 'jun' (Factor derived from Calculation) is greyed out across all rows
+    if (field === 'jun') {
       return {
         style: {
           backgroundColor: '#d9d9d9',
@@ -336,6 +353,7 @@ const ManualEntryFactors = ({ startDate, endDate, refreshData, onLoadNormCalcula
         },
       }
     }
+
 
     if (field === 'may') {
       return {
