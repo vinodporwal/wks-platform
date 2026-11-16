@@ -59,6 +59,13 @@ const OverallAopConsumption = () => {
 const isC2UnitPlants= siteName.toLowerCase() === 'c2' &&
 (
     plantName.toLowerCase() === 'cpu_unit (c722)' ||
+    plantName.toLowerCase() === 'dm_unit (c721)'   ||
+    plantName.toLowerCase() === 'chiller_system (c131)' ||
+    plantName.toLowerCase() === 'remineralisation_unit (z712)' ||
+    plantName.toLowerCase() === 'cpu_unit (c722)' ||
+    plantName.toLowerCase() === 'rwtp (d151)' ||
+    plantName.toLowerCase() === 'swro_storage (c711)' ||
+    plantName.toLowerCase() === 'fire_water_system (c714)' ||
     plantName.toLowerCase() === 'dm_unit (c721)'
 )
   const isDtapcgCtPlant =
