@@ -3196,8 +3196,11 @@ public boolean isVgohtWithThreeValues(String plantId) {
 	boolean VGOHT4 = plant.getName().equalsIgnoreCase("VGOHT4");
 	boolean KHT = plant.getName().equalsIgnoreCase("KHT");
 	boolean CNHT = plant.getName().equalsIgnoreCase("CNHT");
+	boolean LCOHC = plant.getName().equalsIgnoreCase("LCOHC");
+	boolean DHDS1 = plant.getName().equalsIgnoreCase("DHDS-1");
+	boolean DHDS2 = plant.getName().equalsIgnoreCase("DHDS-2");
 
-	boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT || CNHT);
+	boolean isVgohtWithThreeValues = vgoht && (dht1 || dht2 || VGOHT1 || VGOHT2 || VGOHT3 || VGOHT4 || KHT || LCOHC || DHDS1 || DHDS2 || CNHT);
 
 	return isVgohtWithThreeValues;
 }

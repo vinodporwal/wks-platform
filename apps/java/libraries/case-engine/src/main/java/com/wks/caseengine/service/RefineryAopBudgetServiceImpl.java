@@ -2372,15 +2372,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
             List<LabCostDTO> data = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 String id = rs.getString("Id");
                 String costCenterMasterId = rs.getString("CostCenterMasterId");
-                String materialMasterId = rs.getString("MaterialMasterId");
 
                 return LabCostDTO.builder()
-                    .id(id != null ? id : (costCenterMasterId + "_" + (materialMasterId != null ? materialMasterId : "")))
+                    .id(id != null ? id : costCenterMasterId)
                     .costCenterMasterId(costCenterMasterId)
-                    .materialMasterId(materialMasterId)
                     .costCenterDescription(rs.getString("CostCenterDescription"))
-                    .material(rs.getString("Material"))
-                    .uom(rs.getString("UOM"))
                     .aopYear(aopYear)
                     .apr(rs.getObject("Apr") != null ? rs.getDouble("Apr") : 0.0)
                     .may(rs.getObject("May") != null ? rs.getDouble("May") : 0.0)
@@ -2419,9 +2415,6 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                 String costCenterMasterId = dto.getCostCenterMasterId() != null && !dto.getCostCenterMasterId().isEmpty() && !dto.getCostCenterMasterId().startsWith("new_row_")
                     ? dto.getCostCenterMasterId()
                     : null;
-                String materialMasterId = dto.getMaterialMasterId() != null && !dto.getMaterialMasterId().isEmpty() && !dto.getMaterialMasterId().startsWith("new_row_")
-                    ? dto.getMaterialMasterId()
-                    : null;
                 String year = (aopYear != null && !aopYear.isEmpty()) ? aopYear : dto.getAopYear();
 
                 if (year == null) {
@@ -2442,30 +2435,9 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     }
                 }
 
-                // If materialMasterId is missing, look up by material name
-                if (materialMasterId == null || materialMasterId.isEmpty()) {
-                    String mat = dto.getMaterial();
-                    if (mat != null && !mat.isEmpty()) {
-                        List<String> existingMatIds = jdbcTemplate.queryForList(
-                            "SELECT TOP 1 CAST(Id AS VARCHAR(50)) FROM dbo.FBSCMaterialMaster WHERE Material = ?",
-                            String.class, mat
-                        );
-                        if (!existingMatIds.isEmpty()) {
-                            materialMasterId = existingMatIds.get(0);
-                        }
-                    }
-                }
-
                 if (costCenterMasterId == null || costCenterMasterId.isEmpty()) {
                     dto.setSaveStatus("Failed");
                     dto.setErrorMessage("Cost Center Description is required.");
-                    failedRecords.add(dto);
-                    continue;
-                }
-
-                if (materialMasterId == null || materialMasterId.isEmpty()) {
-                    dto.setSaveStatus("Failed");
-                    dto.setErrorMessage("Material is required.");
                     failedRecords.add(dto);
                     continue;
                 }
@@ -2481,11 +2453,11 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
 
                     if (countById > 0) {
                         String updateSql = "UPDATE dbo.LabCostTransaction " +
-                                           "SET CostCenterMasterId = ?, MaterialMasterId = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
+                                           "SET CostCenterMasterId = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
                                            "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
                                            "WHERE Id = ?";
                         jdbcTemplate.update(updateSql,
-                            costCenterMasterId, materialMasterId,
+                            costCenterMasterId,
                             dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
                             dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
                             dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
@@ -2495,29 +2467,29 @@ public class RefineryAopBudgetServiceImpl implements RefineryAopBudgetService {
                     }
                 }
 
-                // Condition 2: Fallback / New record check by (CostCenterMasterId + MaterialMasterId + AopYear)
+                // Condition 2: Fallback / New record check by (CostCenterMasterId + AopYear)
                 String checkSql = "SELECT COUNT(1) FROM dbo.LabCostTransaction " +
-                                  "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
-                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, costCenterMasterId, materialMasterId, year);
+                                  "WHERE CostCenterMasterId = ? AND AopYear = ?";
+                int count = jdbcTemplate.queryForObject(checkSql, Integer.class, costCenterMasterId, year);
 
                 if (count > 0) {
                     String updateSql = "UPDATE dbo.LabCostTransaction " +
                                        "SET Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, " +
                                        "Remarks = ?, UpdatedAt = GETDATE(), UpdatedBy = ? " +
-                                       "WHERE CostCenterMasterId = ? AND MaterialMasterId = ? AND AopYear = ?";
+                                       "WHERE CostCenterMasterId = ? AND AopYear = ?";
                     jdbcTemplate.update(updateSql,
                         dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
                         dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
                         dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
                         dto.getRemarks(), updatedBy,
-                        costCenterMasterId, materialMasterId, year);
+                        costCenterMasterId, year);
                 } else {
                     String insertSql = "INSERT INTO dbo.LabCostTransaction " +
-                                       "(Id, CostCenterMasterId, MaterialMasterId, AopYear, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, " +
+                                       "(Id, CostCenterMasterId, AopYear, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, " +
                                        "Remarks, CreatedAt, CreatedBy) " +
-                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
+                                       "VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
                     jdbcTemplate.update(insertSql,
-                        costCenterMasterId, materialMasterId, year,
+                        costCenterMasterId, year,
                         dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
                         dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
                         dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),

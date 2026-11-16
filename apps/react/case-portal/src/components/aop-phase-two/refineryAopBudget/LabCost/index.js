@@ -13,9 +13,7 @@ import { LabCostApiService } from 'components/aop-phase-two/services/crude/labCo
 import ReleaseAPIService from 'components/aop-phase-two/services/common/releaseAPIService'
 import {
   formatCostCenterDropdownOptions,
-  formatMaterialDropdownOptions,
   getCostCenterOptions,
-  getMaterialOptions,
 } from './helpers'
 import { CostCenterSelectCellEditor } from './CostCenterSelectCellEditor'
 
@@ -51,7 +49,6 @@ const LabCostScreen = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [costCenterDropdown, setCostCenterDropdown] = useState([])
-  const [materialDropdown, setMaterialDropdown] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -84,64 +81,25 @@ const LabCostScreen = () => {
     }
   }, [keycloak])
 
-  // 2. Fetch Material & UOM Dropdown options (lab-cost-material-dropdown)
-  const fetchMaterialDropdown = useCallback(async () => {
-    try {
-      const response = await LabCostApiService.getLabCostMaterialDropdown(keycloak)
-      const data = response?.data || response?.result || response || []
-      const formatted = formatMaterialDropdownOptions(data)
-      setMaterialDropdown(formatted)
-      return formatted
-    } catch (error) {
-      console.error('Error fetching material dropdown options:', error)
-      return []
-    }
-  }, [keycloak])
-
   useEffect(() => {
     fetchCostCenterDropdown()
-    fetchMaterialDropdown()
-  }, [fetchCostCenterDropdown, fetchMaterialDropdown])
+  }, [fetchCostCenterDropdown])
 
-  // 3. Grid Columns definition:
+  // 2. Grid Columns definition:
   // Column 1: Cost Center Description (Select)
-  // Column 2: Material (Select)
-  // Column 3: UOM (Read-only, auto-fetched)
   // 12 Months + Remarks
   const columns = [
     {
       field: 'costCenterDescription',
       title: 'Cost Center Description',
-      widthT: 180,
-      minWidth: 180,
+      widthT: 250,
+      minWidth: 200,
       type: 'customSelect',
       cellEditor: CostCenterSelectCellEditor,
       editable: !READ_ONLY,
       locked: true,
       dynamicOptions: true,
       getOptions: (dataItem) => getCostCenterOptions(dataItem, costCenterDropdown, rows),
-    },
-    {
-      field: 'material',
-      title: 'Material',
-      widthT: 150,
-      minWidth: 150,
-      type: 'customSelect',
-      cellEditor: CostCenterSelectCellEditor,
-      editable: !READ_ONLY,
-      locked: true,
-      dynamicOptions: true,
-      getOptions: (dataItem) => getMaterialOptions(dataItem, materialDropdown, rows),
-    },
-    {
-      field: 'uom',
-      title: 'UOM',
-      widthT: 80,
-      minWidth: 80,
-      width: 80,
-      type: 'text',
-      editable: false,
-      locked: true,
     },
     {
       field: 'apr',
@@ -287,7 +245,7 @@ const LabCostScreen = () => {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR, dispatch])
 
-  // 4. GET API - lab-cost
+  // 3. GET API - lab-cost
   const fetchData = useCallback(async () => {
     if (!AOP_YEAR) return
     setLoading(true)
@@ -300,17 +258,12 @@ const LabCostScreen = () => {
       const formattedData = rawList.map((item, index) => {
         const rowId = item.id || `row_${index}`
         const desc = item.costCenterDescription || ''
-        const mat = item.material || ''
-        const uom = item.uom || ''
 
         return {
           ...item,
           id: rowId,
           costCenterMasterId: item.costCenterMasterId || null,
-          materialMasterId: item.materialMasterId || null,
           costCenterDescription: desc,
-          material: mat,
-          uom: uom,
           apr: Number(item.apr ?? 0),
           may: Number(item.may ?? 0),
           jun: Number(item.jun ?? 0),
@@ -347,7 +300,7 @@ const LabCostScreen = () => {
     }
   }, [AOP_YEAR, fetchData])
 
-  // Custom Item Change: Handles Cost Center, Material (auto-fetch UOM), Months, Remarks
+  // Custom Item Change: Handles Cost Center, Months, Remarks
   const handleCustomItemChange = (e) => {
     if (READ_ONLY) return
     const { dataItem, field, value } = e
@@ -361,7 +314,7 @@ const LabCostScreen = () => {
       inEdit: true,
     }
 
-    // 1) Cost Center Description change
+    // Cost Center Description change
     if (field === 'costCenterDescription') {
       const valStr =
         typeof value === 'object'
@@ -383,32 +336,6 @@ const LabCostScreen = () => {
       updatedRow.costCenterMasterId = selectedId
       updatedRow.costCenterDescription = selectedDesc
       updatedRow[field] = selectedDesc
-    }
-
-    // 2) Material change -> Auto update UOM and materialMasterId
-    if (field === 'material') {
-      const valStr =
-        typeof value === 'object'
-          ? value?.value || value?.label || value?.material || ''
-          : String(value || '')
-
-      const matchedOpt = materialDropdown.find(
-        (opt) =>
-          opt.material === valStr ||
-          opt.value === valStr ||
-          opt.label === valStr ||
-          opt.id === valStr ||
-          opt.materialMasterId === valStr
-      )
-
-      const selectedId = matchedOpt?.materialMasterId || matchedOpt?.id || valStr
-      const selectedMat = matchedOpt?.material || matchedOpt?.label || valStr
-      const selectedUom = matchedOpt?.uom || ''
-
-      updatedRow.materialMasterId = selectedId
-      updatedRow.material = selectedMat
-      updatedRow.uom = selectedUom
-      updatedRow[field] = selectedMat
     }
 
     setRows((prevRows) =>
@@ -475,7 +402,7 @@ const LabCostScreen = () => {
     }
   }
 
-  // 5. SAVE API
+  // 4. SAVE API
   const saveChanges = async () => {
     if (READ_ONLY) return
     setLoading(true)
@@ -492,21 +419,12 @@ const LabCostScreen = () => {
         return
       }
 
-      // VALIDATION 1: Cost Center & Material Selection
+      // VALIDATION: Cost Center Selection
       for (const row of rows) {
         if (!row.costCenterDescription) {
           setSnackbarOpen(true)
           setSnackbarData({
             message: 'Please select a Cost Center Description for all rows before saving!',
-            severity: 'warning',
-          })
-          setLoading(false)
-          return
-        }
-        if (!row.material) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Please select a Material for Cost Center: "${row.costCenterDescription}" before saving!`,
             severity: 'warning',
           })
           setLoading(false)
@@ -525,20 +443,10 @@ const LabCostScreen = () => {
           resolvedCostCenterMasterId = matchCC?.costCenterMasterId || matchCC?.id || null
         }
 
-        // Resolve Material Master Id
-        let resolvedMaterialMasterId = row.materialMasterId
-        if (!resolvedMaterialMasterId || String(resolvedMaterialMasterId).startsWith('new_row_')) {
-          const matchMat = materialDropdown.find((m) => m.material === row.material)
-          resolvedMaterialMasterId = matchMat?.materialMasterId || matchMat?.id || null
-        }
-
         return {
           id: row.id && !String(row.id).startsWith('new_row_') ? row.id : null,
           costCenterMasterId: resolvedCostCenterMasterId,
-          materialMasterId: resolvedMaterialMasterId,
           costCenterDescription: row.costCenterDescription || '',
-          material: row.material || '',
-          uom: row.uom || '',
           aopYear: AOP_YEAR,
           apr: Number(row.apr || 0),
           may: Number(row.may || 0),
@@ -647,4 +555,3 @@ const LabCostScreen = () => {
 }
 
 export default LabCostScreen
-
