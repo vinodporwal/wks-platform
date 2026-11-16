@@ -112,6 +112,7 @@ const UtilityRateGrid = () => {
   // ── State ────────────────────────────────────────────────────────────────
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [calculationLoading, setCalculationLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -265,6 +266,38 @@ const UtilityRateGrid = () => {
     }
   }
 
+  // ── Calculate (Run Cost) ──────────────────────────────────────────────────
+  const handleCalculate = async () => {
+    if (!PLANT_ID_LIST?.length || !AOP_YEAR) return
+    setCalculationLoading(true)
+    try {
+      const res = await OutputApiService.calculateRunCost(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+      )
+
+      if (res) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation completed successfully!',
+          severity: 'success',
+        })
+        // Refresh the data after calculation
+        await fetchUtilityRateData()
+      }
+    } catch (error) {
+      console.error('Error calculating run cost:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error during calculation. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setCalculationLoading(false)
+    }
+  }
+
   // ── Permissions / table config ────────────────────────────────────────────
   const permissions = {
     showAction: true,
@@ -279,12 +312,19 @@ const UtilityRateGrid = () => {
     showImport: false,
     showExport: true,
     ExcelName: EXCEL_NAME,
+    showCalculate: lowerSiteName === 'jmd',
+    calculateButtonName: 'Calculate Cost',
+    calculateDisabled: rows.length === 0,
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop
+        open={!!loading || calculationLoading}
+        showMessage={calculationLoading}
+        message='Your data is being processed. This may take a few moments—thank you for your patience.'
+      />
 
       <AdvanceKendoTable
         columns={columns}
@@ -292,6 +332,7 @@ const UtilityRateGrid = () => {
         setRows={setRows}
         title={permissions.titleName}
         permissions={permissions}
+        handleCalculate={handleCalculate}
         handleExport={handleExport}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
