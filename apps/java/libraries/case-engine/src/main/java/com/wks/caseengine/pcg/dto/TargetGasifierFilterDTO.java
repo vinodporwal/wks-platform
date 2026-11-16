@@ -14,6 +14,11 @@ import java.util.UUID;
 public class TargetGasifierFilterDTO {
 
     private UUID id;
+    private String operationName;
+    private String displayName;
+    private String gConfiguration;
+    private UUID siteId;
+
     private String gOperation;
     private UUID plantId;
     private String aopYear;
