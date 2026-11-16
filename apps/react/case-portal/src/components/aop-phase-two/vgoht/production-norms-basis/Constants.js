@@ -35,7 +35,7 @@ const Constants = ({ startDate, endDate, refreshData }) => {
   const plant = plantObject?.name?.toLowerCase()?.trim()
 
   const isThreeDatesUi = useMemo(() => {
-    if (site === 'sez' && ['vgoht-4', 'vgoht-3'].includes(plant)) return true
+    if (site === 'sez' && ['vgoht-4', 'vgoht-3','dhds-1','dhds-2','lcohc',].includes(plant)) return true
     if (site === 'dta' && ['dht1', 'dht2', 'vgoht-1', 'vgoht-2', 'kht', 'cnht'].includes(plant)) return true
     return false
   }, [site, plant])

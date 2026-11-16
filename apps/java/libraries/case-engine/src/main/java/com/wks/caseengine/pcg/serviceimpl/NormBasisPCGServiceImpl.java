@@ -256,16 +256,24 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 		String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
 
 		return jdbcTemplate.query(sql, (rs, rowNum) -> {
-			String idStr = rs.getString("Id");
-			String plantIdStr = rs.getString("PlantId");
-			String normParamIdStr = rs.getString("NormParameterId");
+			String idStr = null;
+			String operationName = null;
+			String displayName = null;
+			String gConfiguration = null;
+			String siteIdStr = null;
+
+			try { idStr = rs.getString("Id"); } catch (Exception ignored) {}
+			try { operationName = rs.getString("OperationName"); } catch (Exception ignored) {}
+			try { displayName = rs.getString("DisplayName"); } catch (Exception ignored) {}
+			try { gConfiguration = rs.getString("GConfiguration"); } catch (Exception ignored) {}
+			try { siteIdStr = rs.getString("SiteId"); } catch (Exception ignored) {}
 
 			return TargetGasifierFilterDTO.builder()
 					.id(idStr != null && !idStr.isBlank() ? UUID.fromString(idStr) : null)
-					.gOperation(rs.getString("GOperation"))
-					.plantId(plantIdStr != null && !plantIdStr.isBlank() ? UUID.fromString(plantIdStr) : null)
-					.aopYear(rs.getString("AopYear"))
-					.normParameterId(normParamIdStr != null && !normParamIdStr.isBlank() ? UUID.fromString(normParamIdStr) : null)
+					.operationName(operationName)
+					.displayName(displayName)
+					.gConfiguration(gConfiguration)
+					.siteId(siteIdStr != null && !siteIdStr.isBlank() ? UUID.fromString(siteIdStr) : null)
 					.build();
 		}, plantId.toString(), aopYear);
 	}
