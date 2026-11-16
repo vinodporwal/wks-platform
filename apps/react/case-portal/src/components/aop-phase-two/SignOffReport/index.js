@@ -883,8 +883,6 @@ const SignOffReport = () => {
       exportReportGroupWise: true,
       isSignOffReport: isFirstTwoColColor,
       exportGroupByColumn: Boolean(isGroupBy),
-      exportGroupByBlankRow: Boolean(isGroupBy),
-      groupByBlankRowBgColor: '#92D050',
     }
   }, [excelFileName, gridTitle, unitNo, PLANT_ID, AOP_YEAR, loading, isFirstTwoColColor, isGroupBy])
  
