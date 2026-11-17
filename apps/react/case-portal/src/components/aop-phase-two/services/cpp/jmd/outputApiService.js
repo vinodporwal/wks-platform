@@ -21,6 +21,7 @@ export const OutputApiService = {
   // Used in: Outputs/utility-rate/UtilityRateGrid.js (Utility Rate output grid)
   getUtilityRateData,
   exportUtilityRateExcel,
+  calculateRunCost,
 
   // Used in: Outputs/spinning-margin-report/index.js (Spinning Margin report grid)
   getSpinningMarginReport,
@@ -41,6 +42,10 @@ export const OutputApiService = {
   // Used in: Outputs/fuel-allocation/index.js (Fuel Allocation output grid)
   getFuelAllocationQuantity,
   exportFuelAllocationQuantityExcel,
+
+  // Used in: Outputs/fuel-consumption/index.js (Fuel Consumption output report)
+  getFuelConsumption,
+  exportFuelConsumptionExcel,
 }
 
 // ===================== GENERIC HELPERS ===================== //
@@ -435,6 +440,30 @@ async function exportUtilityRateExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
   }
 }
 
+// ===================== || RUN COST CALCULATION API || ===================== //
+// POST /task/jmd/run-cost/calculate?plantIds=...&aopYear=...
+// Triggers run cost calculation for the given plant(s) and AOP year.
+// NOTE: placeholder endpoint — update the path once the backend contract is finalized.
+async function calculateRunCost(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/run-cost/calculate?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'POST', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error calculating run cost:', e)
+    return await Promise.reject(e)
+  }
+}
+
 // ===================== || SPINNING MARGIN REPORT APIs || ===================== //
 // GET /task/jmd/spinning-margin-report?aopYear=...[&plantIds=...]
 // Returns Spinning Margin Maintained rows from dbo.CPPMonthlySpinningMarginMaintained
@@ -815,6 +844,81 @@ async function exportFuelAllocationQuantityExcel(
     return { success: true, message: 'Excel exported successfully' }
   } catch (e) {
     console.error('Error exporting fuel allocation quantity Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || FUEL CONSUMPTION OUTPUT APIs || ===================== //
+// GET /task/cpp/fuel-consumption?siteId=...&financialYear=...
+// Calls SP dbo.CPP_GetFuelConsumption.
+// Returns one row per (CPP plant × fuel) combination for the given site with
+// per-month Available/Allocated/Remaining values (Jan→Dec).
+// Each row contains: plantName, plantCode, plantId, fuelDisplayName, fuelFkId,
+//   financialYear, and 12 monthly groups ({mon}Available, {mon}Allocated,
+//   {mon}Remaining) for jan → dec.
+async function getFuelConsumption(keycloak, siteId, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/cpp/fuel-consumption?siteId=${siteId}&financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching fuel consumption data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/cpp/fuel-consumption/export?siteId=...&financialYear=...
+async function exportFuelConsumptionExcel(
+  keycloak,
+  siteId,
+  financialYear,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cpp/fuel-consumption/export?siteId=${siteId}&financialYear=${financialYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting fuel consumption Excel:', e)
     return Promise.reject(e)
   }
 }

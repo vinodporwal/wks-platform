@@ -3773,7 +3773,7 @@ const AdvanceKendoTable = ({
                   }
                   className='btn-calculate'
                 >
-                  Calculate
+                  {permissions?.calculateButtonName || 'Calculate'}
                 </Button>
               )}
 

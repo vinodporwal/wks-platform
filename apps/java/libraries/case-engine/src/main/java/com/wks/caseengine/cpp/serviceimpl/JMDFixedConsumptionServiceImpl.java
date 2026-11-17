@@ -2,7 +2,7 @@ package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.FixedConsumptionCreateRequestDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
-import com.wks.caseengine.cpp.dto.FixedConsumptionProjection;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionProjection;
 import com.wks.caseengine.cpp.entity.CPPFixedConsumption;
 import com.wks.caseengine.cpp.repository.JMDFixedConsumptionRepository;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
@@ -68,7 +68,7 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
                     .collect(Collectors.joining(","));
             logger.debug("[GET Service] Executing SP with plantIds: {}", plantIdsCsv);
 
-            List<FixedConsumptionProjection> projections = repository.getFixedConsumptionForPlants(plantIdsCsv,
+            List<JMDFixedConsumptionProjection> projections = repository.getFixedConsumptionForPlants(plantIdsCsv,
                     financialYear);
 
             List<JMDFixedConsumptionDto> allResults = projections.stream()
@@ -92,7 +92,7 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         return aopMessageVM;
     }
 
-    private JMDFixedConsumptionDto mapToDto(FixedConsumptionProjection p) {
+    private JMDFixedConsumptionDto mapToDto(JMDFixedConsumptionProjection p) {
         JMDFixedConsumptionDto dto = new JMDFixedConsumptionDto();
 
         dto.setId(p.getId()); // SP-returned row Id
@@ -110,6 +110,17 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         dto.setNormParameter_FK_Id(p.getNormParameter_FK_Id());
         dto.setRemarkId(p.getRemarkId());
         dto.setRemarks(p.getRemarks());
+
+        // Sender (Material) details
+        dto.setSenderPlant(p.getMaterialPlantName());
+        dto.setSenderPlantCode(p.getMaterialPlantCode());
+        dto.setSenderMaterial(p.getMaterialName());
+        dto.setSenderMaterialCode(p.getMaterialSAP());
+        dto.setSenderMaterialUom(p.getMaterialUOM());
+
+        // Receiver (Utility) cost center details
+        dto.setReceiverCostCenter(p.getUtilityCostCenterName());
+        dto.setReceiverCostCenterCode(p.getUtilityCostCenterCode());
 
         dto.setApril(p.getApr());
         dto.setMay(p.getMay());
@@ -247,15 +258,22 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
 
         // Header row
         List<String> headers = new ArrayList<>();
-        headers.add("Plant");
-        headers.add("Plant Id");
-        headers.add("Cost Center");
-        headers.add("Cost Center Id");
-        headers.add("CPP Utilities");
-        headers.add("CPP Utility Ids");
-        headers.add("CPP Plant");
-        headers.add("CPP Plant Id");
-        headers.add("UOM");
+        // Sender (Material) columns
+        headers.add("Sender Material");
+        headers.add("Sender Material Code");
+        headers.add("Sender Material UOM");
+        headers.add("Sender Plant");
+        headers.add("Sender Plant Code");
+        headers.add("Sender Cost Center");
+        headers.add("Sender Cost Center Code");
+        // Receiver (Utility) columns
+        headers.add("Receiver Utility");
+        headers.add("Receiver Utility Code");
+        headers.add("Receiver Utility UOM");
+        headers.add("Receiver Plant");
+        headers.add("Receiver Plant Code");
+        headers.add("Receiver Cost Center");
+        headers.add("Receiver Cost Center Code");
         headers.add("Apr-" + startYearSuffix);
         headers.add("May-" + startYearSuffix);
         headers.add("Jun-" + startYearSuffix);
@@ -270,7 +288,7 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         headers.add("Mar-" + endYearSuffix);
         headers.add("Grand Total");
         headers.add("Remarks");
-        // Hidden columns (col 23 = id, col 24 = row hash for change detection)
+        // Hidden columns (col 28 = id, col 29 = row hash for change detection)
         headers.add("id");
         headers.add("_hash");
 
@@ -286,41 +304,23 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
             Row row = sheet.createRow(currentRow++);
             int col = 0;
 
-            Cell cell = row.createCell(col++);
-            cell.setCellValue(dto.getPlant() != null ? dto.getPlant() : "");
-            cell.setCellStyle(dataStyle);
+            // Sender (Material) columns
+            createStrCell(row, col++, dto.getSenderMaterial(), dataStyle);
+            createStrCell(row, col++, dto.getSenderMaterialCode(), dataStyle);
+            createStrCell(row, col++, dto.getSenderMaterialUom(), dataStyle);
+            createStrCell(row, col++, dto.getSenderPlant(), dataStyle);
+            createStrCell(row, col++, dto.getSenderPlantCode(), dataStyle);
+            createStrCell(row, col++, dto.getCostCenter(), dataStyle);
+            createStrCell(row, col++, dto.getCostCenterId(), dataStyle);
 
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getPlantId() != null ? dto.getPlantId() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getCostCenter() != null ? dto.getCostCenter() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getCostCenterId() != null ? dto.getCostCenterId() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getCppUtilityId() != null ? dto.getCppUtilityId() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getCppPlant() != null ? dto.getCppPlant() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getCppPlantId() != null ? dto.getCppPlantId() : "");
-            cell.setCellStyle(dataStyle);
-
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
-            cell.setCellStyle(dataStyle);
+            // Receiver (Utility) columns
+            createStrCell(row, col++, dto.getCppUtility(), dataStyle);
+            createStrCell(row, col++, dto.getCppUtilityId(), dataStyle);
+            createStrCell(row, col++, dto.getUom(), dataStyle);
+            createStrCell(row, col++, dto.getPlant(), dataStyle);
+            createStrCell(row, col++, dto.getPlantId(), dataStyle);
+            createStrCell(row, col++, dto.getReceiverCostCenter(), dataStyle);
+            createStrCell(row, col++, dto.getReceiverCostCenterCode(), dataStyle);
 
             setDoubleCellValue(row.createCell(col++), dto.getApril(), dataStyle);
             setDoubleCellValue(row.createCell(col++), dto.getMay(), dataStyle);
@@ -336,28 +336,22 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
             setDoubleCellValue(row.createCell(col++), dto.getMar(), dataStyle);
             setDoubleCellValue(row.createCell(col++), dto.getGrandTotal(), dataStyle);
 
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
-            cell.setCellStyle(remarksStyle);
+            createStrCell(row, col++, dto.getRemarks(), remarksStyle);
 
-            // col 23 – id (hidden)
-            cell = row.createCell(col++);
-            cell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
-            cell.setCellStyle(dataStyle);
+            // col 28 – id (hidden)
+            createStrCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
 
-            // col 24 – row hash (hidden, used for change detection at import time)
-            cell = row.createCell(col++);
-            cell.setCellValue(computeRowHash(dto));
-            cell.setCellStyle(dataStyle);
+            // col 29 – row hash (hidden, used for change detection at import time)
+            createStrCell(row, col++, computeRowHash(dto), dataStyle);
         }
 
-        // Hide id column (23) and hash column (24)
-        sheet.setColumnHidden(23, true);
-        sheet.setColumnHidden(24, true);
+        // Hide id column (28) and hash column (29)
+        sheet.setColumnHidden(28, true);
+        sheet.setColumnHidden(29, true);
 
         int totalColumns = headers.size();
         for (int col = 0; col < totalColumns; col++) {
-            if (col == 22) { // Remarks column
+            if (col == 27) { // Remarks column
                 sheet.setColumnWidth(col, 8000);
                 continue;
             }
@@ -539,10 +533,11 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
      * Reads the exported Fixed Consumption Excel file and maps each data row to a
      * DTO.
      * Column order must match the export format:
-     * Plant(0), PlantId(1), CostCenter(2), CostCenterId(3), CPPUtility(4),
-     * CPPUtilityId(5),
-     * CPPPlant(6), CPPPlantId(7), UOM(8), Apr(9)..Mar(20), GrandTotal(21),
-     * Remarks(22), id(23)
+     * SenderMaterial(0), SenderMaterialCode(1), SenderMaterialUOM(2),
+     * SenderPlant(3), SenderPlantCode(4), SenderCostCenter(5), SenderCostCenterCode(6),
+     * ReceiverUtility(7), ReceiverUtilityCode(8), ReceiverUtilityUOM(9),
+     * ReceiverPlant(10), ReceiverPlantCode(11), ReceiverCostCenter(12), ReceiverCostCenterCode(13),
+     * Apr(14)..Mar(25), GrandTotal(26), Remarks(27), id(28), hash(29)
      */
     private List<JMDFixedConsumptionDto> readFixedConsumptionExcel(InputStream inputStream, String financialYear)
             throws Exception {
@@ -570,36 +565,44 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
                 int col = 0;
 
                 // Static / read-only columns (not updated, kept for context in error report)
-                dto.setPlant(getCellStringValue(row, col++)); // col 0 Plant
-                dto.setPlantId(getCellStringValue(row, col++)); // col 1 PlantId
-                dto.setCostCenter(getCellStringValue(row, col++)); // col 2 CostCenter
-                dto.setCostCenterId(getCellStringValue(row, col++)); // col 3 CostCenterId
-                dto.setCppUtility(getCellStringValue(row, col++)); // col 4 CPPUtility
-                dto.setCppUtilityId(getCellStringValue(row, col++)); // col 5 CPPUtilityId
-                dto.setCppPlant(getCellStringValue(row, col++)); // col 6 CPPPlant
-                dto.setCppPlantId(getCellStringValue(row, col++)); // col 7 CPPPlantId
-                dto.setUom(getCellStringValue(row, col++)); // col 8 UOM
+                // Sender (Material) columns
+                dto.setSenderMaterial(getCellStringValue(row, col++)); // col 0 SenderMaterial
+                dto.setSenderMaterialCode(getCellStringValue(row, col++)); // col 1 SenderMaterialCode
+                dto.setSenderMaterialUom(getCellStringValue(row, col++)); // col 2 SenderMaterialUOM
+                dto.setSenderPlant(getCellStringValue(row, col++)); // col 3 SenderPlant
+                dto.setSenderPlantCode(getCellStringValue(row, col++)); // col 4 SenderPlantCode
+                dto.setCostCenter(getCellStringValue(row, col++)); // col 5 SenderCostCenter
+                dto.setCostCenterId(getCellStringValue(row, col++)); // col 6 SenderCostCenterCode
+
+                // Receiver (Utility) columns
+                dto.setCppUtility(getCellStringValue(row, col++)); // col 7 ReceiverUtility
+                dto.setCppUtilityId(getCellStringValue(row, col++)); // col 8 ReceiverUtilityCode
+                dto.setUom(getCellStringValue(row, col++)); // col 9 ReceiverUtilityUOM
+                dto.setPlant(getCellStringValue(row, col++)); // col 10 ReceiverPlant
+                dto.setPlantId(getCellStringValue(row, col++)); // col 11 ReceiverPlantCode
+                dto.setReceiverCostCenter(getCellStringValue(row, col++)); // col 12 ReceiverCostCenter
+                dto.setReceiverCostCenterCode(getCellStringValue(row, col++)); // col 13 ReceiverCostCenterCode
 
                 // Month columns (updatable)
-                dto.setApril(getCellDoubleVal(row, col++)); // col 9 Apr
-                dto.setMay(getCellDoubleVal(row, col++)); // col 10 May
-                dto.setJune(getCellDoubleVal(row, col++)); // col 11 Jun
-                dto.setJuly(getCellDoubleVal(row, col++)); // col 12 Jul
-                dto.setAug(getCellDoubleVal(row, col++)); // col 13 Aug
-                dto.setSep(getCellDoubleVal(row, col++)); // col 14 Sep
-                dto.setOct(getCellDoubleVal(row, col++)); // col 15 Oct
-                dto.setNov(getCellDoubleVal(row, col++)); // col 16 Nov
-                dto.setDec(getCellDoubleVal(row, col++)); // col 17 Dec
-                dto.setJan(getCellDoubleVal(row, col++)); // col 18 Jan
-                dto.setFeb(getCellDoubleVal(row, col++)); // col 19 Feb
-                dto.setMar(getCellDoubleVal(row, col++)); // col 20 Mar
+                dto.setApril(getCellDoubleVal(row, col++)); // col 14 Apr
+                dto.setMay(getCellDoubleVal(row, col++)); // col 15 May
+                dto.setJune(getCellDoubleVal(row, col++)); // col 16 Jun
+                dto.setJuly(getCellDoubleVal(row, col++)); // col 17 Jul
+                dto.setAug(getCellDoubleVal(row, col++)); // col 18 Aug
+                dto.setSep(getCellDoubleVal(row, col++)); // col 19 Sep
+                dto.setOct(getCellDoubleVal(row, col++)); // col 20 Oct
+                dto.setNov(getCellDoubleVal(row, col++)); // col 21 Nov
+                dto.setDec(getCellDoubleVal(row, col++)); // col 22 Dec
+                dto.setJan(getCellDoubleVal(row, col++)); // col 23 Jan
+                dto.setFeb(getCellDoubleVal(row, col++)); // col 24 Feb
+                dto.setMar(getCellDoubleVal(row, col++)); // col 25 Mar
 
-                col++; // col 21 Grand Total – skip (calculated, not stored)
+                col++; // col 26 Grand Total – skip (calculated, not stored)
 
                 // Remarks (updatable)
-                dto.setRemarks(getCellStringValue(row, col++)); // col 22 Remarks
+                dto.setRemarks(getCellStringValue(row, col++)); // col 27 Remarks
 
-                // col 23 – Hidden id column (required for update)
+                // col 28 – Hidden id column (required for update)
                 String idStr = getCellStringValue(row, col++);
                 if (idStr != null && !idStr.trim().isEmpty()) {
                     try {
@@ -609,7 +612,7 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
                     }
                 }
 
-                // col 24 – Hidden row hash (written at export time for change detection)
+                // col 29 – Hidden row hash (written at export time for change detection)
                 String hash = getCellStringValue(row, col++);
                 dto.setRowHash(hash);
 
@@ -722,8 +725,12 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
             Row headerRow = sheet.createRow(0);
             int col = 0;
             String[] headers = {
-                    "Plant", "Plant Id", "Cost Center", "Cost Center Id",
-                    "CPP Utilities", "CPP Utility Ids", "CPP Plant", "CPP Plant Id", "UOM",
+                    "Sender Material", "Sender Material Code", "Sender Material UOM",
+                    "Sender Plant", "Sender Plant Code",
+                    "Sender Cost Center", "Sender Cost Center Code",
+                    "Receiver Utility", "Receiver Utility Code", "Receiver Utility UOM",
+                    "Receiver Plant", "Receiver Plant Code",
+                    "Receiver Cost Center", "Receiver Cost Center Code",
                     "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
                     "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
                     "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
@@ -743,15 +750,23 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
                 Row row = sheet.createRow(rowNum++);
                 col = 0;
 
-                createStrCell(row, col++, dto.getPlant(), dataStyle);
-                createStrCell(row, col++, dto.getPlantId(), dataStyle);
+                // Sender (Material) columns
+                createStrCell(row, col++, dto.getSenderMaterial(), dataStyle);
+                createStrCell(row, col++, dto.getSenderMaterialCode(), dataStyle);
+                createStrCell(row, col++, dto.getSenderMaterialUom(), dataStyle);
+                createStrCell(row, col++, dto.getSenderPlant(), dataStyle);
+                createStrCell(row, col++, dto.getSenderPlantCode(), dataStyle);
                 createStrCell(row, col++, dto.getCostCenter(), dataStyle);
                 createStrCell(row, col++, dto.getCostCenterId(), dataStyle);
+
+                // Receiver (Utility) columns
                 createStrCell(row, col++, dto.getCppUtility(), dataStyle);
                 createStrCell(row, col++, dto.getCppUtilityId(), dataStyle);
-                createStrCell(row, col++, dto.getCppPlant(), dataStyle);
-                createStrCell(row, col++, dto.getCppPlantId(), dataStyle);
                 createStrCell(row, col++, dto.getUom(), dataStyle);
+                createStrCell(row, col++, dto.getPlant(), dataStyle);
+                createStrCell(row, col++, dto.getPlantId(), dataStyle);
+                createStrCell(row, col++, dto.getReceiverCostCenter(), dataStyle);
+                createStrCell(row, col++, dto.getReceiverCostCenterCode(), dataStyle);
                 setDoubleCell(row, col++, dto.getApril(), dataStyle);
                 setDoubleCell(row, col++, dto.getMay(), dataStyle);
                 setDoubleCell(row, col++, dto.getJune(), dataStyle);
