@@ -5,12 +5,9 @@ import { getRoleName } from 'services/role-service'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import {
-  convertRowsByUnit,
-  convertDataForSave,
-} from '../production-target/utils'
+
 import { ShutdownConsumptionApiService } from '../../services/polyester/shutdownConsumptionApiService'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const ShutdownConsumption = () => {
   const dispatch = useDispatch()
@@ -55,7 +52,7 @@ const ShutdownConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = ValueFormatterProduction(5)
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const monthsConfig = [

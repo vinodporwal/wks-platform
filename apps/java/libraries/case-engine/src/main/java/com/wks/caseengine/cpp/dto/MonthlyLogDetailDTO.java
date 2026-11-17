@@ -33,6 +33,8 @@ public class MonthlyLogDetailDTO {
     private UUID parentExecutionFkId;
     private Integer financialYear;
     private Integer month;
+    private UUID plantId;
+    private String modelScope;
     private Date executionDateTime;
     private String status;
     private Integer iterations;
