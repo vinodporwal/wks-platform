@@ -12,6 +12,7 @@
 package com.wks.caseengine.cpp.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.cpp.dto.*;
@@ -36,6 +37,14 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CPPModelCalculationLogService {
 
+    private static final String JMD_CREATED_BY = "JMDCombinedModel";
+    private static final Set<UUID> JMD_CPP_PLANT_IDS = Set.of(
+            UUID.fromString("A4AF8441-73AD-4F9F-BCF4-6734E8202F7A"),
+            UUID.fromString("F6D82E68-C3B6-494F-9905-48F19DC611E3"),
+            UUID.fromString("2DFEE33F-4CFD-4887-B9DD-53388AA95271"),
+            UUID.fromString("D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45"),
+            UUID.fromString("BA558F95-8A3F-4769-9C78-FF7B6C639DDF"));
+
     private final CPPModelCalculationLogRepository repository;
     private final ObjectMapper objectMapper;
     private final PlantsRepository plantsRepository;
@@ -53,6 +62,15 @@ public class CPPModelCalculationLogService {
                 } else {
                     parents = repository.findParentExecutionsByFinancialYearAndPlantIds(financialYear, plantIds);
                 }
+                if (plantIds != null && plantIds.stream().anyMatch(JMD_CPP_PLANT_IDS::contains)) {
+                    parents.addAll(repository.findJmdCombinedParentExecutionsByFinancialYear(financialYear));
+                }
+                Set<UUID> seenIds = new HashSet<>();
+                parents = parents.stream()
+                        .filter(parent -> seenIds.add(parent.getId()))
+                        .sorted(Comparator.comparing(CPPModelCalculationLog::getExecutionDateTime,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
+                        .collect(Collectors.toList());
             }
             log.info("[CPPModelCalculationLogService] Found {} parent execution records", parents.size());
             
@@ -78,8 +96,15 @@ public class CPPModelCalculationLogService {
             Integer financialYear, String status) {
         log.info("[CPPModelCalculationLogService] Fetching parent executions with filters - financialYear: {}, status: {}", financialYear, status);
         try {
-            List<CPPModelCalculationLog> parents = repository.findParentExecutionsWithFilters(
-                    financialYear, status);
+            List<CPPModelCalculationLog> parents = new ArrayList<>(
+                    repository.findParentExecutionsWithFilters(financialYear, status));
+            parents.addAll(repository.findJmdCombinedParentExecutionsWithFilters(financialYear, status));
+            Set<UUID> seenIds = new HashSet<>();
+            parents = parents.stream()
+                    .filter(parent -> seenIds.add(parent.getId()))
+                    .sorted(Comparator.comparing(CPPModelCalculationLog::getExecutionDateTime,
+                            Comparator.nullsLast(Comparator.reverseOrder())))
+                    .collect(Collectors.toList());
             log.info("[CPPModelCalculationLogService] Found {} parent execution records matching filters", parents.size());
             
             Map<UUID, Map<String, Long>> statsMap = buildMonthlyLogStatsMap();
@@ -307,8 +332,9 @@ public class CPPModelCalculationLogService {
 
         // Resolve plant info
         UUID plantId = parent.getCppPlantFkId();
-        String plantName = null;
-        if (plantId != null && plantMap.containsKey(plantId)) {
+        boolean combinedJmd = JMD_CREATED_BY.equalsIgnoreCase(parent.getCreatedBy());
+        String plantName = combinedJmd ? "JMD Combined" : null;
+        if (!combinedJmd && plantId != null && plantMap.containsKey(plantId)) {
             Plants plant = plantMap.get(plantId);
             plantName = plant.getDisplayName() != null ? plant.getDisplayName() : plant.getName();
         }
@@ -326,6 +352,7 @@ public class CPPModelCalculationLogService {
                     parent.getExecutionTimeSeconds().toString() + "s" : null)
                 .plantId(plantId)
                 .plantName(plantName)
+                .modelScope(combinedJmd ? "JMD_COMBINED" : (plantId != null ? "CPP" : null))
                 .monthsSucceeded(monthsSucceeded)
                 .monthsFailed(monthsFailed)
                 .monthsWithWarnings(monthsWithWarnings)
@@ -351,6 +378,9 @@ public class CPPModelCalculationLogService {
                 .financialYear(monthlyLog.getFinancialYear())
                 .financialYearDisplay(financialYearDisplay)
                 .month(monthlyLog.getMonth())
+                .plantId(monthlyLog.getCppPlantFkId())
+                .modelScope(JMD_CREATED_BY.equalsIgnoreCase(monthlyLog.getCreatedBy())
+                        ? "JMD_COMBINED" : (monthlyLog.getCppPlantFkId() != null ? "CPP" : null))
                 .executionDateTime(monthlyLog.getExecutionDateTime())
                 .status(monthlyLog.getStatus())
                 .iterations(monthlyLog.getIterationCount())
@@ -374,6 +404,9 @@ public class CPPModelCalculationLogService {
                 .parentExecutionFkId(monthlyLog.getParentExecutionFkId())
                 .financialYear(monthlyLog.getFinancialYear())
                 .month(monthlyLog.getMonth())
+                .plantId(monthlyLog.getCppPlantFkId())
+                .modelScope(JMD_CREATED_BY.equalsIgnoreCase(monthlyLog.getCreatedBy())
+                        ? "JMD_COMBINED" : (monthlyLog.getCppPlantFkId() != null ? "CPP" : null))
                 .executionDateTime(monthlyLog.getExecutionDateTime())
                 .status(monthlyLog.getStatus())
                 .iterations(monthlyLog.getIterationCount())
@@ -420,13 +453,15 @@ public class CPPModelCalculationLogService {
                 AssetStatusDTO.AssetLoadingDTO.AssetLoadingDTOBuilder builder = AssetStatusDTO.AssetLoadingDTO.builder()
                         .assetName(getStringOrNull(assetNode, "asset"))
                         .assetType(assetType)
+                        .cpp(getStringOrNull(assetNode, "cpp"))
+                        .plantId(parseUuidOrNull(getStringOrNull(assetNode, "plantId")))
                         .priority(getIntegerOrNull(assetNode, "priority"))
                         .isAvailable(getBooleanOrNull(assetNode, "isAvailable"))
                         .operatingHours(getDoubleOrNull(assetNode, "operatingHours"))
                         .status(getStringOrNull(assetNode, "status"));
                 
                 // Type-specific fields
-                if ("GT".equals(assetType) || "STG".equals(assetType) || "ImportPower".equals(assetType)) {
+                if (assetType != null && ("GT".equalsIgnoreCase(assetType) || "STG".equalsIgnoreCase(assetType) || "ImportPower".equalsIgnoreCase(assetType))) {
                     // GT/STG/ImportPower fields
                     Double grossMWh = getDoubleOrNull(assetNode, "grossMWh");
                     builder.minCapacityMW(getDoubleOrNull(assetNode, "minCapacityMW"))
@@ -439,12 +474,16 @@ public class CPPModelCalculationLogService {
                            .loading(grossMWh)  // Legacy field
                            .unit("MWh");  // Legacy field
                 } 
-                else if ("HRSG".equals(assetType)) {
-                    // HRSG fields
+                else if (assetType != null && ("HRSG".equalsIgnoreCase(assetType) || "AUXBOILER".equalsIgnoreCase(assetType))) {
+                    // Steam generation assets retain CPP ownership and TPH capacities.
                     Double steamGenMT = getDoubleOrNull(assetNode, "steamGenerationMT");
                     builder.steamGenerationMT(steamGenMT)
                            .freeSteamMT(getDoubleOrNull(assetNode, "freeSteamMT"))
                            .avgSteamGenRateMTPerHr(getDoubleOrNull(assetNode, "avgSteamGenRateMTPerHr"))
+                           .minCapacityTPH(getDoubleOrNull(assetNode, "minCapacityTPH"))
+                           .maxCapacityTPH(getDoubleOrNull(assetNode, "maxCapacityTPH"))
+                           .dispatchedRateTPH(getDoubleOrNull(assetNode, "dispatchedRateTPH"))
+                           .totalOutputMT(getDoubleOrNull(assetNode, "totalOutputMT"))
                            .loading(steamGenMT)  // Legacy field
                            .unit("MT");  // Legacy field
                 }
@@ -494,6 +533,8 @@ public class CPPModelCalculationLogService {
                                    getDoubleOrNull(supplyNode, "gt3Net") : null)
                         .steamTurbine(getDoubleOrNull(supplyNode, "stgNet"))
                         .importPower(getDoubleOrNull(supplyNode, "importPower"))
+                        .totalNetGeneration(getDoubleOrNull(supplyNode, "totalNetGeneration"))
+                        .totalGeneration(getDoubleOrNull(supplyNode, "totalGeneration"))
                         .totalSupply(getDoubleOrNull(supplyNode, "total"))
                         .build();
             }
@@ -502,6 +543,9 @@ public class CPPModelCalculationLogService {
             if (demandNode != null) {
                 demand = PowerBalanceDTO.DemandDTO.builder()
                         .processDemand(getDoubleOrNull(demandNode, "processDemand"))
+                        .fixedDemand(getDoubleOrNull(demandNode, "fixedDemand"))
+                        .utilityAuxPower(getDoubleOrNull(demandNode, "utilityAuxPower"))
+                        .poolDemand(getDoubleOrNull(demandNode, "poolDemand"))
                         .u4uPower(getDoubleOrNull(demandNode, "u4uDemand"))
                         .totalDemand(getDoubleOrNull(demandNode, "total"))
                         .build();
@@ -509,9 +553,25 @@ public class CPPModelCalculationLogService {
 
             log.debug("[CPPModelCalculationLogService] Successfully parsed power balance JSON - Supply: {}, Demand: {}", 
                     supply != null ? supply.getTotalSupply() : null, demand != null ? demand.getTotalDemand() : null);
+            JsonNode balanceNode = root.get("balance");
+            PowerBalanceDTO.BalanceDTO balance = balanceNode == null ? null
+                    : PowerBalanceDTO.BalanceDTO.builder()
+                            .difference(getDoubleOrNull(balanceNode, "difference"))
+                            .closureResidualMWh(getDoubleOrNull(balanceNode, "closureResidualMWh"))
+                            .poolDemandMWh(getDoubleOrNull(balanceNode, "poolDemandMWh"))
+                            .internalGenerationMWh(getDoubleOrNull(balanceNode, "internalGenerationMWh"))
+                            .ctuImportMWh(getDoubleOrNull(balanceNode, "ctuImportMWh"))
+                            .isBalanced(getBooleanOrNull(balanceNode, "isBalanced"))
+                            .importsMWh(getDoubleOrNull(balanceNode, "importsMWh"))
+                            .exportsMWh(getDoubleOrNull(balanceNode, "exportsMWh"))
+                            .build();
             return PowerBalanceDTO.builder()
                     .supply(supply)
                     .demand(demand)
+                    .balance(balance)
+                    .cppBalances(asMap(root.get("cppBalances")))
+                    .transfers(asMapList(root.get("transfers")))
+                    .pool(asMap(root.get("pool")))
                     .build();
 
         } catch (JsonProcessingException e) {
@@ -545,6 +605,9 @@ public class CPPModelCalculationLogService {
                     .hp(parseSteamTypeBalance(root.get("HP"), "HP"))
                     .mp(parseSteamTypeBalance(root.get("MP"), "MP"))
                     .lp(parseSteamTypeBalance(root.get("LP"), "LP"))
+                    .byCPP(asMap(root.get("byCPP")))
+                    .balanceRows(asMapList(root.get("balanceRows")))
+                    .transfers(asMapList(root.get("transfers")))
                     .build();
             log.debug("[CPPModelCalculationLogService] Successfully parsed steam balance JSON for all steam types");
             return result;
@@ -583,6 +646,24 @@ public class CPPModelCalculationLogService {
     }
 
     // ==================== JSON Helper Methods ====================
+
+    private UUID parseUuidOrNull(String value) {
+        try {
+            return value == null || value.isBlank() ? null : UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> asMap(JsonNode node) {
+        if (node == null || node.isNull()) return null;
+        return objectMapper.convertValue(node, new TypeReference<Map<String, Object>>() {});
+    }
+
+    private List<Map<String, Object>> asMapList(JsonNode node) {
+        if (node == null || !node.isArray()) return null;
+        return objectMapper.convertValue(node, new TypeReference<List<Map<String, Object>>>() {});
+    }
 
     private Double getDoubleOrNull(JsonNode node, String fieldName) {
         JsonNode field = node.get(fieldName);

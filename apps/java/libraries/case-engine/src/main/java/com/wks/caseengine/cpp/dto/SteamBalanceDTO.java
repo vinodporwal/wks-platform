@@ -16,6 +16,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * DTO for Steam Balance JSON data
  * Contains steam supply and demand breakdown for each steam type
@@ -30,6 +33,9 @@ public class SteamBalanceDTO {
     private SteamTypeBalanceDTO hp;   // High Pressure
     private SteamTypeBalanceDTO mp;   // Medium Pressure
     private SteamTypeBalanceDTO lp;   // Low Pressure
+    private Map<String, Object> byCPP;
+    private List<Map<String, Object>> balanceRows;
+    private List<Map<String, Object>> transfers;
     
     @Data
     @Builder
