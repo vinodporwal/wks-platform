@@ -622,9 +622,9 @@ const FixedConsumptionJMD = () => {
           }}
         />
       </Stack>
-      <Stack>
+      {/* <Stack>
         <IntersiteSteamTransfer />
-      </Stack>
+      </Stack> */}
 
       <AddFixedConsumptionDialog
         open={addRowDialogOpen}
