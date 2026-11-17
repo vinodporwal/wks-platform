@@ -63,6 +63,35 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
             @Param("financialYear") Integer financialYear,
             @Param("plantIds") List<UUID> plantIds);
 
+    /** Combined JMD runs have no single CPP FK and are identified by CreatedBy. */
+    @Query(value = """
+            SELECT *
+            FROM CPPModelCalculationLogs WITH(NOLOCK)
+            WHERE ParentExecution_FK_Id IS NULL
+              AND Month IS NULL
+              AND FinancialYear = :financialYear
+              AND CreatedBy = 'JMDCombinedModel'
+              AND (Status IS NULL OR Status != 'InProgress')
+            ORDER BY ExecutionDateTime DESC
+            """, nativeQuery = true)
+    List<CPPModelCalculationLog> findJmdCombinedParentExecutionsByFinancialYear(
+            @Param("financialYear") Integer financialYear);
+
+    /** Combined JMD runs matching the existing year/status search endpoint. */
+    @Query(value = """
+            SELECT *
+            FROM CPPModelCalculationLogs WITH(NOLOCK)
+            WHERE ParentExecution_FK_Id IS NULL
+              AND Month IS NULL
+              AND (:financialYear IS NULL OR FinancialYear = :financialYear)
+              AND CreatedBy = 'JMDCombinedModel'
+              AND (:status IS NULL OR Status = :status)
+            ORDER BY ExecutionDateTime DESC
+            """, nativeQuery = true)
+    List<CPPModelCalculationLog> findJmdCombinedParentExecutionsWithFilters(
+            @Param("financialYear") Integer financialYear,
+            @Param("status") String status);
+
     /**
      * Find parent executions by status
      */

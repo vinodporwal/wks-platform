@@ -34,6 +34,8 @@ public class MonthlyLogDTO {
     private Integer financialYear;
     private String financialYearDisplay; // e.g., "2025-26"
     private Integer month;
+    private UUID plantId;
+    private String modelScope;
     private Date executionDateTime;
     private String status;
     private Integer iterations;

@@ -17,6 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO for Asset Status JSON data
@@ -36,7 +37,9 @@ public class AssetStatusDTO {
     @AllArgsConstructor
     public static class AssetLoadingDTO {
         private String assetName;
-        private String assetType;  // GT, HRSG, STG, ImportPower
+        private String assetType;  // GT, HRSG, STG, ImportPower, AUXBOILER
+        private String cpp;
+        private UUID plantId;
         private Integer priority;  // Dispatch priority (lower = higher priority)
         private Boolean isAvailable;
         private Double operatingHours;  // Working hours
@@ -54,6 +57,10 @@ public class AssetStatusDTO {
         private Double steamGenerationMT;  // Total supplementary firing steam (MT)
         private Double freeSteamMT;  // Free steam from GT exhaust (MT)
         private Double avgSteamGenRateMTPerHr;  // Average generation rate (MT/hour)
+        private Double minCapacityTPH;
+        private Double maxCapacityTPH;
+        private Double dispatchedRateTPH;
+        private Double totalOutputMT;
         
         private String status;  // OFF, AtMin, AtMax, PARTIAL, Running, etc.
         

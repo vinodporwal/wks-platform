@@ -42,6 +42,8 @@ public class CPPModelCalculationLogListDTO {
     // Plant information
     private UUID plantId;
     private String plantName;
+    /** CPP, JMD_COMBINED, or null for older untagged aggregate records. */
+    private String modelScope;
     
     // Additional summary fields
     private Long monthsSucceeded;
