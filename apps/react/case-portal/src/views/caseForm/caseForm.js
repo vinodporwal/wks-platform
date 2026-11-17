@@ -908,7 +908,11 @@ return {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
+          if (data && data.caseUrl) {
           window.location.href = data.caseUrl;
+          } else {
+            handleClose();
+          }
         }, 1000)
       })
       .catch((err) => {
@@ -1140,8 +1144,11 @@ return {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
+          if (data && data.caseUrl) {
           window.location.href = data.caseUrl;
-          // handleClose()
+          } else {
+            handleClose();
+          }
         }, 1000)
       })
       .catch((err) => {
@@ -2095,18 +2102,15 @@ return {
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged} >
                   <Tab
                     label={t('pages.caseform.tabs.details')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' }
                     {...a11yProps(0)}
                   />
                   <Tab
                     label={t('pages.caseform.tabs.attachments')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' }
                     {...a11yProps(1)}
                    
                   />
                   <Tab
                     label={t('pages.caseform.tabs.comments')}
-                    disabled={((isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator) || aCase?.status?.name === 'Closed' }
                     {...a11yProps(2)}
                   
                   />
@@ -2191,7 +2195,7 @@ return {
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
                         options={{
-                          readOnly: isCaseViewer || aCase?.status?.name === 'Closed',
+                          readOnly: isCaseViewer || !isDraft || aCase?.status?.name === 'Closed',
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {
