@@ -943,6 +943,11 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		return "Actual " + getPreviousFiscalYear(aopYear);
 	}
 
+	/** e.g. "2026-27" → "Actual 2025-26" */
+	private String getColumnNameWithYear(String aopYear, String col) {
+		return col + " " + aopYear;
+	}
+
 	private void writeProposedSteadyStateSheet(Workbook workbook, String sheetName,
 			List<ProposedAOPDTO> dtoList, boolean isAfterSave, String aopYear) {
 
@@ -956,7 +961,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
 				"SAP MAT Code", "Particulars", "UOM / MT",
 				getBudgetColumnName(aopYear), getActualColumnName(aopYear),
-				"Sys Gen", "Proposed", "Remarks",
+				getColumnNameWithYear(aopYear, "Sys Gen"), getColumnNameWithYear(aopYear, "Proposed"), "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
