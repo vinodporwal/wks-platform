@@ -111,6 +111,7 @@ const AssetFuelPriority = ({ fuelOptions = [], plantFuelMap = {} }) => {
           editable: true,
           showClearOption: true,
           returnFullObject: true,
+          keyboardNavigation: true,
           field: `${mon}${field.charAt(0).toUpperCase() + field.slice(1)}FuelName`,
           title,
         })),

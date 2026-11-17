@@ -2907,6 +2907,7 @@ const AdvanceKendoTable = ({
                       searchable={col.searchable || false}
                       showClearOption={col.showClearOption || false}
                       returnFullObject={col.returnFullObject || false}
+                      keyboardNavigation={col.keyboardNavigation || false}
                     />
                   )
                 },
