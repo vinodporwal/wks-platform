@@ -44,6 +44,17 @@ public class JMDFixedConsumptionDto {
     private UUID costCenter_FK_Id;
     private UUID normParameter_FK_Id;
 
+    // Sender (Material) details
+    private String senderPlant;
+    private String senderPlantCode;
+    private String senderMaterial;
+    private String senderMaterialCode;
+    private String senderMaterialUom;
+
+    // Receiver (Utility) cost center details
+    private String receiverCostCenter;
+    private String receiverCostCenterCode;
+
     // Fields for import/export tracking
     private String saveStatus;
     private String errDescription;

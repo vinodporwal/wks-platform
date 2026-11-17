@@ -150,27 +150,50 @@ const FixedConsumptionJMD = () => {
 
   // Column definitions
   const columns = [
+    // Sender (Material) columns
     {
-      field: 'plant',
-      title: 'Plant',
+      field: 'senderMaterial',
+      title: 'Sender Material',
       widthT: 150,
       minWidth: 150,
       type: 'text',
       editable: false,
-      hidden: false,
     },
     {
-      field: 'plantId',
-      title: 'Plant ID',
+      field: 'senderMaterialCode',
+      title: 'Sender Material Code',
+      widthT: 170,
+      minWidth: 170,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'senderMaterialUom',
+      title: 'Sender Material UOM',
       widthT: 120,
       minWidth: 120,
       type: 'text',
       editable: false,
-      hidden: true,
+    },
+    {
+      field: 'senderPlant',
+      title: 'Sender Plant',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'senderPlantCode',
+      title: 'Sender Plant Code',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
     },
     {
       field: 'costCenter',
-      title: 'Cost Center',
+      title: 'Sender Cost Center',
       widthT: 150,
       minWidth: 150,
       type: 'text',
@@ -179,16 +202,18 @@ const FixedConsumptionJMD = () => {
     },
     {
       field: 'costCenterId',
-      title: 'Cost Center ID',
+      title: 'Sender Cost Center ID',
       widthT: 170,
       minWidth: 170,
       type: 'text',
       editable: false,
       hidden: false,
     },
+
+    // Receiver (Utility) columns
     {
       field: 'cppUtility',
-      title: 'CPP Utilities',
+      title: 'Receiver Utility',
       widthT: 150,
       minWidth: 150,
       type: 'text',
@@ -196,34 +221,50 @@ const FixedConsumptionJMD = () => {
     },
     {
       field: 'cppUtilityId',
-      title: 'CPP Utility IDs',
+      title: 'Receiver Utility Code',
       widthT: 170,
       minWidth: 170,
       type: 'text',
       editable: false,
     },
     {
-      field: 'cppPlant',
-      title: 'CPP Plant',
+      field: 'uom',
+      title: 'Receiver Utility UOM',
+      widthT: 100,
+      minWidth: 100,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'plant',
+      title: 'Receiver Plant',
       widthT: 150,
       minWidth: 150,
       type: 'text',
       editable: false,
     },
     {
-      field: 'cppPlantId',
-      title: 'CPP Plant ID',
-      widthT: 170,
-      minWidth: 170,
+      field: 'plantId',
+      title: 'Receiver Plant Code',
+      widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
-      hidden: true,
+      hidden: false,
     },
     {
-      field: 'uom',
-      title: 'UOM',
-      widthT: 100,
-      minWidth: 100,
+      field: 'receiverCostCenter',
+      title: 'Receiver Cost Center',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'receiverCostCenterCode',
+      title: 'Receiver Cost Center Code',
+      widthT: 170,
+      minWidth: 170,
       type: 'text',
       editable: false,
     },
@@ -581,9 +622,9 @@ const FixedConsumptionJMD = () => {
           }}
         />
       </Stack>
-      <Stack>
+      {/* <Stack>
         <IntersiteSteamTransfer />
-      </Stack>
+      </Stack> */}
 
       <AddFixedConsumptionDialog
         open={addRowDialogOpen}
