@@ -647,6 +647,14 @@ const AdvanceKendoTable = ({
       groupBy &&
       (permissions?.exportGroupByColumn || permissions?.exportWithGroupColumn || permissions?.includeGroupColumnInExport)
     )
+    const shouldExportGroupByBlankRow = Boolean(
+      groupBy &&
+      (permissions?.exportGroupByBlankRow || permissions?.isGroupByBlankRow || permissions?.hasGroupByBlankRow)
+    )
+    const groupByBlankRowBgColor =
+      permissions?.groupByBlankRowBgColor ||
+      permissions?.blankRowBgColor ||
+      '#92D050'
     const visibleColumns =
       columns?.filter(
         (col) =>
@@ -888,7 +896,7 @@ const AdvanceKendoTable = ({
         }
       })
 
-      if (shouldExportGroupByColumn) {
+      if (shouldExportGroupByColumn || shouldExportGroupByBlankRow) {
         let groupField = null
         if (Array.isArray(groupBy) && groupBy.length > 0) {
           groupField = typeof groupBy[0] === 'string' ? groupBy[0] : groupBy[0]?.field
@@ -913,47 +921,7 @@ const AdvanceKendoTable = ({
               : ''
           }
 
-          // 1. Determine header title from column definitions or fallback to field name
-          const groupColDef =
-            leafColumns.find(
-              (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
-            ) ||
-            visibleColumns.find(
-              (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
-            ) ||
-            columns?.find(
-              (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
-            )
-          const groupTitle = groupColDef?.title || groupColDef?.headerName || groupField
-
-          // 2. Add header cell to the first header row (spanning all header rows if multiple)
-          const firstHeaderRow = sheet.rows.find(
-            (r) => r.type === 'header' || r.type === 'group-header',
-          )
-          if (firstHeaderRow) {
-            firstHeaderRow.cells.unshift({
-              value: groupTitle,
-              bold: true,
-              textAlign: 'center',
-              verticalAlign: 'center',
-              background: '#DFDFDF',
-              color: '#000000',
-              disabled: true,
-              borderTop: HEADER_BORDER,
-              borderBottom: HEADER_BORDER,
-              borderLeft: HEADER_BORDER,
-              borderRight: HEADER_BORDER,
-              wrap: true,
-              rowSpan: headerRowCount > 1 ? headerRowCount : undefined,
-            })
-          }
-
-          // 3. Add column width definition to sheet.columns
-          if (sheet.columns && Array.isArray(sheet.columns)) {
-            sheet.columns.unshift({ autoWidth: true })
-          }
-
-          // 4. Compute contiguous group ranges from activeRows
+          // Compute contiguous group ranges from activeRows
           const groupRanges = []
           let currGroup = null
           activeRows.forEach((r, idx) => {
@@ -966,28 +934,104 @@ const AdvanceKendoTable = ({
             }
           })
 
-          // 5. Unshift merged group cell into the first row of each group
-          groupRanges.forEach((grp) => {
-            const sheetRowIndex = headerRowCount + grp.startIndex
-            const targetRow = sheet.rows[sheetRowIndex]
-            if (targetRow && targetRow.type === 'data') {
-              targetRow.cells.unshift({
-                value: grp.value,
-                rowSpan: grp.count > 1 ? grp.count : undefined,
+          if (shouldExportGroupByColumn) {
+            // 1. Determine header title from column definitions or fallback to field name
+            const groupColDef =
+              leafColumns.find(
+                (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
+              ) ||
+              visibleColumns.find(
+                (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
+              ) ||
+              columns?.find(
+                (c) => c?.field?.trim().toLowerCase() === groupField.trim().toLowerCase(),
+              )
+            const groupTitle = groupColDef?.title || groupColDef?.headerName || groupField
+
+            // 2. Add header cell to the first header row (spanning all header rows if multiple)
+            const firstHeaderRow = sheet.rows.find(
+              (r) => r.type === 'header' || r.type === 'group-header',
+            )
+            if (firstHeaderRow) {
+              firstHeaderRow.cells.unshift({
+                value: groupTitle,
                 bold: true,
                 textAlign: 'center',
                 verticalAlign: 'center',
-                background: '#ffffff',
+                background: '#DFDFDF',
                 color: '#000000',
                 disabled: true,
-                borderTop: CELL_BORDER,
-                borderBottom: CELL_BORDER,
-                borderLeft: CELL_BORDER,
-                borderRight: CELL_BORDER,
+                borderTop: HEADER_BORDER,
+                borderBottom: HEADER_BORDER,
+                borderLeft: HEADER_BORDER,
+                borderRight: HEADER_BORDER,
                 wrap: true,
+                rowSpan: headerRowCount > 1 ? headerRowCount : undefined,
               })
             }
-          })
+
+            // 3. Add column width definition to sheet.columns
+            if (sheet.columns && Array.isArray(sheet.columns)) {
+              sheet.columns.unshift({ autoWidth: true })
+            }
+
+            // 4. Unshift merged group cell into the first row of each group
+            groupRanges.forEach((grp) => {
+              const sheetRowIndex = headerRowCount + grp.startIndex
+              const targetRow = sheet.rows[sheetRowIndex]
+              if (targetRow && targetRow.type === 'data') {
+                targetRow.cells.unshift({
+                  value: grp.value,
+                  rowSpan: grp.count > 1 ? grp.count : undefined,
+                  bold: true,
+                  textAlign: 'center',
+                  verticalAlign: 'center',
+                  background: '#ffffff',
+                  color: '#000000',
+                  disabled: true,
+                  borderTop: CELL_BORDER,
+                  borderBottom: CELL_BORDER,
+                  borderLeft: CELL_BORDER,
+                  borderRight: CELL_BORDER,
+                  wrap: true,
+                })
+              }
+            })
+          }
+
+          if (shouldExportGroupByBlankRow && groupRanges.length > 0) {
+            const firstHeaderRow = sheet.rows.find(
+              (r) => r.type === 'header' || r.type === 'group-header',
+            )
+            const totalCols =
+              (sheet.columns && sheet.columns.length) ||
+              (firstHeaderRow && firstHeaderRow.cells.length) ||
+              maxCols
+
+            for (let i = groupRanges.length - 1; i >= 0; i--) {
+              const grp = groupRanges[i]
+              const insertIndex = headerRowCount + grp.startIndex + grp.count
+
+              const blankCells = []
+              for (let c = 0; c < totalCols; c++) {
+                blankCells.push({
+                  value: '',
+                  background: groupByBlankRowBgColor,
+                  color: '#000000',
+                  disabled: true,
+                  borderTop: CELL_BORDER,
+                  borderBottom: CELL_BORDER,
+                  borderLeft: CELL_BORDER,
+                  borderRight: CELL_BORDER,
+                })
+              }
+
+              sheet.rows.splice(insertIndex, 0, {
+                type: 'data',
+                cells: blankCells,
+              })
+            }
+          }
         }
       }
 
@@ -3729,7 +3773,7 @@ const AdvanceKendoTable = ({
                   }
                   className='btn-calculate'
                 >
-                  Calculate
+                  {permissions?.calculateButtonName || 'Calculate'}
                 </Button>
               )}
 
