@@ -8,13 +8,14 @@ import ValueFormatterPhaseTwo, {
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { QuantityApiService } from 'components/aop-phase-two/services/cpp/jmd/quantityApiService'
+import { InputNormsApiService } from 'components/aop-phase-two/services/cpp/jmd/inputNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { downloadBase64Excel } from 'components/aop-phase-two/common/utilities/downloadBase64Excel'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import { useDebounce } from 'hooks/useDebounce'
 
-const Quantity = () => {
+const Quantity = ({ refreshKey = 0, onRefreshAll = () => {} }) => {
   const keycloak = useSession()
   // State management
   const dispatch = useDispatch()
@@ -246,6 +247,7 @@ const Quantity = () => {
         return {
           ...item,
           id: item.id || index + 1,
+          idFromApi: item.normHeaderId,
           remarks: item.remarks || '',
         }
       })
@@ -269,7 +271,7 @@ const Quantity = () => {
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchNormsData],
+    [PLANT_ID_LIST, AOP_YEAR, fetchNormsData, refreshKey],
   )
 
   // Save handler with API call
@@ -479,6 +481,47 @@ const Quantity = () => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
+  // Move selected quantity rows to Norms (NormType_FK_Id 10 -> 6)
+  const handleMoveToNorms = async (selectedIds) => {
+    if (!selectedIds?.length) return
+    setLoading(true)
+    try {
+      const response = await InputNormsApiService.updateNormType(
+        keycloak,
+        selectedIds,
+        'quantity',
+        AOP_YEAR,
+      )
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message ||
+            `Moved ${selectedIds.length} record(s) to Norms.`,
+          severity: 'success',
+        })
+        // Refresh both grids — moved rows now belong to the Norms grid
+        onRefreshAll()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Failed to update records. Please try again.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error updating norm type:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to update records. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
   // Permissions for monthly view (editable)
   const monthlyPermissions = useMemo(() => {
     return {
@@ -527,6 +570,15 @@ const Quantity = () => {
           setSnackbarData={setSnackbarData}
           customHeight={80}
           groupBy={['cppPlantName', 'generatingPlantName']}
+          enableRowSelection
+          selectionAction={{
+            label: 'Move to Norms',
+            dialogTitle: 'MOVE TO NORMS',
+            dialogMessage:
+              'Are you sure you want to move the selected record(s) to the Norms grid?',
+            confirmText: 'Move',
+            onConfirm: handleMoveToNorms,
+          }}
         />
       </Box>
     </Box>

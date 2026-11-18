@@ -229,7 +229,7 @@ const FuelConsumption = () => {
         columns={columns}
         rows={rows}
         setRows={setRows}
-        title='Fuel Consumption'
+        title='Fuel Consumption (In MMBTU)'
         permissions={permissions}
         handleExport={handleExport}
         snackbarData={snackbarData}

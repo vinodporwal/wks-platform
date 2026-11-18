@@ -277,20 +277,29 @@ const UtilityRateGrid = () => {
         AOP_YEAR,
       )
 
-      if (res) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Calculation completed successfully!',
-          severity: 'success',
-        })
-        // Refresh the data after calculation
-        await fetchUtilityRateData()
+      if (!res?.success) {
+        throw new Error(res?.error || 'Cost module execution failed.')
       }
+
+      if (res.log_message) console.info(res.log_message)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Cost module completed successfully for FY ' +
+          (res.financial_year || AOP_YEAR) +
+          '.',
+        severity: 'success',
+      })
+      // Refresh the utility rates after the cost module persists them.
+      await fetchUtilityRateData()
     } catch (error) {
       console.error('Error calculating run cost:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Error during calculation. Please try again.',
+        message:
+          error.message ||
+          'Cost module execution failed. Check the server log.',
         severity: 'error',
       })
     } finally {

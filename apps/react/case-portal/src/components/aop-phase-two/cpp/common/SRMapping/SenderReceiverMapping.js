@@ -97,6 +97,24 @@ const DROPDOWN_FIELD_CONFIG = {
     codeField: 'code',
     idField: 'costCenterId',
   },
+  senderCostCenterCode: {
+    source: 'costCentersDropdown',
+    prefix: 'sender',
+    group: 'CostCenter',
+    valueField: 'code',
+    labelField: 'label',
+    codeField: 'code',
+    idField: 'costCenterId',
+  },
+  receiverCostCenterCode: {
+    source: 'costCentersDropdown',
+    prefix: 'receiver',
+    group: 'CostCenter',
+    valueField: 'code',
+    labelField: 'label',
+    codeField: 'code',
+    idField: 'costCenterId',
+  },
   senderUtilityName: {
     source: 'normParameters',
     prefix: 'sender',
@@ -420,6 +438,39 @@ const SenderReceiverMapping = () => {
     [costCentersDropdown],
   )
 
+  // Cost-center code dropdowns: same row scoping as the name dropdowns,
+  // but options are keyed by code so picking a code resolves back to the
+  // cost center (and its name) in handleCustomItemChange.
+  const toCodeOptions = useCallback((items) => {
+    const seen = new Set()
+    const options = []
+    items.forEach((cc) => {
+      if (cc.code && !seen.has(cc.code)) {
+        seen.add(cc.code)
+        options.push({ value: cc.code, label: cc.code })
+      }
+    })
+    return options
+  }, [])
+
+  const getFilteredSenderCostCenterCodes = useCallback(
+    () => toCodeOptions(costCentersDropdown),
+    [costCentersDropdown, toCodeOptions],
+  )
+
+  const getFilteredReceiverCostCenterCodes = useCallback(
+    (dataItem) => {
+      const selectedCppPlantId = dataItem?.cppPlantId
+      if (!selectedCppPlantId) return []
+      const filtered = costCentersDropdown.filter(
+        (cc) =>
+          cc.cppPlantFkId?.toLowerCase() === selectedCppPlantId?.toLowerCase(),
+      )
+      return toCodeOptions(filtered)
+    },
+    [costCentersDropdown, toCodeOptions],
+  )
+
   const getFilteredPlants = useCallback(
     (dataItem) => {
       // Sender Plant: show all plants (both SourceName-based and CPPProcessPlantsMapping-based)
@@ -671,8 +722,12 @@ const SenderReceiverMapping = () => {
         title: 'Sender Cost Center Code',
         widthT: 200,
         minWidth: 180,
-        type: 'text',
-        editable: false,
+        type: 'select',
+        dynamicOptions: true,
+        displayMode: 'label',
+        getOptions: getFilteredSenderCostCenterCodes,
+        editable: isSRMappingRole || isSRMappingEditRole,
+        searchable: true,
       },
       {
         field: 'senderPlantName',
@@ -738,8 +793,12 @@ const SenderReceiverMapping = () => {
         title: 'Receiver Cost Center Code',
         widthT: 200,
         minWidth: 200,
-        type: 'text',
-        editable: false,
+        type: 'select',
+        dynamicOptions: true,
+        displayMode: 'label',
+        getOptions: getFilteredReceiverCostCenterCodes,
+        editable: isSRMappingRole || isSRMappingEditRole,
+        searchable: true,
       },
       {
         field: 'receiverPlantName',
@@ -817,6 +876,8 @@ const SenderReceiverMapping = () => {
       cppPlantList,
       getFilteredSenderCostCenters,
       getFilteredReceiverCostCenters,
+      getFilteredSenderCostCenterCodes,
+      getFilteredReceiverCostCenterCodes,
       getFilteredPlants,
       getFilteredReceiverPlants,
       getFilteredSenderUtilities,
