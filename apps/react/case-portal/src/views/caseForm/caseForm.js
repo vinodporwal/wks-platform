@@ -908,11 +908,9 @@ return {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          if (data && data.caseUrl) {
+          
           window.location.href = data.caseUrl;
-          } else {
-            handleClose();
-          }
+        
         }, 1000)
       })
       .catch((err) => {
@@ -1144,11 +1142,9 @@ return {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
-          if (data && data.caseUrl) {
+          
           window.location.href = data.caseUrl;
-          } else {
-            handleClose();
-          }
+          
         }, 1000)
       })
       .catch((err) => {
@@ -2190,7 +2186,7 @@ return {
 {console.log('***** formData at render', formData)}
                     
                     {isFormData && (
-                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${aCase?.status?.name === 'Closed' ? 'case-closed' : ''}`}>
+                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${!isDraft && (aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3') ? 'case-closed' : ''}`}>
                       <Form
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
