@@ -308,6 +308,7 @@ const OverallAopConsumptionPCG = () => {
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={70}

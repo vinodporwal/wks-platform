@@ -296,6 +296,7 @@ const OverallAopConsumptionAlkylation = () => {
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         groupBy={['normParameterTypeDisplayName']}

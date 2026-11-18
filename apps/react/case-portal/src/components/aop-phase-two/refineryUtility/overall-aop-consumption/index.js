@@ -535,6 +535,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         permissions={permissions}
         handleCalculate={handleCalculate}
         handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
