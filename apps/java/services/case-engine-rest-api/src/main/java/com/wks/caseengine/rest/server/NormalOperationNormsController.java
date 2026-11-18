@@ -201,7 +201,7 @@ public class NormalOperationNormsController {
 			if(vertical.getName().equalsIgnoreCase("Coker") || vertical.getName().equalsIgnoreCase("CRUDE") 
 					|| vertical.getName().equalsIgnoreCase("MEROX") || vertical.getName().equalsIgnoreCase("VGOHT") 
 					|| vertical.getName().equalsIgnoreCase("PCG") || vertical.getName().equalsIgnoreCase("FCC") || vertical.getName().equalsIgnoreCase("RefineryUtility")
-					|| vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("Staple")) {
+					|| vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("Staple") || vertical.getName().equalsIgnoreCase("Sulphur")) {
 					
 				 excelBytes = normalOperationNormsService.createExcelSAP(year,UUID.fromString(plantId),false,null,mode,gradeId); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 			}else {

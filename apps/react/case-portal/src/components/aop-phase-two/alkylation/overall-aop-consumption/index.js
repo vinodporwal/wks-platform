@@ -10,6 +10,7 @@ import ValueFormatterPhaseTwo, {
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 
 const OverallAopConsumptionAlkylation = () => {
   const keycloak = useSession()
@@ -30,7 +31,11 @@ const OverallAopConsumptionAlkylation = () => {
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Overall AOP Consumption')
-
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+    })
   const columns = [
     {
       field: 'productName',
@@ -273,6 +278,8 @@ const OverallAopConsumptionAlkylation = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
   }
 
   return (
@@ -288,6 +295,7 @@ const OverallAopConsumptionAlkylation = () => {
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
+        handleRelease={handleRelease}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         groupBy={['normParameterTypeDisplayName']}
@@ -299,6 +307,7 @@ const OverallAopConsumptionAlkylation = () => {
           defaultPageSize: 100,
         }}
       />
+      {ReleaseDialogComponent}
     </Box>
   )
 }
