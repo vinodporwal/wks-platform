@@ -447,7 +447,7 @@ return {
 };
       })
       .then(({ caseData, updatedFormStructure }) => {
-        const isDraft = caseData?.isDraft === 'y'
+        const isDraft = (caseData?.isDraft || aCase?.isDraft) === 'y'
         setIsDraft(isDraft);
         setIsOverdue(caseData?.isDraft === 'o');
         const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
@@ -2195,7 +2195,7 @@ return {
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
                         options={{
-                          readOnly: isCaseViewer || !isDraft || aCase?.status?.name === 'Closed',
+                          readOnly: isCaseViewer || !isDraft,
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {

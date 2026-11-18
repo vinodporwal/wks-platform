@@ -436,6 +436,18 @@ export const CaseList = ({ status, caseDefId }) => {
                 const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
                 window.history.replaceState(null, '', newUrl);
                 return;
+              } else if (target) {
+                // ✅ For Linked Cases: fetch case directly and open form
+                CaseService.getCaseByBusinessKey(keycloak, caseDefId, target).then((directCase) => {
+                  const caseData = directCase?.data?.[0] || directCase;
+                  if (caseData && setACase) {
+                    setACase(caseData);
+                    setOpenCaseForm(true);
+                    searchParamsWindow.delete('caseNo');
+                    searchParamsWindow.delete('businessKey');
+                    window.history.replaceState(null, '', `${window.location.pathname}?${searchParamsWindow.toString()}`);
+                  }
+                });
               }
             //  else clear variables from URL
             //  else {
