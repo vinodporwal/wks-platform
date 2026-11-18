@@ -219,6 +219,38 @@ export const monthMap = {
 const ADJUST_PADDING = 4
 const COLUMN_MIN = 4
 
+const buildSelectiveGroupData = (items, groupField) => {
+  if (!items || !items.length || !groupField) return items || []
+  const result = []
+  let currentGroup = null
+
+  items.forEach((item) => {
+    const rawVal = item?.[groupField]
+    const hasGroupVal =
+      rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== ''
+
+    if (hasGroupVal) {
+      const valStr = String(rawVal).trim()
+      if (currentGroup && currentGroup.value === valStr) {
+        currentGroup.items.push(item)
+      } else {
+        currentGroup = {
+          field: groupField,
+          value: valStr,
+          [groupField]: valStr,
+          items: [item],
+        }
+        result.push(currentGroup)
+      }
+    } else {
+      currentGroup = null
+      result.push(item)
+    }
+  })
+
+  return result
+}
+
 const AdvanceKendoTable = ({
   allRedCell = [],
   allRedCell2 = [],
@@ -348,6 +380,27 @@ const AdvanceKendoTable = ({
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
+  const isGroupByNonNullOnly = Boolean(
+    permissions?.groupByNonNullOnly ||
+      permissions?.groupOnlyNonNull ||
+      permissions?.isGroupByNonNullOnly
+  )
+  const selectiveGroupField = Array.isArray(groupBy)
+    ? groupBy[0]
+    : typeof groupBy === 'object'
+      ? groupBy?.field
+      : groupBy
+
+  const selectiveGroupData = useMemo(() => {
+    if (!isGroupByNonNullOnly || !selectiveGroupField) return rows
+    return buildSelectiveGroupData(rows, selectiveGroupField)
+  }, [rows, selectiveGroupField, isGroupByNonNullOnly])
+
+  const [groupExpand, setGroupExpand] = useState([])
+  const handleGroupExpandChange = useCallback((e) => {
+    setGroupExpand(e.groupExpand)
+  }, [])
+
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
     : groupBy
@@ -356,7 +409,7 @@ const AdvanceKendoTable = ({
 
   // Process grouped data to get flat row sequence for tab navigation
   const processedFlatRows = useMemo(() => {
-    if (!groupBy || initialGroup.length === 0) {
+    if (!groupBy || initialGroup.length === 0 || isGroupByNonNullOnly) {
       return rows
     }
 
@@ -367,7 +420,7 @@ const AdvanceKendoTable = ({
     })
 
     return extractFlatRowsFromGrouped(processedData.data)
-  }, [rows, groupBy, initialGroup, sort, filter])
+  }, [rows, groupBy, initialGroup, sort, filter, isGroupByNonNullOnly])
 
   const activeRows = useMemo(() => {
     return groupBy && processedFlatRows?.length > 0 ? processedFlatRows : (rows || [])
@@ -3850,12 +3903,16 @@ const AdvanceKendoTable = ({
                       : undefined,
                 }}
                 modifiedCells={modifiedCells}
-                data={rows}
+                data={isGroupByNonNullOnly ? selectiveGroupData : rows}
                 rows={{ data: CustomRow }}
                 sortable={{
                   mode: 'multiple',
                 }}
-                autoProcessData={true}
+                autoProcessData={
+                  isGroupByNonNullOnly
+                    ? { group: false, sort: true, filter: true, page: true }
+                    : true
+                }
                 dataItemKey='id'
                 editField='inEdit'
                 editable={{ mode: 'incell' }}
@@ -3867,7 +3924,12 @@ const AdvanceKendoTable = ({
                 onKeyDown={(e) => onTabKeyPressed(e)}
                 resizable={true}
                 defaultSkip={0}
-                defaultGroup={initialGroup}
+                group={isGroupByNonNullOnly ? initialGroup : undefined}
+                defaultGroup={isGroupByNonNullOnly ? undefined : initialGroup}
+                groupExpand={isGroupByNonNullOnly ? groupExpand : undefined}
+                onGroupExpandChange={
+                  isGroupByNonNullOnly ? handleGroupExpandChange : undefined
+                }
                 defaultTake={defaultTake}
                 contextMenu={true}
                 filterable={
