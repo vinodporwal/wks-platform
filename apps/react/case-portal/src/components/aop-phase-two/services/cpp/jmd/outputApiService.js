@@ -441,25 +441,36 @@ async function exportUtilityRateExcel(keycloak, plantIds, aopYear, EXCEL_NAME) {
 }
 
 // ===================== || RUN COST CALCULATION API || ===================== //
-// POST /task/jmd/run-cost/calculate?plantIds=...&aopYear=...
-// Triggers run cost calculation for the given plant(s) and AOP year.
-// NOTE: placeholder endpoint — update the path once the backend contract is finalized.
+// POST /task/jmd-run-full-year-cost-module
+// Runs the standalone cost module for all CPPs in the requested financial year.
 async function calculateRunCost(keycloak, plantIds, aopYear) {
-  const queryParams = buildPlantIdsParam(plantIds)
-  const url = `${Config.CaseEngineUrl}/task/jmd/run-cost/calculate?plantIds=${queryParams}&aopYear=${aopYear}`
+  const url = Config.CaseEngineUrl + '/task/jmd-run-full-year-cost-module'
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
+    Authorization: 'Bearer ' + keycloak.token,
   }
+  const financialYearStart = String(aopYear).split('-')[0]
+  const body = JSON.stringify({
+    financial_year: financialYearStart,
+    cpp_ids: plantIds,
+    save_to_db: true,
+  })
   try {
-    const resp = await fetch(url, { method: 'POST', headers })
+    const resp = await fetch(url, { method: 'POST', headers, body })
     if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
+      let errorMessage = 'HTTP error! Status: ' + resp.status
+      try {
+        const errorBody = await resp.json()
+        errorMessage = errorBody?.error || errorMessage
+      } catch (_) {
+        // Retain the HTTP status if the response body is not JSON.
+      }
+      throw new Error(errorMessage)
     }
     return json(keycloak, resp)
   } catch (e) {
-    console.error('Error calculating run cost:', e)
+    console.error('Error calculating yearly JMD run cost:', e)
     return await Promise.reject(e)
   }
 }

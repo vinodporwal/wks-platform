@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.norm.CPPNormsRequestDTO;
+import com.wks.caseengine.cpp.dto.norm.CPPNormTypeUpdateRequestDTO;
 import com.wks.caseengine.cpp.service.JMDCPPNormsService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -175,6 +176,49 @@ public class JMDCPPNormsController {
             }
         } catch (Exception e) {
             log.error("=== ERROR in calculateCPPNorms (JMD) ===", e);
+
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    // POST /task/jmd/cpp-norms/update-norm-type?financialYear=...&modifiedBy=...
+    // Body: { "normsHeaderIds": ["uuid", ...], "type": "norms" | "quantity" }
+    // type = source grid. "norms" moves records to Quantity (NormType_FK_Id=10),
+    // "quantity" moves records to Norms (NormType_FK_Id=6).
+    @PostMapping("/jmd/cpp-norms/update-norm-type")
+    public ResponseEntity<?> updateCPPNormType(
+            @RequestParam String financialYear,
+            @RequestBody CPPNormTypeUpdateRequestDTO request,
+            @RequestParam(required = false, defaultValue = "SYSTEM") String modifiedBy
+    ) {
+        try {
+            log.info("=== POST JMD CPP Norms Update NormType Request ===");
+            log.info("FinancialYear: {}, ModifiedBy: {}, Type: {}, NormsHeaderIds: {}",
+                    financialYear, modifiedBy,
+                    request != null ? request.getType() : null,
+                    request != null ? request.getNormsHeaderIds() : null);
+
+            if (request == null || request.getNormsHeaderIds() == null || request.getNormsHeaderIds().isEmpty()) {
+                AOPMessageVM errorResponse = new AOPMessageVM();
+                errorResponse.setCode(400);
+                errorResponse.setMessage("normsHeaderIds cannot be null or empty");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            AOPMessageVM response = jmdCppNormsService.updateCPPNormType(
+                    request.getNormsHeaderIds(), request.getType(), financialYear, modifiedBy);
+
+            if (response.getCode() == 200) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(response.getCode()).body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("=== ERROR in updateCPPNormType (JMD) ===", e);
 
             AOPMessageVM errorResponse = new AOPMessageVM();
             errorResponse.setCode(500);

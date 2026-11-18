@@ -7,6 +7,7 @@ export const InputNormsApiService = {
   exportNormsData,
   importNormsData,
   calculateNormsData,
+  updateNormType,
 }
 
 async function getNormsData(
@@ -138,6 +139,31 @@ async function calculateNormsData(
   }
   try {
     const resp = await fetch(url, { method: 'POST', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// type = source grid ("norms" | "quantity"); backend toggles CPPNorms.NormType_FK_Id
+async function updateNormType(keycloak, normsHeaderIds, type, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/cpp-norms/update-norm-type?financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({ normsHeaderIds, type })
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
