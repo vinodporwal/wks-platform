@@ -33,6 +33,9 @@ public interface JMDNormBasedUtilityBudgetService {
     
     Map<String, Object> runFullYear(Map<String, Object> request);
 
+    Map<String, Object> runFullYear(Map<String, Object> request, boolean costModulecall);
+
+
 
     // ===================== || QUANTITY APIs (NEW) || ===================== //
 

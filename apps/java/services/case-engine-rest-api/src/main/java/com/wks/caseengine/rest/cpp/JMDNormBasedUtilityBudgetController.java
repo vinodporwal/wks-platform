@@ -246,6 +246,39 @@ public class JMDNormBasedUtilityBudgetController {
         }
     }
 
+    @PostMapping("/jmd-run-full-year-cost-module")
+    public ResponseEntity<Map<String, Object>> runFullYearWithCostModule(@RequestBody Map<String, Object> request) {
+        logger.info(
+            "Controller received JMD cost-module request: financial_year={}, cpp_ids={}, save_to_db={}, "
+                + "save_logs={}, python_exe_path={}, python_script_folder={}, request_keys={}, costModulecall=true",
+            request.get("financial_year"),
+            request.get("cpp_ids"),
+            request.get("save_to_db"),
+            request.get("save_logs"),
+            request.get("python_exe_path"),
+            request.get("python_script_folder"),
+            request.keySet());
+
+        Map<String, Object> result = normBasedUtilityBudgetService.runFullYear(request, true);
+        if (Boolean.TRUE.equals(result.get("success"))) {
+            logger.info(
+                "Controller completed JMD cost-module request through dbo.usp_JMD_CalculateBalanceUSDIteration: "
+                    + "financial_year={}, costModulecall=true, success={}, response_keys={}",
+                request.get("financial_year"),
+                result.get("success"),
+                result.keySet());
+            return ResponseEntity.ok(result);
+        }
+
+        logger.error(
+            "Controller failed JMD cost-module request through dbo.usp_JMD_CalculateBalanceUSDIteration: "
+                + "financial_year={}, costModulecall=true, error={}, response_keys={}",
+            request.get("financial_year"),
+            result.get("error"),
+            result.keySet());
+        return ResponseEntity.status(500).body(result);
+    }
+
 
     // ===================== || QUANTITY APIs (NEW) || ===================== //
 
