@@ -68,6 +68,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
 import DeleteSelectedDialog from './components/DeleteSelectedDialog'
+import GenericConfirmDialog from './components/GenericConfirmDialog'
 import {
   calculateMonthDuration,
   getMonthStartEndDate,
@@ -278,6 +279,9 @@ const AdvanceKendoTable = ({
   pagable = true,
   extraExportGrid = null,
   isSignOffReport = false,
+  enableRowSelection = false,
+  showSelectAll = true,
+  selectionAction = null,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -331,6 +335,7 @@ const AdvanceKendoTable = ({
   const [disableRedHighlight, setDisableRedHighlight] = useState(false)
   const [selectedRows, setSelectedRows] = useState([])
   const [deleteMultipleConfirms, setDeleteMultipleConfirms] = useState(false)
+  const [openSelectionDialog, setOpenSelectionDialog] = useState(false)
 
   // Use external customModifiedCells if provided, otherwise use internal
   const customModifiedCells =
@@ -1514,6 +1519,15 @@ const AdvanceKendoTable = ({
     setDeleteMultipleConfirms(true)
   }
 
+  const handleSelectionActionConfirm = async () => {
+    setOpenSelectionDialog(false)
+    const selectedIds = [...selectedRows]
+    setSelectedRows([])
+    if (selectionAction?.onConfirm) {
+      await selectionAction.onConfirm(selectedIds)
+    }
+  }
+
   const RemarkCell = (props) => {
     const {
       dataItem,
@@ -1974,12 +1988,13 @@ const AdvanceKendoTable = ({
       <GridColumn
         field='selected'
         width='50px'
-        headerSelectionValue={
-          selectedRows?.length > 0 && selectedRows?.length === rows?.length
-        }
         cells={{
           data: (props) => (
-            <td style={{ textAlign: 'center' }}>
+            <td
+              {...props.tdProps}
+              style={{ ...props.tdProps?.style, textAlign: 'center' }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <Checkbox
                 checked={selectedRows?.includes(props.dataItem?.idFromApi)}
                 onChange={() => {
@@ -1993,27 +2008,28 @@ const AdvanceKendoTable = ({
               />
             </td>
           ),
-          headerCell: () => (
+          headerCell: (props) => (
             <th
-              style={{
-                textAlign: 'center',
-                padding: '0px !important',
-              }}
+              {...props.thProps}
+              style={{ ...props.thProps?.style, textAlign: 'center' }}
             >
-              <Checkbox
-                checked={
-                  selectedRows?.length > 0 &&
-                  selectedRows?.length === rows?.length
-                }
-                onChange={(e) => {
-                  const checked = e?.value ?? e?.target?.checked ?? false
-                  if (checked) {
-                    setSelectedRows(rows.map((r) => r?.idFromApi))
-                  } else {
-                    setSelectedRows([])
+              {showSelectAll && (
+                <Checkbox
+                  checked={
+                    selectedRows?.length > 0 &&
+                    selectedRows?.length === rows?.length
                   }
-                }}
-              />
+                  onChange={(e) => {
+                    e?.stopPropagation?.()
+                    const checked = e?.value ?? e?.target?.checked ?? false
+                    if (checked) {
+                      setSelectedRows(rows.map((r) => r?.idFromApi))
+                    } else {
+                      setSelectedRows([])
+                    }
+                  }}
+                />
+              )}
             </th>
           ),
         }}
@@ -3809,6 +3825,22 @@ const AdvanceKendoTable = ({
                   Delete
                 </Button>
               )}
+
+              {selectionAction && (
+                <Button
+                  variant='contained'
+                  className={selectionAction.className || 'btn-calculate'}
+                  onClick={() => setOpenSelectionDialog(true)}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    selectedRows?.length === 0 ||
+                    !!selectionAction.disabled
+                  }
+                >
+                  {selectionAction.label || 'Action'}
+                </Button>
+              )}
               {permissions?.showToggleAll && (
                 <SegmentedSwitch
                   options={showToggleAllOptions}
@@ -3885,7 +3917,7 @@ const AdvanceKendoTable = ({
                 onRowClick={handleRowClick}
                 lockGroups={true}
               >
-                {permissions?.deleteMultiple &&
+                {(permissions?.deleteMultiple || enableRowSelection) &&
                   renderMultipleSelectionCheckbox()}
                 {renderColumns(
                   columns.filter(
@@ -3976,6 +4008,20 @@ const AdvanceKendoTable = ({
         deleteTheRecord={handleDeleteMultiple}
         confirmButtonText={'Delete'}
       />
+      {/* Generic selection action confirmation */}
+      {selectionAction && (
+        <GenericConfirmDialog
+          open={openSelectionDialog}
+          onClose={() => setOpenSelectionDialog(false)}
+          onConfirm={handleSelectionActionConfirm}
+          title={selectionAction.dialogTitle || 'CONFIRM'}
+          message={
+            selectionAction.dialogMessage ||
+            `Are you sure you want to ${selectionAction.label || 'continue'} for ${selectedRows?.length || 0} selected row(s)?`
+          }
+          confirmText={selectionAction.confirmText || 'Yes'}
+        />
+      )}
     </div>
   )
 }

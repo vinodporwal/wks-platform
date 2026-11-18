@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
@@ -43,5 +44,16 @@ public interface CPPNormsRepository extends JpaRepository<CPPNorms, UUID> {
         @Param("Mar_Norms") java.math.BigDecimal marNorms,
         @Param("Remarks") String remarks,
         @Param("ModifiedBy") String modifiedBy
+    );
+
+    @Modifying
+    @Query("UPDATE CPPNorms c SET c.normTypeFkId = :newNormTypeFkId, c.modifiedBy = :modifiedBy, c.modifiedDate = CURRENT_TIMESTAMP " +
+            "WHERE c.normsHeaderFkId IN :normsHeaderIds AND c.financialYear = :financialYear AND c.normTypeFkId = :currentNormTypeFkId")
+    int updateNormTypeFkId(
+        @Param("normsHeaderIds") Collection<UUID> normsHeaderIds,
+        @Param("financialYear") String financialYear,
+        @Param("currentNormTypeFkId") Integer currentNormTypeFkId,
+        @Param("newNormTypeFkId") Integer newNormTypeFkId,
+        @Param("modifiedBy") String modifiedBy
     );
 }
