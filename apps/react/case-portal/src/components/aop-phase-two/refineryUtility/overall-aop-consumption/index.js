@@ -8,6 +8,7 @@ import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTw
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 
 const CoolingTowerUom=['Kg/Km3', 'kWh/km3', 'm3/km3', 'Nm3/Km3']
 const ThreeDecimalUomM3= [
@@ -135,7 +136,11 @@ const ISETP_Plants=(siteName === 'DTA' &&
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+    })
   const formatValueByUom = useCallback(
       (val, uom, row = {}) => {
         if (val === null || val === undefined || val === '') return ''
@@ -514,6 +519,8 @@ const ISETP_Plants=(siteName === 'DTA' &&
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
     showCalulcationPromt: true,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
   }
 
   return (
@@ -527,6 +534,8 @@ const ISETP_Plants=(siteName === 'DTA' &&
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleCalculate={handleCalculate}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
@@ -540,6 +549,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
           defaultPageSize: 100,
         }}
       />
+      {ReleaseDialogComponent}
     </Box>
   )
 }

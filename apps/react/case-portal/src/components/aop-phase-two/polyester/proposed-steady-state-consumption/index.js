@@ -312,19 +312,19 @@ const ProposedSteadyStateConsumption = () => {
     },
     {
       field: 'sysGrn',
-      title: `Sys Gen ${AOP_YEAR}`,
+      title: `Sys Gen AOP ${AOP_YEAR}`,
       editable: false,
       type: 'number',
-      minWidth: 140,
+      minWidth: 160,
       format: valueFormat,
       allowNegative: true
     },
     {
       field: 'proposed',
-      title: `Proposed ${AOP_YEAR}`,
+      title: `Proposed AOP ${AOP_YEAR}`,
       editable: true,
       type: 'number1',
-      minWidth: 140,
+      minWidth: 160,
       format: valueFormat,
       allowNegative: true
     },

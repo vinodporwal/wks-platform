@@ -961,7 +961,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		List<String> headerNames = new ArrayList<>(Arrays.asList(
 				"SAP MAT Code", "Particulars", "UOM / MT",
 				getBudgetColumnName(aopYear), getActualColumnName(aopYear),
-				getColumnNameWithYear(aopYear, "Sys Gen"), getColumnNameWithYear(aopYear, "Proposed"), "Remarks",
+				getColumnNameWithYear(aopYear, "Sys Gen AOP"), getColumnNameWithYear(aopYear, "Proposed AOP"), "Remarks",
 				"NormParameterId", "AopYear", "Id", "NormParameterTypeId", "PlantId"));
 		if (isAfterSave) {
 			headerNames.add("Status");
