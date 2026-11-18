@@ -13,7 +13,7 @@ import useConfigurationDates from 'components/aop-phase-two/common/hooks/useConf
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 
-const FixedNorms = () => {
+const FixedNorms = ({ refreshKey = 0, onRefreshAll = () => {} }) => {
   const keycloak = useSession()
   const {
     startDate,
@@ -62,6 +62,16 @@ const FixedNorms = () => {
 
   // Column definitions
   const nestedColumns = [
+    // Row selection checkbox (sticky/locked first column)
+    {
+      field: 'selected',
+      title: '',
+      type: 'selectionCheckbox',
+      widthT: 80,
+      minWidth: 80,
+      locked: true,
+      editable: false,
+    },
     //Generating Plant
     {
       field: 'generatingPlantName',
@@ -385,6 +395,7 @@ const FixedNorms = () => {
               return {
                 ...item,
                 id: item.id || index + 1,
+                idFromApi: item.normsHeaderFkId,
                 remarks: item.remarks || '',
                 actualNorm: actualNormValue,
                 applyActualNormToAll: applyToAll,
@@ -409,6 +420,7 @@ const FixedNorms = () => {
             return {
               ...item,
               id: item.id || index + 1,
+              idFromApi: item.normsHeaderFkId,
               remarks: item.remarks || '',
               actualNorm: actualNormValue,
               applyActualNormToAll: applyToAll,
@@ -440,7 +452,7 @@ const FixedNorms = () => {
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, startDate, endDate, fetchNormsData],
+    [PLANT_ID_LIST, AOP_YEAR, startDate, endDate, fetchNormsData, refreshKey],
   )
 
   // Permissions (adjust as needed)
@@ -725,6 +737,47 @@ const FixedNorms = () => {
     setRemarkDialogOpen(true)
   }
 
+  // Move selected norms rows to Quantity (NormType_FK_Id 6 -> 10)
+  const handleMoveToQuantity = async (selectedIds) => {
+    if (!selectedIds?.length) return
+    setLoading(true)
+    try {
+      const response = await InputNormsApiService.updateNormType(
+        keycloak,
+        selectedIds,
+        'norms',
+        AOP_YEAR,
+      )
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message ||
+            `Moved ${selectedIds.length} record(s) to Quantity.`,
+          severity: 'success',
+        })
+        // Refresh both grids — moved rows now belong to the Quantity grid
+        onRefreshAll()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Failed to update records. Please try again.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error updating norm type:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to update records. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Custom item change handler for actualNorm checkbox logic
   const handleCustomItemChange = (e, setRows) => {
     const { dataItem, field, value } = e
@@ -870,6 +923,14 @@ const FixedNorms = () => {
         customHeight={70}
         groupBy={['cppPlantName', 'generatingPlantName']}
         customItemChange={handleCustomItemChange}
+        selectionAction={{
+          label: 'Move to Fixed Quantity',
+          dialogTitle: 'MOVE TO Fixed QUANTITY',
+          dialogMessage:
+            'Are you sure you want to move the selected record(s) to the Quantity grid?',
+          confirmText: 'Move',
+          onConfirm: handleMoveToQuantity,
+        }}
       />
     </Box>
   )
