@@ -7,6 +7,7 @@ import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -26,7 +27,11 @@ const OverallAopConsumption = () => {
 
   const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
-
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+    })
   const columns = [
     {
       field: 'productName',
@@ -269,6 +274,8 @@ const OverallAopConsumption = () => {
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
     dropdownCell: true,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
   }
 
   return (
@@ -284,6 +291,8 @@ const OverallAopConsumption = () => {
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={70}
@@ -295,6 +304,7 @@ const OverallAopConsumption = () => {
           defaultPageSize: 100,
         }}
       />
+      {ReleaseDialogComponent}
     </Box>
   )
 }
