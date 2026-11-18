@@ -2,10 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Stack,
-  Button,
-  CircularProgress,
-  Snackbar,
-  Alert,
 } from '../../../../../node_modules/@mui/material/index'
 import TabSection from 'components/aop-phase-two/common/utilities/Tabs'
 import ConfigurationAccordian from '../../common/components/ConfigurationAccordian'
@@ -24,6 +20,9 @@ import Notification from 'components/aop-phase-two/common/utilities/Notification
 import ManualEntry from './ManualEntry'
 import HistoricalMonths from './HistoricalMonths'
 import ShutdownCatChem from './ShutdownCatChem'
+import DataFilter from './DataFilter'
+import EnergyFactor from './EnergyFactor'
+import NormsRationalizationFactor from './NormsRationalizationFactor'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -286,6 +285,24 @@ const ProductionNormsBasis = () => {
             endDate={endDate}
           />
         )
+      case 'Data Filters':
+        return <DataFilter
+          refreshData={refreshData}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      case 'Energy Factor':
+        return <EnergyFactor
+          refreshData={refreshData}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      case 'Norms Rationalization Factor':
+        return <NormsRationalizationFactor
+          refreshData={refreshData}
+          startDate={startDate}
+          endDate={endDate}
+        />
       default:
         return null
     }

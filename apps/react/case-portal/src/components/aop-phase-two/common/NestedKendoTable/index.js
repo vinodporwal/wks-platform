@@ -28,6 +28,8 @@ import {
 import { DashboardColors } from 'themes/colors'
 import DeleteDialog from '../AdvanceKendoTable/components/DeleteDialog'
 import SaveConfirmationDialog from '../AdvanceKendoTable/components/SaveConfirmationDialog'
+import GenericConfirmDialog from '../AdvanceKendoTable/components/GenericConfirmDialog'
+import { Checkbox } from '@progress/kendo-react-inputs'
 import { ExcelExport } from '@progress/kendo-react-excel-export'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
@@ -161,6 +163,7 @@ const NestedKendoTable = ({
   isReleaseDisabled = true,
   handleRelease = () => {},
   showFilters = false,
+  selectionAction = null,
 }) => {
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -174,6 +177,8 @@ const NestedKendoTable = ({
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
+  const [selectedRows, setSelectedRows] = useState([])
+  const [openSelectionDialog, setOpenSelectionDialog] = useState(false)
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
   const [edit, setEdit] = useState({})
   const [sort, setSort] = useState([])
@@ -1373,6 +1378,69 @@ const NestedKendoTable = ({
         )
       }
 
+      // Row multi-select checkbox column (declared via nestedColumns, supports locked/sticky)
+      if (col.type === 'selectionCheckbox') {
+        return (
+          <GridColumn
+            key={col.field || 'selected'}
+            field={col.field || 'selected'}
+            title={col.title || ''}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            filterable={false}
+            editable={false}
+            sortable={false}
+            className='k-text-center'
+            width={setWidth(col?.minWidth || col?.widthT || col?.width || 50)}
+            cells={{
+              data: (props) => (
+                <td
+                  {...props.tdProps}
+                  style={{ ...props.tdProps?.style, textAlign: 'center' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Checkbox
+                    checked={selectedRows?.includes(props.dataItem?.idFromApi)}
+                    onChange={() => {
+                      const id = props.dataItem?.idFromApi
+                      if (selectedRows?.includes(id)) {
+                        setSelectedRows(selectedRows?.filter((r) => r !== id))
+                      } else {
+                        setSelectedRows([...selectedRows, id])
+                      }
+                    }}
+                  />
+                </td>
+              ),
+              headerCell: (props) => (
+                <th
+                  {...props.thProps}
+                  style={{ ...props.thProps?.style, textAlign: 'center' }}
+                >
+                  {col.showSelectAll !== false && (
+                    <Checkbox
+                      checked={
+                        selectedRows?.length > 0 &&
+                        selectedRows?.length === rows?.length
+                      }
+                      onChange={(e) => {
+                        e?.stopPropagation?.()
+                        const checked = e?.value ?? e?.target?.checked ?? false
+                        if (checked) {
+                          setSelectedRows(rows.map((r) => r?.idFromApi))
+                        } else {
+                          setSelectedRows([])
+                        }
+                      }}
+                    />
+                  )}
+                </th>
+              ),
+            }}
+          />
+        )
+      }
+
       // Default column
       return (
         <GridColumn
@@ -1436,6 +1504,15 @@ const NestedKendoTable = ({
         {cellContent}
       </td>
     )
+  }
+
+  const handleSelectionActionConfirm = async () => {
+    setOpenSelectionDialog(false)
+    const selectedIds = [...selectedRows]
+    setSelectedRows([])
+    if (selectionAction?.onConfirm) {
+      await selectionAction.onConfirm(selectedIds)
+    }
   }
 
   return (
@@ -1708,6 +1785,22 @@ const NestedKendoTable = ({
                   Release
                 </Button>
               )}
+
+              {selectionAction && (
+                <Button
+                  variant='contained'
+                  className={selectionAction.className || 'btn-calculate'}
+                  onClick={() => setOpenSelectionDialog(true)}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    selectedRows?.length === 0 ||
+                    !!selectionAction.disabled
+                  }
+                >
+                  {selectionAction.label || 'Action'}
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
@@ -1836,6 +1929,21 @@ const NestedKendoTable = ({
         closeSaveDialogeBox={closeSaveDialogeBox}
         saveConfirmation={saveConfirmation}
       />
+
+      {/* Generic selection action confirmation */}
+      {selectionAction && (
+        <GenericConfirmDialog
+          open={openSelectionDialog}
+          onClose={() => setOpenSelectionDialog(false)}
+          onConfirm={handleSelectionActionConfirm}
+          title={selectionAction.dialogTitle || 'CONFIRM'}
+          message={
+            selectionAction.dialogMessage ||
+            `Are you sure you want to ${selectionAction.label || 'continue'} for ${selectedRows?.length || 0} selected row(s)?`
+          }
+          confirmText={selectionAction.confirmText || 'Yes'}
+        />
+      )}
     </div>
   )
 }
