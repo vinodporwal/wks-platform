@@ -61,28 +61,10 @@ public class SulphurConfigurationServiceImpl implements SulphurConfigurationServ
         String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
       
-            Boolean selected = null;
-            Object selectedObj = rs.getObject("Selected");
-    
-            if (selectedObj != null) {
-                if (selectedObj instanceof Boolean) {
-                    selected = (Boolean) selectedObj;
-                } else if (selectedObj instanceof Number) {
-                    selected = ((Number) selectedObj).intValue() == 1;
-                }
-            }
-
-            Boolean isTickRow = null;
-            Object isTickRowObj = rs.getObject("IsTickRow");
-
-            if (isTickRowObj != null) {
-                if (isTickRowObj instanceof Boolean) {
-                    isTickRow = (Boolean) isTickRowObj;
-                } else if (isTickRowObj instanceof Number) {
-                    isTickRow = ((Number) isTickRowObj).intValue() == 1;
-                }
-            }
-
+            Boolean selected = resolveBooleanValue(rs.getObject("Selected"));
+            Boolean isTickRow = resolveBooleanValue(rs.getObject("IsTickRow"));
+            Boolean isEditable = resolveBooleanValue(rs.getObject("IsEditable"));
+         
 
          return   SulphurConfigurationDTO.builder()
                 .normParameterFKId(rs.getString("NormParameter_FK_Id"))
@@ -107,10 +89,23 @@ public class SulphurConfigurationServiceImpl implements SulphurConfigurationServ
                 .remarks(rs.getString("Remarks"))
                 .utilities(rs.getString("Utilities"))
                 .displayOrder(rs.getInt("DisplayOrder"))
+                .isEditable(isEditable)
                 .build(); },
             plantId.toString(), aopYear  
         );
     
+    }
+
+    private Boolean resolveBooleanValue(Object value) {
+
+        if(value == null) return null;
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        } else if (value instanceof Number) {
+            return ((Number) value).intValue() == 1;
+        }
+        return false;
     }
   
 @Override
