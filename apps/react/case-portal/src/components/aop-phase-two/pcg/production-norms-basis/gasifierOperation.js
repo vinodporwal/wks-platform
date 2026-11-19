@@ -150,7 +150,7 @@ const GasifierOperation = () => {
     <Box>
       <LoaderBackdrop open={!!loading} />
       <Box>
-        <TargetActualDafThroughput />
+        <TargetActualDafThroughput onSaveSuccess={fetchData} />
       </Box>
 
       {/* Target Actual DAF Throughput Grid */}
