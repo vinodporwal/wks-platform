@@ -3522,7 +3522,7 @@ const AdvanceKendoTable = ({
           format={col.format || '{0:0.000}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
-            data: toolTipRenderer,
+            data: col.cell || toolTipRenderer,
             headerCell: col.subtitle
               ? createHeaderWithSubtitle(col.subtitle)
               : SimpleHeaderWithTooltip,
