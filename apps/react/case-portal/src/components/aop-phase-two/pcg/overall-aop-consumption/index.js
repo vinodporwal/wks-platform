@@ -8,6 +8,7 @@ import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTw
 import { OverallAopConsumptionApiService } from '../../services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 
 const OverallAopConsumptionPCG = () => {
   const keycloak = useSession()
@@ -34,7 +35,11 @@ const OverallAopConsumptionPCG = () => {
     dataGridStore,
     'Overall AOP Consumption',
   )
-
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+  })
   const columns = [
     {
       field: 'sapCode',
@@ -284,6 +289,8 @@ const OverallAopConsumptionPCG = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
     //dropdownCell: true,
   }
 
@@ -300,6 +307,8 @@ const OverallAopConsumptionPCG = () => {
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={70}
@@ -312,6 +321,7 @@ const OverallAopConsumptionPCG = () => {
         }}
         convertScientificValue={true}
       />
+      {ReleaseDialogComponent}
     </Box>
   )
 }

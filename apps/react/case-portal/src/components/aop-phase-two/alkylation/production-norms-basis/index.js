@@ -13,6 +13,8 @@ import PIMSMontlyThroughput from 'components/aop-phase-two/crude/production-norm
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/alkylation/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import ManualEntry from './ManualEntry'
+import { COMMON_TABS_REGISTRY } from 'components/aop-phase-two/common/components/Tabs/index'
+
 const ProductionNormsBasisAlkylation = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -225,8 +227,20 @@ const ProductionNormsBasisAlkylation = () => {
         return <PIMSMontlyThroughput startDate={startDate} endDate={endDate} />
       case 'Manual Entry':
         return <ManualEntry startDate={startDate} endDate={endDate} />
-      default:
+      default: {
+        const SharedTab = COMMON_TABS_REGISTRY[currentTabName]
+        if (SharedTab) {
+          return (
+            <SharedTab
+              startDate={startDate}
+              endDate={endDate}
+              refreshData={refreshData}
+              onLoadNormCalculation={handleLoadNormCalculation}
+            />
+          )
+        }
         return null
+      }
     }
   }
 

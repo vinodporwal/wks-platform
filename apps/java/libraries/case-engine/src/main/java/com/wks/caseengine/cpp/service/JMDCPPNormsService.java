@@ -21,4 +21,6 @@ public interface JMDCPPNormsService {
 
     AOPMessageVM calculateCPPNorms(List<UUID> plantIds, String financialYear, String fromDate, String toDate);
 
+    AOPMessageVM updateCPPNormType(List<UUID> normsHeaderIds, String type, String financialYear, String modifiedBy);
+
 }

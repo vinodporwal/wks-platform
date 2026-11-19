@@ -1058,4 +1058,62 @@ public class JMDCPPNormsServiceImpl implements JMDCPPNormsService {
 
         return vm;
     }
+
+    @Override
+    @Transactional
+    public AOPMessageVM updateCPPNormType(List<UUID> normsHeaderIds, String type, String financialYear, String modifiedBy) {
+        log.info("=== Starting updateCPPNormType ===");
+        log.info("NormsHeaderIds: {}, Type: {}, FinancialYear: {}", normsHeaderIds, type, financialYear);
+
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (normsHeaderIds == null || normsHeaderIds.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("normsHeaderIds cannot be null or empty");
+                return vm;
+            }
+
+            if (financialYear == null || financialYear.isEmpty()) {
+                vm.setCode(400);
+                vm.setMessage("financialYear cannot be null or empty");
+                return vm;
+            }
+
+            // NormType_FK_Id: 6 = Norms, 10 = Quantity.
+            // The API is invoked from the source grid, so the value is toggled
+            // to move the record to the other grid.
+            int currentNormTypeFkId;
+            int newNormTypeFkId;
+            String normalizedType = type == null ? "" : type.trim().toLowerCase();
+            if ("norms".equals(normalizedType)) {
+                currentNormTypeFkId = 6;
+                newNormTypeFkId = 10;
+            } else if ("quantity".equals(normalizedType)) {
+                currentNormTypeFkId = 10;
+                newNormTypeFkId = 6;
+            } else {
+                vm.setCode(400);
+                vm.setMessage("type must be 'norms' or 'quantity'");
+                return vm;
+            }
+
+            int updatedCount = cppNormsRepository.updateNormTypeFkId(
+                    normsHeaderIds, financialYear, currentNormTypeFkId, newNormTypeFkId, modifiedBy);
+
+            log.info("updateCPPNormType completed. Updated {} CPPNorms record(s)", updatedCount);
+
+            vm.setCode(200);
+            vm.setMessage(String.format("Successfully updated norm type for %d record(s)", updatedCount));
+            vm.setData(updatedCount);
+
+        } catch (Exception e) {
+            log.error("=== ERROR in updateCPPNormType ===", e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+            vm.setData(null);
+        }
+
+        return vm;
+    }
 }

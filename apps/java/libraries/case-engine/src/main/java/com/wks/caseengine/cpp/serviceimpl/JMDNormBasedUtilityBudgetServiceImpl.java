@@ -2082,11 +2082,30 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         return null;
     }
     
-    @SuppressWarnings("unchecked")
     public Map<String, Object> runFullYear(Map<String, Object> request) {
-        logger.info("Calling stored procedure usp_JMD_CalculateBalanceUSDIteration for full year");
-        
-        // 1. Extract financial_year from request (Number or String)
+        return runFullYearInternal(request, null);
+    }
+
+    @Override
+    public Map<String, Object> runFullYear(Map<String, Object> request, boolean costModulecall) {
+        return runFullYearInternal(request, costModulecall);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> runFullYearInternal(Map<String, Object> request, Boolean costModulecall) {
+        logger.info(
+            "Service received JMD full-year request: financial_year={}, cpp_ids={}, save_to_db={}, "
+                + "save_logs={}, python_exe_path={}, python_script_folder={}, request_keys={}, costModulecall={}",
+            request.get("financial_year"),
+            request.get("cpp_ids"),
+            request.get("save_to_db"),
+            request.get("save_logs"),
+            request.get("python_exe_path"),
+            request.get("python_script_folder"),
+            request.keySet(),
+            costModulecall == null ? "not supplied (balance path)" : costModulecall);
+
+        // 1. Extract financial_year from request as a start year or YYYY-YY (Number or String)
         Integer financialYear = null;
         Object yearObj = request.get("financial_year");
         if (yearObj instanceof Number) {
@@ -2095,7 +2114,22 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             String yearStr = ((String) yearObj).trim();
             if (!yearStr.isEmpty()) {
                 try {
-                    financialYear = Integer.parseInt(yearStr);
+                    if (yearStr.matches("\\d{4}-(\\d{2}|\\d{4})")) {
+                        String[] parts = yearStr.split("-", 2);
+                        int parsedStartYear = Integer.parseInt(parts[0]);
+                        int parsedEndYear = Integer.parseInt(parts[1]);
+                        int expectedEndYear = parsedStartYear + 1;
+                        boolean validEndYear = parts[1].length() == 2
+                            ? parsedEndYear == expectedEndYear % 100
+                            : parsedEndYear == expectedEndYear;
+                        if (validEndYear) {
+                            financialYear = parsedStartYear;
+                        } else {
+                            logger.warn("Financial year is not consecutive: '{}'", yearStr);
+                        }
+                    } else {
+                        financialYear = Integer.parseInt(yearStr);
+                    }
                 } catch (NumberFormatException e) {
                     logger.warn("Invalid financial_year format: '{}'", yearStr);
                 }
@@ -2103,11 +2137,20 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
         }
         
         if (financialYear == null) {
+            logger.warn(
+                "Service rejected JMD request because financial_year is missing or invalid: value={}, costModulecall={}",
+                yearObj,
+                costModulecall);
             return Map.of(
                 "success", false,
-                "error", "financial_year is required"
+                "error", "financial_year is required as a start year or consecutive FY such as 2026-27"
             );
         }
+        logger.info(
+            "Service normalized JMD financial year: requested={}, start_year={}, costModulecall={}",
+            yearObj,
+            financialYear,
+            costModulecall);
 
         // 2. Extract and sanitize multiple cpp_ids
         String cppPlantIdsStr = null;
@@ -2156,7 +2199,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 pythonScriptFolder, request.containsKey("python_script_folder") ? "request" : "database");
 
             // Call stored procedure with all parameters
-            String sql = "{CALL dbo.usp_JMD_CalculateBalanceUSDIteration(?, ?, ?, ?, ?, ?)}";
+            String sql = costModulecall == null
+                ? "{CALL dbo.usp_JMD_CalculateBalanceUSDIteration(?, ?, ?, ?, ?, ?)}"
+                : "{CALL dbo.usp_JMD_CalculateBalanceUSDIteration(?, ?, ?, ?, ?, ?, ?)}";
             
             try (CallableStatement stmt = conn.prepareCall(sql)) {
                 stmt.setInt(1, financialYear);
@@ -2177,15 +2222,20 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 } else {
                     stmt.setNull(6, java.sql.Types.NVARCHAR);
                 }
+
+                if (costModulecall != null) {
+                    stmt.setBoolean(7, costModulecall);
+                }
                 
                 // Log the complete SP call with all parameters
-                logger.info("Executing Stored Procedure: EXEC dbo.usp_JMD_CalculateBalanceUSDIteration @FinancialYear={}, @CPPPlantIds={}, @SaveToDb={}, @SaveLogs={}, @PythonExePath='{}', @PythonScriptFolder='{}'", 
+                logger.info("Executing Stored Procedure: EXEC dbo.usp_JMD_CalculateBalanceUSDIteration @FinancialYear={}, @CPPPlantIds={}, @SaveToDb={}, @SaveLogs={}, @PythonExePath='{}', @PythonScriptFolder='{}', @costModulecall={}",
                     financialYear, 
                     (cppPlantIdsStr != null ? "'" + cppPlantIdsStr + "'" : "NULL"),
                     saveToDb, 
                     saveLogs,
                     pythonExePath,
-                    (pythonScriptFolder != null && !pythonScriptFolder.isEmpty() ? pythonScriptFolder : "NULL"));
+                    (pythonScriptFolder != null && !pythonScriptFolder.isEmpty() ? pythonScriptFolder : "NULL"),
+                    costModulecall == null ? "not supplied" : costModulecall);
                 
                 // Execute and capture output
                 boolean hasResults = stmt.execute();
@@ -2220,9 +2270,21 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                         Map<String, Object> result = gson.fromJson(jsonOutput, Map.class);
                         logger.info("Full year budget calculation completed successfully");
 
-                        // After successful calculation, delete the AopCalculation flag
-                        // so the UI no longer shows the "recalculate" warning
-                        clearAopCalculationFlag(request);
+                        if (Boolean.TRUE.equals(costModulecall)) {
+                            logger.info(
+                                "Existing JMD stored procedure returned cost-module result: financial_year={}, "
+                                    + "costModulecall=true, success={}, response_keys={}",
+                                financialYear,
+                                result.get("success"),
+                                result.keySet());
+                        } else {
+                            logger.info(
+                                "Existing JMD balance stored procedure returned result: financial_year={}, success={}",
+                                financialYear,
+                                result.get("success"));
+                            // Only a balance run clears the balance recalculation flag.
+                            clearAopCalculationFlag(request);
+                        }
 
                         return result;
                     } catch (JsonSyntaxException e) {
@@ -2234,7 +2296,12 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                         );
                     }
                 } else {
-                    logger.error("No JSON output found in SP result");
+                    logger.error(
+                        "No JSON output from existing JMD stored procedure: financial_year={}, "
+                            + "costModulecall={}, output={}",
+                        financialYear,
+                        costModulecall,
+                        output);
                     return Map.of(
                         "success", false,
                         "error", "No JSON output from stored procedure",

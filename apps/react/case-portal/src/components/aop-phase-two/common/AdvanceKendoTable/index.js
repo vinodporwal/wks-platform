@@ -68,6 +68,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
 import DeleteSelectedDialog from './components/DeleteSelectedDialog'
+import GenericConfirmDialog from './components/GenericConfirmDialog'
 import {
   calculateMonthDuration,
   getMonthStartEndDate,
@@ -219,6 +220,38 @@ export const monthMap = {
 const ADJUST_PADDING = 4
 const COLUMN_MIN = 4
 
+const buildSelectiveGroupData = (items, groupField) => {
+  if (!items || !items.length || !groupField) return items || []
+  const result = []
+  let currentGroup = null
+
+  items.forEach((item) => {
+    const rawVal = item?.[groupField]
+    const hasGroupVal =
+      rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== ''
+
+    if (hasGroupVal) {
+      const valStr = String(rawVal).trim()
+      if (currentGroup && currentGroup.value === valStr) {
+        currentGroup.items.push(item)
+      } else {
+        currentGroup = {
+          field: groupField,
+          value: valStr,
+          [groupField]: valStr,
+          items: [item],
+        }
+        result.push(currentGroup)
+      }
+    } else {
+      currentGroup = null
+      result.push(item)
+    }
+  })
+
+  return result
+}
+
 const AdvanceKendoTable = ({
   allRedCell = [],
   allRedCell2 = [],
@@ -278,6 +311,9 @@ const AdvanceKendoTable = ({
   pagable = true,
   extraExportGrid = null,
   isSignOffReport = false,
+  enableRowSelection = false,
+  showSelectAll = true,
+  selectionAction = null,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -331,6 +367,7 @@ const AdvanceKendoTable = ({
   const [disableRedHighlight, setDisableRedHighlight] = useState(false)
   const [selectedRows, setSelectedRows] = useState([])
   const [deleteMultipleConfirms, setDeleteMultipleConfirms] = useState(false)
+  const [openSelectionDialog, setOpenSelectionDialog] = useState(false)
 
   // Use external customModifiedCells if provided, otherwise use internal
   const customModifiedCells =
@@ -348,6 +385,27 @@ const AdvanceKendoTable = ({
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_CPP = verticalObject?.name?.toLowerCase() == 'cpp'
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
+  const isGroupByNonNullOnly = Boolean(
+    permissions?.groupByNonNullOnly ||
+      permissions?.groupOnlyNonNull ||
+      permissions?.isGroupByNonNullOnly
+  )
+  const selectiveGroupField = Array.isArray(groupBy)
+    ? groupBy[0]
+    : typeof groupBy === 'object'
+      ? groupBy?.field
+      : groupBy
+
+  const selectiveGroupData = useMemo(() => {
+    if (!isGroupByNonNullOnly || !selectiveGroupField) return rows
+    return buildSelectiveGroupData(rows, selectiveGroupField)
+  }, [rows, selectiveGroupField, isGroupByNonNullOnly])
+
+  const [groupExpand, setGroupExpand] = useState([])
+  const handleGroupExpandChange = useCallback((e) => {
+    setGroupExpand(e.groupExpand)
+  }, [])
+
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
     : groupBy
@@ -356,7 +414,7 @@ const AdvanceKendoTable = ({
 
   // Process grouped data to get flat row sequence for tab navigation
   const processedFlatRows = useMemo(() => {
-    if (!groupBy || initialGroup.length === 0) {
+    if (!groupBy || initialGroup.length === 0 || isGroupByNonNullOnly) {
       return rows
     }
 
@@ -367,7 +425,7 @@ const AdvanceKendoTable = ({
     })
 
     return extractFlatRowsFromGrouped(processedData.data)
-  }, [rows, groupBy, initialGroup, sort, filter])
+  }, [rows, groupBy, initialGroup, sort, filter, isGroupByNonNullOnly])
 
   const activeRows = useMemo(() => {
     return groupBy && processedFlatRows?.length > 0 ? processedFlatRows : (rows || [])
@@ -1514,6 +1572,15 @@ const AdvanceKendoTable = ({
     setDeleteMultipleConfirms(true)
   }
 
+  const handleSelectionActionConfirm = async () => {
+    setOpenSelectionDialog(false)
+    const selectedIds = [...selectedRows]
+    setSelectedRows([])
+    if (selectionAction?.onConfirm) {
+      await selectionAction.onConfirm(selectedIds)
+    }
+  }
+
   const RemarkCell = (props) => {
     const {
       dataItem,
@@ -1974,12 +2041,13 @@ const AdvanceKendoTable = ({
       <GridColumn
         field='selected'
         width='50px'
-        headerSelectionValue={
-          selectedRows?.length > 0 && selectedRows?.length === rows?.length
-        }
         cells={{
           data: (props) => (
-            <td style={{ textAlign: 'center' }}>
+            <td
+              {...props.tdProps}
+              style={{ ...props.tdProps?.style, textAlign: 'center' }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <Checkbox
                 checked={selectedRows?.includes(props.dataItem?.idFromApi)}
                 onChange={() => {
@@ -1993,27 +2061,28 @@ const AdvanceKendoTable = ({
               />
             </td>
           ),
-          headerCell: () => (
+          headerCell: (props) => (
             <th
-              style={{
-                textAlign: 'center',
-                padding: '0px !important',
-              }}
+              {...props.thProps}
+              style={{ ...props.thProps?.style, textAlign: 'center' }}
             >
-              <Checkbox
-                checked={
-                  selectedRows?.length > 0 &&
-                  selectedRows?.length === rows?.length
-                }
-                onChange={(e) => {
-                  const checked = e?.value ?? e?.target?.checked ?? false
-                  if (checked) {
-                    setSelectedRows(rows.map((r) => r?.idFromApi))
-                  } else {
-                    setSelectedRows([])
+              {showSelectAll && (
+                <Checkbox
+                  checked={
+                    selectedRows?.length > 0 &&
+                    selectedRows?.length === rows?.length
                   }
-                }}
-              />
+                  onChange={(e) => {
+                    e?.stopPropagation?.()
+                    const checked = e?.value ?? e?.target?.checked ?? false
+                    if (checked) {
+                      setSelectedRows(rows.map((r) => r?.idFromApi))
+                    } else {
+                      setSelectedRows([])
+                    }
+                  }}
+                />
+              )}
             </th>
           ),
         }}
@@ -2907,6 +2976,7 @@ const AdvanceKendoTable = ({
                       searchable={col.searchable || false}
                       showClearOption={col.showClearOption || false}
                       returnFullObject={col.returnFullObject || false}
+                      keyboardNavigation={col.keyboardNavigation || false}
                     />
                   )
                 },
@@ -3361,7 +3431,7 @@ const AdvanceKendoTable = ({
           format={col.format || '{0:0.000}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
-            data: toolTipRenderer,
+            data: col.cell || toolTipRenderer,
             headerCell: col.subtitle
               ? createHeaderWithSubtitle(col.subtitle)
               : SimpleHeaderWithTooltip,
@@ -3808,6 +3878,22 @@ const AdvanceKendoTable = ({
                   Delete
                 </Button>
               )}
+
+              {selectionAction && (
+                <Button
+                  variant='contained'
+                  className={selectionAction.className || 'btn-calculate'}
+                  onClick={() => setOpenSelectionDialog(true)}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    selectedRows?.length === 0 ||
+                    !!selectionAction.disabled
+                  }
+                >
+                  {selectionAction.label || 'Action'}
+                </Button>
+              )}
               {permissions?.showToggleAll && (
                 <SegmentedSwitch
                   options={showToggleAllOptions}
@@ -3850,12 +3936,16 @@ const AdvanceKendoTable = ({
                       : undefined,
                 }}
                 modifiedCells={modifiedCells}
-                data={rows}
+                data={isGroupByNonNullOnly ? selectiveGroupData : rows}
                 rows={{ data: CustomRow }}
                 sortable={{
                   mode: 'multiple',
                 }}
-                autoProcessData={true}
+                autoProcessData={
+                  isGroupByNonNullOnly
+                    ? { group: false, sort: true, filter: true, page: true }
+                    : true
+                }
                 dataItemKey='id'
                 editField='inEdit'
                 editable={{ mode: 'incell' }}
@@ -3867,7 +3957,12 @@ const AdvanceKendoTable = ({
                 onKeyDown={(e) => onTabKeyPressed(e)}
                 resizable={true}
                 defaultSkip={0}
-                defaultGroup={initialGroup}
+                group={isGroupByNonNullOnly ? initialGroup : undefined}
+                defaultGroup={isGroupByNonNullOnly ? undefined : initialGroup}
+                groupExpand={isGroupByNonNullOnly ? groupExpand : undefined}
+                onGroupExpandChange={
+                  isGroupByNonNullOnly ? handleGroupExpandChange : undefined
+                }
                 defaultTake={defaultTake}
                 contextMenu={true}
                 filterable={
@@ -3884,7 +3979,7 @@ const AdvanceKendoTable = ({
                 onRowClick={handleRowClick}
                 lockGroups={true}
               >
-                {permissions?.deleteMultiple &&
+                {(permissions?.deleteMultiple || enableRowSelection) &&
                   renderMultipleSelectionCheckbox()}
                 {renderColumns(
                   columns.filter(
@@ -3975,6 +4070,20 @@ const AdvanceKendoTable = ({
         deleteTheRecord={handleDeleteMultiple}
         confirmButtonText={'Delete'}
       />
+      {/* Generic selection action confirmation */}
+      {selectionAction && (
+        <GenericConfirmDialog
+          open={openSelectionDialog}
+          onClose={() => setOpenSelectionDialog(false)}
+          onConfirm={handleSelectionActionConfirm}
+          title={selectionAction.dialogTitle || 'CONFIRM'}
+          message={
+            selectionAction.dialogMessage ||
+            `Are you sure you want to ${selectionAction.label || 'continue'} for ${selectedRows?.length || 0} selected row(s)?`
+          }
+          confirmText={selectionAction.confirmText || 'Yes'}
+        />
+      )}
     </div>
   )
 }

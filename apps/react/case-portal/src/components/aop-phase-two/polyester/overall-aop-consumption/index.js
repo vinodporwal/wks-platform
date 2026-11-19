@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent } from '@mui/material'
-import ReleaseDialog from 'components/aop-phase-two/common/components/ReleaseDialog'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
-import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { validateFields } from 'utils/validationUtils'
-import { useMenuContext } from 'menu/menuProvider'
-import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
-import { DataService } from 'services/DataService'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import MaterialGroupedSelectionGrid from '../material-grouped-selection/MaterialGroupedSelectionGrid'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import useReleaseAOP from 'components/aop-phase-two/common/hooks/useReleaseAOP'
 
 const OverallAopConsumption = () => {
   const dispatch = useDispatch()
@@ -57,20 +54,21 @@ const OverallAopConsumption = () => {
   const [grades, setGrades] = useState([])
   const [gradeId, setGradeId] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
-  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
   const [openMaterialGroupedSelectionDialog, setOpenMaterialGroupedSelectionDialog] = useState(false)
 
-  // Release states
-  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
-
+  
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
-
-  const { items: menuItems } = useMenuContext()
-  const showReleaseButton = shouldShowReleaseButton(menuItems)
+  
+  // Release states
+  const { isReleaseDisabled, handleRelease, ReleaseDialogComponent } =
+    useReleaseAOP({
+      setSnackbarOpen,
+      setSnackbarData,
+    })
 
   const monthsConfig = [
     { field: 'april', key: 4, title: 'April' },
@@ -155,27 +153,6 @@ const OverallAopConsumption = () => {
     return defaultColumns
   }, [isFilament, isStaple])
 
-  const getIsReleased = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    try {
-      const response = await DataService.getReleaseAOPStatus(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-      if (response?.data && Object.keys(response.data).length > 0) {
-        setIsReleaseDisabled(true)
-      } else {
-        setIsReleaseDisabled(false)
-      }
-    } catch (error) {
-      console.error('Error fetching release status:', error)
-    }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
-
-  useEffect(() => {
-    getIsReleased()
-  }, [getIsReleased])
 
   const fetchGradeDropdowns = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -477,43 +454,12 @@ const OverallAopConsumption = () => {
     [READ_ONLY],
   )
 
-  const handleRelease = () => {
-    setOpenReleaseDialogBox(true)
-  }
   const handleToggleShowAll = (val) => {
     setShowToggleAllState(val)
     if(val === "Show All"){
       setRows(originalRows)
     }else{
       setRows(originalRows?.filter((row) => Number(row?.ytd) > 0) || [])
-    }
-  }
-
-  const closeReleaseDialogBox = () => {
-    setOpenReleaseDialogBox(false)
-  }
-
-  const submitConfirmation = async () => {
-    setOpenReleaseDialogBox(false)
-    setLoading(true)
-    try {
-      await DataService.releaseAOPReport(keycloak, PLANT_ID, AOP_YEAR)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Released Successfully!',
-        severity: 'success',
-      })
-      setIsReleaseDisabled(true)
-      dispatch(setIsReleased({ isReleased: 1 }))
-    } catch (error) {
-      console.error('Error releasing report:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Release Failed!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -537,6 +483,9 @@ const OverallAopConsumption = () => {
     showToggleAll: true,
     titleName: `${SCREEN_NAME}`,
     ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${SCREEN_NAME}-${AOP_YEAR}`,
+    showReleaseBtn: true,
+    isReleaseDisabled: isReleaseDisabled,
+    
   }
 
   const dropdownConfig = {
@@ -590,12 +539,7 @@ const OverallAopConsumption = () => {
           defaultPageSize: 100,
         }}
       />
-
-      <ReleaseDialog
-        openReleaseDialogBox={openReleaseDialogBox}
-        closeReleaseDialogBox={closeReleaseDialogBox}
-        submitConfirmation={submitConfirmation}
-      />
+      {ReleaseDialogComponent}
       <Dialog
         open={openMaterialGroupedSelectionDialog}
         onClose={(event, reason) => {

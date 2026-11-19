@@ -297,7 +297,7 @@ const ProposedSteadyStateConsumption = () => {
       title: `Budget ${previousFYFormatted}`,
       editable: false,
       type: 'number',
-      minWidth: 110,
+      minWidth: 140,
       format: valueFormat,
       allowNegative: true
     },
@@ -306,25 +306,25 @@ const ProposedSteadyStateConsumption = () => {
       title: `Actual ${previousFYFormatted}`,
       editable: false,
       type: 'number',
-      minWidth: 110,
+      minWidth: 140,
       format: valueFormat,
       allowNegative: true
     },
     {
       field: 'sysGrn',
-      title: 'Sys Gen',
+      title: `Sys Gen AOP ${AOP_YEAR}`,
       editable: false,
       type: 'number',
-      minWidth: 110,
+      minWidth: 160,
       format: valueFormat,
       allowNegative: true
     },
     {
       field: 'proposed',
-      title: 'Proposed',
+      title: `Proposed AOP ${AOP_YEAR}`,
       editable: true,
       type: 'number1',
-      minWidth: 100,
+      minWidth: 160,
       format: valueFormat,
       allowNegative: true
     },

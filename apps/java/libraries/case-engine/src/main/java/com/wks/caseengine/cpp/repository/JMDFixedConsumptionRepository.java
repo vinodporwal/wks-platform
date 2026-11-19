@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.wks.caseengine.cpp.dto.FixedConsumptionProjection;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionProjection;
 import com.wks.caseengine.cpp.entity.CPPFixedConsumption;
 
 @Repository
@@ -19,7 +19,7 @@ public interface JMDFixedConsumptionRepository extends JpaRepository<CPPFixedCon
 
     // ── GET ──────────────────────────────────────────────────────────────────
     @Query(value = "EXEC dbo.CPP_GetFixedConsumptionByPlant :plantIds, :financialYear", nativeQuery = true)
-    List<FixedConsumptionProjection> getFixedConsumptionForPlants(
+    List<JMDFixedConsumptionProjection> getFixedConsumptionForPlants(
             @Param("plantIds") String plantIds,
             @Param("financialYear") String financialYear);
 
