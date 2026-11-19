@@ -24,310 +24,6 @@ const monthColumns = [
   { field: 'mar', headerIndex: 3 },
 ]
 
-const FILTER_CONFIG = [
-  {
-    id: 1,
-    displayName: 'Liquid Sulphur Production Min\nCriteria-More than target value',
-    uom: 'TPD',
-    apr: 1025,
-    may: '',
-    jun: '',
-    jul: '',
-    aug: '',
-    sep: '',
-    oct: '',
-    nov: '',
-    dec: '',
-    jan: '',
-    feb: '',
-    mar: '',
-    remarks: '',
-    normsType: '',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'number1',
-    selection: false,
-    hideCheckbox: true,
-  },
-  {
-    id: 2,
-    displayName: 'Liquid Sulphur Production Max\nLess than target value',
-    uom: 'TPD',
-    apr: 2049,
-    may: '',
-    jun: '',
-    jul: '',
-    aug: '',
-    sep: '',
-    oct: '',
-    nov: '',
-    dec: '',
-    jan: '',
-    feb: '',
-    mar: '',
-    remarks: '',
-    normsType: '',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'number1',
-    selection: false,
-    hideCheckbox: true,
-  },
-  {
-    id: 3,
-    displayName:
-      'Last 6 months average',
-    uom: 'MTPD',
-    apr: null,
-    may: null,
-    jun: null,
-    jul: null,
-    aug: null,
-    sep: null,
-    oct: null,
-    nov: null,
-    dec: null,
-    jan: null,
-    feb: null,
-    mar: null,
-    remarks: '',
-    normsType: 'Liquid Sulphur Production Norm basis selection',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'checkbox',
-    selection: false,
-    hideCheckbox: false,
-  },
-  {
-    id: 31,
-    displayName:
-      'Last 12 months average',
-    uom: 'MTPD',
-    apr: null,
-    may: null,
-    jun: null,
-    jul: null,
-    aug: null,
-    sep: null,
-    oct: null,
-    nov: null,
-    dec: null,
-    jan: null,
-    feb: null,
-    mar: null,
-    remarks: '',
-    normsType: 'Liquid Sulphur Production Norm basis selection',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'checkbox',
-    selection: false,
-    hideCheckbox: false,
-  },
-   {
-    id: 32,
-    displayName:
-      'Last FY Average',
-    uom: 'MTPD',
-    apr: null,
-    may: null,
-    jun: null,
-    jul: null,
-    aug: null,
-    sep: null,
-    oct: null,
-    nov: null,
-    dec: null,
-    jan: null,
-    feb: null,
-    mar: null,
-    remarks: '',
-    normsType: 'Liquid Sulphur Production Norm basis selection',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'checkbox',
-    selection: false,
-    hideCheckbox: false,
-  },
-  {
-    id: 33,
-    displayName:
-      'Predictor (Based on last 12 months)',
-    uom: 'MTPD',
-    apr: null,
-    may: null,
-    jun: null,
-    jul: null,
-    aug: null,
-    sep: null,
-    oct: null,
-    nov: null,
-    dec: null,
-    jan: null,
-    feb: null,
-    mar: null,
-    remarks: '',
-    normsType: 'Liquid Sulphur Production Norm basis selection',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'checkbox',
-    selection: false,
-    hideCheckbox: false,
-  },
-  {
-    id: 34,
-    displayName:
-      'Last 4 Years Benchmark Comparison',
-    uom: 'MTPD',
-    apr: null,
-    may: null,
-    jun: null,
-    jul: null,
-    aug: null,
-    sep: null,
-    oct: null,
-    nov: null,
-    dec: null,
-    jan: null,
-    feb: null,
-    mar: null,
-    remarks: '',
-    normsType: 'Liquid Sulphur Production Norm basis selection',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'checkbox',
-    selection: false,
-    hideCheckbox: false,
-  },
-  {
-    id: 35,
-    displayName:
-      'Manual Entry Norm',
-    uom: 'MTPD',
-    apr: null,
-    may: null,
-    jun: null,
-    jul: null,
-    aug: null,
-    sep: null,
-    oct: null,
-    nov: null,
-    dec: null,
-    jan: null,
-    feb: null,
-    mar: null,
-    remarks: '',
-    normsType: 'Liquid Sulphur Production Norm basis selection',
-    dependantAttributeId:
-      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
-    isEditable: true,
-    type: 'checkbox',
-    selection: false,
-    hideCheckbox: false,
-  },
-  {
-    id: 4,
-    displayName: 'Rich Amine processed Min (Lower Bound (SOR))',
-    uom: 'm3/Hr/Train',
-    apr: 350,
-    may: '',
-    jun: '',
-    jul: '',
-    aug: '',
-    sep: '',
-    oct: '',
-    nov: '',
-    dec: '',
-    jan: '',
-    feb: '',
-    mar: '',
-    remarks: '',
-    normsType: '',
-    dependantAttributeId: 'LP steam consumption ATU',
-    isEditable: true,
-    type: 'number1',
-    selection: false,
-    hideCheckbox: true,
-  },
-  {
-    id: 5,
-    displayName: 'Rich Amine processed Max (Upper Bound (EOR))',
-    uom: 'm3/Hr/Train',
-    apr: 600,
-    may: '',
-    jun: '',
-    jul: '',
-    aug: '',
-    sep: '',
-    oct: '',
-    nov: '',
-    dec: '',
-    jan: '',
-    feb: '',
-    mar: '',
-    remarks: '',
-    normsType: '',
-    dependantAttributeId: 'LP steam consumption ATU',
-    isEditable: true,
-    type: 'number1',
-    selection: false,
-    hideCheckbox: true,
-  },
-  {
-    id: 6,
-    displayName: 'Sour water Processing Min (Lower Bound (SOR))',
-    uom: 'MT/M3 Sour water',
-    apr: 140,
-    may: '',
-    jun: '',
-    jul: '',
-    aug: '',
-    sep: '',
-    oct: '',
-    nov: '',
-    dec: '',
-    jan: '',
-    feb: '',
-    mar: '',
-    remarks: '',
-    normsType: '',
-    dependantAttributeId: 'LP steam SWS',
-    isEditable: true,
-    type: 'number1',
-    selection: false,
-    hideCheckbox: true,
-  },
-  {
-    id: 7,
-    displayName: 'Sour water Processing Max (Upper Bound (EOR))',
-    uom: 'MT/M3 Sour water',
-    apr: 260,
-    may: '',
-    jun: '',
-    jul: '',
-    aug: '',
-    sep: '',
-    oct: '',
-    nov: '',
-    dec: '',
-    jan: '',
-    feb: '',
-    mar: '',
-    remarks: '',
-    normsType: '',
-    dependantAttributeId: 'LP steam SWS',
-    isEditable: true,
-    type: 'number1',
-    selection: false,
-    hideCheckbox: true,
-  },
-]
 
 const PERMISSIONS = {
   showAction: true,
@@ -469,94 +165,69 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const apiRes = FILTER_CONFIG
-      // await ProductionNormsApiService.getConfigurationData(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
+      const response = await ProductionNormsApiService.getConfigurationData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-      const res = apiRes?.length
-        ? apiRes.map((apiItem) => {
-            const configItem =
-              FILTER_CONFIG.find((d) =>
-                [apiItem.displayName, apiItem.productName].some(
-                  (name) =>
-                    name &&
-                    (d.displayName.toLowerCase().includes(name.toLowerCase()) ||
-                      name
-                        .toLowerCase()
-                        .includes(d.displayName.split('\n')[0].toLowerCase())),
-                ),
-              ) || {}
+      const apiList = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+          ? response
+          : []
 
-            const fallbackHideCheckbox =
-              apiItem.hideCheckbox ??
-              apiItem.hideCheckBox ??
-              configItem.hideCheckbox ??
-              configItem.hideCheckBox ??
-              false
-            const hideCheckbox = resolveHideCheckbox(
-              apiItem.dependentAttributeConfig,
-              fallbackHideCheckbox,
-            )
+      let formattedData = []
 
-            return {
-              ...configItem,
-              ...apiItem,
-              hideCheckbox,
-              hideCheckBox: hideCheckbox,
-              isEditable: apiItem.isEditable ?? configItem.isEditable ?? true,
-              nonEditableFields: configItem.nonEditableFields || [],
-              type: apiItem.type || configItem.type || 'number1',
-              dataType: apiItem.type || configItem.type || 'number1',
-              options: configItem.options || [],
-            }
-          })
-        : FILTER_CONFIG
+      if (apiList.length > 0) {
+        formattedData = apiList.map((item, index) => {
+          const isTickRow = Boolean(item.isTickRow)
+          const isSelected = Boolean(item.selected)
+          const hideCheckbox = !isTickRow
 
-      if (!res.length) {
-        showSnackbar('No data found')
-        setLoading(false)
-        setRows([])
-        setOriginalRows([])
-        return
+          return {
+            id: item.normParameterFKId || index + 1,
+            normParameterFKId: item.normParameterFKId,
+            displayName: item.displayName || '',
+            uom: item.uom || '',
+            normsType: item.groupName || item.normsType || '',
+            groupName: item.groupName || '',
+            selection: isSelected,
+            selected: isSelected,
+            isTickRow,
+            hideCheckbox,
+            hideCheckBox: hideCheckbox,
+            type: isTickRow ? 'checkbox' : item.dataType || 'number1',
+            dataType: item.dataType || (isTickRow ? 'checkbox' : 'number1'),
+            isEditable: item.isEditable !== undefined ? item.isEditable : true,
+            remarks: item.remarks || '',
+            dependantAttributeId: item.utilities || '',
+            utilities: item.utilities || '',
+            displayOrder:
+              item.displayOrder != null ? item.displayOrder : index + 1,
+            apr: item.apr ?? '',
+            may: item.may ?? '',
+            jun: item.jun ?? '',
+            jul: item.jul ?? '',
+            aug: item.aug ?? '',
+            sep: item.sep ?? '',
+            oct: item.oct ?? '',
+            nov: item.nov ?? '',
+            dec: item.dec ?? '',
+            jan: item.jan ?? '',
+            feb: item.feb ?? '',
+            mar: item.mar ?? '',
+          }
+        })
       }
-
-      let formattedData = res.map((item, index) => {
-        const config = parseConfig(item.config)
-        const mappingKeys = config?.valueMapping ? Object.keys(config.valueMapping) : []
-        const type =
-          item.type || item.dataType || (mappingKeys.length ? 'dropdown' : undefined)
-        const fallbackHideCheckbox = item.hideCheckbox ?? item.hideCheckBox ?? false
-        const hideCheckbox = resolveHideCheckbox(
-          item.dependentAttributeConfig,
-          fallbackHideCheckbox,
-        )
-
-        return {
-          ...item,
-          hideCheckbox,
-          hideCheckBox: hideCheckbox,
-          config,
-          type,
-          options: item.options?.length ? item.options : mappingKeys,
-          remarks: item.remarks || '',
-          id: item.id || index + 1,
-          attributeValue: ['date', 'datetime'].includes(type)
-            ? formatDate(item.attributeValue)
-            : item.attributeValue,
-          allowNegative: item.allowNegative,
-          selection: item?.selection ? true : false,
-        }
-      })
 
       setRows(formattedData)
       setOriginalRows(formattedData)
-      setLoading(false)
     } catch (error) {
-      console.error('Error fetching data:', error)
-      showSnackbar('Error fetching data', 'error')
+      console.error('Error fetching sulphur configuration data:', error)
+      setRows([])
+      setOriginalRows([])
+    } finally {
       setLoading(false)
     }
   }
@@ -566,11 +237,42 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     const dataToSave = modifiedData.filter((row) => row.inEdit)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
 
-    setLoading(true)
-
-    const payload = modifiedData.map((rest) => ({
-      ...rest,
+    const payload = dataToSave.map((row) => ({
+      normParameterFKId: row.normParameterFKId,
+      displayName: row.displayName || '',
+      groupName: row.groupName || row.normsType || '',
+      dataType: row.dataType || (row.isTickRow ? 'checkbox' : 'number1'),
+      isTickRow: Boolean(row.isTickRow),
+      selected: Boolean(row.selection ?? row.selected),
+      apr: row.apr != null ? String(row.apr) : '',
+      may: row.may != null ? String(row.may) : '',
+      jun: row.jun != null ? String(row.jun) : '',
+      jul: row.jul != null ? String(row.jul) : '',
+      aug: row.aug != null ? String(row.aug) : '',
+      sep: row.sep != null ? String(row.sep) : '',
+      oct: row.oct != null ? String(row.oct) : '',
+      nov: row.nov != null ? String(row.nov) : '',
+      dec: row.dec != null ? String(row.dec) : '',
+      jan: row.jan != null ? String(row.jan) : '',
+      feb: row.feb != null ? String(row.feb) : '',
+      mar: row.mar != null ? String(row.mar) : '',
+      uom: row.uom || '',
+      remarks: row.remarks || '',
+      utilities: row.utilities || row.dependantAttributeId || '',
+      isEditable: row.isEditable !== undefined ? Boolean(row.isEditable) : true,
+      displayOrder: row.displayOrder != null ? Number(row.displayOrder) : 0,
     }))
+
+    const hasMissingId = payload.some((row) => !row.normParameterFKId)
+    if (hasMissingId) {
+      showSnackbar(
+        'Cannot save: Configuration records are missing Norm Parameter ID.',
+        'error',
+      )
+      return
+    }
+
+    setLoading(true)
 
     try {
       const response = await ProductionNormsApiService.saveConfigurationData(
@@ -579,24 +281,28 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         payload,
         PLANT_ID,
       )
-      setModifiedCells({})
 
-      showSnackbar(`Successfully saved ${modifiedData.length} changes!`, 'success')
-      if (response?.code === 422) {
-        setTimeout(
-          () =>
-            showSnackbar(
-              response.message || 'Validation error occurred.',
-              'error',
-              false,
-            ),
-          1000,
+      if (response?.code === 200 || response?.success) {
+        setModifiedCells({})
+        showSnackbar(
+          response?.message ||
+            `Successfully saved ${dataToSave.length} changes!`,
+          'success',
         )
+        await fetchConfigurationData()
+      } else if (response?.code === 400) {
+        showSnackbar(
+          response?.message || 'Partial data updated with errors.',
+          'warning',
+        )
+        await fetchConfigurationData()
+      } else {
+        showSnackbar(response?.message || 'Failed to save changes.', 'error')
       }
-      await fetchConfigurationData()
     } catch (error) {
       console.error('Error saving data:', error)
       showSnackbar('Failed to save changes. Please try again.', 'error')
+    } finally {
       setLoading(false)
     }
   }
