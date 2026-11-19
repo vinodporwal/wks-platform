@@ -866,7 +866,7 @@ return {
     CaseService.createCase(
       keycloak,
       JSON.stringify({
-        caseDefinitionId: aCase.caseDefinitionId,
+        caseDefinitionId: aCase?.caseDefinitionId || 'case-management-system',
         caseNo: aCase.businessKey,
         owner: {
           id: keycloak.idTokenParsed.sub || '',
@@ -885,7 +885,7 @@ return {
         return CaseService.saveAnalysis(
           keycloak,
           JSON.stringify({
-            caseDefinitionId: aCase.caseDefinitionId,
+            caseDefinitionId: aCase?.caseDefinitionId || 'case-management-system',
             assetName: assetName,
             isDraft: isDraftFlag,
             hierarchyName: hierarchyName,
@@ -2190,8 +2190,8 @@ return {
                       <Form
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
-                        options={{
-                          readOnly: isCaseViewer || !isDraft,
+                          options={{
+                          readOnly: isCaseViewer || (!isDraft && (aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3' || aCase?.status === 'CLOSED_CASE_STATUS')),
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {

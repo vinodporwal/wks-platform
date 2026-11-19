@@ -29,6 +29,9 @@ function Documents({ aCase, initialValue }) {
 
   const isDraft = aCase?.isDraft === 'y'
   const handleChange = (files) => {
+    if (aCase?.isDraft !== 'y' && (aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3' || aCase?.status === 'CLOSED_CASE_STATUS')) {
+      return
+    }
     setFetching(true)
 
     CaseStore.saveDocumentsFromFiles(

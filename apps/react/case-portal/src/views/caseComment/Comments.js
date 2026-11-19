@@ -30,6 +30,9 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
   const keycloak = useSession()
 
   const addComment = async (text, parentId) => {
+    if (aCase?.isDraft !== 'y' && (aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3' || aCase?.status === 'CLOSED_CASE_STATUS')) {
+      return
+    }
     CaseService.addComment(keycloak, text, parentId, aCase.businessKey)
       .then(() => {
         getCaseInfo(aCase)
