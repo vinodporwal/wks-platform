@@ -78,7 +78,7 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
       editable: false,
     },
     {
-      field: 'month',
+      field: 'monthName',
       title: 'Month',
       widthT: 100,
       minWidth: 100,
@@ -127,6 +127,23 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
     }
   }, [executionId])
 
+  // Month number to month name mapping
+  const monthNames = [
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ]
+
   const fetchMonthlyExecutionDetails = async () => {
     setLoading(true)
     try {
@@ -153,6 +170,7 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
       const formattedData = sortedData?.map((item, index) => ({
         ...item,
         id: item?.id || index + 1,
+        monthName: monthNames[item.month] || '',
       }))
       setRows(formattedData)
     } catch (error) {
