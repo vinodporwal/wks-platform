@@ -31,6 +31,7 @@ public class SulphurConfigurationDTO {
     private String uom;
     private String remarks;
     private String utilities;
+    private Boolean isEditable;
     private Integer displayOrder;
     private String normParameterFKId;
 }
