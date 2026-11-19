@@ -163,10 +163,27 @@ const applyKendoNumberFormat = (value, format) => {
   // Handle decimal format like '0.00' or '0.0000'
   if (formatSpec.match(/^0+\.0+$/)) {
     const decimalPlaces = formatSpec.split('.')[1].length
-    // Truncate instead of rounding to preserve original precision
-    const factor = Math.pow(10, decimalPlaces)
-    const truncated = Math.trunc(numValue * factor) / factor
-    return truncated.toFixed(decimalPlaces)
+    // Normalize floating-point epsilon noise if value is a float
+    const cleanValue =
+      typeof value === 'number'
+        ? Number(value.toFixed(Math.min(20, Math.max(decimalPlaces + 4, 12))))
+        : value
+    const strVal =
+      typeof convertFromScientificNotation === 'function'
+        ? convertFromScientificNotation(cleanValue) ?? String(cleanValue)
+        : String(cleanValue)
+
+    if (!isNaN(parseFloat(strVal))) {
+      const parts = strVal.split('.')
+      if (parts.length > 1) {
+        const intPart = parts[0]
+        const decPart = parts[1].slice(0, decimalPlaces).padEnd(decimalPlaces, '0')
+        return decimalPlaces > 0 ? `${intPart}.${decPart}` : intPart
+      } else {
+        return decimalPlaces > 0 ? `${parts[0]}.${'0'.repeat(decimalPlaces)}` : parts[0]
+      }
+    }
+    return numValue.toFixed(decimalPlaces)
   }
 
   return value
@@ -400,6 +417,9 @@ const AdvanceKendoTable = ({
     if (!isGroupByNonNullOnly || !selectiveGroupField) return rows
     return buildSelectiveGroupData(rows, selectiveGroupField)
   }, [rows, selectiveGroupField, isGroupByNonNullOnly])
+
+  const rowsRef = useRef(rows)
+  rowsRef.current = rows
 
   const [groupExpand, setGroupExpand] = useState([])
   const handleGroupExpandChange = useCallback((e) => {
@@ -1197,6 +1217,40 @@ const AdvanceKendoTable = ({
         (col) => col.field === 'siteName' && col.type === 'dropdownSiteplant',
       )
 
+      const isCheckboxColumn = (cols) =>
+        Array.isArray(cols) &&
+        cols.some(
+          (col) =>
+            (col.field === field && col.type === 'checkbox') ||
+            (Array.isArray(col.children) && isCheckboxColumn(col.children)),
+        )
+
+      const isCheckboxChange =
+        isCheckboxColumn(columns) || dataItem?.type === 'checkbox'
+
+      const targetGroupValue =
+        permissions?.singleCheckboxPerGroup &&
+        selectiveGroupField &&
+        isCheckboxChange &&
+        value === true
+          ? String(dataItem?.[selectiveGroupField] ?? '').trim()
+          : ''
+
+      const shouldEnforceSingleCheckboxInGroup = Boolean(targetGroupValue)
+
+      const siblingsToUncheck = shouldEnforceSingleCheckboxInGroup
+        ? (rowsRef.current || []).filter((r) => {
+            const rId = r?.id !== undefined ? r.id : r?.idFromApi
+            const isSameRow =
+              String(rId) === String(itemId) ||
+              (r.idFromApi !== undefined &&
+                String(r.idFromApi) === String(itemId))
+            if (isSameRow) return false
+            const rGroupVal = String(r?.[selectiveGroupField] ?? '').trim()
+            return rGroupVal === targetGroupValue && Boolean(r?.[field])
+          })
+        : []
+
       // First update modifiedCells to accumulate all changes
       let updatedModifiedCells
       setModifiedCells((prev) => {
@@ -1225,7 +1279,17 @@ const AdvanceKendoTable = ({
         Object.assign(base, dateUpdates)
 
         updatedModifiedCells = base
-        return { ...prev, [itemId]: base }
+        const next = { ...prev, [itemId]: base }
+        siblingsToUncheck.forEach((sib) => {
+          const sibId = sib?.id !== undefined ? sib.id : sib?.idFromApi
+          next[sibId] = {
+            ...sib,
+            ...(prev[sibId] || {}),
+            [field]: false,
+            inEdit: true,
+          }
+        })
+        return next
       })
 
       // Then update rows using the accumulated modified data
@@ -1234,7 +1298,17 @@ const AdvanceKendoTable = ({
           const isTarget =
             String(r.id) === String(itemId) ||
             (r.idFromApi !== undefined && String(r.idFromApi) === String(itemId))
-          if (!isTarget) return r
+          if (!isTarget) {
+            if (
+              shouldEnforceSingleCheckboxInGroup &&
+              String(r?.[selectiveGroupField] ?? '').trim() ===
+                targetGroupValue &&
+              Boolean(r?.[field])
+            ) {
+              return { ...r, [field]: false, inEdit: true }
+            }
+            return r
+          }
 
           // Handle nested field paths (e.g., "summer.kbpsd")
           const fieldParts = field.split('.')
@@ -1296,10 +1370,19 @@ const AdvanceKendoTable = ({
         )
         Object.assign(base, dateUpdates)
 
-        return {
+        const next = {
           ...prev,
           [itemId]: base,
         }
+        siblingsToUncheck.forEach((sib) => {
+          const sibId = sib?.id !== undefined ? sib.id : sib?.idFromApi
+          next[sibId] = {
+            ...(prev[sibId] || {}),
+            [field]: false,
+            inEdit: true,
+          }
+        })
+        return next
       })
 
       // Call custom itemChange handler if provided
@@ -1307,7 +1390,15 @@ const AdvanceKendoTable = ({
         customItemChange(e, setRows, setModifiedCells, setCustomModifiedCells)
       }
     },
-    [setRows, setModifiedCells, setCustomModifiedCells, customItemChange],
+    [
+      setRows,
+      setModifiedCells,
+      setCustomModifiedCells,
+      customItemChange,
+      columns,
+      permissions?.singleCheckboxPerGroup,
+      selectiveGroupField,
+    ],
   )
 
   // Handle Tab key navigation between editable cells in the grid
@@ -1706,7 +1797,7 @@ const AdvanceKendoTable = ({
       if (!isNaN(numValue)) {
         formattedValue = isDaysUom
           ? String(Math.round(numValue))
-          : applyKendoNumberFormat(numValue, format)
+          : applyKendoNumberFormat(value ?? numValue, format)
       }
     }
 
@@ -1790,7 +1881,7 @@ const AdvanceKendoTable = ({
       if (!isNaN(numValue)) {
         formattedValue = isDaysUom
           ? String(Math.round(numValue))
-          : applyKendoNumberFormat(numValue, format)
+          : applyKendoNumberFormat(value ?? numValue, format)
       }
     }
 
