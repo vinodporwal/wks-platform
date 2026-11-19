@@ -15,7 +15,7 @@ import lombok.Data;
  *   cppPlantId, cppPlantName, generatingPlantName,
  *   assetId, assetName, assetType, assetCategory,
  *   utilityName, uom, materialName, issuingPlantName, issuingUom,
- *   {Mon}_GenQty, {Mon}_OpHours, {Mon}_AvgLoading, {Mon}_HeatRate  (for each of 12 months Apr→Mar)
+ *   {Mon}_GenQty, {Mon}_OpHours, {Mon}_Loading, {Mon}_HeatRate, {Mon}_AvgLoading  (for each of 12 months Apr→Mar)
  * </pre>
  */
 @Data
@@ -118,4 +118,18 @@ public class AverageAssetLoadingDTO {
     private BigDecimal marOpHours;
     private BigDecimal marAvgLoading;
     private BigDecimal marHeatRate;
+
+    // ── Loading (operational-hours based, per month) ───────────────────────────
+    private BigDecimal aprLoading;
+    private BigDecimal mayLoading;
+    private BigDecimal junLoading;
+    private BigDecimal julLoading;
+    private BigDecimal augLoading;
+    private BigDecimal sepLoading;
+    private BigDecimal octLoading;
+    private BigDecimal novLoading;
+    private BigDecimal decLoading;
+    private BigDecimal janLoading;
+    private BigDecimal febLoading;
+    private BigDecimal marLoading;
 }

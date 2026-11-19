@@ -126,7 +126,7 @@ public class AverageAssetLoadingServiceImpl implements AverageAssetLoadingServic
     // SP returns: cppPlantId, cppPlantName, generatingPlantName,
     //   assetId, assetName, assetType, assetCategory,
     //   utilityName, uom, materialName, issuingPlantName, issuingUom,
-    //   {Mon}_GenQty, {Mon}_OpHours, {Mon}_AvgLoading, {Mon}_HeatRate  (Apr..Mar)
+    //   {Mon}_GenQty, {Mon}_OpHours, {Mon}_Loading, {Mon}_HeatRate, {Mon}_AvgLoading  (Apr..Mar)
 
     private AverageAssetLoadingDTO mapRowToDto(ResultSet rs) throws java.sql.SQLException {
         AverageAssetLoadingDTO dto = new AverageAssetLoadingDTO();
@@ -216,6 +216,20 @@ public class AverageAssetLoadingServiceImpl implements AverageAssetLoadingServic
         dto.setMarAvgLoading(getBigDecimalOrNull(rs, "Mar_AvgLoading"));
         dto.setMarHeatRate(getBigDecimalOrNull(rs, "Mar_HeatRate"));
 
+        // Loading (operational-hours based)
+        dto.setAprLoading(getBigDecimalOrNull(rs, "Apr_Loading"));
+        dto.setMayLoading(getBigDecimalOrNull(rs, "May_Loading"));
+        dto.setJunLoading(getBigDecimalOrNull(rs, "Jun_Loading"));
+        dto.setJulLoading(getBigDecimalOrNull(rs, "Jul_Loading"));
+        dto.setAugLoading(getBigDecimalOrNull(rs, "Aug_Loading"));
+        dto.setSepLoading(getBigDecimalOrNull(rs, "Sep_Loading"));
+        dto.setOctLoading(getBigDecimalOrNull(rs, "Oct_Loading"));
+        dto.setNovLoading(getBigDecimalOrNull(rs, "Nov_Loading"));
+        dto.setDecLoading(getBigDecimalOrNull(rs, "Dec_Loading"));
+        dto.setJanLoading(getBigDecimalOrNull(rs, "Jan_Loading"));
+        dto.setFebLoading(getBigDecimalOrNull(rs, "Feb_Loading"));
+        dto.setMarLoading(getBigDecimalOrNull(rs, "Mar_Loading"));
+
         return dto;
     }
 
@@ -255,7 +269,7 @@ public class AverageAssetLoadingServiceImpl implements AverageAssetLoadingServic
         };
 
         // Sub-column labels for each month
-        String[] subCols = {"Gen.Qty", "Op. Hours", "Avg. Loading", "Heat Rate"};
+        String[] subCols = {"Gen.Qty", "Op. Hours", "Park Loading", "Avg. Loading", "Heat Rate"};
 
         String[] baseHeaders = {
             "CPP Plant", "Asset Name", "Asset Type", "Gen. Utility", "UOM"
@@ -275,9 +289,9 @@ public class AverageAssetLoadingServiceImpl implements AverageAssetLoadingServic
             Cell cell = headerRow1.createCell(col);
             cell.setCellValue(month);
             cell.setCellStyle(headerStyle);
-            // Span 4 sub-columns via merge
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, col, col + 3));
-            col += 4;
+            // Span 5 sub-columns via merge
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, col, col + 4));
+            col += 5;
         }
 
         // ── Row 1: sub-column headers ──
@@ -316,72 +330,84 @@ public class AverageAssetLoadingServiceImpl implements AverageAssetLoadingServic
             // April
             setBigDecimalCell(row.createCell(col++), dto.getAprGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getAprOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getAprLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getAprAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getAprHeatRate(), dataStyle);
 
             // May
             setBigDecimalCell(row.createCell(col++), dto.getMayGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getMayOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getMayLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getMayAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getMayHeatRate(), dataStyle);
 
             // June
             setBigDecimalCell(row.createCell(col++), dto.getJunGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJunOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getJunLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJunAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJunHeatRate(), dataStyle);
 
             // July
             setBigDecimalCell(row.createCell(col++), dto.getJulGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJulOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getJulLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJulAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJulHeatRate(), dataStyle);
 
             // August
             setBigDecimalCell(row.createCell(col++), dto.getAugGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getAugOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getAugLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getAugAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getAugHeatRate(), dataStyle);
 
             // September
             setBigDecimalCell(row.createCell(col++), dto.getSepGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getSepOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getSepLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getSepAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getSepHeatRate(), dataStyle);
 
             // October
             setBigDecimalCell(row.createCell(col++), dto.getOctGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getOctOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getOctLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getOctAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getOctHeatRate(), dataStyle);
 
             // November
             setBigDecimalCell(row.createCell(col++), dto.getNovGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getNovOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getNovLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getNovAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getNovHeatRate(), dataStyle);
 
             // December
             setBigDecimalCell(row.createCell(col++), dto.getDecGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getDecOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getDecLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getDecAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getDecHeatRate(), dataStyle);
 
             // January
             setBigDecimalCell(row.createCell(col++), dto.getJanGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJanOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getJanLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJanAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getJanHeatRate(), dataStyle);
 
             // February
             setBigDecimalCell(row.createCell(col++), dto.getFebGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getFebOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getFebLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getFebAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getFebHeatRate(), dataStyle);
 
             // March
             setBigDecimalCell(row.createCell(col++), dto.getMarGenQty(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getMarOpHours(), dataStyle);
+            setBigDecimalCell(row.createCell(col++), dto.getMarLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getMarAvgLoading(), dataStyle);
             setBigDecimalCell(row.createCell(col++), dto.getMarHeatRate(), dataStyle);
         }
