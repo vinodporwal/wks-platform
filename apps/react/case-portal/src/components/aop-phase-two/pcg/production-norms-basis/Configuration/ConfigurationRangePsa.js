@@ -26,20 +26,33 @@ const PSA_READONLY_ROWS = [
   '395JWALLRW001',
 ]
 
-const TGC2_TOGGLE_ROW = 'TGC2 Online/Offline'
 const ALL_EDITABLE_FIELDS = ['targetValue', 'range', 'selection', 'remarks']
 
-// Fallback / per-row config (matched by displayName)
-const FILTER_CONFIG = [
-  {
-    displayName: TGC2_TOGGLE_ROW,
-    targetValue: 'Offline',
-    type: 'dropdown',
-    options: ['Online', 'Offline'],
-    nonEditableFields: ['range'],
-    hideCheckbox: true,
-  },
+// Name matching ignores case and spaces, so "TGC1Online/Offline" and "TGC1 Online/Offline" both match
+const norm = (s) => String(s ?? '').toLowerCase().replace(/\s+/g, '')
+
+// One entry per dropdown (toggle) row.
+// prefix = normalised start of the child row names, e.g. "TGC1 Offline (...)" -> "tgc1"
+const TOGGLES = [
+  { toggleName: 'TGC2 Online/Offline', prefix: 'tgc2', options: ['Online', 'Offline'], defaultValue: 'Offline' },
+  { toggleName: 'TGC1 Online/Offline', prefix: 'tgc1', options: ['Online', 'Offline'], defaultValue: 'Online' },
+  { toggleName: 'CO2 Ingestion Mode On/Off', prefix: 'co2ingestionmode', options: ['On', 'Off'], defaultValue: 'On' },
 ]
+
+// Kept for backward compatibility with older references
+const TGC2_TOGGLE_ROW = TOGGLES[0].toggleName
+
+const getToggleByRow = (row) => TOGGLES.find((t) => norm(t.toggleName) === norm(row?.displayName))
+
+// Fallback / per-row config (matched by displayName)
+const FILTER_CONFIG = TOGGLES.map((t) => ({
+  displayName: t.toggleName,
+  targetValue: t.defaultValue,
+  type: 'dropdown',
+  options: t.options,
+  nonEditableFields: ['range'],
+  hideCheckbox: true,
+}))
 
 const PERMISSIONS = {
   showAction: true, addButton: false, deleteButton: false, editButton: true, saveBtn: true,
@@ -90,7 +103,7 @@ const isNumeric = (value) => {
 // Partial value check while typing ("-", "5.", ".5" are allowed while the user is still typing)
 const isTypingNumber = (value) => /^-?\d*\.?\d*$/.test(value)
 
-// Only plain text rows are numeric-restricted; the TGC2 dropdown row is left alone
+// Only plain text rows are numeric-restricted; the dropdown (toggle) rows are left alone
 const isNumericTargetRow = (row) => row?.type === 'text'
 
 // Finds out whether an input sits in the "Target Value" column by matching its cell
@@ -118,22 +131,34 @@ const isTargetValueInput = (input) => {
   return (headerCell?.textContent || '').trim() === TARGET_VALUE_TITLE
 }
 
-// ---- TGC2 Online/Offline helpers ----
-const getTgcType = (row) => {
-  const name = row.displayName?.toLowerCase() || ''
-  if (!name.includes('tgc2') || row.displayName === TGC2_TOGGLE_ROW) return null
-  if (name.includes('online')) return 'Online'
-  if (name.includes('offline')) return 'Offline'
-  return null
+// ---- Toggle helpers (TGC2 / TGC1 Online-Offline, CO2 Ingestion Mode On-Off) ----
+
+// Returns the option ('Online' / 'Offline' / 'On' / 'Off') a child row belongs to, or null
+const getChildOption = (row, toggle) => {
+  const name = norm(row.displayName)
+  if (name === norm(toggle.toggleName)) return null
+  const idx = name.indexOf(toggle.prefix)
+  if (idx === -1) return null
+  const rest = name.slice(idx + toggle.prefix.length) // e.g. "offline(g385ii...)" or "on(g330fi...)"
+  // longest option first, so "Online" is not mistaken for "On"
+  const sorted = [...toggle.options].sort((a, b) => b.length - a.length)
+  return sorted.find((opt) => rest.startsWith(opt.toLowerCase())) || null
 }
 
-// Enables only the TGC rows matching the dropdown value; the rest are disabled
-const applyTgcToggle = (rows, value) =>
+// Enables only the child rows matching the dropdown value; the rest are disabled
+const applyToggle = (rows, toggle, value) =>
   rows.map((row) => {
-    const tgcType = getTgcType(row)
-    if (!tgcType) return row
-    return { ...row, isEditable: row.isApiEditable === false ? false : value === tgcType }
+    const option = getChildOption(row, toggle)
+    if (!option) return row
+    return { ...row, isEditable: row.isApiEditable === false ? false : value === option }
   })
+
+// Applies every toggle from the rows' current dropdown values (used after fetch)
+const applyAllToggles = (rows) =>
+  TOGGLES.reduce((acc, toggle) => {
+    const toggleRow = acc.find((r) => norm(r.displayName) === norm(toggle.toggleName))
+    return toggleRow ? applyToggle(acc, toggle, toggleRow.targetValue) : acc
+  }, rows)
 
 const ConfigurationRangePsa = ({ refreshData }) => {
   const keycloak = useSession()
@@ -210,16 +235,16 @@ const ConfigurationRangePsa = ({ refreshData }) => {
       }
 
       let formattedData = apiRes.map((apiItem, index) => {
-        const configItem = FILTER_CONFIG.find((d) => d.displayName === apiItem.displayName) || {}
+        const configItem = FILTER_CONFIG.find((d) => norm(d.displayName) === norm(apiItem.displayName)) || {}
         const isReadonlyRow = PSA_READONLY_ROWS.includes(apiItem.displayName)
-        const isToggleRow = apiItem.displayName === TGC2_TOGGLE_ROW
+        const isToggleRow = Boolean(getToggleByRow(apiItem))
 
         // Rows with empty selection from API have no checkbox
         const fallbackHideCheckbox = configItem.hideCheckbox ?? !apiItem.selection
         const hideCheckbox = resolveHideCheckbox(apiItem.dependentAttributeConfig, fallbackHideCheckbox)
 
         // NOTE: API sends isEditable=false for every row, so it is ignored here.
-        // Only the PSA read-only rows are locked; TGC rows are driven by the dropdown.
+        // Only the PSA read-only rows are locked; toggle child rows are driven by the dropdowns.
         const isApiEditable = !isReadonlyRow
 
         const nonEditableFields = isReadonlyRow
@@ -251,9 +276,8 @@ const ConfigurationRangePsa = ({ refreshData }) => {
         }
       })
 
-      // Initial TGC2 Online/Offline toggle state
-      const toggleRow = formattedData.find((row) => row.displayName === TGC2_TOGGLE_ROW)
-      if (toggleRow) formattedData = applyTgcToggle(formattedData, toggleRow.targetValue)
+      // Initial toggle state for TGC2, TGC1 and CO2 Ingestion Mode
+      formattedData = applyAllToggles(formattedData)
 
       setRows(formattedData)
     } catch (error) {
@@ -353,13 +377,15 @@ const ConfigurationRangePsa = ({ refreshData }) => {
     }
   }
 
-  // Dropdown change on 'TGC2 Online/Offline' enables/disables the TGC Online/Offline rows.
+  // Dropdown change on a toggle row (TGC2 / TGC1 Online-Offline, CO2 Ingestion Mode On-Off)
+  // enables/disables its matching child rows.
   // Fallback cleanup for Target Value in case a non-numeric value still gets through.
   const handleCustomItemChange = ({ dataItem, field, value }, setRowsCallback) => {
     if (!['targetValue', 'range'].includes(field)) return
 
-    if (dataItem.displayName === TGC2_TOGGLE_ROW && field === 'targetValue') {
-      setRowsCallback((currentRows) => applyTgcToggle(currentRows, value))
+    const toggle = getToggleByRow(dataItem)
+    if (toggle && field === 'targetValue') {
+      setRowsCallback((currentRows) => applyToggle(currentRows, toggle, value))
       return
     }
 

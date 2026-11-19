@@ -131,9 +131,23 @@ export const NumberWithCheckboxDisplayCell = (props) => {
     if (isNaN(numVal)) return val
     if (formatSpec.match(/^0+\.0+$/)) {
       const decimalPlaces = formatSpec.split('.')[1].length
-      const factor = Math.pow(10, decimalPlaces)
-      const truncated = Math.trunc(numVal * factor) / factor
-      return truncated.toFixed(decimalPlaces)
+      const cleanValue =
+        typeof val === 'number'
+          ? Number(val.toFixed(Math.min(20, Math.max(decimalPlaces + 4, 12))))
+          : val
+      const strVal = String(cleanValue)
+
+      if (!isNaN(parseFloat(strVal))) {
+        const parts = strVal.split('.')
+        if (parts.length > 1) {
+          const intPart = parts[0]
+          const decPart = parts[1].slice(0, decimalPlaces).padEnd(decimalPlaces, '0')
+          return decimalPlaces > 0 ? `${intPart}.${decPart}` : intPart
+        } else {
+          return decimalPlaces > 0 ? `${parts[0]}.${'0'.repeat(decimalPlaces)}` : parts[0]
+        }
+      }
+      return numVal.toFixed(decimalPlaces)
     }
     return val
   }

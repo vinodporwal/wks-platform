@@ -42,10 +42,13 @@ const FILTER_CONFIG = [
     feb: '',
     mar: '',
     remarks: '',
+    normsType: '',
     dependantAttributeId:
       'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
     isEditable: true,
     type: 'number1',
+    selection: false,
+    hideCheckbox: true,
   },
   {
     id: 2,
@@ -64,17 +67,20 @@ const FILTER_CONFIG = [
     feb: '',
     mar: '',
     remarks: '',
+    normsType: '',
     dependantAttributeId:
       'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
     isEditable: true,
     type: 'number1',
+    selection: false,
+    hideCheckbox: true,
   },
   {
     id: 3,
     displayName:
-      'Liquid Sulphur Production Norm basis selection\n1. Last 6 months average\n2. Last 12 months average\n3. Last FY Average\n4. Predictor (Based on last 12 months)\n5. Last 4 Years Benchmark Comparison\n6. Manual Entry Norm',
+      'Last 6 months average',
     uom: 'MTPD',
-    apr: '',
+    apr: null,
     may: null,
     jun: null,
     jul: null,
@@ -87,10 +93,143 @@ const FILTER_CONFIG = [
     feb: null,
     mar: null,
     remarks: '',
+    normsType: 'Liquid Sulphur Production Norm basis selection',
     dependantAttributeId:
       'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
     isEditable: true,
-    type: 'number1',
+    type: 'checkbox',
+    selection: false,
+    hideCheckbox: false,
+  },
+  {
+    id: 31,
+    displayName:
+      'Last 12 months average',
+    uom: 'MTPD',
+    apr: null,
+    may: null,
+    jun: null,
+    jul: null,
+    aug: null,
+    sep: null,
+    oct: null,
+    nov: null,
+    dec: null,
+    jan: null,
+    feb: null,
+    mar: null,
+    remarks: '',
+    normsType: 'Liquid Sulphur Production Norm basis selection',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'checkbox',
+    selection: false,
+    hideCheckbox: false,
+  },
+   {
+    id: 32,
+    displayName:
+      'Last FY Average',
+    uom: 'MTPD',
+    apr: null,
+    may: null,
+    jun: null,
+    jul: null,
+    aug: null,
+    sep: null,
+    oct: null,
+    nov: null,
+    dec: null,
+    jan: null,
+    feb: null,
+    mar: null,
+    remarks: '',
+    normsType: 'Liquid Sulphur Production Norm basis selection',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'checkbox',
+    selection: false,
+    hideCheckbox: false,
+  },
+  {
+    id: 33,
+    displayName:
+      'Predictor (Based on last 12 months)',
+    uom: 'MTPD',
+    apr: null,
+    may: null,
+    jun: null,
+    jul: null,
+    aug: null,
+    sep: null,
+    oct: null,
+    nov: null,
+    dec: null,
+    jan: null,
+    feb: null,
+    mar: null,
+    remarks: '',
+    normsType: 'Liquid Sulphur Production Norm basis selection',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'checkbox',
+    selection: false,
+    hideCheckbox: false,
+  },
+  {
+    id: 34,
+    displayName:
+      'Last 4 Years Benchmark Comparison',
+    uom: 'MTPD',
+    apr: null,
+    may: null,
+    jun: null,
+    jul: null,
+    aug: null,
+    sep: null,
+    oct: null,
+    nov: null,
+    dec: null,
+    jan: null,
+    feb: null,
+    mar: null,
+    remarks: '',
+    normsType: 'Liquid Sulphur Production Norm basis selection',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'checkbox',
+    selection: false,
+    hideCheckbox: false,
+  },
+  {
+    id: 35,
+    displayName:
+      'Manual Entry Norm',
+    uom: 'MTPD',
+    apr: null,
+    may: null,
+    jun: null,
+    jul: null,
+    aug: null,
+    sep: null,
+    oct: null,
+    nov: null,
+    dec: null,
+    jan: null,
+    feb: null,
+    mar: null,
+    remarks: '',
+    normsType: 'Liquid Sulphur Production Norm basis selection',
+    dependantAttributeId:
+      'Fuel Consumption CBA, Power Consumption CBA, HP steam CBA, LP steam generation CBA, LP steam TGTU, HP steam TGTU, Specific Power consumption TGTU, Fuel Gas TGTU, H2 Consumption TGTU',
+    isEditable: true,
+    type: 'checkbox',
+    selection: false,
+    hideCheckbox: false,
   },
   {
     id: 4,
@@ -109,9 +248,12 @@ const FILTER_CONFIG = [
     feb: '',
     mar: '',
     remarks: '',
+    normsType: '',
     dependantAttributeId: 'LP steam consumption ATU',
     isEditable: true,
     type: 'number1',
+    selection: false,
+    hideCheckbox: true,
   },
   {
     id: 5,
@@ -130,9 +272,12 @@ const FILTER_CONFIG = [
     feb: '',
     mar: '',
     remarks: '',
+    normsType: '',
     dependantAttributeId: 'LP steam consumption ATU',
     isEditable: true,
     type: 'number1',
+    selection: false,
+    hideCheckbox: true,
   },
   {
     id: 6,
@@ -151,9 +296,12 @@ const FILTER_CONFIG = [
     feb: '',
     mar: '',
     remarks: '',
+    normsType: '',
     dependantAttributeId: 'LP steam SWS',
     isEditable: true,
     type: 'number1',
+    selection: false,
+    hideCheckbox: true,
   },
   {
     id: 7,
@@ -172,9 +320,12 @@ const FILTER_CONFIG = [
     feb: '',
     mar: '',
     remarks: '',
+    normsType: '',
     dependantAttributeId: 'LP steam SWS',
     isEditable: true,
     type: 'number1',
+    selection: false,
+    hideCheckbox: true,
   },
 ]
 
@@ -191,6 +342,8 @@ const PERMISSIONS = {
   showTitleNameBusiness: true,
   showTitle: true,
   titleName: 'Configuration',
+  groupByNonNullOnly: true,
+  singleCheckboxPerGroup: true,
 }
 
 const parseConfig = (config) => {
@@ -270,20 +423,28 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       minWidth: 90,
       editable: false,
     },
+    {
+      field: 'selection',
+      title: 'Selection',
+      widthT: 110,
+      minWidth: 110,
+      type: 'checkbox',
+      editable: true,
+    },
     ...monthColumns.map((month) => ({
       field: month.field,
       title: headerMap[month.headerIndex],
       minWidth: 140,
-      type: 'row-based',
+      type: 'number1',
       editable: true,
       format: valueFormat,
     })),
     {
       field: 'remarks',
-      title: 'Remark',
+      title: 'Remarks',
       widthT: 160,
       type: 'textarea',
-      editable: false,
+      editable: true,
       minWidth: 140,
       showPlaceholder: false,
     },
@@ -386,7 +547,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
             ? formatDate(item.attributeValue)
             : item.attributeValue,
           allowNegative: item.allowNegative,
-          selection: item.selection?.toLowerCase() === 'true' ? true : false,
+          selection: item?.selection ? true : false,
         }
       })
 
@@ -403,8 +564,6 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const saveChanges = async () => {
     const modifiedData = Object.values(modifiedCells)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
-    console.log('modifiedData', modifiedData)
-    console.log('dataToSave', dataToSave)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
 
     setLoading(true)
@@ -546,6 +705,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         setSnackbarData={setSnackbarData}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
+        groupBy={PERMISSIONS.groupByNonNullOnly ? ['normsType'] : undefined}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
