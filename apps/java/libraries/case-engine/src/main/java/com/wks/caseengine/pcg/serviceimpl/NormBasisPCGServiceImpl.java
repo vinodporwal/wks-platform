@@ -264,6 +264,7 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			String minDAFThroughput = null;
 			String maxDAFThroughput = null;
 			String siteIdStr = null;
+			String uom = null;
 
 			try { idStr = rs.getString("Id"); } catch (Exception ignored) {}
 			try { operationName = rs.getString("OperationName"); } catch (Exception ignored) {}
@@ -273,6 +274,7 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 			try { minDAFThroughput = rs.getString("MinDAFThroughput"); } catch (Exception ignored) {}
 			try { maxDAFThroughput = rs.getString("MaxDAFThroughput"); } catch (Exception ignored) {}
 			try { siteIdStr = rs.getString("SiteId"); } catch (Exception ignored) {}
+			try { uom = rs.getString("UOM"); } catch (Exception ignored) {}
 
 			return TargetGasifierFilterDTO.builder()
 					.id(idStr != null && !idStr.isBlank() ? UUID.fromString(idStr) : null)
@@ -283,6 +285,7 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 					.minDAFThroughput(minDAFThroughput)
 					.maxDAFThroughput(maxDAFThroughput)
 					.siteId(siteIdStr != null && !siteIdStr.isBlank() ? UUID.fromString(siteIdStr) : null)
+					.uom(uom)
 					.build();
 		}, plantId.toString(), aopYear);
 	}
