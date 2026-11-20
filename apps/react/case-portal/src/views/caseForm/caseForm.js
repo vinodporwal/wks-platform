@@ -866,7 +866,7 @@ return {
     CaseService.createCase(
       keycloak,
       JSON.stringify({
-        caseDefinitionId: aCase?.caseDefinitionId || 'case-management-system',
+        caseDefinitionId: aCase?.caseDefinitionId,
         caseNo: aCase.businessKey,
         owner: {
           id: keycloak.idTokenParsed.sub || '',
@@ -885,7 +885,7 @@ return {
         return CaseService.saveAnalysis(
           keycloak,
           JSON.stringify({
-            caseDefinitionId: aCase?.caseDefinitionId || 'case-management-system',
+            caseDefinitionId: aCase?.caseDefinitionId,
             assetName: assetName,
             isDraft: isDraftFlag,
             hierarchyName: hierarchyName,
