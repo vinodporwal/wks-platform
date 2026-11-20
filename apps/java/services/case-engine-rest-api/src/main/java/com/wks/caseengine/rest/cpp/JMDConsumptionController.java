@@ -103,6 +103,24 @@ public class JMDConsumptionController {
 		}
 	}
 
+	@GetMapping(value = "/jmd-plant-requirement/export")
+	public ResponseEntity<byte[]> exportJmdPlantRequirementForMultiplePlants(
+			@RequestParam List<UUID> plantIds,
+			@RequestParam String financialYear) {
+		logger.info("[GET] Exporting JMD plant requirement for plantIds: {}, financialYear: {}", plantIds,
+				financialYear);
+		try {
+			byte[] excelFile = jmdConsumptionService.exportPlantRequirementForMultiplePlants(plantIds, financialYear);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			headers.setContentDispositionFormData("attachment", "PlantRequirement_" + financialYear + ".xlsx");
+			return ResponseEntity.ok().headers(headers).body(excelFile);
+		} catch (Exception e) {
+			logger.error("[GET] Error exporting JMD plant requirement: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+	}
+
 	@PostMapping(value = "/jmd-plant-requirement/import/{plantId}/{financialYear}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<AOPMessageVM> importJmdPlantRequirement(
 			@PathVariable UUID plantId,

@@ -171,6 +171,19 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 		}
 	}
 
+	@Override
+	public byte[] exportPlantRequirementForMultiplePlants(List<UUID> plantIds, String financialYear) {
+		logger.info("[JMDConsumption] Exporting plant requirement for plantIds: {}, financialYear: {}", plantIds,
+				financialYear);
+		try {
+			List<CalculatedProcessDemandDTO> processDemand = getProcessDemandByMultiplePlants(plantIds, financialYear);
+			return generatePlantRequirementExcel(processDemand, financialYear, false);
+		} catch (Exception e) {
+			logger.error("[JMDConsumption] Error exporting plant requirement: {}", e.getMessage(), e);
+			throw new RuntimeException("Failed to export plant requirement: " + e.getMessage(), e);
+		}
+	}
+
 	private byte[] generatePlantRequirementExcel(
 			List<CalculatedProcessDemandDTO> processDemand, String financialYear, boolean includeErrors)
 			throws Exception {
@@ -349,20 +362,22 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 		// Header row
 		List<String> headers = new ArrayList<>();
 		headers.add("Parent Plant");
-		headers.add("Receiver Plant");
-		headers.add("Receiver Plant Id");
-		headers.add("Receiver Plant Utility");
-		headers.add("Receiver Utility Id");
-		headers.add("Receiver Utility UOM");
-		headers.add("Receiver Cost Center");
-		headers.add("Receiver Cost Center Code");
+		// Sender (CPP) columns
+		headers.add("Sender Utility");
+		headers.add("Sender Utility Code");
+		headers.add("Sender UOM");
 		headers.add("Sender Plant");
-		headers.add("Sender Plant Id");
-		headers.add("Sender Plant Utility");
-		headers.add("Sender Utility Id");
-		headers.add("Sender Utility UOM");
+		headers.add("Sender Plant Code");
 		headers.add("Sender Cost Center");
 		headers.add("Sender Cost Center Code");
+		// Receiver (Process Plant) columns
+		headers.add("Receiver Utility");
+		headers.add("Receiver Utility Code");
+		headers.add("Receiver UOM");
+		headers.add("Receiver Plant");
+		headers.add("Plant Code");
+		headers.add("Receiver Cost Center");
+		headers.add("Receiver Cost Center Code");
 		headers.add("Apr-" + startYearSuffix);
 		headers.add("May-" + startYearSuffix);
 		headers.add("Jun-" + startYearSuffix);
@@ -375,8 +390,8 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 		headers.add("Jan-" + endYearSuffix);
 		headers.add("Feb-" + endYearSuffix);
 		headers.add("Mar-" + endYearSuffix);
+		headers.add("Total");
 		headers.add("Remarks");
-		headers.add("Plant Code");
 		if (isAfterSave) {
 			headers.add("Status");
 			headers.add("Error Description");
@@ -389,9 +404,6 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 			cell.setCellStyle(headerStyle);
 		}
 
-		// Hide Plant Code column (index 28)
-		sheet.setColumnHidden(28, true);
-
 		// Data rows
 		for (CalculatedProcessDemandDTO dto : dtoList) {
 			Row row = sheet.createRow(currentRow++);
@@ -400,33 +412,8 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 			Cell cell = row.createCell(col++);
 			cell.setCellValue(dto.getParentPlantName() != null ? dto.getParentPlantName() : "");
 			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlant() != null ? dto.getProcessPlant() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantId() != null ? dto.getProcessPlantId() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantUtility() != null ? dto.getProcessPlantUtility() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantUtilityId() != null ? dto.getProcessPlantUtilityId() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantUom() != null ? dto.getProcessPlantUom() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantCostCenter() != null ? dto.getProcessPlantCostCenter() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantCostCenterCode() != null ? dto.getProcessPlantCostCenterCode() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getCppPlant() != null ? dto.getCppPlant() : "");
-			cell.setCellStyle(dataStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getCppPlantId() != null ? dto.getCppPlantId() : "");
-			cell.setCellStyle(dataStyle);
+
+			// Sender (CPP) columns
 			cell = row.createCell(col++);
 			cell.setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
 			cell.setCellStyle(dataStyle);
@@ -437,31 +424,62 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 			cell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
 			cell.setCellStyle(dataStyle);
 			cell = row.createCell(col++);
+			cell.setCellValue(dto.getCppPlant() != null ? dto.getCppPlant() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getCppPlantId() != null ? dto.getCppPlantId() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
 			cell.setCellValue(dto.getCppPlantCostCenter() != null ? dto.getCppPlantCostCenter() : "");
 			cell.setCellStyle(dataStyle);
 			cell = row.createCell(col++);
 			cell.setCellValue(dto.getCppPlantCostCenterCode() != null ? dto.getCppPlantCostCenterCode() : "");
 			cell.setCellStyle(dataStyle);
 
-			setDoubleCellValue(row.createCell(col++), dto.getApr(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getMay(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getJun(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getJul(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getAug(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getSep(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getOct(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getNov(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getDec(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getJan(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getFeb(), dataStyle);
-			setDoubleCellValue(row.createCell(col++), dto.getMar(), dataStyle);
+			// Receiver (Process Plant) columns
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlantUtility() != null ? dto.getProcessPlantUtility() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlantUtilityId() != null ? dto.getProcessPlantUtilityId() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlantUom() != null ? dto.getProcessPlantUom() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlant() != null ? dto.getProcessPlant() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlantId() != null ? dto.getProcessPlantId() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlantCostCenter() != null ? dto.getProcessPlantCostCenter() : "");
+			cell.setCellStyle(dataStyle);
+			cell = row.createCell(col++);
+			cell.setCellValue(dto.getProcessPlantCostCenterCode() != null ? dto.getProcessPlantCostCenterCode() : "");
+			cell.setCellStyle(dataStyle);
+
+			double total = 0.0;
+			total += setDoubleCellValue(row.createCell(col++), dto.getApr(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getMay(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getJun(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getJul(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getAug(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getSep(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getOct(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getNov(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getDec(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getJan(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getFeb(), dataStyle);
+			total += setDoubleCellValue(row.createCell(col++), dto.getMar(), dataStyle);
+
+			cell = row.createCell(col++);
+			cell.setCellValue(total);
+			cell.setCellStyle(dataStyle);
 
 			cell = row.createCell(col++);
 			cell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
 			cell.setCellStyle(remarksStyle);
-			cell = row.createCell(col++);
-			cell.setCellValue(dto.getProcessPlantId() != null ? dto.getProcessPlantId() : "");
-			cell.setCellStyle(dataStyle); // Hidden column
 			if (isAfterSave) {
 				cell = row.createCell(col++);
 				cell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
@@ -530,11 +548,12 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 	/**
 	 * Set double value in cell with proper formatting
 	 */
-	private void setDoubleCellValue(Cell cell, Double value, CellStyle style) {
+	private double setDoubleCellValue(Cell cell, Double value, CellStyle style) {
 		if (value != null) {
 			cell.setCellValue(value);
 		}
 		cell.setCellStyle(style);
+		return value != null ? value : 0.0;
 	}
 
 	@Override
@@ -930,22 +949,31 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 			}
 
 			int plantIdColumn = requireHeader(headerIndexes, "Plant Code", "Receiver Plant Id", "Process Plant Id");
-			int utilityIdColumn = requireHeader(headerIndexes, "Sender Utility Id", "CPP Utility Ids");
+			int utilityIdColumn = requireHeader(headerIndexes, "Sender Utility Code", "Sender Utility Id",
+					"CPP Utility Ids");
 			int parentPlantColumn = findHeader(headerIndexes, "Parent Plant");
+			// Sender (CPP) columns
+			int senderUtilityColumn = findHeader(headerIndexes, "Sender Utility", "Sender Plant Utility",
+					"CPP Utilities");
+			int senderUomColumn = findHeader(headerIndexes, "Sender UOM", "Sender Utility UOM", "UOM");
+			int senderPlantColumn = findHeader(headerIndexes, "Sender Plant", "CPP Plant");
+			int senderPlantIdColumn = findHeader(headerIndexes, "Sender Plant Code", "Sender Plant Id",
+					"CPP Plant Id");
+			int senderCostCenterColumn = findHeader(headerIndexes, "Sender Cost Center", "CPP Plant Cost Center");
+			int senderCostCenterCodeColumn = findHeader(headerIndexes, "Sender Cost Center Code",
+					"CPP Plant Cost Center Code");
+			// Receiver (Process Plant) columns
+			int receiverUtilityColumn = findHeader(headerIndexes, "Receiver Utility", "Receiver Plant Utility",
+					"Process Plant Utility");
+			int receiverUtilityCodeColumn = findHeader(headerIndexes, "Receiver Utility Code", "Receiver Utility Id",
+					"Process Plant Utility Id");
+			int receiverUomColumn = findHeader(headerIndexes, "Receiver UOM", "Receiver Utility UOM",
+					"Process Plant UOM");
 			int receiverPlantColumn = findHeader(headerIndexes, "Receiver Plant", "Process Plant");
-			int receiverUtilityColumn = findHeader(headerIndexes, "Receiver Plant Utility");
-			int receiverUomColumn = findHeader(headerIndexes, "Receiver Utility UOM", "Process Plant UOM");
 			int receiverCostCenterColumn = findHeader(headerIndexes, "Receiver Cost Center",
 					"Process Plant Cost Center");
 			int receiverCostCenterCodeColumn = findHeader(headerIndexes, "Receiver Cost Center Code",
 					"Process Plant Cost Center Code");
-			int senderPlantColumn = findHeader(headerIndexes, "Sender Plant", "CPP Plant");
-			int senderPlantIdColumn = findHeader(headerIndexes, "Sender Plant Id", "CPP Plant Id");
-			int senderUtilityColumn = findHeader(headerIndexes, "Sender Plant Utility", "CPP Utilities");
-			int senderUomColumn = findHeader(headerIndexes, "Sender Utility UOM", "UOM");
-			int senderCostCenterColumn = findHeader(headerIndexes, "Sender Cost Center", "CPP Plant Cost Center");
-			int senderCostCenterCodeColumn = findHeader(headerIndexes, "Sender Cost Center Code",
-					"CPP Plant Cost Center Code");
 			String startYear = financialYear.substring(2, 4);
 			String endYear = financialYear.substring(5, 7);
 			int aprColumn = requireHeader(headerIndexes, "Apr-" + startYear, "Apr");
@@ -972,20 +1000,21 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 				try {
 					dto.setProcessPlantId(getExcelCellString(row.getCell(plantIdColumn)));
 					dto.setParentPlantName(getExcelCellString(getCell(row, parentPlantColumn)));
-					dto.setProcessPlant(getExcelCellString(getCell(row, receiverPlantColumn)));
-					dto.setProcessPlantUtility(getExcelCellString(getCell(row, receiverUtilityColumn)));
-					dto.setProcessPlantUom(getExcelCellString(getCell(row, receiverUomColumn)));
-					dto.setProcessPlantUtilityId(getExcelCellString(getCell(row,
-							findHeader(headerIndexes, "Receiver Utility Id", "Process Plant Utility Id"))));
-					dto.setProcessPlantCostCenter(getExcelCellString(getCell(row, receiverCostCenterColumn)));
-					dto.setProcessPlantCostCenterCode(getExcelCellString(getCell(row, receiverCostCenterCodeColumn)));
+					// Sender (CPP) fields
+					dto.setCppUtility(getExcelCellString(getCell(row, senderUtilityColumn)));
+					dto.setUom(getExcelCellString(getCell(row, senderUomColumn)));
 					dto.setCppPlant(getExcelCellString(getCell(row, senderPlantColumn)));
 					dto.setCppPlantId(getExcelCellString(getCell(row, senderPlantIdColumn)));
-					dto.setCppUtility(getExcelCellString(getCell(row, senderUtilityColumn)));
-					dto.setCppUtilityId(getExcelCellString(row.getCell(utilityIdColumn)));
-					dto.setUom(getExcelCellString(getCell(row, senderUomColumn)));
 					dto.setCppPlantCostCenter(getExcelCellString(getCell(row, senderCostCenterColumn)));
 					dto.setCppPlantCostCenterCode(getExcelCellString(getCell(row, senderCostCenterCodeColumn)));
+					dto.setCppUtilityId(getExcelCellString(row.getCell(utilityIdColumn)));
+					// Receiver (Process Plant) fields
+					dto.setProcessPlantUtility(getExcelCellString(getCell(row, receiverUtilityColumn)));
+					dto.setProcessPlantUtilityId(getExcelCellString(getCell(row, receiverUtilityCodeColumn)));
+					dto.setProcessPlantUom(getExcelCellString(getCell(row, receiverUomColumn)));
+					dto.setProcessPlant(getExcelCellString(getCell(row, receiverPlantColumn)));
+					dto.setProcessPlantCostCenter(getExcelCellString(getCell(row, receiverCostCenterColumn)));
+					dto.setProcessPlantCostCenterCode(getExcelCellString(getCell(row, receiverCostCenterCodeColumn)));
 					dto.setApr(getExcelCellDouble(row.getCell(aprColumn)));
 					dto.setMay(getExcelCellDouble(row.getCell(mayColumn)));
 					dto.setJun(getExcelCellDouble(row.getCell(junColumn)));

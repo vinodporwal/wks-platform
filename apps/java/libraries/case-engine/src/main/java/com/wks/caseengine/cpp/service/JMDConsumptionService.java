@@ -82,6 +82,8 @@ public interface JMDConsumptionService {
 
 	public byte[] exportPlantRequirement(UUID plantId, String financialYear);
 
+	public byte[] exportPlantRequirementForMultiplePlants(List<UUID> plantIds, String financialYear);
+
 	public AOPMessageVM importPlantRequirement(UUID plantId, String financialYear, MultipartFile file);
 
 	/**

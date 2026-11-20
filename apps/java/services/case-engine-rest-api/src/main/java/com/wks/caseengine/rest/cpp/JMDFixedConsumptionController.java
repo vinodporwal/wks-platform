@@ -142,6 +142,71 @@ public class JMDFixedConsumptionController {
     }
 
     // ========================================
+    // EXPORT FIXED CONSUMPTION (V2) ENDPOINT
+    // ========================================
+
+    @GetMapping("/jmd/fixed-consumption/export-v2")
+    public ResponseEntity<byte[]> exportFixedConsumptionV2(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear) {
+
+        logger.info("[GET /jmd/fixed-consumption/export-v2] Request received - plantIds: {}, financialYear: {}", plantIds, financialYear);
+
+        byte[] excelData = jmdFixedConsumptionService.exportFixedConsumptionV2(plantIds, financialYear);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/fixed-consumption/export-v2] Failed to generate Excel file");
+            return ResponseEntity.status(500).body(null);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "FixedConsumption_" + financialYear + ".xlsx");
+
+        logger.info("[GET /jmd/fixed-consumption/export-v2] Successfully generated Excel file");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    // ========================================
+    // IMPORT FIXED CONSUMPTION (V2) ENDPOINT
+    // ========================================
+
+    @PostMapping(value = "/jmd/fixed-consumption/import-v2", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AOPMessageVM> importFixedConsumptionV2(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/fixed-consumption/import-v2] Request received - plantIds: {}, financialYear: {}, fileName: {}",
+                plantIds, financialYear, file != null ? file.getOriginalFilename() : "null");
+
+        if (file == null || file.isEmpty()) {
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(400);
+            errorResponse.setMessage("File is required");
+            errorResponse.setData(null);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        try {
+            AOPMessageVM response = jmdFixedConsumptionService.importFixedConsumptionV2(plantIds, financialYear, file);
+            logger.info("[POST /jmd/fixed-consumption/import-v2] Response - code: {}, message: {}",
+                    response.getCode(), response.getMessage());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[POST /jmd/fixed-consumption/import-v2] Unexpected error: {}", e.getMessage(), e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Failed to import data: " + e.getMessage());
+            errorResponse.setData(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    // ========================================
     // CREATE FIXED CONSUMPTION ROW ENDPOINT
     // ========================================
 

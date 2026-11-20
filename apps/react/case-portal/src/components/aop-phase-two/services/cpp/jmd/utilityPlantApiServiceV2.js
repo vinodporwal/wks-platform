@@ -6,6 +6,8 @@ export const UtilityPlantApiServiceV2 = {
   saveFixedConsumptionData,
   saveFixedConsumptionExcel,
   exportFixedConsumptionExcel,
+  saveFixedConsumptionExcelV2,
+  exportFixedConsumptionExcelV2,
   addFixedConsumptionRow,
   updateFixedConsumptionRow,
   deleteFixedConsumptionRow,
@@ -15,6 +17,8 @@ export const UtilityPlantApiServiceV2 = {
   savePlantRequirementData,
   savePlantRequirementExcel,
   exportPlantRequirementExcel,
+  savePlantRequirementExcelV2,
+  exportPlantRequirementExcelV2,
 
   // Import Consumption APIs
   getImportConsumptionData,
@@ -526,6 +530,42 @@ async function exportFixedConsumptionExcel(
   })
 }
 
+// Fixed Consumption Excel Import (V2 - JMD extended format)
+async function saveFixedConsumptionExcelV2(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  return saveExcelData(
+    file,
+    keycloak,
+    `jmd/fixed-consumption/import-v2`,
+    null,
+    null,
+    { plantIds: queryParams, financialYear },
+  )
+}
+
+// Fixed Consumption Excel Export (V2 - JMD extended format)
+async function exportFixedConsumptionExcelV2(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  return exportExcelData(keycloak, {
+    endpoint: `jmd/fixed-consumption/export-v2`,
+    queryParams: { plantIds: queryParams, financialYear },
+    fileName: EXCEL_NAME || `FixedConsumption_${financialYear}.xlsx`,
+    method: 'GET',
+  })
+}
+
 // Plant Requirement Excel Import
 async function savePlantRequirementExcel(
   file,
@@ -552,6 +592,33 @@ async function exportPlantRequirementExcel(
     endpoint: 'jmd-consumption/export',
     queryParams: { plantIds: plantIdArray.join(','), financialYear },
     fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// Plant Requirement Excel Import (JMD format)
+async function savePlantRequirementExcelV2(file, keycloak, plantId, AOP_YEAR) {
+  return saveExcelData(
+    file,
+    keycloak,
+    `jmd-plant-requirement/import/${plantId}/${AOP_YEAR}`,
+    null,
+    null,
+  )
+}
+
+// Plant Requirement Excel Export (JMD format)
+async function exportPlantRequirementExcelV2(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return exportExcelData(keycloak, {
+    endpoint: 'jmd-plant-requirement/export',
+    queryParams: { plantIds: plantIdArray.join(','), financialYear },
+    fileName: EXCEL_NAME || `PlantRequirement_${financialYear}.xlsx`,
     method: 'GET',
   })
 }

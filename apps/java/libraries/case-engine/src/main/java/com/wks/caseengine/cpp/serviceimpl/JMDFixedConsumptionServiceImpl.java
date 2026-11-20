@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -223,18 +221,7 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
                 financialYear);
 
         try {
-            AOPMessageVM response = getFixedConsumptionForPlants(plantIds, financialYear);
-            @SuppressWarnings("unchecked")
-            List<JMDFixedConsumptionDto> fixedConsumptions = (List<JMDFixedConsumptionDto>) response.getData();
-            if (fixedConsumptions == null) {
-                fixedConsumptions = new ArrayList<>();
-            }
-            // Preserve the same order as the SP: PlantName → CostCenterName → NormParameter Name
-            fixedConsumptions.sort(
-                    Comparator.comparing((JMDFixedConsumptionDto d) -> d.getPlant() != null ? d.getPlant() : "")
-                            .thenComparing(d -> d.getCostCenter() != null ? d.getCostCenter() : "")
-                            .thenComparing(d -> d.getCppUtility() != null ? d.getCppUtility() : ""));
-
+            List<JMDFixedConsumptionDto> fixedConsumptions = fetchSortedFixedConsumptions(plantIds, financialYear);
             return generateFixedConsumptionExcel(fixedConsumptions, "Fixed Consumption", financialYear);
         } catch (Exception e) {
             logger.error("[Export Service] Error exporting fixed consumption: {}", e.getMessage(), e);
@@ -242,7 +229,148 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         }
     }
 
+    @Override
+    public byte[] exportFixedConsumptionV2(List<UUID> plantIds, String financialYear) {
+        logger.info("[Export Service] Exporting fixed consumption (V2) for plantIds: {}, financialYear: {}", plantIds,
+                financialYear);
+
+        try {
+            List<JMDFixedConsumptionDto> fixedConsumptions = fetchSortedFixedConsumptions(plantIds, financialYear);
+            return generateFixedConsumptionExcelV2(fixedConsumptions, "Fixed Consumption", financialYear);
+        } catch (Exception e) {
+            logger.error("[Export Service] Error exporting fixed consumption (V2): {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private List<JMDFixedConsumptionDto> fetchSortedFixedConsumptions(List<UUID> plantIds, String financialYear) {
+        AOPMessageVM response = getFixedConsumptionForPlants(plantIds, financialYear);
+        @SuppressWarnings("unchecked")
+        List<JMDFixedConsumptionDto> fixedConsumptions = (List<JMDFixedConsumptionDto>) response.getData();
+        if (fixedConsumptions == null) {
+            fixedConsumptions = new ArrayList<>();
+        }
+        // Preserve the same order as the SP: PlantName → CostCenterName → NormParameter Name
+        fixedConsumptions.sort(
+                Comparator.comparing((JMDFixedConsumptionDto d) -> d.getPlant() != null ? d.getPlant() : "")
+                        .thenComparing(d -> d.getCostCenter() != null ? d.getCostCenter() : "")
+                        .thenComparing(d -> d.getCppUtility() != null ? d.getCppUtility() : ""));
+        return fixedConsumptions;
+    }
+
     private byte[] generateFixedConsumptionExcel(List<JMDFixedConsumptionDto> dtoList, String sheetName,
+            String financialYear) throws Exception {
+        logger.info("[Excel Generation] Creating {} with {} records", sheetName, dtoList != null ? dtoList.size() : 0);
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet(sheetName);
+        int currentRow = 0;
+
+        CellStyle headerStyle = createHeaderStyle(workbook);
+        CellStyle dataStyle = createDataStyle(workbook);
+        CellStyle remarksStyle = createRemarksStyle(workbook);
+
+        String startYearSuffix = financialYear.substring(2, 4);
+        String endYearSuffix = financialYear.substring(5, 7);
+
+        // Header row
+        List<String> headers = new ArrayList<>();
+        headers.add("Plant");
+        headers.add("Plant Id");
+        headers.add("Cost Center");
+        headers.add("Cost Center Id");
+        headers.add("CPP Utilities");
+        headers.add("CPP Utility Ids");
+        headers.add("CPP Plant");
+        headers.add("CPP Plant Id");
+        headers.add("UOM");
+        headers.add("Apr-" + startYearSuffix);
+        headers.add("May-" + startYearSuffix);
+        headers.add("Jun-" + startYearSuffix);
+        headers.add("Jul-" + startYearSuffix);
+        headers.add("Aug-" + startYearSuffix);
+        headers.add("Sep-" + startYearSuffix);
+        headers.add("Oct-" + startYearSuffix);
+        headers.add("Nov-" + startYearSuffix);
+        headers.add("Dec-" + startYearSuffix);
+        headers.add("Jan-" + endYearSuffix);
+        headers.add("Feb-" + endYearSuffix);
+        headers.add("Mar-" + endYearSuffix);
+        headers.add("Grand Total");
+        headers.add("Remarks");
+        // Hidden columns (col 23 = id, col 24 = row hash for change detection)
+        headers.add("id");
+        headers.add("_hash");
+
+        Row headerRow = sheet.createRow(currentRow++);
+        for (int col = 0; col < headers.size(); col++) {
+            Cell cell = headerRow.createCell(col);
+            cell.setCellValue(headers.get(col));
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Data rows
+        for (JMDFixedConsumptionDto dto : dtoList) {
+            Row row = sheet.createRow(currentRow++);
+            int col = 0;
+
+            createStrCell(row, col++, dto.getPlant(), dataStyle);
+            createStrCell(row, col++, dto.getPlantId(), dataStyle);
+            createStrCell(row, col++, dto.getCostCenter(), dataStyle);
+            createStrCell(row, col++, dto.getCostCenterId(), dataStyle);
+            createStrCell(row, col++, dto.getCppUtility(), dataStyle);
+            createStrCell(row, col++, dto.getCppUtilityId(), dataStyle);
+            createStrCell(row, col++, dto.getCppPlant(), dataStyle);
+            createStrCell(row, col++, dto.getCppPlantId(), dataStyle);
+            createStrCell(row, col++, dto.getUom(), dataStyle);
+
+            setDoubleCellValue(row.createCell(col++), dto.getApril(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getMay(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getJune(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getJuly(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getAug(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getSep(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getOct(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getNov(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getDec(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getJan(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getFeb(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getMar(), dataStyle);
+            setDoubleCellValue(row.createCell(col++), dto.getGrandTotal(), dataStyle);
+
+            createStrCell(row, col++, dto.getRemarks(), remarksStyle);
+
+            // col 23 – id (hidden)
+            createStrCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+
+            // col 24 – row hash (hidden, used for change detection at import time)
+            createStrCell(row, col++, computeRowHash(dto), dataStyle);
+        }
+
+        // Hide id column (23) and hash column (24)
+        sheet.setColumnHidden(23, true);
+        sheet.setColumnHidden(24, true);
+
+        int totalColumns = headers.size();
+        for (int col = 0; col < totalColumns; col++) {
+            if (col == 22) { // Remarks column
+                sheet.setColumnWidth(col, 8000);
+                continue;
+            }
+            sheet.autoSizeColumn(col);
+            String headerText = headers.get(col);
+            int headerWidth = Math.min(255 * 256, (headerText.length() + 2) * 256);
+            if (sheet.getColumnWidth(col) < headerWidth) {
+                sheet.setColumnWidth(col, headerWidth);
+            }
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        return outputStream.toByteArray();
+    }
+
+    private byte[] generateFixedConsumptionExcelV2(List<JMDFixedConsumptionDto> dtoList, String sheetName,
             String financialYear) throws Exception {
         logger.info("[Excel Generation] Creating {} with {} records", sheetName, dtoList != null ? dtoList.size() : 0);
         Workbook workbook = new XSSFWorkbook();
@@ -409,12 +537,24 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
 
     @Override
     public AOPMessageVM importFixedConsumption(List<UUID> plantIds, String financialYear, MultipartFile file) {
-        logger.info("[Import Service] Importing fixed consumption for plantIds: {}, financialYear: {}, fileName: {}",
-                plantIds, financialYear, file.getOriginalFilename());
+        return importFixedConsumptionInternal(plantIds, financialYear, file, false);
+    }
+
+    @Override
+    public AOPMessageVM importFixedConsumptionV2(List<UUID> plantIds, String financialYear, MultipartFile file) {
+        return importFixedConsumptionInternal(plantIds, financialYear, file, true);
+    }
+
+    private AOPMessageVM importFixedConsumptionInternal(List<UUID> plantIds, String financialYear,
+            MultipartFile file, boolean v2Format) {
+        logger.info("[Import Service] Importing fixed consumption (v2={}) for plantIds: {}, financialYear: {}, fileName: {}",
+                v2Format, plantIds, financialYear, file.getOriginalFilename());
         AOPMessageVM aopMessageVM = new AOPMessageVM();
 
         try {
-            List<JMDFixedConsumptionDto> excelData = readFixedConsumptionExcel(file.getInputStream(), financialYear);
+            List<JMDFixedConsumptionDto> excelData = v2Format
+                    ? readFixedConsumptionExcelV2(file.getInputStream(), financialYear)
+                    : readFixedConsumptionExcel(file.getInputStream(), financialYear);
             logger.info("[Import Service] Read {} records from Excel", excelData.size());
 
             List<JMDFixedConsumptionDto> validRecords = new ArrayList<>();
@@ -507,7 +647,9 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
                 }
                 aopMessageVM.setData(null);
             } else {
-                byte[] errorFile = generateFixedConsumptionErrorExcel(failedRecords, failureReasons, financialYear);
+                byte[] errorFile = v2Format
+                        ? generateFixedConsumptionErrorExcelV2(failedRecords, failureReasons, financialYear)
+                        : generateFixedConsumptionErrorExcel(failedRecords, failureReasons, financialYear);
                 String base64File = java.util.Base64.getEncoder().encodeToString(errorFile);
                 aopMessageVM.setCode(400);
                 aopMessageVM.setMessage("Partial import: " + updated + " updated, " + skippedCount
@@ -530,16 +672,100 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
     }
 
     /**
-     * Reads the exported Fixed Consumption Excel file and maps each data row to a
-     * DTO.
-     * Column order must match the export format:
+     * Reads the exported Fixed Consumption Excel file (legacy format) and maps
+     * each data row to a DTO.
+     * Column order must match the legacy export format:
+     * Plant(0), PlantId(1), CostCenter(2), CostCenterId(3), CPPUtility(4),
+     * CPPUtilityId(5),
+     * CPPPlant(6), CPPPlantId(7), UOM(8), Apr(9)..Mar(20), GrandTotal(21),
+     * Remarks(22), id(23), hash(24)
+     */
+    private List<JMDFixedConsumptionDto> readFixedConsumptionExcel(InputStream inputStream, String financialYear)
+            throws Exception {
+        List<JMDFixedConsumptionDto> records = new ArrayList<>();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null)
+                    continue;
+
+                // Skip fully empty rows
+                boolean isRowEmpty = true;
+                for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
+                    Cell cell = row.getCell(cellIndex);
+                    if (cell != null && !cell.toString().trim().isEmpty()) {
+                        isRowEmpty = false;
+                        break;
+                    }
+                }
+                if (isRowEmpty)
+                    continue;
+
+                JMDFixedConsumptionDto dto = new JMDFixedConsumptionDto();
+                int col = 0;
+
+                // Static / read-only columns (not updated, kept for context in error report)
+                dto.setPlant(getCellStringValue(row, col++)); // col 0 Plant
+                dto.setPlantId(getCellStringValue(row, col++)); // col 1 PlantId
+                dto.setCostCenter(getCellStringValue(row, col++)); // col 2 CostCenter
+                dto.setCostCenterId(getCellStringValue(row, col++)); // col 3 CostCenterId
+                dto.setCppUtility(getCellStringValue(row, col++)); // col 4 CPPUtility
+                dto.setCppUtilityId(getCellStringValue(row, col++)); // col 5 CPPUtilityId
+                dto.setCppPlant(getCellStringValue(row, col++)); // col 6 CPPPlant
+                dto.setCppPlantId(getCellStringValue(row, col++)); // col 7 CPPPlantId
+                dto.setUom(getCellStringValue(row, col++)); // col 8 UOM
+
+                // Month columns (updatable)
+                dto.setApril(getCellDoubleVal(row, col++)); // col 9 Apr
+                dto.setMay(getCellDoubleVal(row, col++)); // col 10 May
+                dto.setJune(getCellDoubleVal(row, col++)); // col 11 Jun
+                dto.setJuly(getCellDoubleVal(row, col++)); // col 12 Jul
+                dto.setAug(getCellDoubleVal(row, col++)); // col 13 Aug
+                dto.setSep(getCellDoubleVal(row, col++)); // col 14 Sep
+                dto.setOct(getCellDoubleVal(row, col++)); // col 15 Oct
+                dto.setNov(getCellDoubleVal(row, col++)); // col 16 Nov
+                dto.setDec(getCellDoubleVal(row, col++)); // col 17 Dec
+                dto.setJan(getCellDoubleVal(row, col++)); // col 18 Jan
+                dto.setFeb(getCellDoubleVal(row, col++)); // col 19 Feb
+                dto.setMar(getCellDoubleVal(row, col++)); // col 20 Mar
+
+                col++; // col 21 Grand Total – skip (calculated, not stored)
+
+                // Remarks (updatable)
+                dto.setRemarks(getCellStringValue(row, col++)); // col 22 Remarks
+
+                // col 23 – Hidden id column (required for update)
+                String idStr = getCellStringValue(row, col++);
+                if (idStr != null && !idStr.trim().isEmpty()) {
+                    try {
+                        dto.setId(UUID.fromString(idStr.trim()));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID for id at row {}: {}", i + 1, idStr);
+                    }
+                }
+
+                // col 24 – Hidden row hash (written at export time for change detection)
+                String hash = getCellStringValue(row, col++);
+                dto.setRowHash(hash);
+
+                records.add(dto);
+            }
+        }
+        return records;
+    }
+
+    /**
+     * Reads the exported Fixed Consumption Excel file (V2 format with
+     * sender/receiver columns) and maps each data row to a DTO.
+     * Column order must match the V2 export format:
      * SenderMaterial(0), SenderMaterialCode(1), SenderMaterialUOM(2),
      * SenderPlant(3), SenderPlantCode(4), SenderCostCenter(5), SenderCostCenterCode(6),
      * ReceiverUtility(7), ReceiverUtilityCode(8), ReceiverUtilityUOM(9),
      * ReceiverPlant(10), ReceiverPlantCode(11), ReceiverCostCenter(12), ReceiverCostCenterCode(13),
      * Apr(14)..Mar(25), GrandTotal(26), Remarks(27), id(28), hash(29)
      */
-    private List<JMDFixedConsumptionDto> readFixedConsumptionExcel(InputStream inputStream, String financialYear)
+    private List<JMDFixedConsumptionDto> readFixedConsumptionExcelV2(InputStream inputStream, String financialYear)
             throws Exception {
         List<JMDFixedConsumptionDto> records = new ArrayList<>();
         try (XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
@@ -705,10 +931,91 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
     }
 
     /**
-     * Generates an error Excel file for records that failed during import.
-     * Contains the same columns as the export plus Status and Comment columns.
+     * Generates an error Excel file (legacy format) for records that failed
+     * during import. Contains the same columns as the legacy export plus Status
+     * and Comment columns.
      */
     private byte[] generateFixedConsumptionErrorExcel(List<JMDFixedConsumptionDto> failedRecords,
+            List<String> failureReasons, String financialYear) throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Failed Records");
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle errorStyle = createErrorCellStyle(workbook);
+
+            String startYearSuffix = financialYear.substring(2, 4);
+            String endYearSuffix = financialYear.substring(5, 7);
+
+            // Header row – mirrors legacy export column order + Status + Comment
+            Row headerRow = sheet.createRow(0);
+            int col = 0;
+            String[] headers = {
+                    "Plant", "Plant Id", "Cost Center", "Cost Center Id",
+                    "CPP Utilities", "CPP Utility Ids", "CPP Plant", "CPP Plant Id", "UOM",
+                    "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
+                    "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
+                    "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
+                    "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix,
+                    "Grand Total", "Remarks", "id", "Status", "Comment"
+            };
+            for (String h : headers) {
+                Cell cell = headerRow.createCell(col++);
+                cell.setCellValue(h);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowNum = 1;
+            for (int i = 0; i < failedRecords.size(); i++) {
+                JMDFixedConsumptionDto dto = failedRecords.get(i);
+                String reason = failureReasons.get(i);
+                Row row = sheet.createRow(rowNum++);
+                col = 0;
+
+                createStrCell(row, col++, dto.getPlant(), dataStyle);
+                createStrCell(row, col++, dto.getPlantId(), dataStyle);
+                createStrCell(row, col++, dto.getCostCenter(), dataStyle);
+                createStrCell(row, col++, dto.getCostCenterId(), dataStyle);
+                createStrCell(row, col++, dto.getCppUtility(), dataStyle);
+                createStrCell(row, col++, dto.getCppUtilityId(), dataStyle);
+                createStrCell(row, col++, dto.getCppPlant(), dataStyle);
+                createStrCell(row, col++, dto.getCppPlantId(), dataStyle);
+                createStrCell(row, col++, dto.getUom(), dataStyle);
+                setDoubleCell(row, col++, dto.getApril(), dataStyle);
+                setDoubleCell(row, col++, dto.getMay(), dataStyle);
+                setDoubleCell(row, col++, dto.getJune(), dataStyle);
+                setDoubleCell(row, col++, dto.getJuly(), dataStyle);
+                setDoubleCell(row, col++, dto.getAug(), dataStyle);
+                setDoubleCell(row, col++, dto.getSep(), dataStyle);
+                setDoubleCell(row, col++, dto.getOct(), dataStyle);
+                setDoubleCell(row, col++, dto.getNov(), dataStyle);
+                setDoubleCell(row, col++, dto.getDec(), dataStyle);
+                setDoubleCell(row, col++, dto.getJan(), dataStyle);
+                setDoubleCell(row, col++, dto.getFeb(), dataStyle);
+                setDoubleCell(row, col++, dto.getMar(), dataStyle);
+                setDoubleCell(row, col++, dto.getGrandTotal(), dataStyle);
+                createStrCell(row, col++, dto.getRemarks(), dataStyle);
+                createStrCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+                createStrCell(row, col++, "Failed", errorStyle);
+                createStrCell(row, col++, reason, errorStyle);
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    /**
+     * Generates an error Excel file (V2 format) for records that failed during
+     * import. Contains the same columns as the V2 export plus Status and Comment
+     * columns.
+     */
+    private byte[] generateFixedConsumptionErrorExcelV2(List<JMDFixedConsumptionDto> failedRecords,
             List<String> failureReasons, String financialYear) throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
