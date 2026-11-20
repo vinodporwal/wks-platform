@@ -17,7 +17,7 @@ const SR_MAPPING_EDIT_ROLE = 'sr_mapping_edit'
 
 // Mandatory fields that must be filled for each row
 const REQUIRED_FIELDS = [
-  'cppPlantId',
+  'cppPlantName',
   'senderCostCenterName',
   'senderPlantName',
   'senderUtilityName',
@@ -27,7 +27,7 @@ const REQUIRED_FIELDS = [
 ]
 
 const FIELD_LABELS = {
-  cppPlantId: 'CPP Plant',
+  cppPlantName: 'CPP Plant',
   senderCostCenterName: 'Sender Cost Center',
   senderPlantName: 'Sender Plant',
   senderUtilityName: 'Sender Utility',
@@ -52,7 +52,7 @@ const getAllFields = (prefix) =>
 
 // Comprehensive dependency reset mapping
 const DEPENDENCY_RESETS = {
-  cppPlantId: PREFIXES.flatMap((p) => getAllFields(p)),
+  cppPlantName: PREFIXES.flatMap((p) => getAllFields(p)),
   senderPlantName: getFields('sender', 'Utility'),
   receiverPlantName: getFields('receiver', 'Utility'),
   senderCostCenterName: [],
@@ -331,8 +331,15 @@ const SenderReceiverMapping = () => {
         return
       }
 
+      const plantNameById = new Map(
+        cppPlantList.map((o) => [String(o.value).toLowerCase(), o.label]),
+      )
       const formattedData = apiRows.map((item, index) => ({
         ...item,
+        cppPlantName:
+          item?.cppPlantName ||
+          plantNameById.get(String(item?.cppPlantId || '').toLowerCase()) ||
+          '',
         remarks: item?.remarks || '',
         id: item?.id || index + 1,
         apiId: item?.id,
@@ -350,7 +357,7 @@ const SenderReceiverMapping = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, isSRMappingEditRole])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, isSRMappingEditRole, cppPlantList])
 
   useDebounce(
     () => {
@@ -545,9 +552,16 @@ const SenderReceiverMapping = () => {
 
       if (!dataItem || !field) return
 
-      // Handle cppPlantId change - reset everything
-      if (field === 'cppPlantId') {
-        applyRowUpdate(dataItem.id, field, { cppPlantId: value })
+      // Handle cppPlantName change - reset everything.
+      // With returnFullObject, value is { value: uuid, label: name }.
+      // Store the name in cppPlantName (display/filter field) and the
+      // uuid in cppPlantId (used by dependent filters + save payload).
+      if (field === 'cppPlantName') {
+        const isObject = value && typeof value === 'object'
+        applyRowUpdate(dataItem.id, field, {
+          cppPlantName: (isObject ? value.label : value) || '',
+          cppPlantId: isObject ? value.value || '' : '',
+        })
         return
       }
 
@@ -695,7 +709,7 @@ const SenderReceiverMapping = () => {
   const columns = useMemo(
     () => [
       {
-        field: 'cppPlantId',
+        field: 'cppPlantName',
         title: 'CPP Plant',
         widthT: 200,
         minWidth: 200,
@@ -705,6 +719,7 @@ const SenderReceiverMapping = () => {
         searchable: true,
         displayMode: 'label',
         options: cppPlantList,
+        returnFullObject: true,
       },
       {
         field: 'senderCostCenterName',
@@ -1053,6 +1068,7 @@ const SenderReceiverMapping = () => {
             errDescription,
             isEditable,
             apiId,
+            cppPlantName,
             ...rest
           } = item
           return {

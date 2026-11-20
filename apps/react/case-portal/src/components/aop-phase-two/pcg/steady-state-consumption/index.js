@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -42,6 +42,11 @@ const SteadyStateConsumptionPCG = () => {
     dataGridStore,
     'Steady State Consumption',
   )
+
+  const isSuperGroupBy = useMemo(() => {
+    const IS_SSHDEA = plantObject?.name?.toLowerCase() === 'ssh & dea'
+    return IS_SSHDEA
+  }, [plantObject])
 
   const columns = [
     {
@@ -461,7 +466,12 @@ const SteadyStateConsumptionPCG = () => {
     remarksEditable: true,
     // dropdownCell: true,
   }
-
+  const groupBy = useMemo(() => {
+    if(isSuperGroupBy){
+      return {groupBy: ['normParameterSuperTypeDisplayName', 'normParameterTypeDisplayName']}
+    }
+    return {groupBy: ['normParameterTypeDisplayName']}
+  }, [isSuperGroupBy, rows])
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -489,7 +499,7 @@ const SteadyStateConsumptionPCG = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['normParameterTypeDisplayName']}
+        {...groupBy}
         customHeight={70}
         paginationConfig={{
           threshold: 100,
