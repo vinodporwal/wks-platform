@@ -17,6 +17,7 @@ public class TargetActualDafThroughtFilterDTO {
     private String displayName;
     private Double targetValue;
     private Double range;
+    private String uom;
     private String remarks;
     private String aopYear;
     private UUID plantId;
