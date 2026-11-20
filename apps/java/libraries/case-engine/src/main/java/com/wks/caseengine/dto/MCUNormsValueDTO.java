@@ -42,6 +42,7 @@ public class MCUNormsValueDTO {
     private String normParameterTypeId;
     private String normParameterTypeName;
     private String normParameterTypeDisplayName;
+    private String normParameterSuperTypeDisplayName;
     private String UOM;
     private Boolean isEditable;
 	private String productName;
