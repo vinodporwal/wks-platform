@@ -43,7 +43,8 @@ public class JMDConsumptionController {
 			@RequestParam(required = false) UUID plantId,
 			@RequestParam(required = false) List<UUID> plantIds,
 			@RequestParam String financialYear) {
-		logger.info("[GET] Fetching plant requirement for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds, financialYear);
+		logger.info("[GET] Fetching plant requirement for plantId: {}, plantIds: {}, financialYear: {}", plantId,
+				plantIds, financialYear);
 		try {
 			List<PlantRequirementDTO> result;
 			if (plantId != null) {
@@ -66,7 +67,8 @@ public class JMDConsumptionController {
 			@RequestParam(required = false) UUID plantId,
 			@RequestParam(required = false) List<UUID> plantIds,
 			@RequestParam String financialYear) {
-		logger.info("[GET] Fetching process demand for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds, financialYear);
+		logger.info("[GET] Fetching process demand for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds,
+				financialYear);
 		try {
 			List<CalculatedProcessDemandDTO> result;
 			if (plantId != null) {
@@ -81,6 +83,50 @@ public class JMDConsumptionController {
 		} catch (Exception e) {
 			logger.error("[GET] Error fetching process demand: {}", e.getMessage(), e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+	}
+
+	@GetMapping(value = "/jmd-plant-requirement/export/{plantId}/{financialYear}")
+	public ResponseEntity<byte[]> exportJmdPlantRequirement(
+			@PathVariable UUID plantId,
+			@PathVariable String financialYear) {
+		logger.info("[GET] Exporting JMD plant requirement for plantId: {}, financialYear: {}", plantId, financialYear);
+		try {
+			byte[] excelFile = jmdConsumptionService.exportPlantRequirement(plantId, financialYear);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			headers.setContentDispositionFormData("attachment", "PlantRequirement_" + financialYear + ".xlsx");
+			return ResponseEntity.ok().headers(headers).body(excelFile);
+		} catch (Exception e) {
+			logger.error("[GET] Error exporting JMD plant requirement: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+	}
+
+	@PostMapping(value = "/jmd-plant-requirement/import/{plantId}/{financialYear}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<AOPMessageVM> importJmdPlantRequirement(
+			@PathVariable UUID plantId,
+			@PathVariable String financialYear,
+			@RequestParam("file") MultipartFile file) {
+		logger.info("[POST] Importing JMD plant requirement for plantId: {}, financialYear: {}", plantId,
+				financialYear);
+		if (file == null || file.isEmpty()) {
+			AOPMessageVM errorResponse = new AOPMessageVM();
+			errorResponse.setCode(400);
+			errorResponse.setMessage("File is required");
+			errorResponse.setData(null);
+			return ResponseEntity.badRequest().body(errorResponse);
+		}
+		try {
+			AOPMessageVM result = jmdConsumptionService.importPlantRequirement(plantId, financialYear, file);
+			return ResponseEntity.ok(result);
+		} catch (Exception e) {
+			logger.error("[POST] Error importing JMD plant requirement: {}", e.getMessage(), e);
+			AOPMessageVM errorResponse = new AOPMessageVM();
+			errorResponse.setCode(500);
+			errorResponse.setMessage("Failed to import JMD plant requirement: " + e.getMessage());
+			errorResponse.setData(null);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
 		}
 	}
 
@@ -104,13 +150,15 @@ public class JMDConsumptionController {
 			@RequestParam(required = false) UUID plantId,
 			@RequestParam(required = false) List<UUID> plantIds,
 			@RequestParam String financialYear) {
-		logger.info("[GET] Exporting consumption for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds, financialYear);
+		logger.info("[GET] Exporting consumption for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds,
+				financialYear);
 		try {
 			byte[] excelFile;
 			if (plantId != null) {
 				excelFile = jmdConsumptionService.exportConsumption(plantId, financialYear, false, null);
 			} else if (plantIds != null && !plantIds.isEmpty()) {
-				excelFile = jmdConsumptionService.exportConsumptionForMultiplePlants(plantIds, financialYear, false, null);
+				excelFile = jmdConsumptionService.exportConsumptionForMultiplePlants(plantIds, financialYear, false,
+						null);
 			} else {
 				throw new IllegalArgumentException("Either plantId or plantIds must be provided");
 			}
@@ -131,7 +179,8 @@ public class JMDConsumptionController {
 			@RequestParam(required = false) List<UUID> plantIds,
 			@RequestParam String financialYear,
 			@RequestParam("file") MultipartFile file) {
-		logger.info("[POST] Importing consumption for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds, financialYear);
+		logger.info("[POST] Importing consumption for plantId: {}, plantIds: {}, financialYear: {}", plantId, plantIds,
+				financialYear);
 		if (file == null || file.isEmpty()) {
 			AOPMessageVM errorResponse = new AOPMessageVM();
 			errorResponse.setCode(400);
@@ -142,9 +191,9 @@ public class JMDConsumptionController {
 		try {
 			AOPMessageVM result;
 			if (plantId != null) {
-				result = jmdConsumptionService.importExcel(plantId, financialYear, file);
+				result = jmdConsumptionService.importJmdExcel(plantId, financialYear, file);
 			} else if (plantIds != null && !plantIds.isEmpty()) {
-				result = jmdConsumptionService.importExcelForMultiplePlants(plantIds, financialYear, file);
+				result = jmdConsumptionService.importJmdExcelForMultiplePlants(plantIds, financialYear, file);
 			} else {
 				throw new IllegalArgumentException("Either plantId or plantIds must be provided");
 			}
