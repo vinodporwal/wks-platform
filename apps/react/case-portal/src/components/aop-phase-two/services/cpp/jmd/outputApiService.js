@@ -14,6 +14,10 @@ export const OutputApiService = {
   getAverageAssetLoading,
   exportAverageAssetLoadingExcel,
 
+  // Used in: Outputs/average-asset-loading/index.js (Power and Asset Loading grid)
+  getPowerAndSteamLoading,
+  exportPowerAndSteamLoadingExcel,
+
   // Used in: Outputs/monthly-calculated-norms/index.js (Monthly Calculated Norms output grid)
   getMonthlyCalculatedNorms,
   exportMonthlyCalculatedNormsExcel,
@@ -203,6 +207,83 @@ async function exportAverageAssetLoadingExcel(
   }
 }
 
+// ===================== || POWER AND STEAM LOADING OUTPUT APIs || ===================== //
+// GET /task/jmd/power-and-steam-loading?plantIds=...&aopYear=...
+// Calls SP CPP_GetPowerAndSteamLoading.
+// Returns power/steam loading rows for the given plant(s).
+// Each row contains: cppPlantName, generatingPlantName, generatingPlantCode,
+// materialCategory, loadingUOM, utilityName, uom, materialName,
+// issuingPlantName, issuingPlantCode, issuingUom,
+// and 12 monthly fields (aprGenQty → marAvgLoading).
+async function getPowerAndSteamLoading(keycloak, plantIds, aopYear) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/power-and-steam-loading?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching power and steam loading data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/jmd/power-and-steam-loading/export?plantIds=...&aopYear=...
+async function exportPowerAndSteamLoadingExcel(
+  keycloak,
+  plantIds,
+  aopYear,
+  EXCEL_NAME,
+) {
+  const queryParams = buildPlantIdsParam(plantIds)
+  const url = `${Config.CaseEngineUrl}/task/jmd/power-and-steam-loading/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = EXCEL_NAME
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting power and steam loading Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
 // ===================== || SR MAPPING OUTPUT APIs || ===================== //
 // GET /task/sr-mapping-qty?plantIds=...&financialYear=...&dataType=...
 // Calls SP CPP_GetSRMappingQTY (dataType=utility, default) or
@@ -217,7 +298,12 @@ async function exportAverageAssetLoadingExcel(
 //   receiverUtilityId, receiverUtilityName, receiverUtilityCode, receiverUtilityUOM,
 //   receiverCostCenterId, receiverCostCenterName, receiverCostCenterCode,
 //   remarks, and 12 monthly QTY fields (apr → mar).
-async function getSRMappingOutput(keycloak, plantIds, financialYear, dataType = 'utility') {
+async function getSRMappingOutput(
+  keycloak,
+  plantIds,
+  financialYear,
+  dataType = 'utility',
+) {
   const queryParams = buildPlantIdsParam(plantIds)
   const url = `${Config.CaseEngineUrl}/task/sr-mapping-qty?plantIds=${queryParams}&financialYear=${financialYear}&dataType=${dataType}`
   const headers = {
@@ -935,5 +1021,3 @@ async function exportFuelConsumptionExcel(
 }
 
 export default OutputApiService
-
-

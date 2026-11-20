@@ -70,4 +70,51 @@ public class AverageAssetLoadingController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    // GET /task/jmd/power-and-steam-loading?plantIds=...&aopYear=...
+    // Calls SP dbo.CPP_GetPowerAndSteamLoading
+    @GetMapping("/jmd/power-and-steam-loading")
+    public ResponseEntity<?> getPowerAndSteamLoading(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear) {
+        log.info("[GET /jmd/power-and-steam-loading] plantIds: {}, aopYear: {}", plantIds, aopYear);
+        try {
+            AOPMessageVM result = averageAssetLoadingService.getPowerAndSteamLoading(plantIds, aopYear);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("[GET /jmd/power-and-steam-loading] Error", e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    // GET /task/jmd/power-and-steam-loading/export?plantIds=...&aopYear=...
+    @GetMapping("/jmd/power-and-steam-loading/export")
+    public ResponseEntity<byte[]> exportPowerAndSteamLoading(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear) {
+        log.info("[GET /jmd/power-and-steam-loading/export] plantIds: {}, aopYear: {}", plantIds, aopYear);
+        try {
+            byte[] excelData = averageAssetLoadingService.exportPowerAndSteamLoading(plantIds, aopYear);
+
+            if (excelData == null) {
+                log.error("[GET /jmd/power-and-steam-loading/export] Failed to generate Excel file");
+                return ResponseEntity.status(500).body(null);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "Power_And_Steam_Loading_" + aopYear + ".xlsx");
+
+            log.info("[GET /jmd/power-and-steam-loading/export] Successfully generated Excel, size: {} bytes",
+                    excelData.length);
+            return ResponseEntity.ok().headers(headers).body(excelData);
+
+        } catch (Exception e) {
+            log.error("[GET /jmd/power-and-steam-loading/export] Error exporting Power and Steam Loading", e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }
