@@ -80,6 +80,10 @@ public interface JMDConsumptionService {
 	 */
 	public byte[] exportConsumption(UUID plantId, String financialYear, boolean isAfterSave, List<CalculatedProcessDemandDTO> dtoList);
 
+	public byte[] exportPlantRequirement(UUID plantId, String financialYear);
+
+	public AOPMessageVM importPlantRequirement(UUID plantId, String financialYear, MultipartFile file);
+
 	/**
 	 * Export consumption data for multiple plants to Excel.
 	 * 
@@ -102,6 +106,11 @@ public interface JMDConsumptionService {
 	public AOPMessageVM importExcel(UUID plantId, String financialYear, MultipartFile file);
 
 	/**
+	 * Import JMD consumption data using the JMD Excel column layout.
+	 */
+	public AOPMessageVM importJmdExcel(UUID plantId, String financialYear, MultipartFile file);
+
+	/**
 	 * Import consumption data from Excel for multiple plants.
 	 * 
 	 * @param plantIds List of plant UUIDs
@@ -110,4 +119,9 @@ public interface JMDConsumptionService {
 	 * @return AOPMessageVM with import status
 	 */
 	public AOPMessageVM importExcelForMultiplePlants(List<UUID> plantIds, String financialYear, MultipartFile file);
+
+	/**
+	 * Import JMD consumption data for multiple plants using the JMD Excel column layout.
+	 */
+	public AOPMessageVM importJmdExcelForMultiplePlants(List<UUID> plantIds, String financialYear, MultipartFile file);
 }
