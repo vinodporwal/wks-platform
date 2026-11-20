@@ -6181,7 +6181,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 
 	private boolean hasSuperType(String verticalName, String plantName) {
-		boolean pcgSSHAndDEA = verticalName.equalsIgnoreCase("PCG") && plantName.equalsIgnoreCase("SSH & DEA");
+		boolean pcgSSHAndDEA = verticalName.equalsIgnoreCase("PCG") && plantName.equalsIgnoreCase("SSH_DEA");
 		return pcgSSHAndDEA;
 	}
 
