@@ -419,7 +419,7 @@ const NormsHistorianBasisPeLegacy = () => {
       .map((gridName, idx) => {
         const d = dataMap[gridName] || { rows: [], columns: [] }
         const cols = d.columns || []
-        const rows = d.rows || []
+        const rows = d.rows || []   
         if (!cols.length && !rows.length) return null
 
         // Calculate max width per column based on content length
@@ -436,9 +436,10 @@ const NormsHistorianBasisPeLegacy = () => {
           // Approximate pixel width: ~8px per character + 16px padding, min 60px
           return Math.max(maxLen * 8 + 16, 60)
         })
-
+ 
         const sheetColumns = cols.map((c, i) => ({
-          width: colWidths[i],
+
+          width: c.type==='date'?100:colWidths[i],
           title: c.title || c.field || '',
         }))
 

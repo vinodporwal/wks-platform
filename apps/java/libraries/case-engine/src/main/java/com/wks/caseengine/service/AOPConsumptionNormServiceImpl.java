@@ -93,6 +93,8 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		boolean filament = vertical.getName().equalsIgnoreCase("Filament");
 		boolean chemical = vertical.getName().equalsIgnoreCase("Chemical");
 		boolean ptapmdpia = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("pmd") && plant.getName().equalsIgnoreCase("pia");
+		boolean pcgSSHAndDEA = vertical.getName().equalsIgnoreCase("PCG") && plant.getName().equalsIgnoreCase("SSH_DEA");
+		boolean hasSuperType = pcgSSHAndDEA;
 		Boolean withGrade=false;
 		if(elastomerhmdsbr || pvc) {
 			withGrade=true;
@@ -193,6 +195,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					}
 					if(vertical.getName().equalsIgnoreCase("MEROX")) {
 						dto.setLastFy(row[26] != null ? Double.valueOf(row[26].toString()) : null);
+					}
+					if(hasSuperType) {
+						dto.setNormParameterSuperTypeDisplayName(row[27] != null ? row[27].toString() : null);
 					}
 				}
 

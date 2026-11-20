@@ -58,7 +58,7 @@ export const ProductionNormsApiService = {
  * @returns {Promise} Configuration data
  */
 async function getConfigurationData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/norm-basis-filters?aopYear=${year}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/sulphur-configuration?plantId=${plantId}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -71,8 +71,8 @@ async function getConfigurationData(keycloak, plantId, year) {
     }
     return json(keycloak, resp)
   } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
+    console.error('Error fetching sulphur configuration data:', e)
+    return Promise.reject(e)
   }
 }
 
@@ -80,18 +80,26 @@ async function getConfigurationData(keycloak, plantId, year) {
  * Save Production Norms Configuration data
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
- * @param {Array} payload - Data to save
+ * @param {Array} payload - Data to save (List<SulphurConfigurationDTO>)
  * @param {string} plantId - Plant ID
  * @returns {Promise} Save response
  */
 async function saveConfigurationData(keycloak, year, payload, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/norm-basis-filters?aopYear=${year}&plantId=${plantId}`
+  const actualYear = Array.isArray(plantId) ? payload : year
+  const actualPlantId = Array.isArray(year) ? payload : plantId
+  const actualPayload = Array.isArray(payload)
+    ? payload
+    : Array.isArray(year)
+      ? year
+      : plantId
+
+  const url = `${Config.CaseEngineUrl}/task/sulphur-configuration?plantId=${actualPlantId}&aopYear=${actualYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
-  const body = JSON.stringify(payload)
+  const body = JSON.stringify(actualPayload)
   try {
     const resp = await fetch(url, {
       method: 'POST',
@@ -104,8 +112,8 @@ async function saveConfigurationData(keycloak, year, payload, plantId) {
     const result = await json(keycloak, resp)
     return result || { success: true }
   } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
+    console.error('Error saving sulphur configuration data:', e)
+    return Promise.reject(e)
   }
 }
 

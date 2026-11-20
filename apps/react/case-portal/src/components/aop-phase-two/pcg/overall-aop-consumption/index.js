@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -40,6 +40,11 @@ const OverallAopConsumptionPCG = () => {
       setSnackbarOpen,
       setSnackbarData,
   })
+  const isSuperGroupBy = useMemo(() => {
+    const IS_SSHDEA = plantObject?.name?.toLowerCase() === 'ssh & dea'
+    return IS_SSHDEA
+  }, [plantObject])
+
   const columns = [
     {
       field: 'sapCode',
@@ -293,7 +298,12 @@ const OverallAopConsumptionPCG = () => {
     isReleaseDisabled: isReleaseDisabled,
     //dropdownCell: true,
   }
-
+  const groupBy = useMemo(() => {
+    if(isSuperGroupBy){
+      return {groupBy: ['normParameterSuperTypeDisplayName', 'normParameterTypeDisplayName']}
+    }
+    return {groupBy: ['normParameterTypeDisplayName']}
+  }, [isSuperGroupBy, rows])
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -312,7 +322,7 @@ const OverallAopConsumptionPCG = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={70}
-        groupBy={['normParameterTypeDisplayName']}
+        {...groupBy}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

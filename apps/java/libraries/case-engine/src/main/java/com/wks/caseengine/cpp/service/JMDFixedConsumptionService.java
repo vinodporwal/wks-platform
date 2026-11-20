@@ -28,6 +28,15 @@ public interface JMDFixedConsumptionService {
             String financialYear,
             MultipartFile file);
 
+    byte[] exportFixedConsumptionV2(
+            List<UUID> plantIds,
+            String financialYear);
+
+    AOPMessageVM importFixedConsumptionV2(
+            List<UUID> plantIds,
+            String financialYear,
+            MultipartFile file);
+
     AOPMessageVM createFixedConsumption(FixedConsumptionCreateRequestDto request);
 
     AOPMessageVM updateFixedConsumption(FixedConsumptionCreateRequestDto request);

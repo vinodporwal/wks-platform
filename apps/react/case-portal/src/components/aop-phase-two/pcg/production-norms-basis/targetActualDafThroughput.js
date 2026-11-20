@@ -10,7 +10,7 @@ import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
-const TargetActualDafThroughput = () => {
+const TargetActualDafThroughput = ({ onSaveSuccess }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, oldYear, isReleased, screenTitle } = dataGridStore
@@ -139,7 +139,7 @@ const TargetActualDafThroughput = () => {
             normParameterId: item?.normParameterId || null,
             particulars: item?.displayName || 'DAF Throughput',
             displayName: item?.displayName || 'DAF Throughput',
-            uom: item?.uom && item.uom !== 'TPH' ? item.uom : 'MT',
+            uom: item?.uom && item.uom !== 'TPH' ? item.uom : 'MT/Hr/Gasifier',
             targetValue: targetVal,
             range: rangeVal,
             remarks: remarksVal,
@@ -160,7 +160,7 @@ const TargetActualDafThroughput = () => {
             normParameterId: null,
             particulars: 'DAF Throughput',
             displayName: 'DAF Throughput',
-            uom: 'MT',
+            uom: 'MT/Hr/Gasifier',
             targetValue: 0,
             range: 0,
             remarks: '',
@@ -265,7 +265,10 @@ const TargetActualDafThroughput = () => {
         })
         setSnackbarOpen(true)
         setModifiedCells({})
-        await fetchData()
+        await Promise.all([
+    fetchData(),
+    typeof onSaveSuccess === 'function' ? onSaveSuccess() : Promise.resolve(),
+  ])
       } else {
         setSnackbarData({
           message:
