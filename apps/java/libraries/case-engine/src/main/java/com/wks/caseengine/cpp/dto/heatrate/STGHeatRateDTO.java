@@ -8,6 +8,8 @@ import lombok.Data;
 public class STGHeatRateDTO {
     
     private String id;
+    private String assetFkId;
+    private String cppPlantName;
     private String equipType;
     private String cppUtility;
     private Double stgLoad;
