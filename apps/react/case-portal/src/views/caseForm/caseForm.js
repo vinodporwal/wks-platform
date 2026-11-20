@@ -832,8 +832,14 @@ return {
 
   const onAnalysisAndValueRealizationSave = (eventData, isDraftFlag) => {
     // eventData comes from onCustomEvent and always has the latest form values
-    const liveData = eventData || formData?.data
-    const liveContainer = {container: liveData};
+    const caseNumber = aCase?.businessKey || aCase?.caseNo || ''
+    const liveData = { ...(eventData || formData?.data) }
+
+    // Ensure caseNo and status 1 ('Assigned') are set to prevent 500 database sync error
+    liveData.caseNo = caseNumber
+    liveData.caseStatus = 1
+
+    const liveContainer = { container: liveData }
     setLoading(true)
     const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
     const missingFields = requiredFields.filter(
@@ -848,13 +854,27 @@ return {
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     
-    // Use APM context for parameters instead of URL
-    const context = getFullApmContext();
-    const assetName = context.assetName || 'default'
-    const hierarchyName = context.hierarchyName || 'default'
-    const eventIdsParam = context.eventIds
-    const sourceSystem = context.sourceSystem || 'default'
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
+    // Use APM context with fallbacks to prevent empty/default values in link mode
+    const context = getFullApmContext()
+    const assetName = (context.assetName && context.assetName !== 'default' && context.assetName.trim() !== '')
+      ? context.assetName
+      : (aCase?.assetName || liveData?.mainAsset || 'default')
+
+    const hierarchyName = context.hierarchyName || aCase?.hierarchyName || 'Planthierarchy'
+    const sourceSystem = context.sourceSystem || aCase?.sourceSystem || 'default'
+
+    // Extract event IDs from dataGrid2 if not present in context
+    const gridEventIds = (liveData?.dataGrid2 || formData?.data?.container?.dataGrid2 || [])
+      .map((item) => String(item?.eventPkId || item?.selectedEventId || ''))
+      .filter(Boolean)
+
+    const eventIds = (context.eventIds && context.eventIds.trim() !== '')
+      ? context.eventIds.split(',')
+      : (aCase?.eventIds && aCase.eventIds.length > 0 ? aCase.eventIds : gridEventIds)
+
+    // Proper case URL pointing directly to the case-list/create view with caseNo
+    const targetCaseUrl = `${window.location.origin}/cm/case-list/create?caseNo=${caseNumber}`
+
     const caseAttributes = Object.keys(liveContainer).map((key) => ({
       name: key,
       value:
@@ -867,7 +887,7 @@ return {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase?.caseDefinitionId,
-        caseNo: aCase.businessKey,
+        caseNo: caseNumber,
         owner: {
           id: keycloak.idTokenParsed.sub || '',
           name: keycloak.idTokenParsed.name || '',
@@ -875,12 +895,12 @@ return {
           phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href),
-        businessKey: aCase.businessKey,
+        caseUrl: targetCaseUrl,
+        businessKey: caseNumber,
       }),
     )
       .then((data) => {
-        const businessKey = data.businessKey
+        const businessKey = data.businessKey || caseNumber
 
         return CaseService.saveAnalysis(
           keycloak,
@@ -899,8 +919,9 @@ return {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href),
-		      //  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+            caseUrl: targetCaseUrl,
+      //  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+
           }),
         )
       })
@@ -908,9 +929,7 @@ return {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          
-          window.location.href = data.caseUrl;
-        
+          window.location.href = targetCaseUrl
         }, 1000)
       })
       .catch((err) => {
