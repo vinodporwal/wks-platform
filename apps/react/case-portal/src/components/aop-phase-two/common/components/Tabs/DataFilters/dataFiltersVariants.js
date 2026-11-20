@@ -1,13 +1,12 @@
-import { ProductionNormsApiService as NaphthaSplitterApiService } from 'components/aop-phase-two/services/naphthasplitter/productionNormsApiService'
-import { ProductionNormsApiService as VgohtApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import CokerDataFilters from 'components/aop-phase-two/coker/production-norms-basis/DataFilters'
 import DataFiltersTab from './DataFilters'
+import { ProductionTabApiService } from 'components/aop-phase-two/services/common/productionTabApiService'
 
 export const DEFAULT_DATA_FILTERS_VARIANT = {
   key: 'default',
   Component: DataFiltersTab,
   config: {
-    apiService: NaphthaSplitterApiService,
+    apiService: ProductionTabApiService,
     groupBy: null,
     triggerNormCalculationOnSave: false,
     getColumns: null,
@@ -28,7 +27,7 @@ export const DATA_FILTERS_VARIANTS = [
     Component: DataFiltersTab,
     config: {
       ...DEFAULT_DATA_FILTERS_VARIANT.config,
-      apiService: VgohtApiService,
+      apiService: ProductionTabApiService,
     },
   },
   {
@@ -37,7 +36,7 @@ export const DATA_FILTERS_VARIANTS = [
     Component: DataFiltersTab,
     config: {
       ...DEFAULT_DATA_FILTERS_VARIANT.config,
-      apiService: NaphthaSplitterApiService,
+      apiService: ProductionTabApiService,
     },
   },
 ]

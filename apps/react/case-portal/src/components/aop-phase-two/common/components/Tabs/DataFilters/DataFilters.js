@@ -5,7 +5,7 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from '../../../utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../../utilities/downloadBase64Excel'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/naphthasplitter/productionNormsApiService'
+import { ProductionTabApiService } from 'components/aop-phase-two/services/common/productionTabApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import usePlantContext from '../../../hooks/usePlantContext'
 import AdvanceKendoTable from '../../../AdvanceKendoTable/index'
@@ -32,7 +32,7 @@ const DataFiltersTab = ({
   } = context
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const apiService = variantConfig?.apiService || ProductionNormsApiService
+  const apiService = variantConfig?.apiService || ProductionTabApiService
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
