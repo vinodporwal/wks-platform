@@ -192,7 +192,10 @@ System.out.println("total results: " + results.size());
 	/**
 	 * Maps SP result row to DTO.
 	 * SP columns: id, financial_year, process_plant, process_plant_id, cpp_utility, cpp_utility_id,
-	 *             cpp_plant, cpp_plant_id, uom, apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar, is_calculated
+	 *             cpp_plant, cpp_plant_id, uom, processPlantUtility, processPlantUom, processPlantUtilityId,
+	 *             processPlantCostCenter, processPlantCostCenterCode, CPPPlantCostCenter,
+	 *             CPPPlantCostCenterCode, apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar,
+	 *             is_calculated, remarks, parentPlantId, parentPlantName
 	 */
 	private CalculatedProcessDemandDTO mapRowToDTO(Object[] row) {
 		return CalculatedProcessDemandDTO.builder()
@@ -205,22 +208,29 @@ System.out.println("total results: " + results.size());
 				.cppPlant(row[6] != null ? row[6].toString() : null)
 				.cppPlantId(row[7] != null ? row[7].toString() : null)
 				.uom(row[8] != null ? row[8].toString() : null)
-				.apr(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0)
-				.may(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0)
-				.jun(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0)
-				.jul(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0)
-				.aug(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0)
-				.sep(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0)
-				.oct(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0)
-				.nov(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0)
-				.dec(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0)
-				.jan(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0)
-				.feb(row[19] != null ? Double.parseDouble(row[19].toString()) : 0.0)
-				.mar(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0)
-				.isCalculated(row[21] != null && Integer.parseInt(row[21].toString()) == 1)
-				.remarks(row[22] != null ? row[22].toString() : null)
-				.parentPlantId(row[23] != null ? row[23].toString() : null)
-				.parentPlantName(row[24] != null ? row[24].toString() : null)
+				.processPlantUtility(row[9] != null ? row[9].toString() : null)
+				.processPlantUom(row[10] != null ? row[10].toString() : null)
+				.processPlantUtilityId(row[11] != null ? row[11].toString() : null)
+				.processPlantCostCenter(row[12] != null ? row[12].toString() : null)
+				.processPlantCostCenterCode(row[13] != null ? row[13].toString() : null)
+				.cppPlantCostCenter(row[14] != null ? row[14].toString() : null)
+				.cppPlantCostCenterCode(row[15] != null ? row[15].toString() : null)
+				.apr(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0)
+				.may(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0)
+				.jun(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0)
+				.jul(row[19] != null ? Double.parseDouble(row[19].toString()) : 0.0)
+				.aug(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0)
+				.sep(row[21] != null ? Double.parseDouble(row[21].toString()) : 0.0)
+				.oct(row[22] != null ? Double.parseDouble(row[22].toString()) : 0.0)
+				.nov(row[23] != null ? Double.parseDouble(row[23].toString()) : 0.0)
+				.dec(row[24] != null ? Double.parseDouble(row[24].toString()) : 0.0)
+				.jan(row[25] != null ? Double.parseDouble(row[25].toString()) : 0.0)
+				.feb(row[26] != null ? Double.parseDouble(row[26].toString()) : 0.0)
+				.mar(row[27] != null ? Double.parseDouble(row[27].toString()) : 0.0)
+				.isCalculated(row[28] != null && Integer.parseInt(row[28].toString()) == 1)
+				.remarks(row[29] != null ? row[29].toString() : null)
+				.parentPlantId(row[30] != null ? row[30].toString() : null)
+				.parentPlantName(row[31] != null ? row[31].toString() : null)
 				.build();
 	}
 
@@ -795,6 +805,4 @@ System.out.println("total results: " + results.size());
 		return null;
 	}
 }
-
-
 

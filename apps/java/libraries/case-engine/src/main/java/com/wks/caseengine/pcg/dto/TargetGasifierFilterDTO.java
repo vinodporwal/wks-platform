@@ -17,7 +17,11 @@ public class TargetGasifierFilterDTO {
     private String operationName;
     private String displayName;
     private String gConfiguration;
+    private String actualDAFThroughput;
+    private String minDAFThroughput;
+    private String maxDAFThroughput;
     private UUID siteId;
+    private String uom;
 
     private String gOperation;
     private UUID plantId;

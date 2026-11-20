@@ -105,6 +105,7 @@ export default function HeaderContent({ keycloak, navigation }) {
   // Derive CPP-JMD flag from Redux (verticalObject/siteObject set by header itself)
   const verticalObject = useSelector((s) => s.dataGridStore.verticalObject)
   const siteObject = useSelector((s) => s.dataGridStore.siteObject)
+  const VERTICAL_NAME = verticalObject?.name?.toLowerCase()
   const IS_CPP_JMD =
     verticalObject?.name?.toLowerCase() === 'cpp' &&
     siteObject?.name?.toLowerCase() === 'jmd'
@@ -178,6 +179,10 @@ export default function HeaderContent({ keycloak, navigation }) {
     '/dashboard',
     '/user-management',
     '/user-form',
+  ].includes(location.pathname)
+  const isPolyesterVerticals = ['filament (pfy)', 'staple (psf)', 'py-pet'].includes(VERTICAL_NAME)
+  const isPolyesterQualityScreen = isPolyesterVerticals && [
+    '/production-norms-plan/quality-packaging-norms-polyester',
   ].includes(location.pathname)
 
   const Hide_Dropdown = [
@@ -892,11 +897,11 @@ export default function HeaderContent({ keycloak, navigation }) {
                   minWidth: 0,
                   flexShrink: 1,
                 }}
-                title={screenTitleName}
+                title={isPolyesterQualityScreen ? 'Quality, Packaging & PPA DC' : screenTitleName}
               >
                 {screenTitleName?.length > 25
-                  ? `${screenTitleName.slice(0, 25)}...`
-                  : screenTitleName}
+                  ? `${isPolyesterQualityScreen ? 'Quality, Packaging & PPA DC' : screenTitleName.slice(0, 25)}...`
+                  : isPolyesterQualityScreen ? 'Quality, Packaging & PPA DC' : screenTitleName}
               </Typography>
 
               {!!currentStep && (

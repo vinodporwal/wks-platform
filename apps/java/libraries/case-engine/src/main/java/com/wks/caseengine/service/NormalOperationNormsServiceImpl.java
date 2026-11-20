@@ -148,6 +148,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		boolean ptaPmdPia = verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("PMD") && plant.getName().equalsIgnoreCase("PIA");
 		Boolean withGrade = false;
 		Boolean elastomer = verticalName.equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+        boolean hasSuperType = hasSuperType(verticalName, plant.getName());
+		
 		if ((plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
 				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) || (vertical.getName().equalsIgnoreCase("STAPLE")&& gradeId != null && !gradeId.trim().isEmpty() ) ||  (vertical.getName().equalsIgnoreCase("Filament")&& gradeId != null && !gradeId.trim().isEmpty() )) {
 			withGrade = true;
@@ -271,6 +273,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					}
 					if (vertical.getName().equalsIgnoreCase("MEROX")) {
 						mCUNormsValueDTO.setLastFy(row[30] != null ? Double.parseDouble(row[30].toString()) : null);	
+					}
+					if (hasSuperType) {
+						mCUNormsValueDTO.setNormParameterSuperTypeDisplayName(row[30] != null ? row[30].toString() : null);
 					}
 				}
 				mCUNormsValueDTOList.add(mCUNormsValueDTO);
@@ -3695,11 +3700,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
 			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
+		    boolean hasSuperType = hasSuperType(vertical.getName(), plant.getName());
+		
 			
 			List<MCUNormsValueDTO> data = null;
 
 				if (merox) {
 				      data = readConfigurationsSAPMerox(file.getInputStream(), plantFKId, year);
+					} else if (hasSuperType) {
+							data = readConfigurationsSAPWithSuperType(file.getInputStream(), plantFKId, year);
 					} else {
 							data = readConfigurationsSAP(file.getInputStream(), plantFKId, year);
 					}
@@ -4346,6 +4355,61 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		return configList;
 	}
 
+
+	// ref: readConfigurationsSAP | export has additional leading "Super Type" column (read only)
+	public List<MCUNormsValueDTO> readConfigurationsSAPWithSuperType(InputStream inputStream, UUID plantFKId, String year) {
+		List<MCUNormsValueDTO> configList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
+
+				if (rowIterator.hasNext())
+					rowIterator.next();
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					MCUNormsValueDTO dto = new MCUNormsValueDTO();
+
+					try {
+						dto.setNormParameterSuperTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(1), dto));
+						dto.setSapCode(getStringCellValue(row.getCell(2), dto));
+						dto.setProductName(getStringCellValue(row.getCell(3), dto));
+						dto.setUOM(getStringCellValue(row.getCell(4), dto));
+						dto.setApril(getNumericCellValue(row.getCell(5), dto));
+						dto.setMay(getNumericCellValue(row.getCell(6), dto));
+						dto.setJune(getNumericCellValue(row.getCell(7), dto));
+						dto.setJuly(getNumericCellValue(row.getCell(8), dto));
+						dto.setAugust(getNumericCellValue(row.getCell(9), dto));
+						dto.setSeptember(getNumericCellValue(row.getCell(10), dto));
+						dto.setOctober(getNumericCellValue(row.getCell(11), dto));
+						dto.setNovember(getNumericCellValue(row.getCell(12), dto));
+						dto.setDecember(getNumericCellValue(row.getCell(13), dto));
+						dto.setJanuary(getNumericCellValue(row.getCell(14), dto));
+						dto.setFebruary(getNumericCellValue(row.getCell(15), dto));
+						dto.setMarch(getNumericCellValue(row.getCell(16), dto));
+						dto.setFinancialYear(year);
+						dto.setRemarks(getStringCellValue(row.getCell(17), dto));
+						dto.setId(getStringCellValue(row.getCell(18), dto));
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+
+					configList.add(dto);
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return configList;
+	}
 
 	public List<MCUNormsValueDTO> readConfigurationsSAPMerox(InputStream inputStream, UUID plantFKId, String year) {
 		List<MCUNormsValueDTO> configList = new ArrayList<>();
@@ -5138,6 +5202,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			boolean polyester = vertical.getName().equalsIgnoreCase("Filament") || vertical.getName().equalsIgnoreCase("Staple");
 			boolean merox = vertical.getName().equalsIgnoreCase("MEROX");
+		    boolean hasSuperType = hasSuperType(vertical.getName(), plant.getName());
+		
 			if (!isAfterSave) {
 				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
 				dtoList = (List<MCUNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
@@ -5201,6 +5267,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			for (MCUNormsValueDTO dto : dtoList) {
 				// if (isAfterSave) {
 				List<Object> list = new ArrayList<>();
+				if (hasSuperType) {
+					list.add(dto.getNormParameterSuperTypeDisplayName());
+				}
 				list.add(dto.getNormParameterTypeDisplayName());
 				list.add(dto.getSapCode());
 				list.add(dto.getProductName());
@@ -5231,6 +5300,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
+			if (hasSuperType) {
+				innerHeaders.add("Super Type");
+			}
 			innerHeaders.add("Type");
 			innerHeaders.add("SAP MAT Code");
 			innerHeaders.add("Particulars");
@@ -6106,6 +6178,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			aopMessageVM.setData(false);
 			return aopMessageVM;
 		}
+	}
+
+	private boolean hasSuperType(String verticalName, String plantName) {
+		boolean pcgSSHAndDEA = verticalName.equalsIgnoreCase("PCG") && plantName.equalsIgnoreCase("SSH_DEA");
+		return pcgSSHAndDEA;
 	}
 
 }

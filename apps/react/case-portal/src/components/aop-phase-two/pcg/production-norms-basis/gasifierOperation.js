@@ -42,10 +42,40 @@ const GasifierOperation = () => {
       {
         field: 'gConfiguration',
         title: 'G Configuration',
-        width: 1000,
-        widthT: 1000,
-        minWidth: 800,
+        width: 250,
+        widthT: 200,
+        minWidth: 200,
         type: 'text',
+        editable: false,
+      },
+      {
+        field: 'actualDAFThroughput',
+        title: 'Actual DAF Throughput',
+        format: '{0:0.00}',
+        width: 250,
+        widthT: 200,
+        minWidth: 200,
+        type: 'number',
+        editable: false,
+      },
+      {
+        field: 'minDAFThroughput',
+        title: 'Min DAF Throughput',
+        format: '{0:0.00}',
+        width: 250,
+        widthT: 200,
+        minWidth: 200,
+        type: 'number',
+        editable: false,
+      },
+      {
+        field: 'maxDAFThroughput',
+        title: 'Max DAF Throughput',
+        format: '{0:0.00}',
+        width: 250,
+        widthT: 200,
+        minWidth: 200,
+        type: 'number',
         editable: false,
       },
     ],
@@ -123,6 +153,11 @@ const GasifierOperation = () => {
     <Box>
       <LoaderBackdrop open={!!loading} />
       <Box>
+        <TargetActualDafThroughput onSaveSuccess={fetchData} />
+      </Box>
+
+      {/* Target Actual DAF Throughput Grid */}
+      <Box sx={{ mt: 3 }}>
         <AdvanceKendoTable
           columns={columns}
           rows={rows}
@@ -140,11 +175,6 @@ const GasifierOperation = () => {
           pagable={false}
           customHeight={30}
         />
-      </Box>
-
-      {/* Target Actual DAF Throughput Grid */}
-      <Box sx={{ mt: 3 }}>
-        <TargetActualDafThroughput />
       </Box>
     </Box>
   )

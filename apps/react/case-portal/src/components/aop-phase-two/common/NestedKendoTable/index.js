@@ -103,10 +103,24 @@ const applyKendoNumberFormat = (value, format) => {
   // Handle decimal format like '0.00' or '0.0000'
   if (formatSpec.match(/^0+\.0+$/)) {
     const decimalPlaces = formatSpec.split('.')[1].length
-    // Truncate instead of rounding to preserve original precision
-    const factor = Math.pow(10, decimalPlaces)
-    const truncated = Math.trunc(numValue * factor) / factor
-    return truncated.toFixed(decimalPlaces)
+    // Normalize floating-point epsilon noise if value is a float
+    const cleanValue =
+      typeof value === 'number'
+        ? Number(value.toFixed(Math.min(20, Math.max(decimalPlaces + 4, 12))))
+        : value
+    const strVal = String(cleanValue)
+
+    if (!isNaN(parseFloat(strVal))) {
+      const parts = strVal.split('.')
+      if (parts.length > 1) {
+        const intPart = parts[0]
+        const decPart = parts[1].slice(0, decimalPlaces).padEnd(decimalPlaces, '0')
+        return decimalPlaces > 0 ? `${intPart}.${decPart}` : intPart
+      } else {
+        return decimalPlaces > 0 ? `${parts[0]}.${'0'.repeat(decimalPlaces)}` : parts[0]
+      }
+    }
+    return numValue.toFixed(decimalPlaces)
   }
 
   return value
@@ -949,7 +963,7 @@ const NestedKendoTable = ({
     if (format && (typeof value === 'number' || typeof value === 'string')) {
       const numValue = typeof value === 'string' ? parseFloat(value) : value
       if (!isNaN(numValue)) {
-        formattedValue = applyKendoNumberFormat(numValue, format)
+        formattedValue = applyKendoNumberFormat(value ?? numValue, format)
       }
     }
 

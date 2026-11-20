@@ -4,16 +4,97 @@ import TabSection from '../../utilities/Tabs'
 import useConfigurationTabs from '../../hooks/useConfigurationTabs'
 import usePlantContext from '../../hooks/usePlantContext'
 import JWAvgNorms from './JWAvgNorms'
+import PIMSMonthlyThroughput from './PIMSMonthlyThroughput'
+import PIMSThroughput from './PIMSThroughput'
+import Constants from './Constants'
+import EnergyFactor from './EnergyFactor'
+import NormsRationalizationFactor from './NormsRationalizationFactor'
+import DataFilters from './DataFilters'
+import HistoricalMonths from './HistoricalMonths'
+import ManualEntry from './ManualEntry'
+import ReportManualEntry from './ReportManualEntry'
+import TargetGasifierOperation from './TargetGasifierOperation'
+import ExclusionDates from './ExclusionDates'
+import Configuration from './Configuration'
+import ManualEntryFactors from './ManualEntryFactors'
+import ShutdownCatChem from './ShutdownCatChem'
+import ProductionRange from './ProductionRange'
+import {
+  REFINERY_UTILITY_TABS_REGISTRY,
+  ProductionDemand,
+  UtilityConsumption,
+  CatChemConsumption,
+  TreatmentVendor,
+  VendorConsumption,
+  CommoditySelection,
+  CommodityConsumption,
+  OwnerSelection,
+  ResinConsumption,
+  AntiScalant,
+  AntiFoam,
+  ResignRequired,
+} from './RefineryUtility'
 
-export { JWAvgNorms }
+export {
+  JWAvgNorms,
+  PIMSMonthlyThroughput,
+  PIMSThroughput,
+  Constants,
+  EnergyFactor,
+  NormsRationalizationFactor,
+  DataFilters,
+  HistoricalMonths,
+  ManualEntry,
+  ReportManualEntry,
+  TargetGasifierOperation,
+  ExclusionDates,
+  Configuration,
+  ManualEntryFactors,
+  ShutdownCatChem,
+  ProductionRange,
+  REFINERY_UTILITY_TABS_REGISTRY,
+  ProductionDemand,
+  UtilityConsumption,
+  CatChemConsumption,
+  TreatmentVendor,
+  VendorConsumption,
+  CommoditySelection,
+  CommodityConsumption,
+  OwnerSelection,
+  ResinConsumption,
+  AntiScalant,
+  AntiFoam,
+  ResignRequired,
+}
 
 /**
  * Central registry mapping backend tab display names to shared tab components
- * under `common/components/Tabs/`. Additional production-norms-basis tabs can
- * be registered here incrementally without touching existing vertical folders.
+ * under `common/components/Tabs/`. Covers all production-norms-basis tabs across
+ * all 11 verticals without touching existing vertical folders.
  */
 export const COMMON_TABS_REGISTRY = {
+  Configuration,
+  Constants,
+  'PIMS Throughput': PIMSThroughput,
+  'PIMS Monthly Throughput': PIMSMonthlyThroughput,
+  'pims-monthly-throughput': PIMSMonthlyThroughput,
+  'pims-monthly-throughtput': PIMSMonthlyThroughput,
   'Job Work Avg Norms': JWAvgNorms,
+  'Manual Entry': ManualEntry,
+  'Manual Entry - Factors': ManualEntryFactors,
+  Factors: ManualEntryFactors,
+  'Manual Entry Factors': ManualEntryFactors,
+  'Report Manual Entry': ReportManualEntry,
+  'Data Filters': DataFilters,
+  'Historical Months': HistoricalMonths,
+  'Energy Factor': EnergyFactor,
+  'Norms Rationalization Factor': NormsRationalizationFactor,
+  'Target Gasifier Filter': TargetGasifierOperation,
+  'Manual Exclusion Dates': ExclusionDates,
+  'Exclusion Date': ExclusionDates,
+  'Shutdown Cat Chem': ShutdownCatChem,
+  ProductionRange,
+  ...REFINERY_UTILITY_TABS_REGISTRY,
 }
 
 const normalizeTabKey = (name) =>

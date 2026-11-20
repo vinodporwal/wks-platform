@@ -9,7 +9,7 @@ import HeatRate from './heat-rate'
 import SRMapping from './sr-mapping'
 import QtyCostReport from './qty-cost-report'
 import Summary from './Summary'
-import AverageAssetLoading from './average-asset-loading'
+import AssetLoading from './average-asset-loading/index'
 import UtilityRate from './utility-rate'
 import MonthlyCalculatedNorms from './monthly-calculated-norms'
 import SpinningMarginReport from './spinning-margin-report'
@@ -47,7 +47,7 @@ const Outputs = () => {
       case 'Norm Cost Report':
         return <QtyCostReport />
       case 'Average Asset Loading':
-        return <AverageAssetLoading />
+        return <AssetLoading />
       case 'Summary':
         return <Summary />
       case 'Utility Rate':
