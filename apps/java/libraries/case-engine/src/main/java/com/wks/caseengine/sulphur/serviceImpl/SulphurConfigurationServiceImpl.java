@@ -115,16 +115,22 @@ public List<SulphurConfigurationDTO> saveConfigurationData(List<SulphurConfigura
 
     for(SulphurConfigurationDTO configurationDTO : configurationDTOList) { 
 
-        boolean isTickRow = configurationDTO.getIsTickRow();
+        boolean isTickRow = Boolean.TRUE.equals(configurationDTO.getIsTickRow());
+
 
           for(int i = 1; i <= 12; i++) {
 
-        // consider only April month for tick row
-           if(isTickRow && i != 4) { 
-                continue;
-           }
-                saveConfigurationDataInDB(configurationDTO, i, year);
+            String attributeValue = getSulphurConfigurationAttributeValue(configurationDTO, i);
+
+            saveConfigurationDataInDB(configurationDTO, i, year, attributeValue);
           
+          }
+         // save select checkbox value
+          if(isTickRow) {
+
+            String  attributeValue = Boolean.TRUE.equals(configurationDTO.getSelected()) ? "1" : "0";
+            saveConfigurationDataInDB(configurationDTO, 13, year, attributeValue);
+
           }
 
     }
@@ -134,16 +140,11 @@ public List<SulphurConfigurationDTO> saveConfigurationData(List<SulphurConfigura
 }
 
 @Transactional
-public void saveConfigurationDataInDB(SulphurConfigurationDTO configurationDTO, int month, String year) {
+public void saveConfigurationDataInDB(SulphurConfigurationDTO configurationDTO, int month, String year, String attributeValue) {
 	
 
 	UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
-	String attributeValue = getSulphurConfigurationAttributeValue(configurationDTO, month);
     String remarks = configurationDTO.getRemarks();
-
-    if (Boolean.TRUE.equals(configurationDTO.getIsTickRow())) {
-        attributeValue = Boolean.TRUE.equals(configurationDTO.getSelected()) ? "1" : "0";
-    }
 
     Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
 			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, year);
