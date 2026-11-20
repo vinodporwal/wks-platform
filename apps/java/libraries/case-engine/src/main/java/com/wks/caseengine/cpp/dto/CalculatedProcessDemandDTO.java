@@ -24,6 +24,13 @@ public class CalculatedProcessDemandDTO {
     private String cppPlant;
     private String cppPlantId;
     private String uom;
+    private String processPlantUtility;
+    private String processPlantUom;
+    private String processPlantUtilityId;
+    private String processPlantCostCenter;
+    private String processPlantCostCenterCode;
+    private String cppPlantCostCenter;
+    private String cppPlantCostCenterCode;
     private Double apr;
     private Double may;
     private Double jun;
