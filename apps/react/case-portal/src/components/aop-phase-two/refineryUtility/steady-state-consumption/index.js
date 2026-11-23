@@ -215,7 +215,7 @@ const SteadyStateConsumption = () => {
         if (isThreeDecimal) {
           return num.toFixed(3)
         }
-        return num.toString()
+        return Math.trunc(num).toString()
       }
       if (isDtaUnitPlants || isC2UnitPlants || isSEZPlnatsUomM3) {
         // Decide by normParameterTypeName (or display name), not by UOM
@@ -228,7 +228,7 @@ const SteadyStateConsumption = () => {
         if (isThreeDecimal) {
           return num.toFixed(3)
         }
-        return num.toString()
+        return Math.trunc(num).toString()
       }
       if (ISETP_Plants) {
         // Decide by normParameterTypeName (or display name), not by UOM
@@ -241,7 +241,7 @@ const SteadyStateConsumption = () => {
         if (isThreeDecimal) {
           return num.toFixed(5)
         }
-        return num.toString()
+        return Math.trunc(num).toString()
       }
       if (isFCCTame) {
         return num.toFixed(5)
@@ -276,7 +276,7 @@ const SteadyStateConsumption = () => {
         if (isThreeDecimal) {
           return num.toFixed(3)
         }
-        return num.toString()
+        return Math.trunc(num).toString()
       }
       if (ISVMD_Plants) {
         const typeKeys = [
@@ -289,10 +289,10 @@ const SteadyStateConsumption = () => {
         if (isThreeDecimal) {
           return num.toFixed(3)
         }
-        return num.toString()
+        return Math.trunc(num).toString()
       }
 
-      return num.toString()
+      return Math.trunc(num).toString()
     },
     [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3],
   )
