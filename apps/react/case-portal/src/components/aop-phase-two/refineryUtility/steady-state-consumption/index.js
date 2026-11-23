@@ -549,22 +549,7 @@ const SteadyStateConsumption = () => {
       return
     }
 
-    const data = modifiedData
-      .filter((row) => row.inEdit)
-      .map((row) => {
-        const uom = row?.UOM || row?.uom || ''
-        const updatedRow = { ...row }
-        MONTH_FIELDS.forEach((m) => {
-          if (
-            updatedRow[m] !== undefined &&
-            updatedRow[m] !== null &&
-            updatedRow[m] !== ''
-          ) {
-            updatedRow[m] = formatValueByUom(updatedRow[m], uom, updatedRow)
-          }
-        })
-        return updatedRow
-      })
+    const data = modifiedData.filter((row) => row.inEdit)
     if (data.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
