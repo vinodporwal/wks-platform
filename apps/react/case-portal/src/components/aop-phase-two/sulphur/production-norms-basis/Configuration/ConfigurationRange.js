@@ -176,7 +176,20 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
         : Array.isArray(response)
           ? response
           : []
-
+      const monthFields = [
+        'apr',
+        'may',
+        'jun',
+        'jul',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+        'jan',
+        'feb',
+        'mar',
+      ]
       let formattedData = []
 
       if (apiList.length > 0) {
@@ -200,6 +213,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
             type: isTickRow ? 'checkbox' : item.dataType || 'number1',
             dataType: item.dataType || (isTickRow ? 'checkbox' : 'number1'),
             isEditable: item.isEditable !== undefined ? item.isEditable : true,
+            nonEditableFields: (isTickRow && item?.displayName?.toLowerCase() !== 'manual entry') ? monthFields : ['selection'],
             remarks: item.remarks || '',
             dependantAttributeId: item.utilities || '',
             utilities: item.utilities || '',

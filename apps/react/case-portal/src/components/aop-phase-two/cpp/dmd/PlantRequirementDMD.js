@@ -421,7 +421,7 @@ const PlantRequirementDMD = () => {
 
     setLoading(true)
     try {
-      const response = await UtilityPlantApiServiceV2.savePlantRequirementExcel(
+      const response = await UtilityPlantApiServiceV2.savePlantRequirementExcelV2(
         file,
         keycloak,
         PLANT_ID,
@@ -501,7 +501,7 @@ const PlantRequirementDMD = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportPlantRequirementExcel(
+      await UtilityPlantApiServiceV2.exportPlantRequirementExcelV2(
         keycloak,
         PLANT_ID,
         AOP_YEAR,

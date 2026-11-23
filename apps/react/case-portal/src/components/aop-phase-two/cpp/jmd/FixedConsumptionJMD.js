@@ -476,12 +476,13 @@ const FixedConsumptionJMD = () => {
 
     setLoading(true)
     try {
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionExcel(
-        file,
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
+      const response =
+        await UtilityPlantApiServiceV2.saveFixedConsumptionExcelV2(
+          file,
+          keycloak,
+          PLANT_ID_LIST,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -556,7 +557,7 @@ const FixedConsumptionJMD = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportFixedConsumptionExcel(
+      await UtilityPlantApiServiceV2.exportFixedConsumptionExcelV2(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,

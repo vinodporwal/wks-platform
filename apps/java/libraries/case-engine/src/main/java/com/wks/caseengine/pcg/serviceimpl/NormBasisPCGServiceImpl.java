@@ -398,6 +398,7 @@ public class NormBasisPCGServiceImpl implements NormBasisPCGService {
 					.aopYear(rs.getString("aopYear"))
 					.plantId(plantIdStr != null && !plantIdStr.isBlank()
 							? UUID.fromString(plantIdStr) : null)
+					.uom(rs.getString("UOM"))
 					.build();
 		}, plantId.toString(), aopYear);
 	}

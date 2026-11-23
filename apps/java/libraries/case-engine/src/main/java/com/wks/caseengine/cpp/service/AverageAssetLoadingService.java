@@ -11,4 +11,8 @@ public interface AverageAssetLoadingService {
     AOPMessageVM getAverageAssetLoading(List<UUID> plantIds, String aopYear);
 
     byte[] exportAverageAssetLoading(List<UUID> plantIds, String aopYear) throws IOException;
+
+    AOPMessageVM getPowerAndSteamLoading(List<UUID> plantIds, String aopYear);
+
+    byte[] exportPowerAndSteamLoading(List<UUID> plantIds, String aopYear) throws IOException;
 }
