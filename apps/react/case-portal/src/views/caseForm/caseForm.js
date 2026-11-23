@@ -835,9 +835,10 @@ return {
     const caseNumber = aCase?.businessKey || aCase?.caseNo || ''
     const liveData = { ...(eventData || formData?.data) }
 
-    // Ensure caseNo and status 1 ('Assigned') are set to prevent 500 database sync error
+
     liveData.caseNo = caseNumber
-    liveData.caseStatus = 1
+    const selectedStatus = liveData?.caseStatus ?? formData?.data?.container?.caseStatus ?? aCase?.caseStatus ?? aCase?.status?.id ?? 1
+    liveData.caseStatus = Number(selectedStatus) || selectedStatus || 1
 
     const liveContainer = { container: liveData }
     setLoading(true)
