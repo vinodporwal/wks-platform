@@ -7,7 +7,10 @@ import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
-import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
+import {
+  validateRowDataWithRemarks,
+  convertFromScientificNotation,
+} from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from 'components/aop-phase-two/services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
@@ -31,16 +34,16 @@ const MONTH_FIELDS = [
   'march',
 ]
 
-const CoolingTowerUom=['Kg/Km3', 'kWh/km3', 'm3/km3', 'Nm3/Km3']
-const ThreeDecimalUomM3= [
-    'Kg/m3',
-    'km3/m3',
-    'KW/m3',
-    'KWH/m3',
-    'm3/m3',
-    'MT/m3',
-    'Nm3/m3',
-    'MW/m3'
+const CoolingTowerUom = ['Kg/Km3', 'kWh/km3', 'm3/km3', 'Nm3/Km3']
+const ThreeDecimalUomM3 = [
+  'Kg/m3',
+  'km3/m3',
+  'KW/m3',
+  'KWH/m3',
+  'm3/m3',
+  'MT/m3',
+  'Nm3/m3',
+  'MW/m3'
 ]
 const normalizeKey = (s) =>
   String(s ?? '')
@@ -49,16 +52,16 @@ const normalizeKey = (s) =>
 
 // Norm parameter types that show 3 decimals for DTA_PCG CT plants
 const THREE_DECIMAL_NORM_TYPES = [
-'Power Norms',
-'Norms proposed for Next FY-Total Power',
+  'Power Norms',
+  'Norms proposed for Next FY-Total Power',
 ].map(normalizeKey)
-const SIX_DECIMAL_NORM_TYPES=[
-'Norms proposed for Next FY-Cooling Water',
-'Cooling Water Norms',
+const SIX_DECIMAL_NORM_TYPES = [
+  'Norms proposed for Next FY-Cooling Water',
+  'Cooling Water Norms',
 ].map(normalizeKey)
 
-const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
-const THREE_DECIMAL_NORM_TYPESVMD=['Utility Consumption', 'Utility Specific Consumption(Total) Norms'].map(normalizeKey)
+const THREE_DECIMAL_NORM_TYPESDMD = ['Utility Consumption'].map(normalizeKey)
+const THREE_DECIMAL_NORM_TYPESVMD = ['Utility Consumption', 'Utility Specific Consumption(Total) Norms'].map(normalizeKey)
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -74,46 +77,46 @@ const SteadyStateConsumption = () => {
 
   const siteName = (siteObject?.name || '').trim().toUpperCase()
   const plantName = (plantObject?.name || '').trim()
-  const isDtaUnitPlants=siteName.toLowerCase() === 'dta' &&
-(
-    plantName.toLowerCase() === 'spent_caustic (palpro)' ||
-    plantName.toLowerCase() === 'cpu_unit (722)' ||
-    plantName.toLowerCase() === 'passivation_unit (712)' ||
-    plantName.toLowerCase() === 'wao_unit (672)' ||
-    plantName.toLowerCase() === 'med_unit (927/711)' ||
-    plantName.toLowerCase() === 'dm_unit (721)'
-)
-const isSEZPlnatsUomM3=siteName.toLowerCase() === 'sez' &&
-(
-    plantName.toLowerCase() === 'ct_remeneralisation_unit (z715)' ||
-    plantName.toLowerCase() === 'remineralisation_unit (z712)' ||
-    plantName.toLowerCase() === 'cold condensate distribution (z722)' ||
-    plantName.toLowerCase() === 'chiller unit (z141)' ||
-    plantName.toLowerCase() === 'refinery fire water system (z713)' ||
-    plantName.toLowerCase() === 'cpu (z722)' ||
-    plantName.toLowerCase() === 'dm unit (z721)' ||
-    plantName.toLowerCase() === 'med_units (z711)'
-)
-const isC2UnitPlants= siteName.toLowerCase() === 'c2' &&
-(
-    plantName.toLowerCase() === 'cpu_unit (c722)' ||
-    plantName.toLowerCase() === 'dm_unit (c721)'   ||
-    plantName.toLowerCase() === 'chiller_system (c131)' ||
-    plantName.toLowerCase() === 'remineralisation_unit (z712)' ||
-    plantName.toLowerCase() === 'cpu_unit (c722)' ||
-    plantName.toLowerCase() === 'rwtp (d151)' ||
-    plantName.toLowerCase() === 'swro_storage (c711)' ||
-    plantName.toLowerCase() === 'fire_water_system (c714)' ||
-    plantName.toLowerCase() === 'dm_unit (c721)'
-)
+  const isDtaUnitPlants = siteName.toLowerCase() === 'dta' &&
+    (
+      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+      plantName.toLowerCase() === 'cpu_unit (722)' ||
+      plantName.toLowerCase() === 'passivation_unit (712)' ||
+      plantName.toLowerCase() === 'wao_unit (672)' ||
+      plantName.toLowerCase() === 'med_unit (927/711)' ||
+      plantName.toLowerCase() === 'dm_unit (721)'
+    )
+  const isSEZPlnatsUomM3 = siteName.toLowerCase() === 'sez' &&
+    (
+      plantName.toLowerCase() === 'ct_remeneralisation_unit (z715)' ||
+      plantName.toLowerCase() === 'remineralisation_unit (z712)' ||
+      plantName.toLowerCase() === 'cold condensate distribution (z722)' ||
+      plantName.toLowerCase() === 'chiller unit (z141)' ||
+      plantName.toLowerCase() === 'refinery fire water system (z713)' ||
+      plantName.toLowerCase() === 'cpu (z722)' ||
+      plantName.toLowerCase() === 'dm unit (z721)' ||
+      plantName.toLowerCase() === 'med_units (z711)'
+    )
+  const isC2UnitPlants = siteName.toLowerCase() === 'c2' &&
+    (
+      plantName.toLowerCase() === 'cpu_unit (c722)' ||
+      plantName.toLowerCase() === 'dm_unit (c721)' ||
+      plantName.toLowerCase() === 'chiller_system (c131)' ||
+      plantName.toLowerCase() === 'remineralisation_unit (z712)' ||
+      plantName.toLowerCase() === 'cpu_unit (c722)' ||
+      plantName.toLowerCase() === 'rwtp (d151)' ||
+      plantName.toLowerCase() === 'swro_storage (c711)' ||
+      plantName.toLowerCase() === 'fire_water_system (c714)' ||
+      plantName.toLowerCase() === 'dm_unit (c721)'
+    )
   const isDtapcgCtPlant =
-    siteName.toLowerCase() === 'dta_pcg'  &&
+    siteName.toLowerCase() === 'dta_pcg' &&
     (plantName.toLowerCase() === 'ct1 (g731)' ||
       plantName.toLowerCase() === 'ct3 (g733)' ||
-     plantName.toLowerCase() === 'ct2 (g733)')
+      plantName.toLowerCase() === 'ct2 (g733)')
 
-  const isSezpcgCtPlant=siteName.toLowerCase() === 'sez_pcg' && (plantName.toLowerCase() === 'ct1 (h731)' ||
-      plantName.toLowerCase() === 'ct3 (h733)' || plantName.toLowerCase() === 'ct2 (h732)' ||plantName.toLowerCase() === 'ct4 (h734)')
+  const isSezpcgCtPlant = siteName.toLowerCase() === 'sez_pcg' && (plantName.toLowerCase() === 'ct1 (h731)' ||
+    plantName.toLowerCase() === 'ct3 (h733)' || plantName.toLowerCase() === 'ct2 (h732)' || plantName.toLowerCase() === 'ct4 (h734)')
   const isFCCTame = siteName === 'DTA' && plantName === 'FCC-2_SHP-TAME'
   const isAsuPlant =
     (siteName === 'DTA' &&
@@ -126,56 +129,56 @@ const isC2UnitPlants= siteName.toLowerCase() === 'c2' &&
       (plantName.toLowerCase() === 'air' ||
         plantName.toLowerCase() === 'c2_asu'))
 
-  const isDtaCtPlant=siteName === 'DTA' &&
-      (
-  plantName.toLowerCase() === 'ct1 (731)' ||
-  plantName.toLowerCase() === 'ct2 (732)' ||
-  plantName.toLowerCase() === 'ct3 (733)' ||
-  plantName.toLowerCase() === 'ct4 (734)' ||
-  plantName.toLowerCase() === 'ct5 (735)' ||  
-  plantName.toLowerCase() === 'ct6 (736)' ||
-  plantName.toLowerCase() === 'ct7 (737)' ||
-  plantName.toLowerCase() === 'ct8 (738)' ||
-  plantName.toLowerCase() === 'ct9 (739)' ||
-  plantName.toLowerCase() === 'ct10 (740)' 
-)
+  const isDtaCtPlant = siteName === 'DTA' &&
+    (
+      plantName.toLowerCase() === 'ct1 (731)' ||
+      plantName.toLowerCase() === 'ct2 (732)' ||
+      plantName.toLowerCase() === 'ct3 (733)' ||
+      plantName.toLowerCase() === 'ct4 (734)' ||
+      plantName.toLowerCase() === 'ct5 (735)' ||
+      plantName.toLowerCase() === 'ct6 (736)' ||
+      plantName.toLowerCase() === 'ct7 (737)' ||
+      plantName.toLowerCase() === 'ct8 (738)' ||
+      plantName.toLowerCase() === 'ct9 (739)' ||
+      plantName.toLowerCase() === 'ct10 (740)'
+    )
 
-const isSezCtPlant=siteName === 'SEZ' &&
-      (
-  plantName.toLowerCase() === 'ct1 (z731)' ||
-  plantName.toLowerCase() === 'ct5 (z735)' ||
-  plantName.toLowerCase() === 'ct4 (z734)' ||
-  plantName.toLowerCase() === 'ct8 (z761)' ||
-  plantName.toLowerCase() === 'ct3 (z733)' ||
-  plantName.toLowerCase() === 'ct2 (z732)' ||
-  plantName.toLowerCase() === 'ct6 (z736)'||
-  plantName.toLowerCase() === 'ct7 (z737)'||
-  plantName.toLowerCase() === 'ct9 px4 (z739)'
-)
+  const isSezCtPlant = siteName === 'SEZ' &&
+    (
+      plantName.toLowerCase() === 'ct1 (z731)' ||
+      plantName.toLowerCase() === 'ct5 (z735)' ||
+      plantName.toLowerCase() === 'ct4 (z734)' ||
+      plantName.toLowerCase() === 'ct8 (z761)' ||
+      plantName.toLowerCase() === 'ct3 (z733)' ||
+      plantName.toLowerCase() === 'ct2 (z732)' ||
+      plantName.toLowerCase() === 'ct6 (z736)' ||
+      plantName.toLowerCase() === 'ct7 (z737)' ||
+      plantName.toLowerCase() === 'ct9 px4 (z739)'
+    )
 
-const isDtaUnitPlant =
-  siteName === 'DTA' &&
-  (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
-    plantName.toLowerCase() === 'new_dm_unit (721)' ||
-    plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
-    plantName.toLowerCase() === 'old_cpu_unit (722)' ||
-    plantName.toLowerCase() === 'old_dm_unit (721)' ||
-    plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
-    plantName.toLowerCase() === 'spent_caustic (palpro)' ||
-    plantName.toLowerCase() === 'wao_unit (672)')
-const ISDMD_Plants=siteName.toLowerCase() === 'dmd'
-const ISVMD_Plants=siteName.toLowerCase() === 'vmd'
+  const isDtaUnitPlant =
+    siteName === 'DTA' &&
+    (plantName.toLowerCase() === 'new_cpu_unit (722)' ||
+      plantName.toLowerCase() === 'new_dm_unit (721)' ||
+      plantName.toLowerCase() === 'new_remineralisation_unit (712)' ||
+      plantName.toLowerCase() === 'old_cpu_unit (722)' ||
+      plantName.toLowerCase() === 'old_dm_unit (721)' ||
+      plantName.toLowerCase() === 'old_remineralisation_unit (712)' ||
+      plantName.toLowerCase() === 'spent_caustic (palpro)' ||
+      plantName.toLowerCase() === 'wao_unit (672)')
+  const ISDMD_Plants = siteName.toLowerCase() === 'dmd'
+  const ISVMD_Plants = siteName.toLowerCase() === 'vmd'
 
-const ISETP_Plants=(siteName === 'DTA' &&
-  (plantName.toLowerCase() === 'etp-hero (ro-2)' ||
-    plantName.toLowerCase() === 'etp' ||
-    plantName.toLowerCase() === 'etp-ufro (ro-3)')) ||
+  const ISETP_Plants = (siteName === 'DTA' &&
+    (plantName.toLowerCase() === 'etp-hero (ro-2)' ||
+      plantName.toLowerCase() === 'etp' ||
+      plantName.toLowerCase() === 'etp-ufro (ro-3)')) ||
     (siteName === 'SEZ' &&
-  (plantName.toLowerCase() === 'etp')) ||
-  (siteName === 'C2' &&
-  (plantName.toLowerCase() === 'complex etp')) ||
-  (siteName === 'MTF' &&
-  (plantName.toLowerCase() === 'etp'))
+      (plantName.toLowerCase() === 'etp')) ||
+    (siteName === 'C2' &&
+      (plantName.toLowerCase() === 'complex etp')) ||
+    (siteName === 'MTF' &&
+      (plantName.toLowerCase() === 'etp'))
 
 
   const [loading, setLoading] = useState(false)
@@ -198,7 +201,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
       if (isNaN(num)) return val
 
       if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
+        return num.toFixed(2)
       }
 
       if (isDtapcgCtPlant || isSezpcgCtPlant || isDtaCtPlant || isSezCtPlant) {
@@ -210,9 +213,9 @@ const ISETP_Plants=(siteName === 'DTA' &&
           (u) => u.trim().toLowerCase() === cleanUom,
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
-        return Math.trunc(num).toString()
+        return num.toString()
       }
       if (isDtaUnitPlants || isC2UnitPlants || isSEZPlnatsUomM3) {
         // Decide by normParameterTypeName (or display name), not by UOM
@@ -223,11 +226,11 @@ const ISETP_Plants=(siteName === 'DTA' &&
           (u) => u.trim().toLowerCase() === cleanUom,
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
-        return Math.trunc(num).toString()
+        return num.toString()
       }
-      if ( ISETP_Plants) {
+      if (ISETP_Plants) {
         // Decide by normParameterTypeName (or display name), not by UOM
         const cleanUom = String(uom ?? '')
           .trim()
@@ -236,12 +239,12 @@ const ISETP_Plants=(siteName === 'DTA' &&
           (u) => u.trim().toLowerCase() === cleanUom,
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(5)
+          return num.toFixed(5)
         }
-        return Math.trunc(num).toString()
+        return num.toString()
       }
       if (isFCCTame) {
-        return (Math.trunc(num * 100000) / 100000).toFixed(5)
+        return num.toFixed(5)
       }
       if (isAsuPlant) {
         const typeKeys = [
@@ -252,17 +255,17 @@ const ISETP_Plants=(siteName === 'DTA' &&
           THREE_DECIMAL_NORM_TYPES.includes(k),
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
         const isSixDecimal = typeKeys.some((k) =>
           SIX_DECIMAL_NORM_TYPES.includes(k),
         )
         if (isSixDecimal) {
-          return (Math.trunc(num * 1000000) / 1000000).toFixed(6)
+          return num.toFixed(6)
         }
-        return (Math.trunc(num * 100000) / 100000).toFixed(5)
+        return num.toFixed(5)
       }
-      if(ISDMD_Plants){
+      if (ISDMD_Plants) {
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
           normalizeKey(row?.normParameterTypeDisplayName),
@@ -271,11 +274,11 @@ const ISETP_Plants=(siteName === 'DTA' &&
           THREE_DECIMAL_NORM_TYPESDMD.includes(k),
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
-        return Math.trunc(num).toString()
+        return num.toString()
       }
-      if(ISVMD_Plants){
+      if (ISVMD_Plants) {
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
           normalizeKey(row?.normParameterTypeDisplayName),
@@ -284,20 +287,54 @@ const ISETP_Plants=(siteName === 'DTA' &&
           THREE_DECIMAL_NORM_TYPESVMD.includes(k),
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
-        return Math.trunc(num).toString()
+        return num.toString()
       }
 
-      return Math.trunc(num).toString()
+      return num.toString()
     },
     [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3],
   )
 
-  const columns = useMemo(() => {
-    const valueFormat = undefined
-    const headerMap = generateHeaderNames(AOP_YEAR)
+  const MonthDataCell = useCallback(
+    (props) => {
+      const { dataItem, field, tdProps, customModifiedCells } = props
+      const rowId = dataItem?.id
+      const rawValue = dataItem?.[field]
+      const uom = dataItem?.UOM || dataItem?.uom || ''
+      const formattedValue = formatValueByUom(rawValue, uom, dataItem)
 
+      const isEdited = Object.prototype.hasOwnProperty.call(
+        customModifiedCells?.[rowId] || {},
+        field,
+      )
+
+      const tooltipText =
+        rawValue !== null && rawValue !== undefined && rawValue !== ''
+          ? convertFromScientificNotation(rawValue) ?? String(rawValue)
+          : ''
+
+      return (
+        <td
+          {...tdProps}
+          title={tooltipText}
+          className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''} k-number-right`.trim()}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'right',
+          }}
+        >
+          {formattedValue}
+        </td>
+      )
+    },
+    [formatValueByUom],
+  )
+
+  const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [AOP_YEAR])
+
+  const columns = useMemo(() => {
     return [
       {
         field: 'id',
@@ -353,7 +390,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'may',
@@ -362,7 +399,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'june',
@@ -371,7 +408,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'july',
@@ -380,7 +417,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'august',
@@ -389,7 +426,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'september',
@@ -398,7 +435,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'october',
@@ -407,7 +444,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'november',
@@ -416,7 +453,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'december',
@@ -425,7 +462,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'january',
@@ -434,7 +471,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'february',
@@ -443,7 +480,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'march',
@@ -452,7 +489,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         minWidth: 120,
         type: 'number1',
         editable: true,
-        format: valueFormat,
+        customCell: MonthDataCell,
       },
       {
         field: 'remarks',
@@ -463,7 +500,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         editable: true,
       },
     ]
-  }, [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, AOP_YEAR, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3])
+  }, [headerMap, MonthDataCell])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -481,30 +518,12 @@ const ISETP_Plants=(siteName === 'DTA' &&
           AOP_YEAR,
         )
       const data = response?.data?.mcuNormsValueDTOList || []
-      const formattedData = data?.map((item, index) => {
-        const row = {
-          ...item,
-          remarks: item.remarks || '',
-          id: item?.id || index + 1,
-          isEditable: true,
-        }
-        const uom = item?.UOM || item?.uom || ''
-        if (isDtaCtPlant || isSezCtPlant) {
-          MONTH_FIELDS.forEach((m) => {
-            if (row[m] !== undefined && row[m] !== null && row[m] !== '') {
-              row[m] = formatValueByUom(row[m], uom, row)
-            }
-          })
-        } else {
-          // Apart from isDtaCtPlant: default formatting
-          MONTH_FIELDS.forEach((m) => {
-            if (row[m] !== undefined && row[m] !== null && row[m] !== '') {
-              row[m] = formatValueByUom(row[m], uom, row)
-            }
-          })
-        }
-        return row
-      })
+      const formattedData = data?.map((item, index) => ({
+        ...item,
+        remarks: item.remarks || '',
+        id: item?.id || index + 1,
+        isEditable: true,
+      }))
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -530,35 +549,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
       return
     }
 
-    const data = modifiedData
-      .filter((row) => row.inEdit)
-      .map((row) => {
-        const uom = row?.UOM || row?.uom || ''
-        const updatedRow = { ...row }
-        if (isDtaCtPlant || isSezCtPlant) {
-          MONTH_FIELDS.forEach((m) => {
-            if (
-              updatedRow[m] !== undefined &&
-              updatedRow[m] !== null &&
-              updatedRow[m] !== ''
-            ) {
-              updatedRow[m] = formatValueByUom(updatedRow[m], uom, updatedRow)
-            }
-          })
-        } else {
-          // Apart from isDtaCtPlant: default formatting
-          MONTH_FIELDS.forEach((m) => {
-            if (
-              updatedRow[m] !== undefined &&
-              updatedRow[m] !== null &&
-              updatedRow[m] !== ''
-            ) {
-              updatedRow[m] = formatValueByUom(updatedRow[m], uom, updatedRow)
-            }
-          })
-        }
-        return updatedRow
-      })
+    const data = modifiedData.filter((row) => row.inEdit)
     if (data.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
@@ -792,7 +783,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExport={handleExport}
         handleExcelUpload={handleImport}
