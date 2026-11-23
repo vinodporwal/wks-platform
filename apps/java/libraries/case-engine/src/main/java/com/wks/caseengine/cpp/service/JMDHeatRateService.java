@@ -58,6 +58,22 @@ public interface JMDHeatRateService {
     byte[] exportCcppHeatRateExcelData(UUID assetId, String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppCcppHeatRateDto> dtoList);
     
     AOPMessageVM importGTHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
+
+    byte[] exportGTHeatRateAllExcelData(String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppGtHeatRateDto> dtoList);
+
+    AOPMessageVM importGTHeatRateAllData(String year, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
+
+    byte[] exportSTGHeatRateAllExcelData(String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<STGHeatRateDTO> dtoList);
+
+    AOPMessageVM importSTGHeatRateAllData(String year, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
+
+    byte[] exportHRSGHeatRateAllExcelData(String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppHrsgHeatRateDto> dtoList);
+
+    AOPMessageVM importHRSGHeatRateAllData(String year, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
+
+    byte[] exportAuxboilerHeatRateAllExcelData(String year, String startDate, String endDate, List<UUID> plantIds, boolean isAfterSave, List<CppAuxBoilerHeatRateDto> dtoList);
+
+    AOPMessageVM importAuxboilerHeatRateAllData(String year, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     
     AOPMessageVM importHRSGHeatRateData(String year, UUID assetId, String startDate, String endDate, List<UUID> plantIds, MultipartFile file);
     

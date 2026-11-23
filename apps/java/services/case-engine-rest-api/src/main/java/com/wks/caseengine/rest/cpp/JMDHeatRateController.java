@@ -74,12 +74,12 @@ public class JMDHeatRateController {
     /**
      * [GT] SAVE Heat Rate Data
      * Used by: GTHeatRate.js
-     * Endpoint: POST /task/jmd/gt-heat-rate?year=...
+     * Endpoint: POST /task/jmd/gt-heat-rate/{year}
      */
-    @PostMapping("/jmd/gt-heat-rate")
+    @PostMapping("/jmd/gt-heat-rate/{year}")
     public ResponseEntity<AOPMessageVM> saveGTHeatRateData(
             @RequestBody List<CppGtHeatRateDto> dtoList,
-            @RequestParam String year) {
+            @PathVariable String year) {
         logger.info("[JMDHeatRateController] POST /jmd/gt-heat-rate - {} records, year: {}", dtoList.size(), year);
         AOPMessageVM response = jmdHeatRateService.saveGTHeatRateData(dtoList, year);
         return ResponseEntity.ok(response);
@@ -133,6 +133,56 @@ public class JMDHeatRateController {
             @RequestParam("file") MultipartFile file) {
         logger.info("[JMDHeatRateController] POST /jmd/gt-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
         return jmdHeatRateService.importGTHeatRateData(year, assetId, startDate, endDate, plantIds, file);
+    }
+
+    /**
+     * [GT - ALL ASSETS] EXPORT Excel
+     * Exports heat rate data for ALL GT assets across the selected plants.
+     * Excel includes a "CPP Plant" column to differentiate assets per plant.
+     * Endpoint: GET /task/jmd/gt-heat-rate/all/export?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @GetMapping(value = "/jmd/gt-heat-rate/all/export")
+    public ResponseEntity<byte[]> exportGTHeatRateAll(
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportGTHeatRateAllExcelData(
+                    year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("GT_Heat_Rate_All_Plants.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting all GT heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * [GT - ALL ASSETS] IMPORT Excel
+     * Imports heat rate data for ALL GT assets across the selected plants.
+     * Each row is resolved to an asset via hidden Asset Id, or CPP Plant + Equipment Type.
+     * Endpoint: POST /task/jmd/gt-heat-rate/all/import?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @PostMapping(value = "/jmd/gt-heat-rate/all/import", consumes = "multipart/form-data")
+    public AOPMessageVM importGTHeatRateAllData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/gt-heat-rate/all/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importGTHeatRateAllData(year, startDate, endDate, plantIds, file);
     }
 
     // ============================================================
@@ -219,6 +269,56 @@ public class JMDHeatRateController {
             @RequestParam("file") MultipartFile file) {
         logger.info("[JMDHeatRateController] POST /jmd/stg-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
         return jmdHeatRateService.importSTGHeatRateData(year, assetId, startDate, endDate, plantIds, file);
+    }
+
+    /**
+     * [STG - ALL ASSETS] EXPORT Excel
+     * Exports heat rate data for ALL STG assets across the selected plants.
+     * Excel includes a "CPP Plant" column to differentiate assets per plant.
+     * Endpoint: GET /task/jmd/stg-heat-rate/all/export?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @GetMapping(value = "/jmd/stg-heat-rate/all/export")
+    public ResponseEntity<byte[]> exportSTGHeatRateAll(
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportSTGHeatRateAllExcelData(
+                    year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("STG_Heat_Rate_All_Plants.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting all STG heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * [STG - ALL ASSETS] IMPORT Excel
+     * Imports heat rate data for ALL STG assets across the selected plants.
+     * Each row is resolved to an asset via hidden Asset Id, or CPP Plant + Equipment Type.
+     * Endpoint: POST /task/jmd/stg-heat-rate/all/import?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @PostMapping(value = "/jmd/stg-heat-rate/all/import", consumes = "multipart/form-data")
+    public AOPMessageVM importSTGHeatRateAllData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/stg-heat-rate/all/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importSTGHeatRateAllData(year, startDate, endDate, plantIds, file);
     }
 
     // ============================================================
@@ -324,6 +424,56 @@ public class JMDHeatRateController {
         return jmdHeatRateService.importHRSGHeatRateData(year, assetId, startDate, endDate, plantIds, file);
     }
 
+    /**
+     * [HRSG - ALL ASSETS] EXPORT Excel
+     * Exports heat rate data for ALL HRSG assets across the selected plants.
+     * Excel includes a "CPP Plant" column to differentiate assets per plant.
+     * Endpoint: GET /task/jmd/hrsg-heat-rate/all/export?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @GetMapping(value = "/jmd/hrsg-heat-rate/all/export")
+    public ResponseEntity<byte[]> exportHRSGHeatRateAll(
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportHRSGHeatRateAllExcelData(
+                    year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("HRSG_Heat_Rate_All_Plants.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting all HRSG heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * [HRSG - ALL ASSETS] IMPORT Excel
+     * Imports heat rate data for ALL HRSG assets across the selected plants.
+     * Each row is resolved to an asset via hidden Asset Id, or CPP Plant + Equipment Type.
+     * Endpoint: POST /task/jmd/hrsg-heat-rate/all/import?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @PostMapping(value = "/jmd/hrsg-heat-rate/all/import", consumes = "multipart/form-data")
+    public AOPMessageVM importHRSGHeatRateAllData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/hrsg-heat-rate/all/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importHRSGHeatRateAllData(year, startDate, endDate, plantIds, file);
+    }
+
     // ============================================================
     // AUXBOILER HEAT RATE APIs
     // ============================================================
@@ -387,6 +537,56 @@ public class JMDHeatRateController {
             @RequestParam("file") MultipartFile file) {
         logger.info("[JMDHeatRateController] POST /jmd/Auxboiler-heat-rate/import - year: {}, file: {}", year, file.getOriginalFilename());
         return jmdHeatRateService.importAuxboilerHeatRateData(year, assetId, startDate, endDate, plantIds, file);
+    }
+
+    /**
+     * [AUXBOILER - ALL ASSETS] EXPORT Excel
+     * Exports heat rate data for ALL AUXBOILER assets across the selected plants.
+     * Excel includes a "CPP Plant" column to differentiate assets per plant.
+     * Endpoint: GET /task/jmd/auxboiler-heat-rate/all/export?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @GetMapping(value = "/jmd/auxboiler-heat-rate/all/export")
+    public ResponseEntity<byte[]> exportAuxboilerHeatRateAll(
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("plantIds") List<UUID> plantIds) {
+        try {
+            byte[] excelBytes = jmdHeatRateService.exportAuxboilerHeatRateAllExcelData(
+                    year, startDate, endDate, plantIds, false, null
+            );
+
+            if (excelBytes == null || excelBytes.length == 0) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename("AUXBOILER_Heat_Rate_All_Plants.xlsx").build());
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error exporting all AUXBOILER heat rate: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * [AUXBOILER - ALL ASSETS] IMPORT Excel
+     * Imports heat rate data for ALL AUXBOILER assets across the selected plants.
+     * Each row is resolved to an asset via hidden Asset Id, or CPP Plant + Equipment Type.
+     * Endpoint: POST /task/jmd/auxboiler-heat-rate/all/import?year=...&startDate=...&endDate=...&plantIds=...
+     */
+    @PostMapping(value = "/jmd/auxboiler-heat-rate/all/import", consumes = "multipart/form-data")
+    public AOPMessageVM importAuxboilerHeatRateAllData(
+            @RequestParam("year") String year,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "plantIds", required = false) List<UUID> plantIds,
+            @RequestParam("file") MultipartFile file) {
+        logger.info("[JMDHeatRateController] POST /jmd/auxboiler-heat-rate/all/import - year: {}, file: {}", year, file.getOriginalFilename());
+        return jmdHeatRateService.importAuxboilerHeatRateAllData(year, startDate, endDate, plantIds, file);
     }
 
       // ============================================================
