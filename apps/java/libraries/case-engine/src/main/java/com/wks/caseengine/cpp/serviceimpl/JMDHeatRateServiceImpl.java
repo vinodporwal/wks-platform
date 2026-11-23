@@ -47,6 +47,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -726,7 +728,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
                     "CPP Plant", "Equipment Type", "CPP Utility", "GT Load", "OEM HR",
                     "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)",
-                    "Final HR", "Free Steam Factor", "Remark", "Selected Heat Rate", "Id", "Asset Id"
+                    "Final HR", "Free Steam Factor", "Remark", "Selected Heat Rate", "Id", "Asset Id", "_hash"
                 ));
 
                 if (isAfterSave) {
@@ -744,6 +746,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 sheet.setColumnHidden(10, true);
                 sheet.setColumnHidden(11, true);
                 sheet.setColumnHidden(12, true);
+                sheet.setColumnHidden(13, true);
                 for (CppGtHeatRateDto dto : dtoList) {
                     Row row = sheet.createRow(rowNum++);
                     int colNum = 0;
@@ -766,6 +769,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
                     row.createCell(colNum++).setCellValue(dto.getAssetFkId() != null ? dto.getAssetFkId() : "");
 
+                    // col 13 – row hash (hidden, used for change detection at import time)
+                    // For error files (isAfterSave) preserve the hash embedded in the uploaded file
+                    String gtRowHash = dto.getRowHash() != null ? dto.getRowHash() : computeGtRowHash(dto);
+                    row.createCell(colNum++).setCellValue(gtRowHash != null ? gtRowHash : "");
+
                     if (isAfterSave) {
                         row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                         row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
@@ -783,7 +791,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         sheet.setColumnWidth(i, 8000);
                         continue;
                     }
-                    if (i >= 10 && i <= 12) {
+                    if (i >= 10 && i <= 13) {
                         continue;
                     }
                     sheet.autoSizeColumn(i);
@@ -819,24 +827,31 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             return String.valueOf(a.getAssetName()).compareToIgnoreCase(String.valueOf(b.getAssetName()));
         });
 
-        for (PowerGenerationAsset asset : assets) {
-            try {
-                AOPMessageVM vm = getGTHeatRateData(asset.getAssetId(), year, startDate, endDate, plantIds);
-                if (vm != null && vm.getData() instanceof List) {
-                    List<CppGtHeatRateDto> assetDtos = (List<CppGtHeatRateDto>) vm.getData();
-                    for (CppGtHeatRateDto dto : assetDtos) {
-                        if (dto == null) continue;
-                        dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
-                        if (asset.getAssetId() != null) {
-                            dto.setAssetFkId(asset.getAssetId().toString());
+        // Parallel per-asset fetch: each call runs JPA queries + a stored procedure,
+        // so running assets concurrently avoids N+1 sequential DB roundtrips on export.
+        List<List<CppGtHeatRateDto>> perAssetDtos = assets.parallelStream()
+                .map(asset -> {
+                    List<CppGtHeatRateDto> list = new java.util.ArrayList<>();
+                    try {
+                        AOPMessageVM vm = getGTHeatRateData(asset.getAssetId(), year, startDate, endDate, plantIds);
+                        if (vm != null && vm.getData() instanceof List) {
+                            List<CppGtHeatRateDto> assetDtos = (List<CppGtHeatRateDto>) vm.getData();
+                            for (CppGtHeatRateDto dto : assetDtos) {
+                                if (dto == null) continue;
+                                dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
+                                if (asset.getAssetId() != null) {
+                                    dto.setAssetFkId(asset.getAssetId().toString());
+                                }
+                                list.add(dto);
+                            }
                         }
-                        allDtos.add(dto);
+                    } catch (Exception e) {
+                        logger.warn("[JMDHeatRate] Failed to build GT heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
                     }
-                }
-            } catch (Exception e) {
-                logger.warn("[JMDHeatRate] Failed to build GT heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
-            }
-        }
+                    return list;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        perAssetDtos.forEach(allDtos::addAll);
         return allDtos;
     }
 
@@ -924,6 +939,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     dto.setSelectedHeatRate(getStringCellValue(row.getCell(10), dto));
                     dto.setId(getStringCellValue(row.getCell(11), dto));
                     dto.setAssetFkId(getStringCellValue(row.getCell(12), dto));
+                    dto.setRowHash(getStringCellValue(row.getCell(13), dto));
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -999,6 +1015,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
                 if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
                     failedList.add(dto);
+                    continue;
+                }
+
+                // ---- Hash-based change detection: skip rows unchanged since export ----
+                if (dto.getRowHash() != null && dto.getRowHash().equals(computeGtRowHash(dto))) {
                     continue;
                 }
 
@@ -1179,7 +1200,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
                     "CPP Plant", "Equipment Type", "CPP Utility", "STG Load (MW)", "OEM HR",
                     "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)",
-                    "Final HR", "Remark", "Selected Heat Rate", "Id", "Asset Id"
+                    "Final HR", "Remark", "Selected Heat Rate", "Id", "Asset Id", "_hash"
                 ));
 
                 if (isAfterSave) {
@@ -1197,6 +1218,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 sheet.setColumnHidden(9, true);
                 sheet.setColumnHidden(10, true);
                 sheet.setColumnHidden(11, true);
+                sheet.setColumnHidden(12, true);
                 for (STGHeatRateDTO dto : dtoList) {
                     Row row = sheet.createRow(rowNum++);
                     int colNum = 0;
@@ -1218,6 +1240,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
                     row.createCell(colNum++).setCellValue(dto.getAssetFkId() != null ? dto.getAssetFkId() : "");
 
+                    // col 12 – row hash (hidden, used for change detection at import time)
+                    // For error files (isAfterSave) preserve the hash embedded in the uploaded file
+                    String stgRowHash = dto.getRowHash() != null ? dto.getRowHash() : computeStgRowHash(dto);
+                    row.createCell(colNum++).setCellValue(stgRowHash != null ? stgRowHash : "");
+
                     if (isAfterSave) {
                         row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                         row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
@@ -1235,7 +1262,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         sheet.setColumnWidth(i, 8000);
                         continue;
                     }
-                    if (i >= 9 && i <= 11) {
+                    if (i >= 9 && i <= 12) {
                         continue;
                     }
                     sheet.autoSizeColumn(i);
@@ -1271,25 +1298,32 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             return String.valueOf(a.getAssetName()).compareToIgnoreCase(String.valueOf(b.getAssetName()));
         });
 
-        for (PowerGenerationAsset asset : assets) {
-            try {
-                AOPMessageVM vm = getSTGHeatRate(asset.getAssetId() != null ? asset.getAssetId().toString() : null,
-                        year, startDate, endDate, plantIds);
-                if (vm != null && vm.getData() instanceof List) {
-                    List<STGHeatRateDTO> assetDtos = (List<STGHeatRateDTO>) vm.getData();
-                    for (STGHeatRateDTO dto : assetDtos) {
-                        if (dto == null) continue;
-                        dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
-                        if (asset.getAssetId() != null) {
-                            dto.setAssetFkId(asset.getAssetId().toString());
+        // Parallel per-asset fetch: each call runs JPA queries + a stored procedure,
+        // so running assets concurrently avoids N+1 sequential DB roundtrips on export.
+        List<List<STGHeatRateDTO>> perAssetDtos = assets.parallelStream()
+                .map(asset -> {
+                    List<STGHeatRateDTO> list = new java.util.ArrayList<>();
+                    try {
+                        AOPMessageVM vm = getSTGHeatRate(asset.getAssetId() != null ? asset.getAssetId().toString() : null,
+                                year, startDate, endDate, plantIds);
+                        if (vm != null && vm.getData() instanceof List) {
+                            List<STGHeatRateDTO> assetDtos = (List<STGHeatRateDTO>) vm.getData();
+                            for (STGHeatRateDTO dto : assetDtos) {
+                                if (dto == null) continue;
+                                dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
+                                if (asset.getAssetId() != null) {
+                                    dto.setAssetFkId(asset.getAssetId().toString());
+                                }
+                                list.add(dto);
+                            }
                         }
-                        allDtos.add(dto);
+                    } catch (Exception e) {
+                        logger.warn("[JMDHeatRate] Failed to build STG heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
                     }
-                }
-            } catch (Exception e) {
-                logger.warn("[JMDHeatRate] Failed to build STG heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
-            }
-        }
+                    return list;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        perAssetDtos.forEach(allDtos::addAll);
         return allDtos;
     }
 
@@ -1360,6 +1394,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     dto.setSelectedHeatRate(getStringCellValue(row.getCell(9), dto));
                     dto.setId(getStringCellValue(row.getCell(10), dto));
                     dto.setAssetFkId(getStringCellValue(row.getCell(11), dto));
+                    dto.setRowHash(getStringCellValue(row.getCell(12), dto));
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -1435,6 +1470,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
                 if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
                     failedList.add(dto);
+                    continue;
+                }
+
+                // ---- Hash-based change detection: skip rows unchanged since export ----
+                if (dto.getRowHash() != null && dto.getRowHash().equals(computeStgRowHash(dto))) {
                     continue;
                 }
 
@@ -1627,7 +1667,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
                     "CPP Plant", "Equipment Type", "CPP Utility", "HRSG Load", "OEM HR",
                     "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)",
-                    "Final HR", "Remark", "Selected Heat Rate", "Id", "Asset Id"
+                    "Final HR", "Remark", "Selected Heat Rate", "Id", "Asset Id", "_hash"
                 ));
 
                 if (isAfterSave) {
@@ -1645,6 +1685,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 sheet.setColumnHidden(9, true);
                 sheet.setColumnHidden(10, true);
                 sheet.setColumnHidden(11, true);
+                sheet.setColumnHidden(12, true);
                 for (CppHrsgHeatRateDto dto : dtoList) {
                     Row row = sheet.createRow(rowNum++);
                     int colNum = 0;
@@ -1666,6 +1707,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
                     row.createCell(colNum++).setCellValue(dto.getAssetFkId() != null ? dto.getAssetFkId() : "");
 
+                    // col 12 – row hash (hidden, used for change detection at import time)
+                    // For error files (isAfterSave) preserve the hash embedded in the uploaded file
+                    String hrsgRowHash = dto.getRowHash() != null ? dto.getRowHash() : computeHrsgRowHash(dto);
+                    row.createCell(colNum++).setCellValue(hrsgRowHash != null ? hrsgRowHash : "");
+
                     if (isAfterSave) {
                         row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                         row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
@@ -1683,7 +1729,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         sheet.setColumnWidth(i, 8000);
                         continue;
                     }
-                    if (i >= 9 && i <= 11) {
+                    if (i >= 9 && i <= 12) {
                         continue;
                     }
                     sheet.autoSizeColumn(i);
@@ -1719,24 +1765,31 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             return String.valueOf(a.getAssetName()).compareToIgnoreCase(String.valueOf(b.getAssetName()));
         });
 
-        for (CppSteamGenerationAsset asset : assets) {
-            try {
-                AOPMessageVM vm = getHRSGHeatRateData(asset.getAssetId(), year, startDate, endDate, plantIds);
-                if (vm != null && vm.getData() instanceof List) {
-                    List<CppHrsgHeatRateDto> assetDtos = (List<CppHrsgHeatRateDto>) vm.getData();
-                    for (CppHrsgHeatRateDto dto : assetDtos) {
-                        if (dto == null) continue;
-                        dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
-                        if (asset.getAssetId() != null) {
-                            dto.setAssetFkId(asset.getAssetId().toString());
+        // Parallel per-asset fetch: each call runs JPA queries + a stored procedure,
+        // so running assets concurrently avoids N+1 sequential DB roundtrips on export.
+        List<List<CppHrsgHeatRateDto>> perAssetDtos = assets.parallelStream()
+                .map(asset -> {
+                    List<CppHrsgHeatRateDto> list = new java.util.ArrayList<>();
+                    try {
+                        AOPMessageVM vm = getHRSGHeatRateData(asset.getAssetId(), year, startDate, endDate, plantIds);
+                        if (vm != null && vm.getData() instanceof List) {
+                            List<CppHrsgHeatRateDto> assetDtos = (List<CppHrsgHeatRateDto>) vm.getData();
+                            for (CppHrsgHeatRateDto dto : assetDtos) {
+                                if (dto == null) continue;
+                                dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
+                                if (asset.getAssetId() != null) {
+                                    dto.setAssetFkId(asset.getAssetId().toString());
+                                }
+                                list.add(dto);
+                            }
                         }
-                        allDtos.add(dto);
+                    } catch (Exception e) {
+                        logger.warn("[JMDHeatRate] Failed to build HRSG heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
                     }
-                }
-            } catch (Exception e) {
-                logger.warn("[JMDHeatRate] Failed to build HRSG heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
-            }
-        }
+                    return list;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        perAssetDtos.forEach(allDtos::addAll);
         return allDtos;
     }
 
@@ -1807,6 +1860,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     dto.setSelectedHeatRate(getStringCellValue(row.getCell(9), dto));
                     dto.setId(getStringCellValue(row.getCell(10), dto));
                     dto.setAssetFkId(getStringCellValue(row.getCell(11), dto));
+                    dto.setRowHash(getStringCellValue(row.getCell(12), dto));
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -1882,6 +1936,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
                 if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
                     failedList.add(dto);
+                    continue;
+                }
+
+                // ---- Hash-based change detection: skip rows unchanged since export ----
+                if (dto.getRowHash() != null && dto.getRowHash().equals(computeHrsgRowHash(dto))) {
                     continue;
                 }
 
@@ -2060,7 +2119,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 List<String> headerList = new java.util.ArrayList<>(java.util.Arrays.asList(
                     "CPP Plant", "Equipment Type", "CPP Utility", "Aux Boiler Load", "OEM HR",
                     "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)",
-                    "Final HR", "Remark", "Selected Heat Rate", "Id", "Asset Id"
+                    "Final HR", "Remark", "Selected Heat Rate", "Id", "Asset Id", "_hash"
                 ));
 
                 if (isAfterSave) {
@@ -2078,6 +2137,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                 sheet.setColumnHidden(9, true);
                 sheet.setColumnHidden(10, true);
                 sheet.setColumnHidden(11, true);
+                sheet.setColumnHidden(12, true);
                 for (CppAuxBoilerHeatRateDto dto : dtoList) {
                     Row row = sheet.createRow(rowNum++);
                     int colNum = 0;
@@ -2099,6 +2159,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     row.createCell(colNum++).setCellValue(dto.getId() != null ? dto.getId() : "");
                     row.createCell(colNum++).setCellValue(dto.getAssetFkId() != null ? dto.getAssetFkId() : "");
 
+                    // col 12 – row hash (hidden, used for change detection at import time)
+                    // For error files (isAfterSave) preserve the hash embedded in the uploaded file
+                    String auxRowHash = dto.getRowHash() != null ? dto.getRowHash() : computeAuxBoilerRowHash(dto);
+                    row.createCell(colNum++).setCellValue(auxRowHash != null ? auxRowHash : "");
+
                     if (isAfterSave) {
                         row.createCell(colNum++).setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
                         row.createCell(colNum++).setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
@@ -2116,7 +2181,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                         sheet.setColumnWidth(i, 8000);
                         continue;
                     }
-                    if (i >= 9 && i <= 11) {
+                    if (i >= 9 && i <= 12) {
                         continue;
                     }
                     sheet.autoSizeColumn(i);
@@ -2152,24 +2217,31 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
             return String.valueOf(a.getAssetName()).compareToIgnoreCase(String.valueOf(b.getAssetName()));
         });
 
-        for (CppSteamGenerationAsset asset : assets) {
-            try {
-                AOPMessageVM vm = getAuxboilerHeatRateData(asset.getAssetId(), year, startDate, endDate, plantIds);
-                if (vm != null && vm.getData() instanceof List) {
-                    List<CppAuxBoilerHeatRateDto> assetDtos = (List<CppAuxBoilerHeatRateDto>) vm.getData();
-                    for (CppAuxBoilerHeatRateDto dto : assetDtos) {
-                        if (dto == null) continue;
-                        dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
-                        if (asset.getAssetId() != null) {
-                            dto.setAssetFkId(asset.getAssetId().toString());
+        // Parallel per-asset fetch: each call runs JPA queries + a stored procedure,
+        // so running assets concurrently avoids N+1 sequential DB roundtrips on export.
+        List<List<CppAuxBoilerHeatRateDto>> perAssetDtos = assets.parallelStream()
+                .map(asset -> {
+                    List<CppAuxBoilerHeatRateDto> list = new java.util.ArrayList<>();
+                    try {
+                        AOPMessageVM vm = getAuxboilerHeatRateData(asset.getAssetId(), year, startDate, endDate, plantIds);
+                        if (vm != null && vm.getData() instanceof List) {
+                            List<CppAuxBoilerHeatRateDto> assetDtos = (List<CppAuxBoilerHeatRateDto>) vm.getData();
+                            for (CppAuxBoilerHeatRateDto dto : assetDtos) {
+                                if (dto == null) continue;
+                                dto.setCppPlantName(plantNameMap.get(asset.getCppPlantFkId()));
+                                if (asset.getAssetId() != null) {
+                                    dto.setAssetFkId(asset.getAssetId().toString());
+                                }
+                                list.add(dto);
+                            }
                         }
-                        allDtos.add(dto);
+                    } catch (Exception e) {
+                        logger.warn("[JMDHeatRate] Failed to build AUXBOILER heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
                     }
-                }
-            } catch (Exception e) {
-                logger.warn("[JMDHeatRate] Failed to build AUXBOILER heat rate rows for asset {}: {}", asset.getAssetId(), e.getMessage());
-            }
-        }
+                    return list;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        perAssetDtos.forEach(allDtos::addAll);
         return allDtos;
     }
 
@@ -2240,6 +2312,7 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
                     dto.setSelectedHeatRate(getStringCellValue(row.getCell(9), dto));
                     dto.setId(getStringCellValue(row.getCell(10), dto));
                     dto.setAssetFkId(getStringCellValue(row.getCell(11), dto));
+                    dto.setRowHash(getStringCellValue(row.getCell(12), dto));
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -2315,6 +2388,11 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
 
                 if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
                     failedList.add(dto);
+                    continue;
+                }
+
+                // ---- Hash-based change detection: skip rows unchanged since export ----
+                if (dto.getRowHash() != null && dto.getRowHash().equals(computeAuxBoilerRowHash(dto))) {
                     continue;
                 }
 
@@ -3377,6 +3455,94 @@ public class JMDHeatRateServiceImpl implements JMDHeatRateService {
         double incomingPrimitive = (incomingValue == null) ? 0.0 : incomingValue;
         
         return Double.compare(dbPrimitive, incomingPrimitive) != 0;
+    }
+
+    // ============================================================
+    // ROW HASH (change detection) - ALL ASSETS import/export
+    // ============================================================
+
+    private String md5Hex(String raw) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(raw.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            logger.warn("[computeRowHash] MD5 unavailable, using raw string as fallback");
+            return raw;
+        }
+    }
+
+    private String fmtHashDouble(Double val) {
+        return val != null ? val.toString() : "0.0";
+    }
+
+    private String fmtHashString(String val) {
+        return val != null ? val.trim() : "";
+    }
+
+    private String computeGtRowHash(CppGtHeatRateDto dto) {
+        String raw = String.join("|",
+                fmtHashString(dto.getCppPlantName()),
+                fmtHashString(dto.getEquipType()),
+                fmtHashString(dto.getCppUtility()),
+                fmtHashDouble(dto.getGtLoad()),
+                fmtHashDouble(dto.getOemHeatRate()),
+                fmtHashDouble(dto.getPrevYearFinalHeatRate()),
+                fmtHashDouble(dto.getProposedYearFinalHeatRate()),
+                fmtHashDouble(dto.getFinalHeatRate()),
+                fmtHashDouble(dto.getFreeSteamFactor()),
+                fmtHashString(dto.getRemarks()),
+                fmtHashString(dto.getSelectedHeatRate()));
+        return md5Hex(raw);
+    }
+
+    private String computeStgRowHash(STGHeatRateDTO dto) {
+        String raw = String.join("|",
+                fmtHashString(dto.getCppPlantName()),
+                fmtHashString(dto.getEquipType()),
+                fmtHashString(dto.getCppUtility()),
+                fmtHashDouble(dto.getStgLoad()),
+                fmtHashDouble(dto.getOemHeatRate()),
+                fmtHashDouble(dto.getPreviousYearHeatRate()),
+                fmtHashDouble(dto.getProposedHeatRate()),
+                fmtHashDouble(dto.getFinalHeatRate()),
+                fmtHashString(dto.getRemarks()),
+                fmtHashString(dto.getSelectedHeatRate()));
+        return md5Hex(raw);
+    }
+
+    private String computeHrsgRowHash(CppHrsgHeatRateDto dto) {
+        String raw = String.join("|",
+                fmtHashString(dto.getCppPlantName()),
+                fmtHashString(dto.getEquipType()),
+                fmtHashString(dto.getCppUtility()),
+                fmtHashDouble(dto.getHrsgLoad()),
+                fmtHashDouble(dto.getOemHeatRate()),
+                fmtHashDouble(dto.getPrevYearFinalHeatRate()),
+                fmtHashDouble(dto.getProposedYearFinalHeatRate()),
+                fmtHashDouble(dto.getFinalHeatRate()),
+                fmtHashString(dto.getRemarks()),
+                fmtHashString(dto.getSelectedHeatRate()));
+        return md5Hex(raw);
+    }
+
+    private String computeAuxBoilerRowHash(CppAuxBoilerHeatRateDto dto) {
+        String raw = String.join("|",
+                fmtHashString(dto.getCppPlantName()),
+                fmtHashString(dto.getEquipType()),
+                fmtHashString(dto.getCppUtility()),
+                fmtHashDouble(dto.getAuxBoilerLoad()),
+                fmtHashDouble(dto.getOemHeatRate()),
+                fmtHashDouble(dto.getPrevYearFinalHeatRate()),
+                fmtHashDouble(dto.getProposedYearFinalHeatRate()),
+                fmtHashDouble(dto.getFinalHeatRate()),
+                fmtHashString(dto.getRemarks()),
+                fmtHashString(dto.getSelectedHeatRate()));
+        return md5Hex(raw);
     }
     
     @Override

@@ -30,4 +30,5 @@ public class CppHrsgHeatRateDto {
     private Double proposedYearFinalHeatRate;
     private String saveStatus;
     private String errDescription;
+    private String rowHash;
 }

@@ -23,4 +23,5 @@ public class STGHeatRateDTO {
     private String saveStatus;
     private String errDescription;
     private String financialYear;
+    private String rowHash;
 }
