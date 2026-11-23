@@ -114,6 +114,8 @@ const FuelRatio = () => {
               minWidth: 160,
               type: 'number1',
               editable: true,
+              minValue: 0,
+              maxValue: 100,
             },
           ],
         }
@@ -160,6 +162,10 @@ const FuelRatio = () => {
         ...row,
         id: row.id || `row_${index}`,
         remarks: row.remarks || '',
+        // First row (e.g. BIOMASS) is manually editable; the remaining
+        // rows (e.g. COAL) are locked and auto-calculate Percentage By Wt
+        // as 100 minus the editable rows' total for each month.
+        isEditable: index === 0,
       }))
       setRows(rowsWithId)
       setOriginalRows(rowsWithId)
@@ -233,8 +239,10 @@ const FuelRatio = () => {
       return [`gcv${monCap}`, `percentageByWt${monCap}`]
     }).flat()
 
+    // Non-editable rows are auto-calculated, so remarks validation only
+    // applies to rows the user can actually edit.
     const validationError = validateNestedRowDataWithRemarks(
-      data,
+      data.filter((row) => row.isEditable !== false),
       originalRows,
       fieldsToCheck,
       'fuelName',
@@ -285,6 +293,64 @@ const FuelRatio = () => {
       setLoading(false)
     }
   }
+
+  // When a Percentage By Wt value changes on an editable row, assign the
+  // remaining percentage (100 - sum of editable rows) to the non-editable
+  // rows for that month, in both the grid rows and modifiedCells so the
+  // auto-calculated values are included in the save payload.
+  const handleCustomItemChange = useCallback(
+    (e, setRowsState, setModifiedCellsState) => {
+      const { dataItem, field, value } = e
+      if (!dataItem || !field) return
+      if (dataItem.isEditable === false) return
+      if (!/^percentageByWt[A-Z][a-z]{2}$/.test(field)) return
+
+      const numericValue = Number(value)
+      if (
+        value === '' ||
+        value === null ||
+        value === undefined ||
+        Number.isNaN(numericValue)
+      ) {
+        return
+      }
+
+      const editableRows = rows.filter((row) => row.isEditable !== false)
+      const autoRows = rows.filter((row) => row.isEditable === false)
+      if (!editableRows.length || !autoRows.length) return
+
+      const monthSum = editableRows.reduce((sum, row) => {
+        const raw =
+          String(row.id) === String(dataItem.id)
+            ? numericValue
+            : Number(row[field])
+        return sum + (Number.isNaN(raw) ? 0 : raw)
+      }, 0)
+
+      const share = Math.round(((100 - monthSum) / autoRows.length) * 100) / 100
+      const autoIds = new Set(autoRows.map((row) => String(row.id)))
+
+      setRowsState((prev) =>
+        prev.map((row) =>
+          autoIds.has(String(row.id)) ? { ...row, [field]: share } : row,
+        ),
+      )
+
+      setModifiedCellsState((prev) => {
+        const next = { ...prev }
+        autoRows.forEach((autoRow) => {
+          next[autoRow.id] = {
+            ...autoRow,
+            ...(prev[autoRow.id] || {}),
+            [field]: share,
+            inEdit: true,
+          }
+        })
+        return next
+      })
+    },
+    [rows],
+  )
 
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
@@ -403,6 +469,7 @@ const FuelRatio = () => {
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
+        customItemChange={handleCustomItemChange}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}

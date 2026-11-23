@@ -129,7 +129,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
             ? ['selection']
             : undefined,
           type: configItem.type || 'number1',
-          dataType: configItem.type || 'number1',
+          dataType: apiItem.dataType || configItem.type || 'number1',
           options: configItem.options || []
         }
       }) : FILTER_CONFIG
@@ -187,8 +187,6 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const saveChanges = async () => {
     const modifiedData = Object.values(modifiedCells)
     const dataToSave = modifiedData.filter((row) => row.inEdit)
-    console.log('modifiedData', modifiedData)
-    console.log('dataToSave', dataToSave)
     if (!dataToSave.length) return showSnackbar('No Records to Save!')
 
     // const validationError = validateRowDataWithRemarks(
@@ -292,7 +290,6 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       }))
     }
   }
-
   return (
     <Box>
       <LoaderBackdrop open={loading} />
