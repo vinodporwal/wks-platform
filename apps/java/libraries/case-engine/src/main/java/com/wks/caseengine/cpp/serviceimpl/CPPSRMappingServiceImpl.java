@@ -747,7 +747,25 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     if (!existingMaster.isEmpty()) {
                         srMappingId = UUID.fromString(existingMaster.get(0));
                         existingMasterFound = true;
-                        logger.info("updateSRMappingsByPlant: found existing CPP_SR_Mapping_Master ID={} for NormParameter combination — skipping master insert/update", srMappingId);
+                        logger.info("updateSRMappingsByPlant: found existing CPP_SR_Mapping_Master ID={} for NormParameter combination — reusing master", srMappingId);
+
+                        // Refresh mutable fields on the reused master — the norm pair
+                        // defines identity, but plant/cost-centers/remarks may change
+                        // (e.g. import-power re-add after delete with new cost centers)
+                        db1JdbcTemplate.update(
+                                "UPDATE CPP_SR_Mapping_Master SET " +
+                                "CPP_Plant_FK_Id = ?, " +
+                                "Utility_CostCenter_FK_Id = ?, " +
+                                "Generation_CostCenter_FK_Id = ?, " +
+                                "Remarks = ?, " +
+                                "UpdatedDate = GETDATE() " +
+                                "WHERE ID = ?",
+                                dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
+                                dto.getSenderCostCenterId()     != null ? dto.getSenderCostCenterId().toString()   : null,
+                                dto.getReceiverCostCenterId()   != null ? dto.getReceiverCostCenterId().toString() : null,
+                                dto.getRemarks(),
+                                srMappingId.toString());
+                        logger.info("updateSRMappingsByPlant: refreshed mutable fields on existing CPP_SR_Mapping_Master ID={}", srMappingId);
                     }
                 }
 

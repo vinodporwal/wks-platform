@@ -17,6 +17,8 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -387,16 +389,15 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
-    setLoading(true)
+    setImportLoading(true)
     try {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      const response = await HeatRateApiService.saveAuxBoilerHeatRateExcel(
+      const response = await HeatRateApiService.importAuxBoilerHeatRateAllExcel(
         file,
         keycloak,
         AOP_YEAR,
-        selectedPlant,
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
@@ -446,11 +447,12 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'error',
       })
     } finally {
-      setLoading(false)
+      setImportLoading(false)
     }
   }
 
   const handleExport = async () => {
+    setExportLoading(true)
     setSnackbarOpen(true)
     setSnackbarData({
       message: 'Excel download started!',
@@ -461,20 +463,13 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      // Get the selected asset name with plant name
-      const selectedAsset = dropdownOptions.find(
-        (opt) => opt.id === selectedPlant,
-      )
-      const assetDisplayName = selectedAsset?.name || 'AUXBOILER_Heat_Rate'
-
-      await HeatRateApiService.exportAuxBoilerHeatRateExcel(
+      // Export heat rate data for ALL AUXBOILER assets across selected plants
+      await HeatRateApiService.exportAuxBoilerHeatRateAllExcel(
         keycloak,
-        selectedPlant,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
-        assetDisplayName,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -486,6 +481,8 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -703,7 +700,7 @@ const AUXBOILERHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!(loading || exportLoading || importLoading)} />
 
       <AdvanceKendoTable
         columns={columns}

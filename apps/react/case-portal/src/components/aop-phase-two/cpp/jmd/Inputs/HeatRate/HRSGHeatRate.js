@@ -17,6 +17,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -400,16 +402,15 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
-    setLoading(true)
+    setImportLoading(true)
     try {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      const response = await HeatRateApiService.saveHRSGHeatRateExcel(
+      const response = await HeatRateApiService.importHRSGHeatRateAllExcel(
         file,
         keycloak,
         AOP_YEAR,
-        selectedPlant,
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
@@ -456,11 +457,12 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'error',
       })
     } finally {
-      setLoading(false)
+      setImportLoading(false)
     }
   }
 
   const handleExport = async () => {
+    setExportLoading(true)
     setSnackbarOpen(true)
     setSnackbarData({
       message: 'Excel download started!',
@@ -471,20 +473,13 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      // Get the selected asset name with plant name
-      const selectedAsset = dropdownOptions.find(
-        (opt) => opt.id === selectedPlant,
-      )
-      const assetDisplayName = selectedAsset?.name || 'HRSG_Heat_Rate'
-
-      await HeatRateApiService.exportHRSGHeatRateExcel(
+      // Export heat rate data for ALL HRSG assets across selected plants
+      await HeatRateApiService.exportHRSGHeatRateAllExcel(
         keycloak,
-        selectedPlant,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
-        assetDisplayName,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -496,6 +491,8 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -713,7 +710,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!(loading || exportLoading || importLoading)} />
 
       <AdvanceKendoTable
         columns={columns}

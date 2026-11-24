@@ -43,4 +43,10 @@ public class CPPImportPowerResponseDTO {
     private UUID cppPlantFkId;
     private UUID normParameterFkId;
     private UUID utilityNormParameterFkId;
+    private UUID utilityPlantId;
+    private String utilityPlantName;
+    private UUID utilityCostCenterId;
+    private String utilityCostCenterName;
+    private UUID materialCostCenterId;
+    private String materialCostCenterName;
 }

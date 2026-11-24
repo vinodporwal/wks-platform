@@ -25,4 +25,14 @@ public class UpdateImportPowerSourceRequestDTO {
 
     /** New value for NormParameters.UOM */
     private String uom;
+
+    /** UUID of the Utility-category plant. Used to re-resolve the 'Power_dis'
+     *  NormParameter stored as Utility_NormParameter_FK_Id in CPPImportPower. */
+    private UUID utilityPlant;
+
+    /** Optional. CostCenterId for the utility side (Utility_CostCenter_FK_Id). */
+    private UUID utilityCostCenter;
+
+    /** Optional. CostCenterId for the material side (Material_CostCenter_FK_Id). */
+    private UUID materialCostCenter;
 }

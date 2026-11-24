@@ -5,21 +5,25 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Autocomplete,
   Button,
   Box,
   Grid,
-  MenuItem,
   Typography,
 } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { SaveIcon as SaveImageIcon } from 'assets/images/icons'
 
 const INITIAL_FORM_DATA = {
   cppPlant: '',
   procurementPlant: '',
+  utilityPlant: '',
+  utilityCostCenter: '',
+  materialCostCenter: '',
   name: '',
   displayName: '',
   sapCode: '',
@@ -29,6 +33,9 @@ const INITIAL_FORM_DATA = {
 const INITIAL_FORM_ERROR = {
   cppPlant: { isError: false, errorMessage: '' },
   procurementPlant: { isError: false, errorMessage: '' },
+  utilityPlant: { isError: false, errorMessage: '' },
+  utilityCostCenter: { isError: false, errorMessage: '' },
+  materialCostCenter: { isError: false, errorMessage: '' },
   name: { isError: false, errorMessage: '' },
   displayName: { isError: false, errorMessage: '' },
   sapCode: { isError: false, errorMessage: '' },
@@ -36,17 +43,31 @@ const INITIAL_FORM_ERROR = {
 }
 
 // Fields that are required for form submission
-const REQUIRED_FIELDS = ['cppPlant', 'procurementPlant', 'name', 'uom']
+const REQUIRED_FIELDS = [
+  'cppPlant',
+  'procurementPlant',
+  'utilityPlant',
+  'name',
+  'uom',
+]
 
 // Human-readable labels for each field
 const FIELD_LABELS = {
   cppPlant: 'CPP Plant',
   procurementPlant: 'Procurement Plant',
+  utilityPlant: 'Utility Plant',
+  utilityCostCenter: 'Utility Cost Center',
+  materialCostCenter: 'Material Cost Center',
   name: 'Name',
   displayName: 'Display Name',
   sapCode: 'SAP Code',
   uom: 'UOM',
 }
+
+// UUIDs from different sources (Redux plant list vs SQL-backed APIs) can
+// differ in casing — compare ids case-insensitively everywhere.
+const sameId = (a, b) =>
+  a != null && b != null && String(a).toLowerCase() === String(b).toLowerCase()
 
 const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
   const keycloak = useSession()
@@ -56,6 +77,8 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
   const [formError, setFormError] = useState(INITIAL_FORM_ERROR)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const [procurementPlantOptions, setProcurementPlantOptions] = useState([])
+  const [utilityPlantOptions, setUtilityPlantOptions] = useState([])
+  const [costCenterOptions, setCostCenterOptions] = useState([])
 
   // Read plant list, year, and role flags from the global store
   const { jmdSelectedPlants, year, oldYear, isReleased } = useSelector(
@@ -73,7 +96,7 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
       label: plant.name || plant.id,
     }))
     if (isEditMode && editRowData?.cppPlantFkId) {
-      if (!options.find((o) => o.value === editRowData.cppPlantFkId)) {
+      if (!options.find((o) => sameId(o.value, editRowData.cppPlantFkId))) {
         options.push({
           value: editRowData.cppPlantFkId,
           label: editRowData.plantName || editRowData.cppPlantFkId,
@@ -104,7 +127,9 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
           // In edit mode, ensure the existing selection is present
           if (isEditMode && editRowData?.importPlantFkId) {
             if (
-              !apiOptions.find((o) => o.value === editRowData.importPlantFkId)
+              !apiOptions.find((o) =>
+                sameId(o.value, editRowData.importPlantFkId),
+              )
             ) {
               apiOptions.push({
                 value: editRowData.importPlantFkId,
@@ -123,6 +148,114 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
     fetchProcurementPlants()
   }, [formData.cppPlant, keycloak, isEditMode, editRowData])
 
+  // Fetch utility plants whenever cppPlant changes
+  useEffect(() => {
+    const fetchUtilityPlants = async () => {
+      if (!formData.cppPlant) {
+        setUtilityPlantOptions([])
+        return
+      }
+      try {
+        const response = await InputApiService.getImportUtilityPlants(
+          keycloak,
+          formData.cppPlant,
+        )
+        if (response && response.data) {
+          const apiOptions = response.data.map((plant) => ({
+            value: plant.id,
+            label: plant.name || plant.id,
+          }))
+
+          // In edit mode, ensure the existing selection is present
+          if (isEditMode && editRowData?.utilityPlantId) {
+            if (
+              !apiOptions.find((o) => sameId(o.value, editRowData.utilityPlantId))
+            ) {
+              apiOptions.push({
+                value: editRowData.utilityPlantId,
+                label: editRowData.utilityPlantName || editRowData.utilityPlantId,
+              })
+            }
+          }
+          // Default-select the utility plant — each CPP plant has exactly one
+          // Utility plant with a single Power_dis norm. The functional update
+          // keeps any existing selection (e.g. edit-mode prefill) untouched.
+          if (apiOptions.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              utilityPlant: prev.utilityPlant || apiOptions[0].value,
+            }))
+          }
+          setUtilityPlantOptions(apiOptions)
+        }
+      } catch (error) {
+        console.error('Error fetching utility plants:', error)
+      }
+    }
+
+    fetchUtilityPlants()
+  }, [formData.cppPlant, keycloak, isEditMode, editRowData])
+
+  // Fetch cost centers (CPPCostCentersMaster, filtered by CPP plant) — same
+  // source as the Sender/Receiver Mapping screen
+  useEffect(() => {
+    const fetchCostCenters = async () => {
+      if (!formData.cppPlant) {
+        setCostCenterOptions([])
+        return
+      }
+      try {
+        const response = await UtilityPlantApiServiceV2.getSRMappingCostCenters(
+          keycloak,
+          [formData.cppPlant],
+        )
+        if (response && response.data) {
+          const apiOptions = response.data.map((cc) => ({
+            value: cc.id,
+            label: cc.costCenterName || cc.id,
+          }))
+
+          // In edit mode, ensure existing selections are present
+          if (isEditMode) {
+            const extras = []
+            if (
+              editRowData?.utilityCostCenterId &&
+              !apiOptions.find((o) =>
+                sameId(o.value, editRowData.utilityCostCenterId),
+              )
+            ) {
+              extras.push({
+                value: editRowData.utilityCostCenterId,
+                label:
+                  editRowData.utilityCostCenterName ||
+                  editRowData.utilityCostCenterId,
+              })
+            }
+            if (
+              editRowData?.materialCostCenterId &&
+              !apiOptions.find((o) =>
+                sameId(o.value, editRowData.materialCostCenterId),
+              )
+            ) {
+              extras.push({
+                value: editRowData.materialCostCenterId,
+                label:
+                  editRowData.materialCostCenterName ||
+                  editRowData.materialCostCenterId,
+              })
+            }
+            apiOptions.push(...extras)
+          }
+          setCostCenterOptions(apiOptions)
+        }
+      } catch (error) {
+        console.error('Error fetching cost centers:', error)
+      }
+    }
+
+    fetchCostCenters()
+  }, [formData.cppPlant, keycloak, isEditMode, editRowData])
+
   // Reset / pre-populate form whenever the dialog opens
   useEffect(() => {
     if (open) {
@@ -131,6 +264,9 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
         setFormData({
           cppPlant: editRowData.cppPlantFkId || '',
           procurementPlant: editRowData.importPlantFkId || '',
+          utilityPlant: editRowData.utilityPlantId || '',
+          utilityCostCenter: editRowData.utilityCostCenterId || '',
+          materialCostCenter: editRowData.materialCostCenterId || '',
           name: editRowData.materialName || '',
           displayName: editRowData.materialDisplayName || '',
           sapCode: editRowData.materialCode || '',
@@ -185,6 +321,9 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
       const sourceData = {
         cppPlant: formData.cppPlant,
         procurementPlant: formData.procurementPlant,
+        utilityPlant: formData.utilityPlant,
+        utilityCostCenter: formData.utilityCostCenter || null,
+        materialCostCenter: formData.materialCostCenter || null,
         name: formData.name,
         displayName: formData.displayName,
         sapCode: formData.sapCode,
@@ -198,6 +337,9 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
           editRowData.normParameterFkId,
           {
             procurementPlant: formData.procurementPlant,
+            utilityPlant: formData.utilityPlant,
+            utilityCostCenter: formData.utilityCostCenter || null,
+            materialCostCenter: formData.materialCostCenter || null,
             name: formData.name,
             displayName: formData.displayName,
             sapCode: formData.sapCode,
@@ -238,50 +380,60 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
       <DialogContent dividers>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
-            {/* CPP Plant — dropdown */}
+            {/* CPP Plant — autocomplete */}
             <Grid item xs={6}>
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label={FIELD_LABELS.cppPlant}
-                value={formData.cppPlant}
-                onChange={(e) => handleFieldChange('cppPlant', e.target.value)}
-                error={formError.cppPlant.isError}
-                helperText={formError.cppPlant.errorMessage}
-                required
                 size='small'
+                options={cppPlantOptions}
+                getOptionLabel={(option) => option.label}
+                value={
+                  cppPlantOptions.find((o) =>
+                    sameId(o.value, formData.cppPlant),
+                  ) || null
+                }
+                onChange={(e, newValue) =>
+                  handleFieldChange('cppPlant', newValue?.value || '')
+                }
                 disabled={isEditMode}
-              >
-                {cppPlantOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={FIELD_LABELS.cppPlant}
+                    required
+                    error={formError.cppPlant.isError}
+                    helperText={formError.cppPlant.errorMessage}
+                  />
+                )}
+              />
             </Grid>
 
-            {/* Procurement Plant — dropdown */}
+            {/* Procurement Plant — autocomplete */}
             <Grid item xs={6}>
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label={FIELD_LABELS.procurementPlant}
-                value={formData.procurementPlant}
-                onChange={(e) =>
-                  handleFieldChange('procurementPlant', e.target.value)
-                }
-                error={formError.procurementPlant.isError}
-                helperText={formError.procurementPlant.errorMessage}
-                required
                 size='small'
+                options={procurementPlantOptions}
+                getOptionLabel={(option) => option.label}
+                value={
+                  procurementPlantOptions.find((o) =>
+                    sameId(o.value, formData.procurementPlant),
+                  ) || null
+                }
+                onChange={(e, newValue) =>
+                  handleFieldChange('procurementPlant', newValue?.value || '')
+                }
                 disabled={isEditMode}
-              >
-                {procurementPlantOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={FIELD_LABELS.procurementPlant}
+                    required
+                    error={formError.procurementPlant.isError}
+                    helperText={formError.procurementPlant.errorMessage}
+                  />
+                )}
+              />
             </Grid>
 
             {/* Name */}
@@ -338,6 +490,85 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
                 helperText={formError.uom.errorMessage}
                 required
                 size='small'
+              />
+            </Grid>
+
+            {/* Utility Plant — autocomplete */}
+            <Grid item xs={6}>
+              <Autocomplete
+                fullWidth
+                size='small'
+                options={utilityPlantOptions}
+                getOptionLabel={(option) => option.label}
+                value={
+                  utilityPlantOptions.find((o) =>
+                    sameId(o.value, formData.utilityPlant),
+                  ) || null
+                }
+                onChange={(e, newValue) =>
+                  handleFieldChange('utilityPlant', newValue?.value || '')
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={FIELD_LABELS.utilityPlant}
+                    required
+                    error={formError.utilityPlant.isError}
+                    helperText={formError.utilityPlant.errorMessage}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Utility Cost Center — autocomplete (optional) */}
+            <Grid item xs={6}>
+              <Autocomplete
+                fullWidth
+                size='small'
+                options={costCenterOptions}
+                getOptionLabel={(option) => option.label}
+                value={
+                  costCenterOptions.find((o) =>
+                    sameId(o.value, formData.utilityCostCenter),
+                  ) || null
+                }
+                onChange={(e, newValue) =>
+                  handleFieldChange('utilityCostCenter', newValue?.value || '')
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={FIELD_LABELS.utilityCostCenter}
+                    error={formError.utilityCostCenter.isError}
+                    helperText={formError.utilityCostCenter.errorMessage}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Material Cost Center — autocomplete (optional) */}
+            <Grid item xs={6}>
+              <Autocomplete
+                fullWidth
+                size='small'
+                options={costCenterOptions}
+                getOptionLabel={(option) => option.label}
+                value={
+                  costCenterOptions.find((o) =>
+                    sameId(o.value, formData.materialCostCenter),
+                  ) || null
+                }
+                onChange={(e, newValue) =>
+                  handleFieldChange('materialCostCenter', newValue?.value || '')
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={FIELD_LABELS.materialCostCenter}
+                    error={formError.materialCostCenter.isError}
+                    helperText={formError.materialCostCenter.errorMessage}
+                  />
+                )}
               />
             </Grid>
           </Grid>

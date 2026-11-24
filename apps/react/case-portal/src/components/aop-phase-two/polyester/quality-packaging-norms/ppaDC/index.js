@@ -71,7 +71,7 @@ const PPADC = ({ refreshTrigger }) => {
     },
     {
       field: 'unit',
-      title: 'Unit',
+      title: 'Unit / MT',
       minWidth: 100,
     },
     {

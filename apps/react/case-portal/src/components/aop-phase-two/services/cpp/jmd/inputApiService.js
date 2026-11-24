@@ -26,6 +26,7 @@ export const InputApiService = {
 
   // Used in: Inputs/components/AddImportPowerRowDialog.js
   getImportProcurementPlants,
+  getImportUtilityPlants,
   addSource,
   updateSource,
   deleteSource,
@@ -387,6 +388,27 @@ async function getImportProcurementPlants(keycloak, cppPlant) {
   }
 }
 
+// GET /task/jmd/imported-power-plants/utility-plants?cppPlant={uuid}
+// Returns Utility-category plants linked to the given CPP plant
+async function getImportUtilityPlants(keycloak, cppPlant) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plants/utility-plants?cppPlant=${cppPlant}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 async function saveImportPowerCapacity(keycloak, plantIds, aopYear, payload) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
@@ -468,10 +490,10 @@ async function updateSource(keycloak, normParameterId, updateData) {
   }
 }
 
-// DELETE /task/jmd/imported-power-plans/source/{normParameterId}?procurementPlant={uuid}
+// DELETE /task/jmd/imported-power-plans/source/{normParameterId}?procurementPlant={uuid}&aopYear={year}
 // Deletes a source row from Import Power
-async function deleteSource(keycloak, normParameterId, procurementPlant) {
-  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/source/${normParameterId}?procurementPlant=${procurementPlant}`
+async function deleteSource(keycloak, normParameterId, procurementPlant, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/source/${normParameterId}?procurementPlant=${procurementPlant}&aopYear=${encodeURIComponent(aopYear)}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

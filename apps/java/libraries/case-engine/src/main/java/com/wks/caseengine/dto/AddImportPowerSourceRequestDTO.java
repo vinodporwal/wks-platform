@@ -38,4 +38,17 @@ public class AddImportPowerSourceRequestDTO {
 
     /** Financial year, e.g. "2026-27". Used as AOPYear in CPPImportPower. */
     private String aopYear;
+
+    /** UUID of the Utility-category plant selected by the user.
+     *  Used to resolve the 'Power_dis' NormParameter (SAPMaterialCode = 310027910,
+     *  NormType_FK_Id = 1) whose Id is stored as Utility_NormParameter_FK_Id. */
+    private UUID utilityPlant;
+
+    /** Optional. CostCenterId (CPPCostCentersMaster) for the utility side —
+     *  stored as Utility_CostCenter_FK_Id in CPPImportPower. */
+    private UUID utilityCostCenter;
+
+    /** Optional. CostCenterId (CPPCostCentersMaster) for the material side —
+     *  stored as Material_CostCenter_FK_Id in CPPImportPower. */
+    private UUID materialCostCenter;
 }

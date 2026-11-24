@@ -16,6 +16,7 @@ public class CppAuxBoilerHeatRateDto {
 
     private String id;
     private String assetFkId;
+    private String cppPlantName;
     private String equipType;
     private String cppUtility;
     private String financialYear;
@@ -31,4 +32,5 @@ public class CppAuxBoilerHeatRateDto {
     private Double proposedYearFinalHeatRate;
     private String saveStatus;
     private String errDescription;
+    private String rowHash;
 }

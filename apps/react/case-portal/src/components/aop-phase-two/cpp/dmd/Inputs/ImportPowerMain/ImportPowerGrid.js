@@ -601,6 +601,7 @@ const ImportPowerGrid = ({ setImportData }) => {
         keycloak,
         rowToDelete.normParameterFkId,
         rowToDelete.importPlantFkId,
+        rowToDelete.aopYear,
       )
       setSnackbarOpen(true)
       setSnackbarData({
