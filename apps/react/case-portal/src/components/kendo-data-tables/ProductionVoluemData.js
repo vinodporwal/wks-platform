@@ -115,6 +115,7 @@ const ProductionvolumeData = ({
   const IS_PVC_VMD =
     verticalObject?.name?.toLowerCase() == 'pvc' &&
     siteObject?.name?.toLowerCase() == 'vmd'
+  const IS_VCM_VMD = IS_VCM && SITE_NAME === 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
   const IS_AROMATICS_HMD = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
@@ -511,7 +512,7 @@ const ProductionvolumeData = ({
         return
       }
       const requiredFields = ['remarks']
-      
+
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
@@ -556,7 +557,7 @@ const ProductionvolumeData = ({
         'february',
         'march',
       ]
-      const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD 
+      const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD
       const invalidRows = data.filter((row) => {
         if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
           return true
@@ -884,11 +885,11 @@ const ProductionvolumeData = ({
               (maxRow.materialFKId &&
                 row.materialFKId &&
                 maxRow.materialFKId.toLowerCase() ===
-                row.materialFKId.toLowerCase()) ||
+                  row.materialFKId.toLowerCase()) ||
               (maxRow.normParametersFKId &&
                 row.normParametersFKId &&
                 maxRow.normParametersFKId.toLowerCase() ===
-                row.normParametersFKId.toLowerCase()) ||
+                  row.normParametersFKId.toLowerCase()) ||
               (maxRow.productName &&
                 row.productName &&
                 maxRow.productName === row.productName),
@@ -1102,7 +1103,7 @@ const ProductionvolumeData = ({
             !(
               IS_PE_PP ||
               IS_PET ||
-              IS_VCM ||
+              (IS_VCM && !IS_VCM_VMD) ||
               IS_PTA_DMD ||
               IS_PVC_VMD ||
               IS_PVC
@@ -1406,14 +1407,14 @@ const ProductionvolumeData = ({
 
       downloadExcelBtnFromUI:
         IS_CRACKER_C2 ||
-          IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PTA_PMD_PIA ||
-          VERTICAL_NAME === 'meg'
+        IS_PE_PP ||
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PTA_PMD_PIA ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1523,7 +1524,12 @@ const ProductionvolumeData = ({
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       showNote: IS_PVC_HMD ? true : false,
       saveBtn:
-        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
+        IS_PE_PP ||
+        IS_PET ||
+        (IS_VCM && !IS_VCM_VMD) ||
+        IS_PTA_DMD ||
+        IS_PVC_VMD ||
+        IS_PVC
           ? false
           : true,
       units: ['TPH', 'TPD'],
@@ -1531,17 +1537,17 @@ const ProductionvolumeData = ({
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC ||
-          IS_PP_SEZ ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_CRACKER_DMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD ||
-          IS_CRACKER_C2 ||
-          IS_PTA_PMD_PIA ||
-          VERTICAL_NAME === 'meg'
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC ||
+        IS_PP_SEZ ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CRACKER_DMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_CRACKER_C2 ||
+        IS_PTA_PMD_PIA ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1597,36 +1603,36 @@ const ProductionvolumeData = ({
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
-          Object.keys(calculationObject || {}).length > 0
+        Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
       downloadExcelBtn:
         IS_CRACKER_C2 ||
-          IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD ||
-          IS_PTA_PMD_PIA ||
-          permissions?.hideDownloadExcel ||
-          VERTICAL_NAME === 'meg'
+        IS_PE_PP ||
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD ||
+        IS_PTA_PMD_PIA ||
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       uploadExcelBtn:
         IS_CRACKER_C2 ||
-          IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD ||
-          IS_VCM_DMD_EDC ||
-          IS_PTA_PMD_PIA ||
-          permissions?.hideDownloadExcel ||
-          VERTICAL_NAME === 'meg'
+        IS_PE_PP ||
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD ||
+        IS_VCM_DMD_EDC ||
+        IS_PTA_PMD_PIA ||
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
 
