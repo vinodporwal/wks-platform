@@ -46,13 +46,15 @@ public interface CPPImportPowerService {
     AOPMessageVM updateImportPowerSource(UUID normParameterId, UpdateImportPowerSourceRequestDTO request);
 
     /**
-     * Soft-delete an import power source by setting isVisible = false on the NormParameters entry.
-     * The CPPImportPower row is kept intact. The GET query already filters isVisible = 1.
+     * Deletes an import power source: removes the CPPImportPower row for the given
+     * norm + AOP year along with its op-hours, cleans up the linked SR mapping
+     * entry, and keeps the NormParameters row untouched.
      *
-     * @param normParameterId  UUID of the NormParameters row to soft-delete
+     * @param normParameterId  UUID of the NormParameters row (material norm)
      * @param procurementPlant UUID of the owning procurement plant (guard check)
+     * @param aopYear          AOP year of the CPPImportPower row to delete
      */
-    AOPMessageVM deleteImportPowerSource(UUID normParameterId, UUID procurementPlant);
+    AOPMessageVM deleteImportPowerSource(UUID normParameterId, UUID procurementPlant, String aopYear);
 
     /**
      * Returns all Import procurement plants for the given CPP plant,
@@ -65,4 +67,13 @@ public interface CPPImportPowerService {
      * @return AOPMessageVM with data = List<ImportPowerProcurementPlantDTO>
      */
     AOPMessageVM getImportProcurementPlants(UUID cppPlantId);
+
+    /**
+     * Returns all Utility-category plants linked to the given CPP plant
+     * (Plants.SourceName = cppPlantId, BusinessCategoryName = 'Utility').
+     *
+     * @param cppPlantId UUID of the CPP parent plant
+     * @return AOPMessageVM with data = List<UtilityPlantDTO>
+     */
+    AOPMessageVM getUtilityPlants(UUID cppPlantId);
 }
