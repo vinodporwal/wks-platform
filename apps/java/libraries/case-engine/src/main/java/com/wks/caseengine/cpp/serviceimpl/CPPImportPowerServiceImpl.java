@@ -3,15 +3,19 @@ package com.wks.caseengine.cpp.serviceimpl;
 import com.wks.caseengine.cpp.dto.CPPImportPowerProjection;
 import com.wks.caseengine.cpp.dto.CPPImportPowerResponseDTO;
 import com.wks.caseengine.cpp.dto.ImportProcurementPlantProjection;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
+import com.wks.caseengine.cpp.dto.UtilityPlantProjection;
 import com.wks.caseengine.cpp.entity.CPPImportPower;
 import com.wks.caseengine.cpp.entity.CPPPowerSourceOperationHours;
 import com.wks.caseengine.cpp.repository.CPPImportPowerRepository;
 import com.wks.caseengine.cpp.repository.CPPPowerSourceOperationHoursRepository;
 import com.wks.caseengine.cpp.service.CPPImportPowerService;
+import com.wks.caseengine.cpp.service.CPPSRMappingService;
 import com.wks.caseengine.dto.AddImportPowerSourceRequestDTO;
 import com.wks.caseengine.dto.ImportPowerProcurementPlantDTO;
 import com.wks.caseengine.dto.ImportPowerSourceDTO;
 import com.wks.caseengine.dto.UpdateImportPowerSourceRequestDTO;
+import com.wks.caseengine.dto.UtilityPlantDTO;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -61,29 +65,26 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
     @Autowired
     private PlantsRepository plantsRepository;
 
-    /** Utility norm name (NormType=1) under the CPP plant. */
-    private static final String IMPORT_POWER_UTILITY_NAME = "Power_dis";
+    @Autowired
+    private CPPSRMappingService cppSRMappingService;
+
+    /** SAP material code identifying the 'Power_dis' utility norm on a Utility plant. */
+    private static final String POWER_DIS_SAP_CODE = "310027910";
 
     /**
-     * Resolves the 'Power_dis' utility norm (NormType=1) attached directly to
-     * the CPP plant (NormParameters.Plant_FK_Id = cppPlantId).
-     * Returns null if the norm cannot be found.
+     * Finds the 'Power_dis' utility norm on the selected Utility-category plant:
+     * NormParameters WHERE Plant_FK_Id = utilityPlantId
+     *   AND SAPMaterialCode = '310027910' AND NormType_FK_Id = 1  (TOP 1).
      */
-    private UUID resolveUtilityNormParameterId(UUID cppPlantId) {
+    private Optional<NormParameters> findPowerDisNorm(UUID utilityPlantId) {
         try {
-            Optional<NormParameters> powerDisNormOpt = normParametersRepository
-                    .findFirstByNameAndPlantFkIdAndNormTypeFkId(
-                            IMPORT_POWER_UTILITY_NAME, cppPlantId, 1);
-            if (powerDisNormOpt.isEmpty()) {
-                logger.warn("[Utility Norm] '{}' norm not found at cppPlant={}",
-                        IMPORT_POWER_UTILITY_NAME, cppPlantId);
-                return null;
-            }
-            return powerDisNormOpt.get().getId();
+            return normParametersRepository
+                    .findFirstByPlantFkIdAndSapCodeAndNormTypeFkId(
+                            utilityPlantId, POWER_DIS_SAP_CODE, 1);
         } catch (Exception e) {
-            logger.error("[Utility Norm] Error resolving utility norm for cppPlant={}: {}",
-                    cppPlantId, e.getMessage(), e);
-            return null;
+            logger.error("[Utility Norm] Error resolving Power_dis norm for utilityPlant={}: {}",
+                    utilityPlantId, e.getMessage(), e);
+            return Optional.empty();
         }
     }
 
@@ -114,18 +115,6 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
                 } else {
                     logger.warn("[GET Service] Could not derive previous financial year from '{}'. Skipping carry-forward.", aopYear);
                 }
-            }
-
-            // ── TIER 3: ZERO-SEED – plants still missing after carry-forward → seed from configured sources ──
-            missingPlantIds = findPlantsWithoutData(plantIds, projections);
-            if (!missingPlantIds.isEmpty()) {
-                logger.info("[GET Service] No carry-forward data found for plantIds: {}. Seeding zero import power plans from configured sources for {}.",
-                        missingPlantIds, aopYear);
-                seedImportedPowerPlans(missingPlantIds, aopYear);
-
-                // Final re-query to return the seeded data with real IDs
-                projections = repository.findImportedPowerPlans(plantIds, aopYear);
-                logger.info("[GET Service] After zero-seed, re-query returned {} records for {}", projections.size(), aopYear);
             }
 
             // Ensure every target-year source has a matching op-hours row — repairs
@@ -191,6 +180,12 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         dto.setCppPlantFkId(projection.getCppPlantFkId());
         dto.setNormParameterFkId(projection.getNormParameterFkId());
         dto.setUtilityNormParameterFkId(projection.getUtilityNormParameterFkId());
+        dto.setUtilityPlantId(projection.getUtilityPlantId());
+        dto.setUtilityPlantName(projection.getUtilityPlantName());
+        dto.setUtilityCostCenterId(projection.getUtilityCostCenterId());
+        dto.setUtilityCostCenterName(projection.getUtilityCostCenterName());
+        dto.setMaterialCostCenterId(projection.getMaterialCostCenterId());
+        dto.setMaterialCostCenterName(projection.getMaterialCostCenterName());
 
         return dto;
     }
@@ -376,95 +371,6 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             }
             logger.info("[GET Service] Saved {} carry-forward import power records (+ {} op-hours) for plantId: {}",
                     clones.size(), opHourWrites.size(), plantId);
-        }
-    }
-
-    /**
-     * Seeds zero-value CPPImportPower records from the configured procurement
-     * plants and their visible NormParameter sources (same shape that
-     * addImportPowerSource creates), plus the linked zero op-hours row.
-     */
-    private void seedImportedPowerPlans(List<UUID> plantIds, String aopYear) {
-        // Records that already exist for the target year — a row with the same
-        // (cppPlantFkId, normParameterFkId, aopYear) is a duplicate, so skip it.
-        Map<String, CPPImportPower> existingByKey = repository
-                .findByCppPlantFkIdInAndAopYear(plantIds, aopYear)
-                .stream()
-                .collect(Collectors.toMap(
-                        r -> r.getCppPlantFkId() + "|" + r.getNormParameterFkId(),
-                        r -> r,
-                        (a, b) -> a));
-
-        for (UUID plantId : plantIds) {
-            List<ImportProcurementPlantProjection> sourceRows = repository.getProcurementPlantsWithSources(plantId)
-                    .stream()
-                    .filter(r -> r.getNormParameterId() != null)
-                    .collect(Collectors.toList());
-            if (sourceRows.isEmpty()) {
-                logger.warn("[GET Service] No configured import sources found for plantId: {}. Skipping zero-seed.", plantId);
-                continue;
-            }
-
-            // Op-hours already present for the target year — never add a second row per source+year
-            Set<UUID> existingOpHourTargets =
-                    powerSourceOperationHoursRepository.findByPlantFkIdAndAopYear(plantId, aopYear)
-                            .stream()
-                            .map(CPPPowerSourceOperationHours::getAssetFkId)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toSet());
-
-            Optional<Plants> cppPlantOpt = plantsRepository.findById(plantId);
-            UUID siteFkId = cppPlantOpt.map(Plants::getSiteFkId).orElse(null);
-            UUID verticalFkId = cppPlantOpt.map(Plants::getVerticalFKId).orElse(null);
-            UUID utilityNormId = resolveUtilityNormParameterId(plantId);
-
-            List<CPPImportPower> seeds = new ArrayList<>();
-            List<CPPPowerSourceOperationHours> opHourSeeds = new ArrayList<>();
-            for (ImportProcurementPlantProjection row : sourceRows) {
-                String key = plantId + "|" + row.getNormParameterId();
-                CPPImportPower existing = existingByKey.get(key);
-                if (existing != null) {
-                    // Same source + year already exists — only backfill op-hours if missing
-                    if (!existingOpHourTargets.contains(existing.getId())) {
-                        opHourSeeds.add(buildImportPowerOpHoursSeed(existing));
-                        existingOpHourTargets.add(existing.getId());
-                    }
-                    continue;
-                }
-
-                CPPImportPower seed = new CPPImportPower();
-                // NOTE: no manual id — see carryForwardImportedPowerPlans; a pre-set id
-                // makes save() merge() and replace it with a different generated value
-                seed.setImportPlantFkId(row.getProcurementPlantId());
-                seed.setNormParameterFkId(row.getNormParameterId());
-                seed.setUtilityNormParameterFkId(utilityNormId);
-                seed.setCppPlantFkId(plantId);
-                seed.setSiteFkId(siteFkId);
-                seed.setVerticalFkId(verticalFkId);
-                seed.setAopYear(aopYear);
-                seed.setRemarks(null);
-                seed.setCreatedDate(LocalDateTime.now());
-                seed.setUpdatedDate(LocalDateTime.now());
-                BigDecimal zero = BigDecimal.ZERO;
-                seed.setApr(zero);  seed.setMay(zero);  seed.setJun(zero);
-                seed.setJul(zero);  seed.setAug(zero);  seed.setSep(zero);
-                seed.setOct(zero);  seed.setNov(zero);  seed.setDec(zero);
-                seed.setJan(zero);  seed.setFeb(zero);  seed.setMar(zero);
-                seeds.add(seed);
-                existingByKey.put(key, seed);
-            }
-
-            // Persist first so generated ids are known, then build op-hours rows
-            // pointing at the real persisted ids
-            List<CPPImportPower> savedSeeds = seeds.isEmpty() ? new ArrayList<>() : repository.saveAll(seeds);
-            for (CPPImportPower savedSeed : savedSeeds) {
-                opHourSeeds.add(buildImportPowerOpHoursSeed(savedSeed));
-            }
-            if (!opHourSeeds.isEmpty()) {
-                powerSourceOperationHoursRepository.saveAll(opHourSeeds);
-            }
-            logger.info("[GET Service] Inserted {} zero-seeded import power records (+ {} op-hours) for plantId: {} in {}",
-                    seeds.size(), opHourSeeds.size(), plantId, aopYear);
         }
     }
 
@@ -1415,6 +1321,14 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
                 response.setMessage("aopYear is required");
                 return response;
             }
+            if (request.getUtilityPlant() == null) {
+                response.setCode(400);
+                response.setMessage("utilityPlant is required");
+                return response;
+            }
+            logger.info("[ADD Source] Validation passed - cppPlant={}, procurementPlant={}, utilityPlant={}, sapCode={}, aopYear={}",
+                    request.getCppPlant(), request.getProcurementPlant(), request.getUtilityPlant(),
+                    request.getSapCode(), request.getAopYear());
 
             // --- Step 1: Fetch CPP plant to get Site_FK_Id and Vertical_FK_Id ---
             Optional<Plants> cppPlantOpt = plantsRepository.findById(request.getCppPlant());
@@ -1426,65 +1340,153 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             Plants cppPlant = cppPlantOpt.get();
             UUID siteFkId     = cppPlant.getSiteFkId();
             UUID verticalFkId = cppPlant.getVerticalFKId();
-            logger.info("[ADD Source] Resolved site={}, vertical={} from CPP plant {}",
-                    siteFkId, verticalFkId, request.getCppPlant());
+            logger.info("[ADD Source] Step 1 done - CPP plant {} resolved, site={}, vertical={}",
+                    request.getCppPlant(), siteFkId, verticalFkId);
 
-            // --- Step 2: Create NormParameters entry ---
-            NormParameters norm = new NormParameters();
-            norm.setName(request.getName());
-            norm.setDisplayName(request.getDisplayName() != null ? request.getDisplayName() : request.getName());
-            norm.setUom(request.getUom());
-            norm.setSapMaterialCode(request.getSapCode());
-            norm.setType("Imported Power");
-            // Plant_FK_Id = procurement plant (mirrors existing NormParameters data pattern)
-            norm.setPlantFkId(request.getProcurementPlant());
-            // Fixed constants mirroring existing POWER import records in NormParameters
-            norm.setNormParameterTypeFkId(UUID.fromString("E9C9FCFB-C5C6-49D6-8017-6D1E4C46868E"));
-            norm.setNormTypeFKId(2);
-            norm.setIsVisible(true);
-            norm.setIsEditable(true);
+            // --- Step 2: Resolve or create NormParameters entry ---
+            // Match-first: reuse an existing NormType=2 norm on the procurement
+            // plant with the same SAP material code. Only create a new norm when
+            // no match exists — prevents duplicate sender norms (and duplicate
+            // SR mappings) for the same material.
+            NormParameters savedNorm;
+            Optional<NormParameters> existingNorm = Optional.empty();
+            if (request.getSapCode() != null && !request.getSapCode().isBlank()) {
+                try {
+                    existingNorm = normParametersRepository
+                            .findFirstByPlantFkIdAndSapCodeAndNormTypeFkId(
+                                    request.getProcurementPlant(),
+                                    request.getSapCode().trim(),
+                                    2);
+                    logger.info("[ADD Source] Step 2 - norm lookup by sapCode={} returned {} match(es) for procurementPlant={}",
+                            request.getSapCode(), existingNorm.isPresent() ? "a" : "no", request.getProcurementPlant());
+                } catch (Exception e) {
+                    logger.warn("[ADD Source] Norm lookup by SAP code failed, will create new: {}", e.getMessage());
+                }
+            } else {
+                logger.info("[ADD Source] Step 2 - sapCode is blank, skipping norm lookup; will create new norm");
+            }
 
-            NormParameters savedNorm = normParametersRepository.save(norm);
-            logger.info("[ADD Source] NormParameters created with Id: {}", savedNorm.getId());
+            if (existingNorm.isPresent()) {
+                savedNorm = existingNorm.get();
+                // Revive soft-deleted norms (isVisible = false) so a re-added
+                // source becomes visible again and is not re-seeded as new
+                if (savedNorm.getIsVisible() == null || !savedNorm.getIsVisible()) {
+                    savedNorm.setIsVisible(true);
+                    savedNorm = normParametersRepository.save(savedNorm);
+                    logger.info("[ADD Source] Revived soft-deleted NormParameters Id={} (SAP={})",
+                            savedNorm.getId(), request.getSapCode());
+                }
+                logger.info("[ADD Source] Reusing existing NormParameters Id={} (SAP={}) for procurementPlant={}",
+                        savedNorm.getId(), request.getSapCode(), request.getProcurementPlant());
+            } else {
+                NormParameters norm = new NormParameters();
+                norm.setName(request.getName());
+                norm.setDisplayName(request.getDisplayName() != null ? request.getDisplayName() : request.getName());
+                norm.setUom(request.getUom());
+                norm.setSapMaterialCode(request.getSapCode());
+                norm.setType("Imported Power");
+                // Plant_FK_Id = procurement plant (mirrors existing NormParameters data pattern)
+                norm.setPlantFkId(request.getProcurementPlant());
+                // Fixed constants mirroring existing POWER import records in NormParameters
+                norm.setNormParameterTypeFkId(UUID.fromString("E9C9FCFB-C5C6-49D6-8017-6D1E4C46868E"));
+                norm.setNormTypeFKId(2);
+                norm.setIsVisible(true);
+                norm.setIsEditable(true);
+
+                savedNorm = normParametersRepository.save(norm);
+                logger.info("[ADD Source] Step 2 done - new NormParameters created with Id: {}", savedNorm.getId());
+            }
 
             // --- Step 3: Create CPPImportPower entry ---
-            CPPImportPower importPower = new CPPImportPower();
-            importPower.setNormParameterFkId(savedNorm.getId());
-            importPower.setUtilityNormParameterFkId(resolveUtilityNormParameterId(request.getCppPlant()));
-            importPower.setImportPlantFkId(request.getProcurementPlant());
-            importPower.setCppPlantFkId(request.getCppPlant());
-            importPower.setSiteFkId(siteFkId);
-            importPower.setVerticalFkId(verticalFkId);
-            importPower.setAopYear(request.getAopYear());
-            importPower.setCreatedDate(LocalDateTime.now());
-            importPower.setUpdatedDate(LocalDateTime.now());
-            // All monthly values default to 0
-            BigDecimal zero = BigDecimal.ZERO;
-            importPower.setApr(zero); importPower.setMay(zero); importPower.setJun(zero);
-            importPower.setJul(zero); importPower.setAug(zero); importPower.setSep(zero);
-            importPower.setOct(zero); importPower.setNov(zero); importPower.setDec(zero);
-            importPower.setJan(zero); importPower.setFeb(zero); importPower.setMar(zero);
+            NormParameters powerDisNorm = findPowerDisNorm(request.getUtilityPlant()).orElse(null);
+            UUID powerDisNormId = powerDisNorm != null ? powerDisNorm.getId() : null;
+            logger.info("[ADD Source] Step 3 - Power_dis norm resolved for utilityPlant={}: {}",
+                    request.getUtilityPlant(), powerDisNormId != null ? powerDisNormId : "NOT FOUND");
 
-            CPPImportPower savedImportPower = repository.save(importPower);
-            logger.info("[ADD Source] CPPImportPower created with Id: {}", savedImportPower.getId());
+            // Duplicate handling mirrors the SR mapping flow: an existing record
+            // for the same material + CPP plant + utility + AOP year is reused
+            // (master dedup by norm pair) instead of rejected — month values are
+            // preserved since the source is still active.
+            List<CPPImportPower> duplicates = repository
+                    .findByNormParameterFkIdAndCppPlantFkIdAndAopYear(
+                            savedNorm.getId(), request.getCppPlant(), request.getAopYear());
+            Optional<CPPImportPower> duplicateOpt = duplicates.stream()
+                    .filter(r -> Objects.equals(r.getUtilityNormParameterFkId(), powerDisNormId))
+                    .findFirst();
+            logger.info("[ADD Source] Step 3 - duplicate check done ({} candidate row(s), duplicate={})",
+                    duplicates.size(), duplicateOpt.isPresent());
+
+            BigDecimal zero = BigDecimal.ZERO;
+            CPPImportPower savedImportPower;
+            if (duplicateOpt.isPresent()) {
+                CPPImportPower existing = duplicateOpt.get();
+                existing.setUtilityNormParameterFkId(powerDisNormId);
+                existing.setUtilityCostCenterFkId(request.getUtilityCostCenter());
+                existing.setMaterialCostCenterFkId(request.getMaterialCostCenter());
+                existing.setImportPlantFkId(request.getProcurementPlant());
+                existing.setSiteFkId(siteFkId);
+                existing.setVerticalFkId(verticalFkId);
+                existing.setUpdatedDate(LocalDateTime.now());
+                savedImportPower = repository.save(existing);
+                logger.info("[ADD Source] Step 3 done - reused existing CPPImportPower Id: {}", savedImportPower.getId());
+            } else {
+                CPPImportPower importPower = new CPPImportPower();
+                importPower.setNormParameterFkId(savedNorm.getId());
+                importPower.setUtilityNormParameterFkId(powerDisNormId);
+                importPower.setUtilityCostCenterFkId(request.getUtilityCostCenter());
+                importPower.setMaterialCostCenterFkId(request.getMaterialCostCenter());
+                importPower.setImportPlantFkId(request.getProcurementPlant());
+                importPower.setCppPlantFkId(request.getCppPlant());
+                importPower.setSiteFkId(siteFkId);
+                importPower.setVerticalFkId(verticalFkId);
+                importPower.setAopYear(request.getAopYear());
+                importPower.setCreatedDate(LocalDateTime.now());
+                importPower.setUpdatedDate(LocalDateTime.now());
+                // All monthly values default to 0
+                importPower.setApr(zero); importPower.setMay(zero); importPower.setJun(zero);
+                importPower.setJul(zero); importPower.setAug(zero); importPower.setSep(zero);
+                importPower.setOct(zero); importPower.setNov(zero); importPower.setDec(zero);
+                importPower.setJan(zero); importPower.setFeb(zero); importPower.setMar(zero);
+
+                savedImportPower = repository.save(importPower);
+                logger.info("[ADD Source] Step 3 done - CPPImportPower created with Id: {}", savedImportPower.getId());
+            }
 
             // --- Step 4: Create CPPPowerSourceOperationHours entry with zero values ---
-            CPPPowerSourceOperationHours opHours = new CPPPowerSourceOperationHours();
-            opHours.setId(UUID.randomUUID());
-            opHours.setAssetFkId(savedImportPower.getId());
-            opHours.setApr(0.0);  opHours.setMay(0.0);  opHours.setJun(0.0);
-            opHours.setJul(0.0);  opHours.setAug(0.0);  opHours.setSep(0.0);
-            opHours.setOct(0.0);  opHours.setNov(0.0);  opHours.setDec(0.0);
-            opHours.setJan(0.0);  opHours.setFeb(0.0);  opHours.setMar(0.0);
-            opHours.setAopYear(request.getAopYear());
-            opHours.setRemarks(null);
-            opHours.setSiteFkId(siteFkId);
-            opHours.setVerticalFkId(verticalFkId);
-            opHours.setPlantFkId(request.getCppPlant());
-            opHours.setCreatedDate(LocalDateTime.now());
-            opHours.setModifiedDate(LocalDateTime.now());
-            powerSourceOperationHoursRepository.save(opHours);
-            logger.info("[ADD Source] CPPPowerSourceOperationHours created with Id: {} for PowerSource_FK_Id: {}", opHours.getId(), savedImportPower.getId());
+            if (powerSourceOperationHoursRepository.existsByAssetFkId(savedImportPower.getId())) {
+                logger.info("[ADD Source] Step 4 - CPPPowerSourceOperationHours already exists for PowerSource_FK_Id: {}, skipping", savedImportPower.getId());
+            } else {
+                CPPPowerSourceOperationHours opHours = new CPPPowerSourceOperationHours();
+                opHours.setId(UUID.randomUUID());
+                opHours.setAssetFkId(savedImportPower.getId());
+                opHours.setApr(0.0);  opHours.setMay(0.0);  opHours.setJun(0.0);
+                opHours.setJul(0.0);  opHours.setAug(0.0);  opHours.setSep(0.0);
+                opHours.setOct(0.0);  opHours.setNov(0.0);  opHours.setDec(0.0);
+                opHours.setJan(0.0);  opHours.setFeb(0.0);  opHours.setMar(0.0);
+                opHours.setAopYear(request.getAopYear());
+                opHours.setRemarks(null);
+                opHours.setSiteFkId(siteFkId);
+                opHours.setVerticalFkId(verticalFkId);
+                opHours.setPlantFkId(request.getCppPlant());
+                opHours.setCreatedDate(LocalDateTime.now());
+                opHours.setModifiedDate(LocalDateTime.now());
+                powerSourceOperationHoursRepository.save(opHours);
+                logger.info("[ADD Source] Step 4 done - CPPPowerSourceOperationHours created with Id: {} for PowerSource_FK_Id: {}", opHours.getId(), savedImportPower.getId());
+            }
+
+            // --- Step 5: Create SR mapping entry (same flow as the SR mapping screen) ---
+            logger.info("[ADD Source] Step 5 - creating SR mapping entry for importPowerId={}", savedImportPower.getId());
+            createSrMappingForImportPower(
+                    request.getCppPlant(),
+                    request.getProcurementPlant(),
+                    request.getUtilityPlant(),
+                    savedNorm,
+                    powerDisNorm,
+                    request.getMaterialCostCenter(),
+                    request.getUtilityCostCenter(),
+                    null,
+                    request.getAopYear());
+            logger.info("[ADD Source] Step 5 done - SR mapping flow invoked");
 
             Map<String, Object> data = new HashMap<>();
             data.put("normParameterId", savedNorm.getId());
@@ -1526,6 +1528,13 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
                 response.setMessage("procurementPlant is required");
                 return response;
             }
+            if (request.getUtilityPlant() == null) {
+                response.setCode(400);
+                response.setMessage("utilityPlant is required");
+                return response;
+            }
+            logger.info("[UPDATE Source] Validation passed - normParameterId={}, procurementPlant={}, utilityPlant={}",
+                    normParameterId, request.getProcurementPlant(), request.getUtilityPlant());
 
             Optional<NormParameters> normOpt = normParametersRepository.findById(normParameterId);
             if (normOpt.isEmpty()) {
@@ -1535,6 +1544,8 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             }
 
             NormParameters norm = normOpt.get();
+            logger.info("[UPDATE Source] Step 1 - NormParameter {} fetched (plantFkId={})",
+                    normParameterId, norm.getPlantFkId());
 
             // Guard: ensure the record belongs to the given procurement plant
             if (!request.getProcurementPlant().equals(norm.getPlantFkId())) {
@@ -1542,6 +1553,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
                 response.setMessage("NormParameter does not belong to the supplied procurementPlant");
                 return response;
             }
+            logger.info("[UPDATE Source] Step 1 done - ownership guard passed");
 
             // Apply only editable fields — Plant_FK_Id is intentionally NOT changed
             if (request.getName() != null && !request.getName().isBlank()) {
@@ -1558,7 +1570,41 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             }
 
             NormParameters saved = normParametersRepository.save(norm);
-            logger.info("[UPDATE Source] NormParameters {} updated successfully", saved.getId());
+            logger.info("[UPDATE Source] Step 2 done - NormParameters {} updated successfully", saved.getId());
+
+            // Re-resolve the Power_dis utility norm from the selected Utility plant
+            // and persist it on the linked CPPImportPower row.
+            CPPImportPower importPower = repository.findByNormParameterFkId(normParameterId);
+            if (importPower != null) {
+                // Resolve Power_dis once — used for both the FK update and the SR mapping DTO
+                NormParameters powerDisNorm = findPowerDisNorm(request.getUtilityPlant()).orElse(null);
+                UUID powerDisNormId = powerDisNorm != null ? powerDisNorm.getId() : null;
+                logger.info("[UPDATE Source] Step 3 - Power_dis norm resolved for utilityPlant={}: {}",
+                        request.getUtilityPlant(), powerDisNormId != null ? powerDisNormId : "NOT FOUND");
+                importPower.setUtilityNormParameterFkId(powerDisNormId);
+                importPower.setUtilityCostCenterFkId(request.getUtilityCostCenter());
+                importPower.setMaterialCostCenterFkId(request.getMaterialCostCenter());
+                importPower.setUpdatedDate(LocalDateTime.now());
+                repository.save(importPower);
+                logger.info("[UPDATE Source] Step 3 done - CPPImportPower {} updated (utilityNorm={}, utilityCC={}, materialCC={})",
+                        importPower.getId(), powerDisNormId, request.getUtilityCostCenter(), request.getMaterialCostCenter());
+
+                // Keep the SR mapping entry in sync (same flow as the SR mapping screen)
+                logger.info("[UPDATE Source] Step 4 - syncing SR mapping entry for importPowerId={}", importPower.getId());
+                createSrMappingForImportPower(
+                        importPower.getCppPlantFkId(),
+                        request.getProcurementPlant(),
+                        request.getUtilityPlant(),
+                        norm,
+                        powerDisNorm,
+                        request.getMaterialCostCenter(),
+                        request.getUtilityCostCenter(),
+                        null,
+                        importPower.getAopYear());
+                logger.info("[UPDATE Source] Step 4 done - SR mapping flow invoked");
+            } else {
+                logger.warn("[UPDATE Source] Step 3 skipped - No CPPImportPower row found for normParameterId={}", normParameterId);
+            }
 
             Map<String, Object> data = new HashMap<>();
             data.put("normParameterId", saved.getId());
@@ -1581,14 +1627,14 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
     }
 
     // ========================================
-    // DELETE (SOFT) IMPORT POWER SOURCE
+    // DELETE IMPORT POWER SOURCE
     // ========================================
 
     @Override
     @Transactional
-    public AOPMessageVM deleteImportPowerSource(UUID normParameterId, UUID procurementPlant) {
-        logger.info("[DELETE Source] Soft-deleting normParameterId={}, procurementPlant={}",
-                normParameterId, procurementPlant);
+    public AOPMessageVM deleteImportPowerSource(UUID normParameterId, UUID procurementPlant, String aopYear) {
+        logger.info("[DELETE Source] Deleting normParameterId={}, procurementPlant={}, aopYear={}",
+                normParameterId, procurementPlant, aopYear);
 
         AOPMessageVM response = new AOPMessageVM();
 
@@ -1601,6 +1647,11 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             if (procurementPlant == null) {
                 response.setCode(400);
                 response.setMessage("procurementPlant is required");
+                return response;
+            }
+            if (aopYear == null || aopYear.isBlank()) {
+                response.setCode(400);
+                response.setMessage("aopYear is required");
                 return response;
             }
 
@@ -1620,20 +1671,37 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
                 return response;
             }
 
-            // Soft-delete: set isVisible = false (isVisible = 0 in DB)
+            // Tombstone: mark the norm invisible so the zero-seed and grid
+            // queries (both filter isVisible = 1) treat the source as deleted.
+            // The norm row itself is kept and revived on re-add.
             norm.setIsVisible(false);
             normParametersRepository.save(norm);
             logger.info("[DELETE Source] NormParameters {} marked as not visible", normParameterId);
 
-            // Also delete corresponding CPPPowerSourceOperationHours entries
-            CPPImportPower importPower = repository.findByNormParameterFkId(normParameterId);
-            if (importPower != null) {
-                powerSourceOperationHoursRepository.deleteByAssetFkId(importPower.getId());
-                logger.info("[DELETE Source] CPPPowerSourceOperationHours deleted for PowerSource_FK_Id: {}", importPower.getId());
+            // Only the CPPImportPower entries (and their children) for this
+            // AOP year are removed — all matching rows, since legacy duplicates
+            // for the same norm+year may exist.
+            List<CPPImportPower> importPowers = repository
+                    .findByNormParameterFkIdAndAopYear(normParameterId, aopYear);
+            if (!importPowers.isEmpty()) {
+                for (CPPImportPower importPower : importPowers) {
+                    powerSourceOperationHoursRepository.deleteByAssetFkId(importPower.getId());
+                    logger.info("[DELETE Source] CPPPowerSourceOperationHours deleted for PowerSource_FK_Id: {}", importPower.getId());
+
+                    // Mirror the add flow: clear the linked SR mapping entry using the
+                    // same deleteSRMapping path as the Sender/Receiver Mapping screen
+                    deleteLinkedSrMapping(importPower, normParameterId);
+
+                    repository.delete(importPower);
+                    logger.info("[DELETE Source] CPPImportPower {} deleted for normParameterId={} aopYear={}",
+                            importPower.getId(), normParameterId, aopYear);
+                }
+            } else {
+                logger.warn("[DELETE Source] No CPPImportPower row found for normParameterId={} aopYear={} — nothing to delete", normParameterId, aopYear);
             }
 
             response.setCode(200);
-            response.setMessage("Import power source deleted successfully (soft delete)");
+            response.setMessage("Import power source deleted successfully");
 
         } catch (Exception e) {
             logger.error("[DELETE Source] Error: {}", e.getMessage(), e);
@@ -1704,6 +1772,175 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             logger.error("[GET Procurement Plants] Error: {}", e.getMessage(), e);
             response.setCode(500);
             response.setMessage("Failed to fetch procurement plants: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    // ========================================
+    // SR MAPPING ENTRY FOR IMPORT POWER SOURCE
+    // ========================================
+
+    /**
+     * Builds an SRMappingDTO for an import power source and delegates to the
+     * shared {@link CPPSRMappingService#updateSRMappingsByPlant} flow so that
+     * CPP_SR_Mapping_Master + NormsHeader + monthly child records
+     * (NormsMonthDetail, CPPNorms, CPPMonthWisePrice) + AopCalculation flag
+     * are created exactly like the Sender/Receiver Mapping screen.
+     *
+     * Side mapping for import power:
+     *   Sender   = material side → procurement plant + material norm (NormType=2)
+     *   Receiver = utility side  → utility plant + Power_dis norm (NormType=1)
+     *   Material cost center → sender side; Utility cost center → receiver side.
+     */
+    private void createSrMappingForImportPower(UUID cppPlantId, UUID procurementPlantId,
+                                               UUID utilityPlantId, NormParameters materialNorm,
+                                               NormParameters powerDisNorm,
+                                               UUID materialCostCenterId, UUID utilityCostCenterId,
+                                               String remarks, String aopYear) {
+        try {
+            if (cppPlantId == null || procurementPlantId == null
+                    || materialNorm == null || materialNorm.getId() == null
+                    || aopYear == null || aopYear.isBlank()) {
+                logger.warn("[SR Mapping] Skipped for import power source – missing cppPlant/procurementPlant/materialNorm/aopYear");
+                return;
+            }
+            logger.info("[SR Mapping] Building SRMappingDTO - cppPlant={}, procurementPlant={}, utilityPlant={}, materialNorm={}, powerDisNorm={}, aopYear={}",
+                    cppPlantId, procurementPlantId, utilityPlantId, materialNorm.getId(),
+                    powerDisNorm != null ? powerDisNorm.getId() : "null", aopYear);
+
+            Plants procPlant = plantsRepository.findById(procurementPlantId).orElse(null);
+            Plants utilPlant = utilityPlantId != null
+                    ? plantsRepository.findById(utilityPlantId).orElse(null) : null;
+            logger.info("[SR Mapping] Plants resolved - sender(procurement)={}, receiver(utility)={}",
+                    procPlant != null ? procPlant.getId() : "NOT FOUND",
+                    utilPlant != null ? utilPlant.getId() : "NOT FOUND");
+
+            SRMappingDTO dto = new SRMappingDTO();
+            dto.setCppPlantId(cppPlantId);
+            dto.setId(null);
+            dto.setRemarks(remarks);
+
+            // ── Sender = material side (procurement plant + material norm, NormType=2) ──
+            dto.setSenderPlantId(procurementPlantId);
+            dto.setSenderPlantName(procPlant != null
+                    ? (procPlant.getDisplayName() != null ? procPlant.getDisplayName() : procPlant.getName())
+                    : null);
+            dto.setSenderPlantCode(procPlant != null ? procPlant.getPlantCode() : null);
+            dto.setSenderUtilityId(materialNorm.getId());
+            dto.setSenderUtilityName(materialNorm.getDisplayName() != null
+                    ? materialNorm.getDisplayName() : materialNorm.getName());
+            dto.setSenderUtilityCode(materialNorm.getSapMaterialCode());
+            dto.setSenderUtilityUOM(materialNorm.getUom());
+            dto.setSenderCostCenterId(materialCostCenterId);
+
+            // ── Receiver = utility side (utility plant + Power_dis norm, NormType=1) ──
+            dto.setReceiverPlantId(utilityPlantId);
+            dto.setReceiverPlantName(utilPlant != null
+                    ? (utilPlant.getDisplayName() != null ? utilPlant.getDisplayName() : utilPlant.getName())
+                    : null);
+            dto.setReceiverPlantCode(utilPlant != null ? utilPlant.getPlantCode() : null);
+            if (powerDisNorm != null) {
+                dto.setReceiverUtilityId(powerDisNorm.getId());
+                dto.setReceiverUtilityName(powerDisNorm.getDisplayName() != null
+                        ? powerDisNorm.getDisplayName() : powerDisNorm.getName());
+                dto.setReceiverUtilityCode(powerDisNorm.getSapMaterialCode());
+                dto.setReceiverUtilityUOM(powerDisNorm.getUom());
+            }
+            dto.setReceiverCostCenterId(utilityCostCenterId);
+
+            logger.info("[SR Mapping] DTO built - senderUtility={}, receiverUtility={}, senderCC={}, receiverCC={}",
+                    dto.getSenderUtilityId(), dto.getReceiverUtilityId(),
+                    dto.getSenderCostCenterId(), dto.getReceiverCostCenterId());
+
+            AOPMessageVM srResponse = cppSRMappingService.updateSRMappingsByPlant(
+                    List.of(dto), aopYear);
+            logger.info("[SR Mapping] updateSRMappingsByPlant for import power source - code: {}, message: {}",
+                    srResponse.getCode(), srResponse.getMessage());
+        } catch (Exception e) {
+            // SR mapping failure must not roll back the import power source save
+            logger.error("[SR Mapping] Error creating SR mapping for import power source: {}",
+                    e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Finds the CPP_SR_Mapping_Master row linked to an import power source and
+     * invokes the shared {@link CPPSRMappingService#deleteSRMapping} flow — the
+     * same path the Sender/Receiver Mapping screen uses on delete (clears the
+     * SR mapping's NormsHeader child records for the source's AOP year).
+     * Failures are logged but never roll back the source delete.
+     */
+    private void deleteLinkedSrMapping(CPPImportPower importPower, UUID materialNormId) {
+        try {
+            UUID receiverNormId = importPower.getUtilityNormParameterFkId();
+            if (receiverNormId == null || importPower.getAopYear() == null
+                    || importPower.getAopYear().isBlank()) {
+                logger.warn("[DELETE Source] SR mapping cleanup skipped – missing receiver norm or aopYear (importPowerId={})",
+                        importPower.getId());
+                return;
+            }
+
+            List<String> masterIds = repository.findSrMappingMasterId(
+                    materialNormId.toString(), receiverNormId.toString());
+
+            if (masterIds.isEmpty()) {
+                logger.info("[DELETE Source] No CPP_SR_Mapping_Master found for norm pair sender={} receiver={} – nothing to clean up",
+                        materialNormId, receiverNormId);
+                return;
+            }
+
+            UUID srMappingId = UUID.fromString(masterIds.get(0));
+            logger.info("[DELETE Source] Found CPP_SR_Mapping_Master {} for importPowerId={} – invoking deleteSRMapping for aopYear={}",
+                    srMappingId, importPower.getId(), importPower.getAopYear());
+
+            AOPMessageVM srResponse = cppSRMappingService.deleteSRMapping(
+                    srMappingId, importPower.getAopYear());
+            logger.info("[DELETE Source] deleteSRMapping result - code: {}, message: {}",
+                    srResponse.getCode(), srResponse.getMessage());
+        } catch (Exception e) {
+            logger.error("[DELETE Source] SR mapping cleanup failed for importPowerId={}: {}",
+                    importPower.getId(), e.getMessage(), e);
+        }
+    }
+
+    // ========================================
+    // GET UTILITY PLANTS
+    // ========================================
+
+    @Override
+    public AOPMessageVM getUtilityPlants(UUID cppPlantId) {
+        logger.info("[GET Utility Plants] cppPlantId={}", cppPlantId);
+
+        AOPMessageVM response = new AOPMessageVM();
+
+        try {
+            if (cppPlantId == null) {
+                response.setCode(400);
+                response.setMessage("cppPlantId is required");
+                return response;
+            }
+
+            List<UtilityPlantProjection> rows = repository.getUtilityPlants(cppPlantId);
+
+            List<UtilityPlantDTO> result = rows.stream().map(row -> {
+                UtilityPlantDTO dto = new UtilityPlantDTO();
+                dto.setId(row.getId());
+                dto.setName(row.getName());
+                return dto;
+            }).collect(Collectors.toList());
+
+            logger.info("[GET Utility Plants] Found {} utility plant(s) for cppPlantId={}",
+                    result.size(), cppPlantId);
+
+            response.setCode(200);
+            response.setMessage("Utility plants fetched successfully");
+            response.setData(result);
+
+        } catch (Exception e) {
+            logger.error("[GET Utility Plants] Error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to fetch utility plants: " + e.getMessage());
         }
 
         return response;

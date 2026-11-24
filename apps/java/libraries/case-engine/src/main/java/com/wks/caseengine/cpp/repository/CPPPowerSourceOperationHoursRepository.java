@@ -149,4 +149,6 @@ public interface CPPPowerSourceOperationHoursRepository extends JpaRepository<CP
             @Param("aopYear") String aopYear);
 
     void deleteByAssetFkId(UUID assetFkId);
+
+    boolean existsByAssetFkId(UUID assetFkId);
 }

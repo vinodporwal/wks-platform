@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Box, Tooltip, IconButton } from '@mui/material'
-import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
@@ -381,18 +380,6 @@ const ImportPowerGrid = ({ setImportData }) => {
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Tooltip title='Edit Source'>
-            <IconButton
-              size='small'
-              onClick={() => {
-                setEditRowData(dataItem)
-                setAddRowDialogOpen(true)
-              }}
-            >
-              <EditIcon fontSize='small' />
-            </IconButton>
-          </Tooltip>
-
           <Tooltip title='Delete Source'>
             <IconButton
               size='small'
@@ -600,6 +587,7 @@ const ImportPowerGrid = ({ setImportData }) => {
         keycloak,
         rowToDelete.normParameterFkId,
         rowToDelete.importPlantFkId,
+        rowToDelete.aopYear,
       )
       setSnackbarOpen(true)
       setSnackbarData({
