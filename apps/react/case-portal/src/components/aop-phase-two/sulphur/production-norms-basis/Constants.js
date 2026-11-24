@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/sulphur/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import RowBasedKendoTable from 'components/aop-phase-two/common/RowBasedKendoTable/index'
+
+const isNormsBasisCheckbox = (item) => {
+  const typeStr = String(item?.type || item?.normType || '').trim().toLowerCase()
+  const uomStr = String(item?.UOM || item?.uom || '').trim().toLowerCase()
+  const isTypeMatch = typeStr === 'norms basis selection'
+  const isUomMatch =
+    uomStr === '1 = selected' ||
+    uomStr.replace(/\s+/g, '') === '1=selected'
+  return Boolean(isTypeMatch && isUomMatch)
+}
 
 const Constants = ({ startDate, endDate }) => {
   const keycloak = useSession()
@@ -36,24 +46,7 @@ const Constants = ({ startDate, endDate }) => {
 
 
   const ExcelName = generateExcelName(dataGridStore, `Production_Norms_Constant`)
-  const DUMMY_DATA = [
-    {
-      id:1,
-      productName: 'Sour water Specific density',
-      uom: '',
-      value: '1',
-      remarks: 'Power Consumption CBA',
-      dependantAttributeId: 'Power Consumption CBA',
-    },
-    {
-      id:2,
-      productName: 'Rich Amine Specific density',
-      uom: '',
-      value: '1.015',
-      remarks: 'Power Consumption CBA',
-      dependantAttributeId: 'Power Consumption CBA',
-    }
-  ]
+
   const columns = [
     {
       field: 'productName',
@@ -80,7 +73,7 @@ const Constants = ({ startDate, endDate }) => {
       minWidth: 120,
       align: 'left',
       headerAlign: 'left',
-      type: 'number1',
+      type: 'row-based',
       format: valueFormat,
     },
     {
@@ -119,17 +112,42 @@ const Constants = ({ startDate, endDate }) => {
         return
       }
 
-      const formattedData = res?.data?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
-        id: item?.id || index + 1,
-      }))
+      // Enforce at most one checked checkbox per group on initial load
+      const checkedGroups = new Set()
+
+      const formattedData = res?.data.map((item, index) => {
+        const isCheckbox = isNormsBasisCheckbox(item)
+        let val = item.value
+
+        if (isCheckbox) {
+          const rawVal = String(val ?? '').trim()
+          const isOne = rawVal === '1' || val === 1 || val === true
+          const groupKey = String(item.type || '').trim()
+
+          if (isOne && !checkedGroups.has(groupKey)) {
+            checkedGroups.add(groupKey)
+            val = true
+          } else {
+            val = false
+          }
+        }
+
+        return {
+          ...item,
+          remarks: item.remarks || '',
+          id: item?.id || item?.normParameterFKId || index + 1,
+          normType: item.type,
+          type: isCheckbox ? 'checkbox' : 'number1',
+          value: val,
+        }
+      })
       
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching constants data:', error)
       setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
     }
@@ -148,6 +166,7 @@ const Constants = ({ startDate, endDate }) => {
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: 'Constants',
+    singleCheckboxPerGroup: true,
   }
 
   const formatDateForAPI = (date) => {
@@ -206,8 +225,10 @@ const Constants = ({ startDate, endDate }) => {
     }
 
     const fieldsToCheck = ['value']
+    // Validate remarks only for numeric constant rows; checkbox toggles do not require remarks
+    const numericData = data.filter((row) => row.type !== 'checkbox')
     const validationError = validateRowDataWithRemarks(
-      data,
+      numericData,
       originalRows,
       fieldsToCheck,
       'productName',
@@ -223,7 +244,11 @@ const Constants = ({ startDate, endDate }) => {
       return
     }
 
-    const payload = modifiedData
+    // Convert boolean values back to "1" or "0" for checkbox rows in save payload
+    const payload = data.map((row) => ({
+      ...row,
+      value: row.type === 'checkbox' ? (row.value ? '1' : '0') : row.value,
+    }))
     try {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
@@ -383,7 +408,7 @@ const Constants = ({ startDate, endDate }) => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <AdvanceKendoTable
+      <RowBasedKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}
@@ -405,7 +430,7 @@ const Constants = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['type']}
+        groupBy={['normType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

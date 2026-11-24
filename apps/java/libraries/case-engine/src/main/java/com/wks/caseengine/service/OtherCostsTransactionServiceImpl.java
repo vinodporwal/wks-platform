@@ -275,7 +275,11 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 	        List<String> innerHeaders = new ArrayList<>();
 	        innerHeaders.add("SAP Material Code");
 	        innerHeaders.add("Name of Item");
-	        innerHeaders.add("UOM");
+			if("ppa-dc".equals(type)) {
+	            innerHeaders.add("Unit / MT");
+	        } else {
+				innerHeaders.add("UOM");
+			}
 	        innerHeaders.add("Budget "+getNextFiscalYear(year));
 	        innerHeaders.add("Actual "+getNextFiscalYear(year));
 	        innerHeaders.add("Proposed Cost "+year);

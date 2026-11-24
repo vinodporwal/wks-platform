@@ -207,20 +207,22 @@ public class CPPImportPowerController {
     // ========================================
 
     /**
-     * DELETE /task/jmd/imported-power-plans/source/{normParameterId}?procurementPlant={uuid}
+     * DELETE /task/jmd/imported-power-plans/source/{normParameterId}?procurementPlant={uuid}&aopYear={year}
      *
-     * Soft-deletes the import power source by setting isVisible = false on the NormParameters entry.
-     * The record is excluded from all subsequent GET calls automatically.
+     * Deletes the CPPImportPower row for the given material norm + AOP year,
+     * removes its op-hours, cleans up the linked SR mapping entry, and keeps
+     * the NormParameters row untouched.
      */
     @DeleteMapping("/jmd/imported-power-plans/source/{normParameterId}")
     public ResponseEntity<AOPMessageVM> deleteImportPowerSource(
             @PathVariable UUID normParameterId,
-            @RequestParam UUID procurementPlant) {
+            @RequestParam UUID procurementPlant,
+            @RequestParam String aopYear) {
 
-        logger.info("[DELETE /jmd/imported-power-plans/source/{}] procurementPlant: {}",
-                normParameterId, procurementPlant);
+        logger.info("[DELETE /jmd/imported-power-plans/source/{}] procurementPlant: {}, aopYear: {}",
+                normParameterId, procurementPlant, aopYear);
 
-        AOPMessageVM response = cppImportPowerService.deleteImportPowerSource(normParameterId, procurementPlant);
+        AOPMessageVM response = cppImportPowerService.deleteImportPowerSource(normParameterId, procurementPlant, aopYear);
 
         logger.info("[DELETE /jmd/imported-power-plans/source/{}] Response - code: {}, message: {}",
                 normParameterId, response.getCode(), response.getMessage());
@@ -268,6 +270,38 @@ public class CPPImportPowerController {
         AOPMessageVM response = cppImportPowerService.getImportProcurementPlants(cppPlant);
 
         logger.info("[GET /jmd/imported-power-plans/procurement-plants] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        int httpStatus = response.getCode() > 0 ? response.getCode() : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // ========================================
+    // GET UTILITY PLANTS ENDPOINT
+    // ========================================
+
+    /**
+     * GET /task/jmd/imported-power-plants/utility-plants?cppPlant={uuid}
+     *
+     * Returns all Utility-category plants linked to the given CPP plant
+     * (Plants.SourceName = cppPlantId, BusinessCategoryName = 'Utility').
+     *
+     * Example response:
+     * <pre>
+     * [
+     *   { "id": "UUID", "name": "Utility Plant Display Name" }
+     * ]
+     * </pre>
+     */
+    @GetMapping("/jmd/imported-power-plants/utility-plants")
+    public ResponseEntity<AOPMessageVM> getUtilityPlants(
+            @RequestParam UUID cppPlant) {
+
+        logger.info("[GET /jmd/imported-power-plants/utility-plants] cppPlant: {}", cppPlant);
+
+        AOPMessageVM response = cppImportPowerService.getUtilityPlants(cppPlant);
+
+        logger.info("[GET /jmd/imported-power-plants/utility-plants] Response - code: {}, message: {}",
                 response.getCode(), response.getMessage());
 
         int httpStatus = response.getCode() > 0 ? response.getCode() : 500;

@@ -15,6 +15,7 @@ public class CppHrsgHeatRateDto {
 
     private String id;
     private String assetFkId;
+    private String cppPlantName;
     private String equipType;
     private String cppUtility;
     private Double hrsgLoad;
@@ -29,4 +30,5 @@ public class CppHrsgHeatRateDto {
     private Double proposedYearFinalHeatRate;
     private String saveStatus;
     private String errDescription;
+    private String rowHash;
 }

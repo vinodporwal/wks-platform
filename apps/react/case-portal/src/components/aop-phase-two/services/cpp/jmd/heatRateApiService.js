@@ -268,6 +268,243 @@ function createHeatRateApi(assetType, config) {
   }
 }
 
+// ===================== ALL-ASSETS EXPORT / IMPORT (GENERIC) ===================== //
+
+/**
+ * Exports heat rate data for ALL assets of a type across the selected plants.
+ * The Excel contains a "CPP Plant" column to differentiate assets per plant.
+ */
+async function exportHeatRateAllExcel(
+  keycloak,
+  dataEndpoint,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+  defaultFileName,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    queryParams.append(
+      'plantIds',
+      Array.isArray(plantIds) ? plantIds.join(',') : plantIds,
+    )
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/jmd/${dataEndpoint}/all/export?${queryParams.toString()}`
+  const headers = {
+    Accept:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = defaultFileName
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(
+        /filename=?"([^";\n]+)"?/i,
+      )
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error(`Error exporting all heat rate Excel (${dataEndpoint}):`, e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Imports heat rate data for ALL assets of a type across the selected plants.
+ * Each row is resolved to an asset via the hidden Asset Id column,
+ * or via CPP Plant + Equipment Type columns.
+ */
+async function importHeatRateAllExcel(
+  file,
+  keycloak,
+  dataEndpoint,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    queryParams.append(
+      'plantIds',
+      Array.isArray(plantIds) ? plantIds.join(',') : plantIds,
+    )
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/jmd/${dataEndpoint}/all/import?${queryParams.toString()}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    const responseData = await json(keycloak, resp)
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import heat rate data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return responseData
+  } catch (e) {
+    console.error(`Error importing all heat rate Excel (${dataEndpoint}):`, e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== ALL-ASSETS EXPORT / IMPORT (GT) ===================== //
+
+/**
+ * Exports heat rate data for ALL GT assets across the selected plants.
+ * The Excel contains a "CPP Plant" column to differentiate assets per plant.
+ */
+async function exportGTHeatRateAllExcel(
+  keycloak,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    queryParams.append(
+      'plantIds',
+      Array.isArray(plantIds) ? plantIds.join(',') : plantIds,
+    )
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/jmd/gt-heat-rate/all/export?${queryParams.toString()}`
+  const headers = {
+    Accept:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = `GT_Heat_Rate_All_Plants_${aopYear}.xlsx`
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(
+        /filename=?"([^";\n]+)"?/i,
+      )
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error('Error exporting all GT heat rate Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+/**
+ * Imports heat rate data for ALL GT assets across the selected plants.
+ * Each row is resolved to an asset via the hidden Asset Id column,
+ * or via CPP Plant + Equipment Type columns.
+ */
+async function importGTHeatRateAllExcel(
+  file,
+  keycloak,
+  aopYear,
+  startDate,
+  endDate,
+  plantIds,
+) {
+  const queryParams = new URLSearchParams()
+  queryParams.append('year', aopYear)
+  if (startDate) queryParams.append('startDate', startDate)
+  if (endDate) queryParams.append('endDate', endDate)
+  if (plantIds && plantIds.length > 0) {
+    queryParams.append(
+      'plantIds',
+      Array.isArray(plantIds) ? plantIds.join(',') : plantIds,
+    )
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/jmd/gt-heat-rate/all/import?${queryParams.toString()}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    const responseData = await json(keycloak, resp)
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import GT heat rate data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return responseData
+  } catch (e) {
+    console.error('Error importing all GT Heat Rate Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
 // ===================== CREATE API INSTANCES ===================== //
 
 // GT - uses shared dropdown with STG
@@ -321,12 +558,41 @@ export const HeatRateApiService = {
   saveGTHeatRateData: gtApi.saveHeatRateData,
   saveGTHeatRateExcel: gtApi.saveHeatRateExcel,
   exportGTHeatRateExcel: gtApi.exportHeatRateExcel,
+  exportGTHeatRateAllExcel,
+  importGTHeatRateAllExcel,
 
   // STG
   getSTGHeatRateData: stgApi.getHeatRateData,
   saveSTGHeatRateData: stgApi.saveHeatRateData,
   saveSTGHeatRateExcel: stgApi.saveHeatRateExcel,
   exportSTGHeatRateExcel: stgApi.exportHeatRateExcel,
+  exportSTGHeatRateAllExcel: (keycloak, aopYear, startDate, endDate, plantIds) =>
+    exportHeatRateAllExcel(
+      keycloak,
+      'stg-heat-rate',
+      aopYear,
+      startDate,
+      endDate,
+      plantIds,
+      `STG_Heat_Rate_All_Plants_${aopYear}.xlsx`,
+    ),
+  importSTGHeatRateAllExcel: (
+    file,
+    keycloak,
+    aopYear,
+    startDate,
+    endDate,
+    plantIds,
+  ) =>
+    importHeatRateAllExcel(
+      file,
+      keycloak,
+      'stg-heat-rate',
+      aopYear,
+      startDate,
+      endDate,
+      plantIds,
+    ),
 
   // HRSG
   getHRSGAssetDropdown: hrsgApi.getAssetDropdown,
@@ -334,6 +600,33 @@ export const HeatRateApiService = {
   saveHRSGHeatRateData: hrsgApi.saveHeatRateData,
   saveHRSGHeatRateExcel: hrsgApi.saveHeatRateExcel,
   exportHRSGHeatRateExcel: hrsgApi.exportHeatRateExcel,
+  exportHRSGHeatRateAllExcel: (keycloak, aopYear, startDate, endDate, plantIds) =>
+    exportHeatRateAllExcel(
+      keycloak,
+      'hrsg-heat-rate',
+      aopYear,
+      startDate,
+      endDate,
+      plantIds,
+      `HRSG_Heat_Rate_All_Plants_${aopYear}.xlsx`,
+    ),
+  importHRSGHeatRateAllExcel: (
+    file,
+    keycloak,
+    aopYear,
+    startDate,
+    endDate,
+    plantIds,
+  ) =>
+    importHeatRateAllExcel(
+      file,
+      keycloak,
+      'hrsg-heat-rate',
+      aopYear,
+      startDate,
+      endDate,
+      plantIds,
+    ),
 
   // AUXBOILER
   getAuxBoilerAssetDropdown: auxBoilerApi.getAssetDropdown,
@@ -341,6 +634,39 @@ export const HeatRateApiService = {
   saveAuxBoilerHeatRateData: auxBoilerApi.saveHeatRateData,
   saveAuxBoilerHeatRateExcel: auxBoilerApi.saveHeatRateExcel,
   exportAuxBoilerHeatRateExcel: auxBoilerApi.exportHeatRateExcel,
+  exportAuxBoilerHeatRateAllExcel: (
+    keycloak,
+    aopYear,
+    startDate,
+    endDate,
+    plantIds,
+  ) =>
+    exportHeatRateAllExcel(
+      keycloak,
+      'auxboiler-heat-rate',
+      aopYear,
+      startDate,
+      endDate,
+      plantIds,
+      `AUXBOILER_Heat_Rate_All_Plants_${aopYear}.xlsx`,
+    ),
+  importAuxBoilerHeatRateAllExcel: (
+    file,
+    keycloak,
+    aopYear,
+    startDate,
+    endDate,
+    plantIds,
+  ) =>
+    importHeatRateAllExcel(
+      file,
+      keycloak,
+      'auxboiler-heat-rate',
+      aopYear,
+      startDate,
+      endDate,
+      plantIds,
+    ),
 
   // CCPP
   getCcppAssetDropdown: ccppApi.getAssetDropdown,

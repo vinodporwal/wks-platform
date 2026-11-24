@@ -590,7 +590,17 @@ public class PackagingConsumablesServiceImpl implements PackagingConsumablesServ
 		             dtoList = (List<PackagingAndConsumableTransactionDTO>) innerMap.get("data");
 		        }
 	        }
-
+			String verticalName = null;
+			if (plantId != null && !plantId.trim().isEmpty()) {
+				try {
+					verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+			boolean staple = "STAPLE".equalsIgnoreCase(verticalName);
+			boolean filament = "Filament".equalsIgnoreCase(verticalName);
+			boolean PYPET = "PY-PET".equalsIgnoreCase(verticalName);
 	        XSSFWorkbook workbook = new XSSFWorkbook();
 	        XSSFSheet sheet = workbook.createSheet("Sheet1");
 	        int currentRow = 0;
@@ -601,7 +611,11 @@ public class PackagingConsumablesServiceImpl implements PackagingConsumablesServ
 	        List<String> innerHeaders = new ArrayList<>();
 	        innerHeaders.add("SAP Material Code");
 	        innerHeaders.add("Name of Item");
-	        innerHeaders.add("Unit");
+			if (staple || filament || PYPET) {
+				innerHeaders.add("Unit / MT");
+			} else {
+				innerHeaders.add("Unit");
+			}
 	        innerHeaders.add("Packaging Price (Rs)");
 	        innerHeaders.add("Budget "+getNextFiscalYear(year));
 	        innerHeaders.add("Actual "+getNextFiscalYear(year));

@@ -2,6 +2,7 @@ package com.wks.caseengine.cpp.repository;
 
 import com.wks.caseengine.cpp.dto.CPPImportPowerProjection;
 import com.wks.caseengine.cpp.dto.ImportProcurementPlantProjection;
+import com.wks.caseengine.cpp.dto.UtilityPlantProjection;
 import com.wks.caseengine.cpp.entity.CPPImportPower;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -79,7 +80,13 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             ip.ImportPlantFK_ID                             AS importPlantFkId,
             ip.CPPPlant_FK_ID                               AS cppPlantFkId,
             ip.NormParameter_FK_Id                          AS normParameterFkId,
-            ip.Utility_NormParameter_FK_Id                  AS utilityNormParameterFkId
+            ip.Utility_NormParameter_FK_Id                  AS utilityNormParameterFkId,
+            unp.Plant_FK_Id                                  AS utilityPlantId,
+            utilityPlant.DisplayName                         AS utilityPlantName,
+            ip.Utility_CostCenter_FK_Id                      AS utilityCostCenterId,
+            ucc.CostCenterName                               AS utilityCostCenterName,
+            ip.Material_CostCenter_FK_Id                     AS materialCostCenterId,
+            mcc.CostCenterName                               AS materialCostCenterName
         FROM [dbo].[CPPImportPower] ip WITH(NOLOCK)
         INNER JOIN ImportPlants imp
             ON ip.ImportPlantFK_ID = imp.importPlantId
@@ -92,6 +99,12 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             ON np.Id = ip.NormParameter_FK_Id
         LEFT JOIN [dbo].[NormParameters] unp WITH(NOLOCK)
             ON unp.Id = ip.Utility_NormParameter_FK_Id
+        LEFT JOIN [dbo].[Plants] utilityPlant WITH(NOLOCK)
+            ON utilityPlant.Id = unp.Plant_FK_Id
+        LEFT JOIN [dbo].[CPPCostCentersMaster] ucc WITH(NOLOCK)
+            ON ucc.CostCenterId = CAST(ip.Utility_CostCenter_FK_Id AS NVARCHAR(36))
+        LEFT JOIN [dbo].[CPPCostCentersMaster] mcc WITH(NOLOCK)
+            ON mcc.CostCenterId = CAST(ip.Material_CostCenter_FK_Id AS NVARCHAR(36))
         WHERE ip.AOPYear = :aopYear
           AND ISNULL(np.isVisible, 1) = 1
         ORDER BY importPlant.DisplayName, np.SAPMaterialCode
@@ -132,11 +145,59 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
     List<ImportProcurementPlantProjection> getProcurementPlantsWithSources(
             @Param("cppPlantId") UUID cppPlantId);
 
+    /**
+     * Returns all Utility-category plants linked to the given CPP plant.
+     *
+     * Query logic:
+     *  - Finds plants where SourceName = cppPlantId AND BusinessCategoryName = 'Utility'
+     *  - TRY_CONVERT is used so non-UUID SourceName values are silently skipped
+     */
+    @Query(value = """
+        SELECT
+            p.Id            AS id,
+            p.DisplayName   AS name
+        FROM [dbo].[Plants] p WITH(NOLOCK)
+        WHERE TRY_CONVERT(UNIQUEIDENTIFIER, p.SourceName) = :cppPlantId
+          AND p.BusinessCategoryName = 'Utility'
+        ORDER BY p.DisplayName
+        """, nativeQuery = true)
+    List<UtilityPlantProjection> getUtilityPlants(
+            @Param("cppPlantId") UUID cppPlantId);
+
     CPPImportPower findByNormParameterFkId(UUID normParameterFkId);
+
+    /**
+     * Finds all CPPImportPower rows for a material norm within a specific AOP year.
+     * Needed because the same norm can have rows for multiple financial years
+     * and legacy duplicates may exist for the same year.
+     */
+    List<CPPImportPower> findByNormParameterFkIdAndAopYear(UUID normParameterFkId, String aopYear);
+
+    /**
+     * Finds the CPP_SR_Mapping_Master row created for an import power source.
+     * The master stores the material (sender) norm in Utility_NormParameter_FK_Id
+     * and the Power_dis (receiver) norm in Generation_NormParameter_FK_Id.
+     */
+    @Query(value = """
+        SELECT TOP 1 ID
+        FROM [dbo].[CPP_SR_Mapping_Master] WITH(NOLOCK)
+        WHERE Utility_NormParameter_FK_Id = :senderNormId
+          AND Generation_NormParameter_FK_Id = :receiverNormId
+        """, nativeQuery = true)
+    List<String> findSrMappingMasterId(
+            @Param("senderNormId") String senderNormId,
+            @Param("receiverNormId") String receiverNormId);
 
     /**
      * Fetches all CPPImportPower entities for the given CPP plant IDs and AOP year.
      * Used by the carry-forward logic to locate previous-year records to clone.
      */
     List<CPPImportPower> findByCppPlantFkIdInAndAopYear(List<UUID> cppPlantFkIds, String aopYear);
+
+    /**
+     * Finds existing CPPImportPower rows for duplicate detection:
+     * same material norm + same CPP plant + same AOP year.
+     */
+    List<CPPImportPower> findByNormParameterFkIdAndCppPlantFkIdAndAopYear(
+            UUID normParameterFkId, UUID cppPlantFkId, String aopYear);
 }

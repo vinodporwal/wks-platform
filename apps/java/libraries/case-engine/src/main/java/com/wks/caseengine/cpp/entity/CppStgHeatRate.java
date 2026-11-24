@@ -36,6 +36,9 @@ public class CppStgHeatRate {
     @Column(name = "Id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "Asset_FK_Id")
+    private UUID assetFkId;
+
     @Column(name = "AssetName", length = 100)
     private String assetName;
 

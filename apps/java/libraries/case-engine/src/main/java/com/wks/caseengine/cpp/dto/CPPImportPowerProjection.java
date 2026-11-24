@@ -40,4 +40,10 @@ public interface CPPImportPowerProjection {
     UUID getCppPlantFkId();
     UUID getNormParameterFkId();
     UUID getUtilityNormParameterFkId();
+    UUID getUtilityPlantId();
+    String getUtilityPlantName();
+    UUID getUtilityCostCenterId();
+    String getUtilityCostCenterName();
+    UUID getMaterialCostCenterId();
+    String getMaterialCostCenterName();
 }

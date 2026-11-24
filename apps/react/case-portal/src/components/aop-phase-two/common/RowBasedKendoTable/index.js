@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
 import AdvanceKendoTable from '../AdvanceKendoTable/index'
 import {
   DynamicRowCellEditor,
@@ -17,6 +17,9 @@ const RowBasedKendoTable = (props) => {
   )
 
   const { columns, rows, ...restProps } = props
+
+  const rowsRef = useRef(rows)
+  rowsRef.current = rows
 
   const getDecimalPlacesFromFormat = (format) => {
     if (!format) return 2
@@ -90,21 +93,113 @@ const RowBasedKendoTable = (props) => {
                 {...cellProps.tdProps}
                 colSpan={colSpan || cellProps.tdProps?.colSpan}
                 title={String(displayValue ?? '')}
-                style={{ ...tdStyle, textAlign: 'center', padding: '6px 2px' }}
+                style={{
+                  ...tdStyle,
+                  textAlign: 'center',
+                  padding: '6px 2px',
+                  cursor: isCellDisabled ? 'default' : 'pointer',
+                }}
                 className='k-checkbox-center'
               >
                 {dataItem?.hideCheckbox ? null : (
-                <div style={{ pointerEvents: 'none', display: 'inline-block', textAlign: 'center' }}>
-                  <Checkbox
-                    checked={!!value}
-                    disabled={isCellDisabled}
-                    size="medium"
-                    style={{ padding: '0px' }}
-                  />
-                </div>
+                  <div style={{ display: 'inline-block', textAlign: 'center' }}>
+                    <Checkbox
+                      checked={!!value}
+                      disabled={isCellDisabled}
+                      size="medium"
+                      style={{ padding: '0px' }}
+                      onChange={(e) => {
+                        if (isCellDisabled) return;
+                        const nextVal =
+                          typeof e?.target?.checked === 'boolean'
+                            ? e.target.checked
+                            : !value;
+                        const itemId =
+                          dataItem?.id !== undefined
+                            ? dataItem.id
+                            : dataItem?.idFromApi;
+
+                        const selectiveGroupField = Array.isArray(props.groupBy)
+                          ? props.groupBy[0]
+                          : typeof props.groupBy === 'object'
+                            ? props.groupBy?.field
+                            : props.groupBy;
+
+                        const targetGroupValue =
+                          props.permissions?.singleCheckboxPerGroup &&
+                          selectiveGroupField &&
+                          nextVal === true
+                            ? String(dataItem?.[selectiveGroupField] ?? '').trim()
+                            : '';
+
+                        const shouldEnforceSingle = Boolean(targetGroupValue);
+
+                        if (props.setModifiedCells) {
+                          props.setModifiedCells((prev) => {
+                            const next = {
+                              ...prev,
+                              [itemId]: {
+                                ...dataItem,
+                                ...(prev[itemId] || {}),
+                                [field]: nextVal,
+                                inEdit: true,
+                              },
+                            };
+                            if (
+                              shouldEnforceSingle &&
+                              Array.isArray(rowsRef.current)
+                            ) {
+                              rowsRef.current.forEach((r) => {
+                                const rId =
+                                  r?.id !== undefined ? r.id : r?.idFromApi;
+                                if (String(rId) === String(itemId)) return;
+                                const rGroupVal = String(
+                                  r?.[selectiveGroupField] ?? '',
+                                ).trim();
+                                if (
+                                  rGroupVal === targetGroupValue &&
+                                  Boolean(r?.[field])
+                                ) {
+                                  next[rId] = {
+                                    ...r,
+                                    ...(prev[rId] || {}),
+                                    [field]: false,
+                                    inEdit: true,
+                                  };
+                                }
+                              });
+                            }
+                            return next;
+                          });
+                        }
+
+                        if (props.setRows) {
+                          props.setRows((prev) =>
+                            (prev || []).map((r) => {
+                              const rId =
+                                r?.id !== undefined ? r.id : r?.idFromApi;
+                              const isTarget = String(rId) === String(itemId);
+                              if (isTarget) {
+                                return { ...r, [field]: nextVal, inEdit: true };
+                              }
+                              if (
+                                shouldEnforceSingle &&
+                                String(r?.[selectiveGroupField] ?? '').trim() ===
+                                  targetGroupValue &&
+                                Boolean(r?.[field])
+                              ) {
+                                return { ...r, [field]: false, inEdit: true };
+                              }
+                              return r;
+                            }),
+                          );
+                        }
+                      }}
+                    />
+                  </div>
                 )}
               </td>
-            )
+            );
           }
 
           return (

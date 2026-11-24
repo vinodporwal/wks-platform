@@ -16,6 +16,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -236,8 +238,12 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      setRows(res?.data)
-      setOriginalRows(res?.data)
+      const rowsWithRemarks = res?.data?.map((row) => ({
+        ...row,
+        remarks: row.remarks || '',
+      }))
+      setRows(rowsWithRemarks)
+      setOriginalRows(rowsWithRemarks)
     } catch (error) {
       console.error('Error fetching STG heat rate data:', error)
       setSnackbarOpen(true)
@@ -354,16 +360,15 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
-    setLoading(true)
+    setImportLoading(true)
     try {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      const response = await HeatRateApiService.saveSTGHeatRateExcel(
+      const response = await HeatRateApiService.importSTGHeatRateAllExcel(
         file,
         keycloak,
         AOP_YEAR,
-        selectedPlant,
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
@@ -410,11 +415,12 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'error',
       })
     } finally {
-      setLoading(false)
+      setImportLoading(false)
     }
   }
 
   const handleExport = async () => {
+    setExportLoading(true)
     setSnackbarOpen(true)
     setSnackbarData({
       message: 'Excel download started!',
@@ -425,19 +431,13 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const formattedStartDate = startDate ? formatDate(startDate) : null
       const formattedEndDate = endDate ? formatDate(endDate) : null
 
-      const selectedOption = dropdownOptions?.find(
-        (opt) => opt.id === selectedPlant,
-      )
-      const assetDisplayName = selectedOption?.name
-
-      await HeatRateApiService.exportSTGHeatRateExcel(
+      // Export heat rate data for ALL STG assets across selected plants
+      await HeatRateApiService.exportSTGHeatRateAllExcel(
         keycloak,
-        selectedPlant,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
         PLANT_ID_LIST,
-        assetDisplayName,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -449,6 +449,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
         message: 'Excel download failed. Please try again.',
         severity: 'error',
       })
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -666,7 +668,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!(loading || exportLoading || importLoading)} />
 
       <AdvanceKendoTable
         columns={columns}
