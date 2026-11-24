@@ -74,7 +74,7 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
     },
     {
       field: 'unit',
-      title: 'Unit',
+      title: 'Unit / MT',
       minWidth: 70,
       editable: false,
     },
