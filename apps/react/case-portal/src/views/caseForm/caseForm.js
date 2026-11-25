@@ -447,7 +447,7 @@ return {
 };
       })
       .then(({ caseData, updatedFormStructure }) => {
-        const isDraft = (caseData?.isDraft || aCase?.isDraft) === 'y'
+        const isDraft = (caseData?.isDraft || aCase?.isDraft || JSON.parse(caseData?.attributes?.[0]?.value || '{}')?.isDraft) === 'y'
         setIsDraft(isDraft);
         setIsOverdue(caseData?.isDraft === 'o');
         const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
@@ -833,21 +833,30 @@ return {
   const onAnalysisAndValueRealizationSave = (eventData, isDraftFlag) => {
     // eventData comes from onCustomEvent and always has the latest form values
     const caseNumber = aCase?.businessKey || aCase?.caseNo || ''
-    const liveData = { ...(eventData || formData?.data) }
-
+    const rawContainer = eventData?.container || formData?.data?.container || {}
+    const liveData = { ...formData?.data?.container, ...rawContainer, ...(eventData || {}) }
+    delete liveData.container
 
     liveData.caseNo = caseNumber
-    const selectedStatus = liveData?.caseStatus ?? formData?.data?.container?.caseStatus ?? aCase?.caseStatus ?? aCase?.status?.id ?? 1
+    liveData.isDraft = isDraftFlag
+    const selectedStatus = liveData?.caseStatus ?? rawContainer?.caseStatus ?? aCase?.caseStatus ?? aCase?.status?.id ?? 1
     liveData.caseStatus = Number(selectedStatus) || selectedStatus || 1
 
     const liveContainer = { container: liveData }
     setLoading(true)
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
+
+    // For Draft ('y'), only basic fields are required. For final submit, analysis fields are also required.
+           const hasAnalysisTeam = Array.isArray(liveData?.analysisTeam)
+      ? liveData.analysisTeam.length > 0
+      : Boolean(liveData?.analysisTeam && String(liveData.analysisTeam).trim() !== '')
+    const requiredFields = (isDraftFlag === 'y' && !hasAnalysisTeam)
+      ? ['caseDescription', 'dueDate', 'faultCategory']
+      : ['caseDescription', 'dueDate', 'faultCategory', 'caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
     const missingFields = requiredFields.filter(
       (field) => !liveData?.[field],
     )
     if (missingFields.length > 0) {
-      setSnackbarMessages([`Please fill in all required fields. ${requiredFields}`])
+      setSnackbarMessages(['Please fill in all required fields.'])
       setSnackbarOpen(true)
       setLoading(false)
       return

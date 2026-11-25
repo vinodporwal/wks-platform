@@ -197,6 +197,31 @@ public class CaseDefinitionController {
 			@RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "0") int offset) {
         int page = (limit > 0) ? offset / limit : 0;
+
+        // When opened from parent (ExxonMobil / Fuels & Lubes), resolve actual asset from the selected event
+                if (eventIds != null && !eventIds.isBlank()) {
+            try {
+                List<Long> eIds = java.util.Arrays.stream(eventIds.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(Long::parseLong)
+                        .collect(Collectors.toList());
+                List<FaultEvents> events = caseDefinitionService.getAllEvents(eIds);
+                if (events != null && !events.isEmpty()) {
+                    String resolved = events.get(0).getAssetName();
+                    if (resolved == null || resolved.isBlank()) {
+                        resolved = events.get(0).getAssetDisplayName();
+                    }
+                    if (resolved != null && !resolved.isBlank()) {
+                        System.out.println(">>> [Link Case] Changed asset from " + assetName + " to: " + resolved);
+                        assetName = resolved;
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println(">>> [Link Case] Error resolving asset: " + e.getMessage());
+            }
+        }
+
 		List<Case> cases = caseDefinitionService.getCaseDetails(assetName,hierarchyName != null ? hierarchyName : "", page, limit);
 		long total = com.wks.caseengine.cases.definition.service.CaseDefinitionServiceImpl.totalHolder.get();
 		com.wks.caseengine.cases.definition.service.CaseDefinitionServiceImpl.totalHolder.remove();
