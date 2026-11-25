@@ -3315,6 +3315,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		boolean elastomerJMD =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean elastomerAndHMD = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD");
+		boolean elastomerVmd = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("VMD");
 		boolean elastomerHmdsbr = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		boolean elastomerHmdPbr3 = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
@@ -3364,7 +3365,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
 	                plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 	                plantMaintenanceTransaction.setId(UUID.randomUUID());
-	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || elastomerJMD || monthDropdown || pvc || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("Aromatics") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("MEG")) {
+	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || elastomerJMD || elastomerVmd || monthDropdown || pvc || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("Aromatics") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("MEG")) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
