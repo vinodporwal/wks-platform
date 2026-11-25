@@ -2215,12 +2215,12 @@ return {
 {console.log('***** formData at render', formData)}
                     
                     {isFormData && (
-                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${!isDraft && (aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3') ? 'case-closed' : ''}`}>
+                      <div className={`${!isDraft ? 'hide-draft-button' : ''} ${!isDraft && (formData?.data?.container?.caseStatus == 3 || aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3') ? 'case-closed' : ''}`}>
                       <Form
                         form={form.structure}
                          submission={{ ...formData, processExistsForBusinessKey }}
                           options={{
-                          readOnly: isCaseViewer || (!isDraft && (aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3' || aCase?.status === 'CLOSED_CASE_STATUS')),
+                          readOnly: isCaseViewer || (!isDraft && (formData?.data?.container?.caseStatus == 3 || aCase?.status?.name === 'Closed' || aCase?.caseStatus === 3 || aCase?.caseStatus === '3' || aCase?.status === 'CLOSED_CASE_STATUS')),
                           fileService: new StorageService(),
                         }}
                         onSubmit={(submission) => {
@@ -2434,8 +2434,15 @@ return {
                     </Snackbar>
                   </Grid>
                 </TabPanel>
-                <TabPanel value={mainTabIndex} index={1}>
-                  <Documents aCase={aCase} initialValue={documents || []} />
+                        <TabPanel value={mainTabIndex} index={1}>
+                          <Documents
+                    aCase={{
+                      ...aCase,
+                      isDraft: isDraft ? 'y' : 'n',
+                      caseStatus: aCase?.caseStatus ?? formData?.data?.container?.caseStatus,
+                    }}
+                    initialValue={documents || []}
+                  />
                 </TabPanel>
 
                 <TabPanel value={mainTabIndex} index={2}>
@@ -2446,7 +2453,11 @@ return {
                   >
                     <Grid item xs={12}>
                       <Comments
-                        aCase={aCase}
+                        aCase={{
+                          ...aCase,
+                          isDraft: isDraft ? 'y' : 'n',
+                          caseStatus: aCase?.caseStatus ?? formData?.data?.container?.caseStatus,
+                        }}
                         getCaseInfo={getCaseInfo}
                         comments={comments ? comments : []}
                       />
