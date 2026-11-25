@@ -35,6 +35,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
@@ -337,14 +338,8 @@ public class InterSitePowerTransferServiceImpl implements InterSitePowerTransfer
         int remarksColIndex = headers.size() - 3;
         ExcelColumns.autoSize(sheet, headers.size(), remarksColIndex);
 
-        // Protect the sheet so locked/unlocked cell styles take effect.
-        // Only Apr–Mar and Remarks columns are unlocked (editable); all other
-        // columns are locked with a grey background.
-        sheet.protectSheet("");
-        org.apache.poi.xssf.usermodel.XSSFSheet xssfSheet =
-                (org.apache.poi.xssf.usermodel.XSSFSheet) sheet;
-        xssfSheet.lockFormatColumns(false);
-        xssfSheet.lockFormatRows(false);
+        // AutoFilter on the header row so filter dropdowns are available
+        sheet.setAutoFilter(new CellRangeAddress(0, sheet.getLastRowNum(), 0, headers.size() - 1));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         workbook.write(baos);
@@ -817,8 +812,8 @@ public class InterSitePowerTransferServiceImpl implements InterSitePowerTransfer
         int remarksColIndex = headers.size() - 3;
         ExcelColumns.autoSize(sheet, headers.size(), remarksColIndex);
 
-        // ── Sheet protection: locked = read-only, unlocked = editable ─────
-        ExcelStyles.applySheetProtectionWithAutoFilter(sheet, headers.size());
+        // AutoFilter on the header row so filter dropdowns are available
+        sheet.setAutoFilter(new CellRangeAddress(0, sheet.getLastRowNum(), 0, headers.size() - 1));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         workbook.write(baos);

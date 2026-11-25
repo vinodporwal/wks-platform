@@ -76,4 +76,16 @@ public class NormBasedUtilityBudgetSummaryResponseDTO {
 
     @JsonProperty("annual")
     private NormBasedUtilityBudgetSummaryPeriodDTO annual;
+
+    @JsonProperty("assetName")
+    private String assetName;
+
+    @JsonProperty("displayName")
+    private String displayName;
+
+    @JsonProperty("assetType")
+    private String assetType;
+
+    @JsonProperty("steamFuelType")
+    private String steamFuelType;
 }

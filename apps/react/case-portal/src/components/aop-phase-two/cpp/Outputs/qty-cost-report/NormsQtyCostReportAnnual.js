@@ -250,6 +250,14 @@ const NormsQtyCostReportAnnual = () => {
       locked: true,
       minWidth: 120,
     },
+    {
+      field: 'steamFuelType',
+      title: 'Fuel Allocation',
+      widthT: 150,
+      type: 'text',
+      editable: false,
+      minWidth: 150,
+    },
     // Material Activity
     {
       field: 'materialActivity',
