@@ -3,13 +3,14 @@ import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo, { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-
 
 // Only users with this role can edit the Fixed Min / Fixed Max columns.
 const CPP_MASTER_ROLE = 'cpp-master'
@@ -37,13 +38,13 @@ const PowerAssetCapacity = ({
     jmdSelectedPlants,
   } = dataGridStore
   const AOP_YEAR = year?.selectedYear
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Asset_Capacity')
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Capacity')
 
-    // Only cpp-master users may edit Fixed Min / Fixed Max.
-    const isCppMasterRole = useMemo(
-      () => keycloak?.realmAccess?.roles?.includes(CPP_MASTER_ROLE) || false,
-      [keycloak?.realmAccess?.roles],
-    )
+  // Only cpp-master users may edit Fixed Min / Fixed Max.
+  const isCppMasterRole = useMemo(
+    () => keycloak?.realmAccess?.roles?.includes(CPP_MASTER_ROLE) || false,
+    [keycloak?.realmAccess?.roles],
+  )
 
   // Multi-plant list — same pattern as PowerAssetAvailability
   const PLANT_ID_LIST = useMemo(
