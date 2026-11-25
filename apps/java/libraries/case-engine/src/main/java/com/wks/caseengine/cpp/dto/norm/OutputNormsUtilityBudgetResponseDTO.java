@@ -102,6 +102,18 @@ public class OutputNormsUtilityBudgetResponseDTO {
     @JsonProperty("remarks")
     private String remarks;
 
+    @JsonProperty("assetName")
+    private String assetName;
+
+    @JsonProperty("displayName")
+    private String displayName;
+
+    @JsonProperty("assetType")
+    private String assetType;
+
+    @JsonProperty("steamFuelType")
+    private String steamFuelType;
+
     // Fields for import/export tracking
     private String saveStatus;
     private String errDescription;
