@@ -36,7 +36,7 @@ const PowerGrid = ({
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Operational_HRS')
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Operational_Hrs')
 
   const PLANT_ID_LIST = useMemo(
     () => jmdSelectedPlants?.map((plant) => plant.id) || [],
