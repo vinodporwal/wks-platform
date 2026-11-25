@@ -409,6 +409,18 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             if (i < r.length) {
                 dto.setMaterialActivity(getString(r[i++]));
             }
+            if (i < r.length) {
+                dto.setAssetName(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setDisplayName(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setAssetType(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setSteamFuelType(getString(r[i++]));
+            }
 
             // set remarks
             if (dto.getApr() != null && dto.getApr().getRemarks() != null) {
@@ -494,6 +506,18 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             }
             if (i < r.length) {
                 dto.setMaterialActivity(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setAssetName(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setDisplayName(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setAssetType(getString(r[i++]));
+            }
+            if (i < r.length) {
+                dto.setSteamFuelType(getString(r[i++]));
             }
 
             return dto;
@@ -996,7 +1020,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
             // Static columns: Row 0 is empty but styled (header appears in Row 1)
             String[] staticColNames = {
                 "Plant Name", "Generating Plant", "Generating Plant Code", "Utility", "Utility ID", "Utility Activity", "UOM",
-                "Account", "Material", "SAP Code", "Material Activity", "Issuing Plant", "Issuing Plant Code", "Issuing UOM"
+                "Account", "Material", "SAP Code", "Fuel Allocation", "Material Activity", "Issuing Plant", "Issuing Plant Code", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
                 Cell emptyCell = topHeaderRow.createCell(col + i);
@@ -1158,6 +1182,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getMaterialId() != null ? dto.getMaterialId() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getSteamFuelType() != null ? dto.getSteamFuelType() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getMaterialActivity() != null ? dto.getMaterialActivity() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
@@ -1303,7 +1330,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
 
             String[] staticColNames = {
                 "CPP Plant", "Generating Plant", "Generating Plant Code", "Utility", "Utility ID", "Utility Activity", "UOM",
-                "Account", "Material", "SAP Code", "Material Activity", "Issuing Plant", "Issuing Plant Code", "Issuing UOM"
+                "Account", "Material", "SAP Code", "Fuel Allocation", "Material Activity", "Issuing Plant", "Issuing Plant Code", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
                 Cell emptyCell = topHeaderRow.createCell(col + i);
@@ -1427,6 +1454,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellValue(dto.getMaterialId() != null ? dto.getMaterialId() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
+                cell.setCellValue(dto.getSteamFuelType() != null ? dto.getSteamFuelType() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
                 cell.setCellValue(dto.getMaterialActivity() != null ? dto.getMaterialActivity() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
@@ -1524,7 +1554,7 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
 
             String[] staticColNames = {
                 "CPP Plant", "Generating Plant", "Plant Code", "Utility", "Utility ID", "Utility Activity", "UOM",
-                "Account", "Material", "SAP Code", "Material Activity", "Issuing Plant", "Plant Code", "Issuing UOM"
+                "Account", "Material", "SAP Code", "Fuel Allocation", "Material Activity", "Issuing Plant", "Plant Code", "Issuing UOM"
             };
             for (int i = 0; i < staticColNames.length; i++) {
                 Cell emptyCell = topHeaderRow.createCell(col + i);
@@ -1627,6 +1657,9 @@ public class JMDNormBasedUtilityBudgetServiceImpl implements JMDNormBasedUtility
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getMaterialId() != null ? dto.getMaterialId() : "");
+                cell.setCellStyle(dataStyle);
+                cell = row.createCell(col++);
+                cell.setCellValue(dto.getSteamFuelType() != null ? dto.getSteamFuelType() : "");
                 cell.setCellStyle(dataStyle);
                 cell = row.createCell(col++);
                 cell.setCellValue(dto.getMaterialActivity() != null ? dto.getMaterialActivity() : "");

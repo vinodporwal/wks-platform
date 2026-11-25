@@ -62,8 +62,13 @@ const SIX_DECIMAL_NORM_TYPES = [
 
 const THREE_DECIMAL_NORM_TYPESDMD = ['Utility Consumption'].map(normalizeKey)
 const THREE_DECIMAL_NORM_TYPESVMD = ['Utility Consumption', 'Utility Specific Consumption(Total) Norms'].map(normalizeKey)
-
-const SteadyStateConsumption = () => {
+const THREE_DECIMAL_NORM_TYPESSMD = [
+    'Raw Material',
+    'Utility Consumption',
+    'Catalyst & Chemicals',
+    'Stores & Spares'
+].map(normalizeKey)
+const SteadyStateConsumption = () => {  
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, siteObject } = dataGridStore
@@ -168,7 +173,7 @@ const SteadyStateConsumption = () => {
       plantName.toLowerCase() === 'wao_unit (672)')
   const ISDMD_Plants = siteName.toLowerCase() === 'dmd'
   const ISVMD_Plants = siteName.toLowerCase() === 'vmd'
-
+  const ISSMD_Plants = siteName.toLowerCase() === 'smd'
   const ISETP_Plants = (siteName === 'DTA' &&
     (plantName.toLowerCase() === 'etp-hero (ro-2)' ||
       plantName.toLowerCase() === 'etp' ||
@@ -278,6 +283,19 @@ const SteadyStateConsumption = () => {
         }
         return Math.trunc(num).toString()
       }
+      if (ISSMD_Plants) {
+        const typeKeys = [
+          normalizeKey(row?.normParameterTypeName),
+          normalizeKey(row?.normParameterTypeDisplayName),
+        ]
+        const isThreeDecimal = typeKeys.some((k) =>
+          THREE_DECIMAL_NORM_TYPESSMD.includes(k),
+        )
+        if (isThreeDecimal) {
+          return num.toFixed(3)
+        }
+        return Math.trunc(num).toString()
+      }
       if (ISVMD_Plants) {
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
@@ -294,7 +312,7 @@ const SteadyStateConsumption = () => {
 
       return Math.trunc(num).toString()
     },
-    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3],
+    [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISSMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3],
   )
 
   const MonthDataCell = useCallback(
@@ -506,7 +524,7 @@ const SteadyStateConsumption = () => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3])
+  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISSMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3])
 
   const fetchData = async () => {
     setLoading(true)

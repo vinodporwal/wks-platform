@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
@@ -35,7 +35,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = customValueFormatterPhaseTwo(5)
+  const valueFormat = useMemo(() => customValueFormatterPhaseTwo(5), [])
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -75,45 +75,48 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     return rules
   }
 
-  const columns = [
-    {
-      field: 'name',
-      title: 'Particulars',
-      widthT: 250,
-      minWidth: 200,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'uom',
-      title: 'UOM',
-      widthT: 80,
-      minWidth: 60,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'attributeValue',
-      title: 'Value',
-      editable: true,
-      widthT: 100,
-      minWidth: 80,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'row-based',
-      format: valueFormat,
-    },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      widthT: 250,
-      type: 'textarea',
-      editable: true,
-      minWidth: 250,
-      showPlaceholder: false,
-    },
-  ]
+  const columns = useMemo(
+  () => [
+      {
+        field: 'name',
+        title: 'Particulars',
+        widthT: 250,
+        minWidth: 200,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        minWidth: 60,
+        type: 'text',
+        editable: false,
+      },
+      {
+        field: 'attributeValue',
+        title: 'Value',
+        editable: true,
+        widthT: 100,
+        minWidth: 80,
+        align: 'left',
+        headerAlign: 'left',
+        type: 'row-based',
+        format: valueFormat,
+      },
+      {
+        field: 'remarks',
+        title: 'Remarks',
+        widthT: 250,
+        type: 'textarea',
+        editable: true,
+        minWidth: 250,
+        showPlaceholder: false,
+      },
+    ],
+  [valueFormat],
+)
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -232,21 +235,20 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
     }
   }
 
-  const permissions = {
-    showAction: true,
-    addButton: false,
-    deleteButton: false,
-    editButton: true,
-    saveBtn: true,
-    allAction: true,
-    // showExport: true,
-    downloadExcelBtnFromUI: true,
-    ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
-    showImport: false,
-    showTitleNameBusiness: true,
-    showTitle: true,
-    titleName: 'Configuration',
-  }
+  const permissions = useMemo(() => ({
+  showAction: true,
+  addButton: false,
+  deleteButton: false,
+  editButton: true,
+  saveBtn: true,
+  allAction: true,
+  downloadExcelBtnFromUI: true,
+  ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
+  showImport: false,
+  showTitleNameBusiness: true,
+  showTitle: true,
+  titleName: 'Configuration',
+}), [AOP_YEAR])
 
   const formatDateForAPI = (date) => {
     if (!date) return ''

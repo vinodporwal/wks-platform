@@ -115,6 +115,7 @@ const ProductionvolumeData = ({
   const IS_PVC_VMD =
     verticalObject?.name?.toLowerCase() == 'pvc' &&
     siteObject?.name?.toLowerCase() == 'vmd'
+  const IS_VCM_VMD = IS_VCM && SITE_NAME === 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
   const IS_AROMATICS_HMD = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
@@ -1102,7 +1103,7 @@ const ProductionvolumeData = ({
             !(
               IS_PE_PP ||
               IS_PET ||
-              IS_VCM ||
+              (IS_VCM && !IS_VCM_VMD) ||
               IS_PTA_DMD ||
               IS_PVC_VMD ||
               IS_PVC
@@ -1523,7 +1524,12 @@ const ProductionvolumeData = ({
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       showNote: IS_PVC_HMD ? true : false,
       saveBtn:
-        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
+        IS_PE_PP ||
+        IS_PET ||
+        (IS_VCM && !IS_VCM_VMD) ||
+        IS_PTA_DMD ||
+        IS_PVC_VMD ||
+        IS_PVC
           ? false
           : true,
       units: ['TPH', 'TPD'],

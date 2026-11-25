@@ -23,8 +23,8 @@ const ALL_GRIDS = ['GT', 'STG', 'HRSG', 'AUXBOILER', 'CCPP']
 const SITE_WISE_GRIDS = {
   vmd: ['GT', 'HRSG', 'AUXBOILER'],
   dmd: ALL_GRIDS,
-  hmd: ALL_GRIDS,
-  pmd: ['GT', 'STG', 'HRSG'],
+  hmd: ['GT', 'STG', 'HRSG', 'CCPP'],
+  pmd: ['GT', 'HRSG', 'AUXBOILER'],
 }
 
 const index = () => {
