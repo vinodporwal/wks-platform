@@ -21,6 +21,9 @@ const RowBasedKendoTable = (props) => {
   const rowsRef = useRef(rows)
   rowsRef.current = rows
 
+  const propsRef = useRef(props)
+  propsRef.current = props
+
   const getDecimalPlacesFromFormat = (format) => {
     if (!format) return 2
     const match = format.match(/\{0:0\.(0+)\}/)
@@ -39,11 +42,11 @@ const RowBasedKendoTable = (props) => {
         const renderDataCell = (cellProps, inEditPhase = false) => {
           const { dataItem, field, onChange } = cellProps
           const rowId = dataItem.id
-          const customModifiedCells = props.externalCustomModifiedCells || {}
+          const customModifiedCells = propsRef.current.externalCustomModifiedCells || {}
 
           let colSpan = cellProps.colSpan;
-          if (props.dynamicColumnMerger) {
-            const config = props.dynamicColumnMerger(dataItem, field);
+          if (propsRef.current.dynamicColumnMerger) {
+            const config = propsRef.current.dynamicColumnMerger(dataItem, field);
             if (config?.hidden) return null;
             if (config?.colSpan) colSpan = config.colSpan;
           }
@@ -119,14 +122,14 @@ const RowBasedKendoTable = (props) => {
                             ? dataItem.id
                             : dataItem?.idFromApi;
 
-                        const selectiveGroupField = Array.isArray(props.groupBy)
-                          ? props.groupBy[0]
-                          : typeof props.groupBy === 'object'
-                            ? props.groupBy?.field
-                            : props.groupBy;
+                        const selectiveGroupField = Array.isArray(propsRef.current.groupBy)
+                          ? propsRef.current.groupBy[0]
+                          : typeof propsRef.current.groupBy === 'object'
+                            ? propsRef.current.groupBy?.field
+                            : propsRef.current.groupBy;
 
                         const targetGroupValue =
-                          props.permissions?.singleCheckboxPerGroup &&
+                          propsRef.current.permissions?.singleCheckboxPerGroup &&
                           selectiveGroupField &&
                           nextVal === true
                             ? String(dataItem?.[selectiveGroupField] ?? '').trim()
@@ -134,8 +137,8 @@ const RowBasedKendoTable = (props) => {
 
                         const shouldEnforceSingle = Boolean(targetGroupValue);
 
-                        if (props.setModifiedCells) {
-                          props.setModifiedCells((prev) => {
+                        if (propsRef.current.setModifiedCells) {
+                          propsRef.current.setModifiedCells((prev) => {
                             const next = {
                               ...prev,
                               [itemId]: {
@@ -173,8 +176,8 @@ const RowBasedKendoTable = (props) => {
                           });
                         }
 
-                        if (props.setRows) {
-                          props.setRows((prev) =>
+                        if (propsRef.current.setRows) {
+                          propsRef.current.setRows((prev) =>
                             (prev || []).map((r) => {
                               const rId =
                                 r?.id !== undefined ? r.id : r?.idFromApi;
@@ -223,8 +226,8 @@ const RowBasedKendoTable = (props) => {
                 let currentCellProps = cellProps;
                 const { dataItem, field } = currentCellProps;
                 
-                if (props.dynamicColumnMerger) {
-                  const config = props.dynamicColumnMerger(dataItem, field);
+                if (propsRef.current.dynamicColumnMerger) {
+                  const config = propsRef.current.dynamicColumnMerger(dataItem, field);
                   if (config?.hidden) return null;
                   if (config?.colSpan) {
                     currentCellProps = { ...currentCellProps, tdProps: { ...currentCellProps.tdProps, colSpan: config.colSpan } };
@@ -253,7 +256,7 @@ const RowBasedKendoTable = (props) => {
     }
 
     return columns.map(enhanceColumn)
-  }, [columns, props.externalCustomModifiedCells])
+  }, [columns])
 
   return (
     <AdvanceKendoTable {...restProps} columns={enhancedColumns} rows={rows} />

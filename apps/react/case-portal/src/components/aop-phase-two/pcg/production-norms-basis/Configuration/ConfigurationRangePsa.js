@@ -18,18 +18,29 @@ const COLUMNS = [
   { field: 'dependantAttributeId', title: 'Applicable Utilities & Cat-Chems', widthT: 250, minWidth: 200, type: 'text', editable: false },
 ]
 
-// Rows that must be fully disabled (targetValue, range, selection, remarks)
-const PSA_READONLY_ROWS = [
+// Name matching ignores case and spaces, so "TGC1Online/Offline" and "TGC1 Online/Offline" both match
+const norm = (s) => String(s ?? '').toLowerCase().replace(/\s+/g, '')
+
+// Rows that must be fully disabled (targetValue, range, selection, remarks).
+// DTA and SEZ have different row names (SEZ names carry a "Z" prefix), so each site has its own list.
+const DTA_PSA_READONLY_ROWS = [
   'Crude-1 311PA651-246 sulphur',
   'Crude-2 312PA651-246 sulphur',
   '395FX019',
   '395JWALLRW001',
 ]
 
-const ALL_EDITABLE_FIELDS = ['targetValue', 'range', 'selection', 'remarks']
+const SEZ_PSA_READONLY_ROWS = [
+  'Crude-1 Z311PA651-246 sulphur',
+  'Crude-2 Z312PA651-246 sulphur',
+  'ZC395IN008',
+  'ZC395IN001',
+]
 
-// Name matching ignores case and spaces, so "TGC1Online/Offline" and "TGC1 Online/Offline" both match
-const norm = (s) => String(s ?? '').toLowerCase().replace(/\s+/g, '')
+const DTA_PSA_READONLY_NORM = DTA_PSA_READONLY_ROWS.map(norm)
+const SEZ_PSA_READONLY_NORM = SEZ_PSA_READONLY_ROWS.map(norm)
+
+const ALL_EDITABLE_FIELDS = ['targetValue', 'range', 'selection', 'remarks']
 
 // One entry per dropdown (toggle) row.
 // prefix = normalised start of the child row names, e.g. "TGC1 Offline (...)" -> "tgc1"
@@ -162,7 +173,20 @@ const applyAllToggles = (rows) =>
 
 const ConfigurationRangePsa = ({ refreshData }) => {
   const keycloak = useSession()
-  const { plantObject, year } = useSelector((state) => state.dataGridStore)
+  const { plantObject, year, verticalObject, siteObject } = useSelector((state) => state.dataGridStore)
+
+  const vertical = verticalObject?.name?.toLowerCase()?.trim()
+  const site = siteObject?.name?.toLowerCase()?.trim()
+  const plant = plantObject?.name?.toLowerCase()?.trim()
+  const IS_PCG_DTA_PSA = vertical === 'pcg' && site === 'dta' && plant === 'psa'
+  const IS_PCG_SEZ_PSA = vertical === 'pcg' && site === 'sez' && plant === 'psa'
+
+  // Read-only row names for the current site (nothing is locked for any other plant)
+  const readonlyRowNames = IS_PCG_SEZ_PSA
+    ? SEZ_PSA_READONLY_NORM
+    : IS_PCG_DTA_PSA
+      ? DTA_PSA_READONLY_NORM
+      : []
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -221,7 +245,7 @@ const ConfigurationRangePsa = ({ refreshData }) => {
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) fetchConfigurationData()
-  }, [PLANT_ID, AOP_YEAR, refreshData])
+  }, [PLANT_ID, AOP_YEAR, refreshData, IS_PCG_DTA_PSA, IS_PCG_SEZ_PSA])
 
   const fetchConfigurationData = async () => {
     setLoading(true)
@@ -236,7 +260,7 @@ const ConfigurationRangePsa = ({ refreshData }) => {
 
       let formattedData = apiRes.map((apiItem, index) => {
         const configItem = FILTER_CONFIG.find((d) => norm(d.displayName) === norm(apiItem.displayName)) || {}
-        const isReadonlyRow = PSA_READONLY_ROWS.includes(apiItem.displayName)
+        const isReadonlyRow = readonlyRowNames.includes(norm(apiItem.displayName))
         const isToggleRow = Boolean(getToggleByRow(apiItem))
 
         // Rows with empty selection from API have no checkbox
