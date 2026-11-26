@@ -1,12 +1,15 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.FixedConsumptionCreateRequestDto;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionCreateRequestDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionProjection;
 import com.wks.caseengine.cpp.entity.CPPFixedConsumption;
 import com.wks.caseengine.cpp.repository.JMDFixedConsumptionRepository;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,10 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
 
     @Autowired
     private JMDFixedConsumptionRepository repository;
+
+    @Autowired
+    @Qualifier("db1JdbcTemplate")
+    private JdbcTemplate db1JdbcTemplate;
 
     @Override
     public AOPMessageVM getFixedConsumptionForPlants(List<UUID> plantIds, String financialYear) {
@@ -106,6 +113,11 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         dto.setNormParameterId(p.getNormParameterId());
         dto.setCostCenter_FK_Id(p.getCostCenter_FK_Id());
         dto.setNormParameter_FK_Id(p.getNormParameter_FK_Id());
+        dto.setPlantFkId(p.getPlant_FK_Id());
+        dto.setCppCostCenterFkId(p.getCPP_CostCenter_FK_Id());
+        dto.setReceiverCostCenterFkId(p.getReceiver_CostCenter_FK_Id());
+        dto.setSenderNormParameterFkId(p.getSender_NormParameter_FK_Id());
+        dto.setSenderPlantId(p.getMaterialPlantId());
         dto.setRemarkId(p.getRemarkId());
         dto.setRemarks(p.getRemarks());
 
@@ -1247,6 +1259,156 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
             return aopMessageVM;
         } catch (Exception e) {
             logger.error("[UPDATE] Error updating fixed consumption: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to update fixed consumption: " + e.getMessage());
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        }
+    }
+
+    /**
+     * JMD fixed consumption rows use the "No Material" norm parameter (under the
+     * CPP plant's "No Plant" record) as the receiver utility
+     * (NormParameter_FK_Id). Resolution order:
+     *   1. NOMATERIAL norm parameter whose plant's SourceName = parentPlantId
+     *   2. Any NOMATERIAL norm parameter
+     *   3. The request value
+     */
+    private UUID resolveReceiverUtilityNormParameterId(UUID parentPlantId, UUID fallbackId) {
+        try {
+            // "No Material" norm parameter whose Plant_FK_Id is the "No Plant"
+            // record belonging to the selected CPP plant's source.
+            if (parentPlantId != null) {
+                List<UUID> scoped = db1JdbcTemplate.query(
+                        "SELECT TOP 1 np.Id FROM NormParameters np " +
+                        "INNER JOIN Plants p ON p.Id = np.Plant_FK_Id " +
+                        "WHERE np.SAPMaterialCode = 'NOMATERIAL' AND p.SourceName = ?",
+                        (rs, rowNum) -> UUID.fromString(rs.getString(1)),
+                        parentPlantId.toString());
+                if (!scoped.isEmpty() && scoped.get(0) != null) {
+                    return scoped.get(0);
+                }
+            }
+
+            List<UUID> any = db1JdbcTemplate.query(
+                    "SELECT TOP 1 Id FROM NormParameters WHERE SAPMaterialCode = 'NOMATERIAL'",
+                    (rs, rowNum) -> UUID.fromString(rs.getString(1)));
+            if (!any.isEmpty() && any.get(0) != null) {
+                return any.get(0);
+            }
+
+            List<UUID> byName = db1JdbcTemplate.query(
+                    "SELECT TOP 1 Id FROM NormParameters WHERE Name = 'No Material'",
+                    (rs, rowNum) -> UUID.fromString(rs.getString(1)));
+            if (!byName.isEmpty() && byName.get(0) != null) {
+                return byName.get(0);
+            }
+        } catch (Exception e) {
+            logger.warn("[JMD] Could not resolve 'No Material' norm parameter: {}", e.getMessage());
+        }
+        return fallbackId;
+    }
+
+    @Override
+    public AOPMessageVM createFixedConsumptionJMD(JMDFixedConsumptionCreateRequestDto request) {
+        logger.info("[CREATE JMD] Creating fixed consumption: parentPlantId={}, recieverPlantId={}, receiverCostCenterId={}, costCenterId={}, senderNormParameterId={}, cppUtilityId={}, aopYear={}",
+                request.getParentPlantId(), request.getRecieverPlantId(), request.getReceiverCostCenterId(),
+                request.getCostCenterId(), request.getSenderNormParameterId(), request.getCppUtilityId(),
+                request.getAopYear());
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+        try {
+            UUID receiverUtilityId = resolveReceiverUtilityNormParameterId(
+                    request.getParentPlantId(), request.getCppUtilityId());
+            if (receiverUtilityId == null) {
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Receiver utility ('No Material' norm parameter) not found");
+                aopMessageVM.setData(null);
+                return aopMessageVM;
+            }
+
+            CPPFixedConsumption entity = new CPPFixedConsumption();
+            entity.setId(UUID.randomUUID());
+            entity.setPlantFkId(request.getRecieverPlantId());
+            entity.setCppCostCenterFkId(request.getCostCenterId());
+            entity.setNormParameterFkId(receiverUtilityId);
+            entity.setReceiverCostCenterFkId(request.getReceiverCostCenterId());
+            entity.setSenderNormParameterFkId(request.getSenderNormParameterId());
+            entity.setRemarks(request.getRemarks());
+            entity.setAopYear(request.getAopYear());
+            entity.setApr(0.0);
+            entity.setMay(0.0);
+            entity.setJun(0.0);
+            entity.setJul(0.0);
+            entity.setAug(0.0);
+            entity.setSep(0.0);
+            entity.setOct(0.0);
+            entity.setNov(0.0);
+            entity.setDec(0.0);
+            entity.setJan(0.0);
+            entity.setFeb(0.0);
+            entity.setMar(0.0);
+            entity.setCreatedDate(LocalDateTime.now());
+            entity.setUpdatedDate(LocalDateTime.now());
+
+            repository.save(entity);
+
+            logger.info("[CREATE JMD] Fixed consumption created with id={}", entity.getId());
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Fixed consumption row created successfully");
+            aopMessageVM.setData(entity.getId());
+            return aopMessageVM;
+        } catch (Exception e) {
+            logger.error("[CREATE JMD] Error creating fixed consumption: {}", e.getMessage(), e);
+            aopMessageVM.setCode(500);
+            aopMessageVM.setMessage("Failed to create fixed consumption: " + e.getMessage());
+            aopMessageVM.setData(null);
+            return aopMessageVM;
+        }
+    }
+
+    @Override
+    public AOPMessageVM updateFixedConsumptionJMD(JMDFixedConsumptionCreateRequestDto request) {
+        logger.info("[UPDATE JMD] Updating fixed consumption: id={}", request.getId());
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+        try {
+            Optional<CPPFixedConsumption> optionalEntity = repository.findById(request.getId());
+            if (optionalEntity.isEmpty()) {
+                logger.warn("[UPDATE JMD] Fixed consumption not found for id={}", request.getId());
+                aopMessageVM.setCode(404);
+                aopMessageVM.setMessage("Fixed consumption row not found");
+                aopMessageVM.setData(null);
+                return aopMessageVM;
+            }
+
+            UUID receiverUtilityId = resolveReceiverUtilityNormParameterId(
+                    request.getParentPlantId(), request.getCppUtilityId());
+            if (receiverUtilityId == null) {
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Receiver utility ('No Material' norm parameter) not found");
+                aopMessageVM.setData(null);
+                return aopMessageVM;
+            }
+
+            CPPFixedConsumption entity = optionalEntity.get();
+            entity.setPlantFkId(request.getRecieverPlantId());
+            entity.setCppCostCenterFkId(request.getCostCenterId());
+            entity.setNormParameterFkId(receiverUtilityId);
+            entity.setReceiverCostCenterFkId(request.getReceiverCostCenterId());
+            entity.setSenderNormParameterFkId(request.getSenderNormParameterId());
+            entity.setRemarks(request.getRemarks());
+            entity.setUpdatedDate(LocalDateTime.now());
+
+            repository.save(entity);
+
+            logger.info("[UPDATE JMD] Fixed consumption updated for id={}", request.getId());
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Fixed consumption row updated successfully");
+            aopMessageVM.setData(request.getId());
+            return aopMessageVM;
+        } catch (Exception e) {
+            logger.error("[UPDATE JMD] Error updating fixed consumption: {}", e.getMessage(), e);
             aopMessageVM.setCode(500);
             aopMessageVM.setMessage("Failed to update fixed consumption: " + e.getMessage());
             aopMessageVM.setData(null);
