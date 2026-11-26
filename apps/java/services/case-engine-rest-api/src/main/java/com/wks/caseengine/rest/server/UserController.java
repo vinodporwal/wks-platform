@@ -38,6 +38,11 @@ public class UserController {
 		return userService.updateUser(data);
 	}
 
+	@PutMapping("/grant-all-screens")
+	public Map<String, Object> grantAllScreens(@RequestBody Map<String, Object> data, @RequestParam String aopYear) throws Exception {
+		return userService.grantAllScreens(data, aopYear);
+	}
+
 	@GetMapping("/roles")
 	public Map<String, Object> getRealmRoles() throws Exception {
 		return userService.getRealmRoles();

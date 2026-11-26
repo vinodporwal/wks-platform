@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 
 import com.wks.caseengine.cpp.dto.FixedConsumptionCreateRequestDto;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionCreateRequestDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -238,6 +239,47 @@ public class JMDFixedConsumptionController {
                 response.getCode(), response.getMessage());
 
         return response;
+    }
+
+    // ========================================
+    // CREATE FIXED CONSUMPTION ROW (JMD) ENDPOINT
+    // ========================================
+
+    @PostMapping("/jmd/fixed-consumption/jmd-create")
+    public ResponseEntity<AOPMessageVM> createFixedConsumptionJMD(@RequestBody JMDFixedConsumptionCreateRequestDto request) {
+        logger.info("[POST /jmd/fixed-consumption/jmd-create] Request received - parentPlantId: {}, recieverPlantId: {}, receiverCostCenterId: {}, costCenterId: {}, senderNormParameterId: {}",
+                request.getParentPlantId(), request.getRecieverPlantId(), request.getReceiverCostCenterId(),
+                request.getCostCenterId(), request.getSenderNormParameterId());
+
+        AOPMessageVM response = jmdFixedConsumptionService.createFixedConsumptionJMD(request);
+
+        logger.info("[POST /jmd/fixed-consumption/jmd-create] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        int httpStatus = response.getCode() == 200 ? 200
+                : response.getCode() == 400 ? 400 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // ========================================
+    // UPDATE FIXED CONSUMPTION ROW (JMD) ENDPOINT
+    // ========================================
+
+    @PutMapping("/jmd/fixed-consumption/jmd-update")
+    public ResponseEntity<AOPMessageVM> updateFixedConsumptionJMD(@RequestBody JMDFixedConsumptionCreateRequestDto request) {
+        logger.info("[PUT /jmd/fixed-consumption/jmd-update] Request received - id: {}, recieverPlantId: {}, receiverCostCenterId: {}, costCenterId: {}, senderNormParameterId: {}",
+                request.getId(), request.getRecieverPlantId(), request.getReceiverCostCenterId(),
+                request.getCostCenterId(), request.getSenderNormParameterId());
+
+        AOPMessageVM response = jmdFixedConsumptionService.updateFixedConsumptionJMD(request);
+
+        logger.info("[PUT /jmd/fixed-consumption/jmd-update] Response - code: {}, message: {}",
+                response.getCode(), response.getMessage());
+
+        int httpStatus = response.getCode() == 200 ? 200
+                : response.getCode() == 404 ? 404
+                : response.getCode() == 400 ? 400 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
     }
 
     // ========================================
