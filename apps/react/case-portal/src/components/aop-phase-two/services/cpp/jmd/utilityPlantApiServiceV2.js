@@ -10,6 +10,8 @@ export const UtilityPlantApiServiceV2 = {
   exportFixedConsumptionExcelV2,
   addFixedConsumptionRow,
   updateFixedConsumptionRow,
+  addFixedConsumptionRowJMD,
+  updateFixedConsumptionRowJMD,
   deleteFixedConsumptionRow,
 
   //   Plant requirement APIs
@@ -152,6 +154,54 @@ async function updateFixedConsumptionRow(keycloak, rowData, financialYear) {
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error updating fixed consumption row:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Create a new fixed consumption row (JMD sender/receiver format)
+async function addFixedConsumptionRowJMD(keycloak, rowData, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/jmd-create`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    ...rowData,
+    aopYear: financialYear,
+  })
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error creating JMD fixed consumption row:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// Update an existing fixed consumption row (JMD sender/receiver format)
+async function updateFixedConsumptionRowJMD(keycloak, rowData, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption/jmd-update`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    ...rowData,
+    aopYear: financialYear,
+  })
+  try {
+    const resp = await fetch(url, { method: 'PUT', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error updating JMD fixed consumption row:', e)
     return await Promise.reject(e)
   }
 }
