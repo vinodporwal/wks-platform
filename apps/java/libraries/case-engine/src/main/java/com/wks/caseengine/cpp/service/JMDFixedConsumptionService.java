@@ -1,6 +1,7 @@
 package com.wks.caseengine.cpp.service;
 
 import com.wks.caseengine.cpp.dto.FixedConsumptionCreateRequestDto;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionCreateRequestDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,6 +41,10 @@ public interface JMDFixedConsumptionService {
     AOPMessageVM createFixedConsumption(FixedConsumptionCreateRequestDto request);
 
     AOPMessageVM updateFixedConsumption(FixedConsumptionCreateRequestDto request);
+
+    AOPMessageVM createFixedConsumptionJMD(JMDFixedConsumptionCreateRequestDto request);
+
+    AOPMessageVM updateFixedConsumptionJMD(JMDFixedConsumptionCreateRequestDto request);
 
     AOPMessageVM deleteFixedConsumption(UUID id);
 }

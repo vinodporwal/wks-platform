@@ -19,6 +19,10 @@ public interface JMDFixedConsumptionProjection {
     UUID getRemarkId();
     UUID getCostCenter_FK_Id();
     UUID getNormParameter_FK_Id();
+    UUID getPlant_FK_Id();
+    UUID getCPP_CostCenter_FK_Id();
+    UUID getReceiver_CostCenter_FK_Id();
+    UUID getSender_NormParameter_FK_Id();
     Double getApr();
     Double getMay();
     Double getJun();
@@ -35,6 +39,7 @@ public interface JMDFixedConsumptionProjection {
     // Sender (Material) details
     String getMaterialPlantName();
     String getMaterialPlantCode();
+    UUID getMaterialPlantId();
     String getMaterialName();
     String getMaterialSAP();
     String getMaterialUOM();
