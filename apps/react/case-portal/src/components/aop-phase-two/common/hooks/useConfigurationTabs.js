@@ -44,6 +44,11 @@ const useConfigurationTabs = (type, options = {}) => {
   // before a previous in-flight matrix call has resolved.
   const requestIdRef = useRef(0)
 
+  // Holds the id of the currently selected tab so it can be restored after
+  // the tab list is refetched (e.g. JMD multi-plant selection changes the
+  // primary plant and triggers a matrix refetch).
+  const selectedTabIdRef = useRef(null)
+
   const loading = matrixLoading || tabsLoading
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
@@ -147,16 +152,6 @@ const useConfigurationTabs = (type, options = {}) => {
       : filtered
   }, [tabs, availableTabs, sortBySequence])
 
-  // Select the first tab by default whenever the filtered tabs change.
-  // Safe to depend on `sortedFilteredTabs` directly because it is memoized.
-  useEffect(() => {
-    if (sortedFilteredTabs.length > 0) {
-      setTabIndex(0)
-    } else {
-      setTabIndex(null)
-    }
-  }, [sortedFilteredTabs])
-
   // Clamp tabIndex to the valid range synchronously during render so that
   // when sortedFilteredTabs changes (e.g. site/plant/vertical change) but the
   // useEffect above hasn't yet reset tabIndex to 0, we don't render with an
@@ -168,6 +163,39 @@ const useConfigurationTabs = (type, options = {}) => {
       : 0
 
   const currentTab = sortedFilteredTabs[safeTabIndex] || null
+
+  // Keep selectedTabIdRef in sync with the active tab whenever tabIndex
+  // changes (user click or programmatic reset). Intentionally depends only
+  // on tabIndex so it doesn't overwrite the ref with a stale index while a
+  // new tab list is being applied.
+  useEffect(() => {
+    const tab = sortedFilteredTabs[safeTabIndex]
+    if (tab?.id != null) {
+      selectedTabIdRef.current = tab.id
+    }
+  }, [tabIndex])
+
+  // Restore the previously selected tab by id whenever the filtered tabs
+  // change (plant/site/vertical/year change or manual refresh). Falls back
+  // to the first tab when the previous tab is no longer available.
+  // Safe to depend on `sortedFilteredTabs` directly because it is memoized.
+  useEffect(() => {
+    if (sortedFilteredTabs.length === 0) {
+      selectedTabIdRef.current = null
+      setTabIndex(null)
+      return
+    }
+    const prevTabId = selectedTabIdRef.current
+    const preservedIndex =
+      prevTabId != null
+        ? sortedFilteredTabs.findIndex(
+            (tab) =>
+              String(tab.id).toLowerCase() ===
+              String(prevTabId).toLowerCase(),
+          )
+        : -1
+    setTabIndex(preservedIndex >= 0 ? preservedIndex : 0)
+  }, [sortedFilteredTabs])
 
   return {
     tabs,
