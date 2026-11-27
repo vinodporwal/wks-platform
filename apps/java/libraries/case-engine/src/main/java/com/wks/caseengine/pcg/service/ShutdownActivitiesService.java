@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.pcg.dto.AopProductionNormsDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownDTO;
+import com.wks.caseengine.pcg.dto.ShutdownSNGTransactionDTO;
 import com.wks.caseengine.pcg.dto.ShutdownTaTransactionDTO;
 
 public interface ShutdownActivitiesService {
@@ -23,4 +24,8 @@ public interface ShutdownActivitiesService {
     byte[] exportShutdownTaTransactions(UUID plantId, String aopYear, boolean isAfterSave, List<ShutdownTaTransactionDTO> dtoList);
 
     AOPMessageVM importShutdownTaTransactions(UUID plantId, String aopYear, MultipartFile file);
+
+    List<ShutdownSNGTransactionDTO> getShutdownSNGTransactions(UUID plantId, String aopYear);
+
+    List<ShutdownSNGTransactionDTO> saveShutdownSNGTransactions(UUID plantId, String aopYear, List<ShutdownSNGTransactionDTO> shutdownSNGTransactionDTOList);
 }

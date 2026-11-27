@@ -3,11 +3,15 @@ import { json } from 'services/request'
 
 export const PCGShutdownTaApiService = {
   getShutdownTaTransactions,
+  getShutdownTaTransactionsSng,
   getShutdownTaGasifierDropdown,
   saveShutdownTaTransactions,
+  saveShutdownTaTransactionsSng,
   getAopProductionNorms,
   exportShutdownPlan,
+  exportShutdownPlanSng,
   importShutdownPlan,
+  importShutdownPlanSng,
 }
 
 /**
@@ -39,8 +43,13 @@ async function getShutdownTaGasifierDropdown(keycloak, plantId, aopYear) {
  * Get Shutdown/TA Transactions
  * GET /shutdown-transactions?plantId=&aopYear=
  */
-async function getShutdownTaTransactions(keycloak, plantId, aopYear) {
-  let url = `${Config.CaseEngineUrl}/task/shutdown-transactions`
+async function fetchShutdownTaTransactions(
+  keycloak,
+  plantId,
+  aopYear,
+  endpointPath,
+) {
+  let url = `${Config.CaseEngineUrl}${endpointPath}`
   const params = []
   if (plantId) params.push(`plantId=${encodeURIComponent(plantId)}`)
   if (aopYear) params.push(`aopYear=${encodeURIComponent(aopYear)}`)
@@ -60,13 +69,41 @@ async function getShutdownTaTransactions(keycloak, plantId, aopYear) {
   }
 }
 
+async function getShutdownTaTransactions(keycloak, plantId, aopYear) {
+  return fetchShutdownTaTransactions(
+    keycloak,
+    plantId,
+    aopYear,
+    '/task/shutdown-transactions',
+  )
+}
+
+/**
+ * Get Shutdown/TA Transactions for SNG
+ * GET /task/shutdown-transactions-sng?plantId=&aopYear=
+ */
+async function getShutdownTaTransactionsSng(keycloak, plantId, aopYear) {
+  return fetchShutdownTaTransactions(
+    keycloak,
+    plantId,
+    aopYear,
+    '/task/shutdown-transactions-sng',
+  )
+}
+
 /**
  * Save Shutdown/TA Transactions
- * POST /shutdown-transactions?plantId=
+ * POST /shutdown-transactions?plantId=&aopYear=
  * Body: List<ShutdownTaTransactionDTO>
  */
-async function saveShutdownTaTransactions(keycloak, plantId, payload, aopYear) {
-  let url = `${Config.CaseEngineUrl}/task/shutdown-transactions`
+async function postShutdownTaTransactions(
+  keycloak,
+  plantId,
+  payload,
+  aopYear,
+  endpointPath,
+) {
+  let url = `${Config.CaseEngineUrl}${endpointPath}`
   const params = []
   if (plantId) params.push(`plantId=${encodeURIComponent(plantId)}`)
   if (aopYear) params.push(`aopYear=${encodeURIComponent(aopYear)}`)
@@ -88,6 +125,35 @@ async function saveShutdownTaTransactions(keycloak, plantId, payload, aopYear) {
     console.error('Error saving shutdown transactions:', e)
     return Promise.reject(e)
   }
+}
+
+async function saveShutdownTaTransactions(keycloak, plantId, payload, aopYear) {
+  return postShutdownTaTransactions(
+    keycloak,
+    plantId,
+    payload,
+    aopYear,
+    '/task/shutdown-transactions',
+  )
+}
+
+/**
+ * Save Shutdown/TA Transactions for SNG
+ * POST /task/shutdown-transactions-sng?plantId=&aopYear=
+ */
+async function saveShutdownTaTransactionsSng(
+  keycloak,
+  plantId,
+  payload,
+  aopYear,
+) {
+  return postShutdownTaTransactions(
+    keycloak,
+    plantId,
+    payload,
+    aopYear,
+    '/task/shutdown-transactions-sng',
+  )
 }
 
 /**
@@ -127,9 +193,15 @@ async function getAopProductionNorms(keycloak, plantId, aopYear) {
  * @param {string} excelTitle    - Filename prefix (e.g. "PE_NMD_LLDPE1")
  * @returns {Promise<void>}
  */
-async function exportShutdownPlan(keycloak, plantId, aopYear, excelTitle) {
+async function exportShutdownTaFile(
+  keycloak,
+  plantId,
+  aopYear,
+  excelTitle,
+  endpointPath,
+) {
   const url =
-    `${Config.CaseEngineUrl}/task/shutdown-transactions-export` +
+    `${Config.CaseEngineUrl}${endpointPath}` +
     `?aopYear=${encodeURIComponent(aopYear)}` +
     `&plantId=${encodeURIComponent(plantId)}`
 
@@ -157,6 +229,30 @@ async function exportShutdownPlan(keycloak, plantId, aopYear, excelTitle) {
   }
 }
 
+async function exportShutdownPlan(keycloak, plantId, aopYear, excelTitle) {
+  return exportShutdownTaFile(
+    keycloak,
+    plantId,
+    aopYear,
+    excelTitle,
+    '/task/shutdown-transactions-export',
+  )
+}
+
+/**
+ * Export shutdown activities for PCG SNG plant as Excel
+ * GET /task/shutdown-transactions-export-sng?plantId=&aopYear=
+ */
+async function exportShutdownPlanSng(keycloak, plantId, aopYear, excelTitle) {
+  return exportShutdownTaFile(
+    keycloak,
+    plantId,
+    aopYear,
+    excelTitle,
+    '/task/shutdown-transactions-export-sng',
+  )
+}
+
 /**
  * Import shutdown activities for a PE plant from Excel
  * POST /task/shutdown-transactions-import?plantId=&aopYear=
@@ -171,9 +267,15 @@ async function exportShutdownPlan(keycloak, plantId, aopYear, excelTitle) {
  * @param {string} year      - AOP year
  * @returns {Promise<{code, message, data}>}
  */
-async function importShutdownPlan(file, keycloak, plantId, aopYear) {
+async function importShutdownTaFile(
+  file,
+  keycloak,
+  plantId,
+  aopYear,
+  endpointPath,
+) {
   const url =
-    `${Config.CaseEngineUrl}/task/shutdown-transactions-import` +
+    `${Config.CaseEngineUrl}${endpointPath}` +
     `?plantId=${encodeURIComponent(plantId)}` +
     `&aopYear=${encodeURIComponent(aopYear)}`
 
@@ -191,4 +293,28 @@ async function importShutdownPlan(file, keycloak, plantId, aopYear) {
     console.error('Error importing shutdown plan:', e)
     return Promise.reject(e)
   }
+}
+
+async function importShutdownPlan(file, keycloak, plantId, aopYear) {
+  return importShutdownTaFile(
+    file,
+    keycloak,
+    plantId,
+    aopYear,
+    '/task/shutdown-transactions-import',
+  )
+}
+
+/**
+ * Import shutdown activities for PCG SNG plant from Excel
+ * POST /task/shutdown-transactions-import-sng?plantId=&aopYear=
+ */
+async function importShutdownPlanSng(file, keycloak, plantId, aopYear) {
+  return importShutdownTaFile(
+    file,
+    keycloak,
+    plantId,
+    aopYear,
+    '/task/shutdown-transactions-import-sng',
+  )
 }
