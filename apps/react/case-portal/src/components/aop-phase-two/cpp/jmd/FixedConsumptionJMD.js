@@ -15,7 +15,7 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
-import AddFixedConsumptionDialog from 'components/aop-phase-two/cpp/common/AddFixedConsumptionDialog/index'
+import AddFixedConsumptionDialogJMD from 'components/aop-phase-two/cpp/common/AddFixedConsumptionDialogJMD/index'
 import IntersiteSteamTransfer from './Inputs/components/IntersiteSteamTransfer'
 
 const FixedConsumptionJMD = () => {
@@ -154,18 +154,20 @@ const FixedConsumptionJMD = () => {
     {
       field: 'senderMaterial',
       title: 'Sender Material',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 130,
+      minWidth: 130,
       type: 'text',
       editable: false,
+      locked: true,
     },
     {
       field: 'senderMaterialCode',
       title: 'Sender Material Code',
-      widthT: 170,
-      minWidth: 170,
+      widthT: 130,
+      minWidth: 130,
       type: 'text',
       editable: false,
+      locked: true,
     },
     {
       field: 'senderMaterialUom',
@@ -178,10 +180,11 @@ const FixedConsumptionJMD = () => {
     {
       field: 'senderPlant',
       title: 'Sender Plant',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 130,
+      minWidth: 130,
       type: 'text',
       editable: false,
+      locked: true,
     },
     {
       field: 'senderPlantCode',
@@ -194,11 +197,12 @@ const FixedConsumptionJMD = () => {
     {
       field: 'costCenter',
       title: 'Sender Cost Center',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 130,
+      minWidth: 130,
       type: 'text',
       editable: false,
       hidden: false,
+      locked: true,
     },
     {
       field: 'costCenterId',
@@ -238,10 +242,11 @@ const FixedConsumptionJMD = () => {
     {
       field: 'plant',
       title: 'Receiver Plant',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 130,
+      minWidth: 130,
       type: 'text',
       editable: false,
+      locked: true,
     },
     {
       field: 'plantId',
@@ -255,10 +260,11 @@ const FixedConsumptionJMD = () => {
     {
       field: 'receiverCostCenter',
       title: 'Receiver Cost Center',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 130,
+      minWidth: 130,
       type: 'text',
       editable: false,
+      locked: true,
     },
     {
       field: 'receiverCostCenterCode',
@@ -627,7 +633,7 @@ const FixedConsumptionJMD = () => {
         <IntersiteSteamTransfer />
       </Stack> */}
 
-      <AddFixedConsumptionDialog
+      <AddFixedConsumptionDialogJMD
         open={addRowDialogOpen}
         onClose={() => {
           setAddRowDialogOpen(false)

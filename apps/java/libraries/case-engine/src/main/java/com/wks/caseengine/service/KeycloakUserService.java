@@ -11,14 +11,19 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.dto.PlantsDTO;
+import com.wks.caseengine.dto.SitesDTO;
+import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.UserScreenMapping;
 import com.wks.caseengine.repository.UserScreenMappingRepository;
 import com.wks.caseengine.utility.KeycloakAdminClient;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +39,12 @@ public class KeycloakUserService {
 
 	@Autowired
 	private UserScreenMappingRepository userScreenMappingRepository;
+
+	@Autowired
+	private VerticalsService verticalsService;
+
+	@Autowired
+	private VerticalScreenMappingService verticalScreenMappingService;
 	
 	private final KeycloakAdminClient keycloakAdminClient;
 
@@ -122,7 +133,7 @@ public class KeycloakUserService {
 	public Map<String, Object> updateUser(Map<String, Object> data) throws Exception {
 		Map<String, Object> result = new HashMap<>();
 		Keycloak keycloak = keycloakAdminClient.getInstance();
-		
+	
 		try {
 		    // Get shared data
 		    List<String> userIds = (List<String>) data.get("userIds");
@@ -293,6 +304,105 @@ public class KeycloakUserService {
 
 		return result;
 	}
+
+	public Map<String, Object> grantAllScreens(Map<String, Object> data, String aopYear) throws Exception {
+		List<String> userIds = (List<String>) data.get("userIds");
+		List<String> verticalIds = (List<String>) data.get("verticalIds");
+
+		if (userIds == null || userIds.isEmpty()) {
+			throw new Exception("userIds must not be empty.");
+		}
+		if (verticalIds == null || verticalIds.isEmpty()) {
+			throw new Exception("verticalIds must not be empty.");
+		}
+
+
+		Map<String, VerticalsDTO> hierarchyById = verticalsService.getHierarchyData().stream()
+				.collect(Collectors.toMap(v -> v.getId().toUpperCase(), v -> v, (v1, v2) -> v1));
+
+		List<String> unknownVerticalIds = verticalIds.stream()
+				.filter(id -> !hierarchyById.containsKey(id.toUpperCase()))
+				.collect(Collectors.toList());
+		if (!unknownVerticalIds.isEmpty()) {
+			throw new Exception("Unknown verticalIds: " + unknownVerticalIds);
+		}
+
+		List<Map<String, Object>> verticalEntries = new ArrayList<>();
+
+		for (String verticalId : new LinkedHashSet<>(verticalIds)) {
+			VerticalsDTO vertical = hierarchyById.get(verticalId.toUpperCase());
+			List<Map<String, Object>> siteEntries = new ArrayList<>();
+
+			for (SitesDTO site : Optional.ofNullable(vertical.getSites()).orElseGet(ArrayList::new)) {
+				List<Map<String, Object>> plantEntries = new ArrayList<>();
+
+				for (PlantsDTO plant : Optional.ofNullable(site.getPlants()).orElseGet(ArrayList::new)) {
+					List<String> screens = getParentScreenTitles(plant.getId(), aopYear);
+					if (screens.isEmpty()) {
+						continue;
+					}
+
+					Map<String, Object> plantEntry = new HashMap<>();
+					plantEntry.put("plantId", plant.getId());
+					plantEntry.put("screens", screens);
+					plantEntry.put("permission", new ArrayList<String>());
+					plantEntries.add(plantEntry);
+				}
+
+				if (!plantEntries.isEmpty()) {
+					Map<String, Object> siteEntry = new HashMap<>();
+					siteEntry.put("siteId", site.getId());
+					siteEntry.put("plants", plantEntries);
+					siteEntries.add(siteEntry);
+				}
+			}
+
+			if (!siteEntries.isEmpty()) {
+				Map<String, Object> verticalEntry = new HashMap<>();
+				verticalEntry.put("verticalId", vertical.getId());
+				verticalEntry.put("sites", siteEntries);
+				verticalEntries.add(verticalEntry);
+			}
+		}
+
+		if (verticalEntries.isEmpty()) {
+			throw new Exception("No screens found for the given verticalIds and aopYear " + aopYear + ".");
+		}
+
+		Map<String, Object> attributes = new HashMap<>();
+		attributes.put("plants", verticalEntries);
+
+		Map<String, Object> updatePayload = new HashMap<>();
+		updatePayload.put("role", data.get("role"));
+		updatePayload.put("userIds", userIds);
+		updatePayload.put("attributes", attributes);
+
+		return updateUser(updatePayload);
+	}
+
+	private List<String> getParentScreenTitles(String plantId, String aopYear) throws Exception {
+		Map<String, Object> screenMapping = verticalScreenMappingService.getPlantScreenMapping(plantId, aopYear);
+		List<Map<String, Object>> verticalData = (List<Map<String, Object>>) screenMapping.get("data");
+		if (verticalData == null) {
+			return new ArrayList<>();
+		}
+
+		Set<String> titles = new LinkedHashSet<>();
+		for (Map<String, Object> vertical : verticalData) {
+			List<Map<String, Object>> children = (List<Map<String, Object>>) vertical.get("children");
+			if (children == null) {
+				continue;
+			}
+			for (Map<String, Object> child : children) {
+				Object title = child.get("title");
+				if (title instanceof String && !((String) title).isBlank()) {
+					titles.add((String) title);
+				}
+			}
+		}
+		return new ArrayList<>(titles);
+	}
+
 
 	public Map<String, Object> getRealmRoles() throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();

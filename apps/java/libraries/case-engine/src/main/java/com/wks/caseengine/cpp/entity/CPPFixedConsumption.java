@@ -29,6 +29,12 @@ public class CPPFixedConsumption {
     @Column(name = "NormParameter_FK_Id")
     private UUID normParameterFkId;
 
+    @Column(name = "Receiver_CostCenter_FK_Id")
+    private UUID receiverCostCenterFkId;
+
+    @Column(name = "Sender_NormParameter_FK_Id")
+    private UUID senderNormParameterFkId;
+
     @Column(name = "Apr")
     private Double apr;
 

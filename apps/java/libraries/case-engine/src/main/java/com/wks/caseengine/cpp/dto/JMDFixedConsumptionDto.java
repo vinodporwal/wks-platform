@@ -43,6 +43,11 @@ public class JMDFixedConsumptionDto {
     private UUID remarkId;
     private UUID costCenter_FK_Id;
     private UUID normParameter_FK_Id;
+    private UUID plantFkId;
+    private UUID cppCostCenterFkId;
+    private UUID receiverCostCenterFkId;
+    private UUID senderNormParameterFkId;
+    private UUID senderPlantId;
 
     // Sender (Material) details
     private String senderPlant;

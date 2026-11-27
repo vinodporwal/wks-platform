@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom'
 import { DataService } from 'services/DataService'
 import { useLocation } from '../../../node_modules/react-router-dom/dist/index'
 import AopTabs from 'components/AopTabs'
+import Config from 'consts/index'
+import GrantAllAccess from './GrantAllAccess'
 
 const UserManagementTable = ({ keycloak }) => {
   const navigate = useNavigate()
@@ -33,6 +35,7 @@ const UserManagementTable = ({ keycloak }) => {
   const [inputValue, setInputValue] = useState('') // keeps the typed text intact
   const [open, setOpen] = useState(false)
   const [tabIndex, setTabIndex] = useState(0)
+  const isDeveloperRole = localStorage.getItem('developer_role') === 'true'
 
   const location = useLocation()
   const data = location.state || ''
@@ -128,18 +131,55 @@ const UserManagementTable = ({ keycloak }) => {
     getPlantAndSite()
   }, [keycloak])
 
+  const searchAbortControllerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
   const handleSearchChange = async (value) => {
+    if (searchAbortControllerRef.current) {
+      searchAbortControllerRef.current.abort()
+      searchAbortControllerRef.current = null
+    }
+
     if (value.length > 2) {
+      const controller = new AbortController()
+      searchAbortControllerRef.current = controller
       setLoading(true)
       try {
-        const res = await DataService.getUserBySearch(keycloak, value)
-        setSearchOptions(res.data)
+        const url = `${Config.CaseEngineUrl}/task/users/search?search=${encodeURIComponent(value)}`
+        const resp = await fetch(url, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${keycloak.token}`,
+          },
+          signal: controller.signal,
+        })
+        if (!resp.ok) {
+          throw new Error(`API Error: ${resp.status} ${resp.statusText}`)
+        }
+        const res = await resp.json()
+        if (!controller.signal.aborted) {
+          setSearchOptions(res.data)
+        }
       } catch (err) {
+        if (err?.name === 'AbortError') return
         console.error(err)
       } finally {
-        setLoading(false)
+        if (searchAbortControllerRef.current === controller) {
+          searchAbortControllerRef.current = null
+          setLoading(false)
+        }
       }
     } else {
+      setLoading(false)
       setSearchOptions([])
     }
   }
@@ -278,7 +318,11 @@ const UserManagementTable = ({ keycloak }) => {
       <AopTabs
         tabIndex={tabIndex}
         setTabIndex={setTabIndex}
-        tabs={['Grant Access', 'Revoke Access']}
+        tabs={
+          isDeveloperRole
+            ? ['Grant Access', 'Revoke Access', 'Grant All Access']
+            : ['Grant Access', 'Revoke Access']
+        }
       />
 
       {tabIndex === 0 && (
@@ -427,6 +471,9 @@ const UserManagementTable = ({ keycloak }) => {
             Next
           </Button>
         </Box>
+      )}
+      {isDeveloperRole && tabIndex === 2 && (
+        <GrantAllAccess keycloak={keycloak} plantSiteData={plantSiteData} />
       )}
       {/* <Button
                   variant='contained'
