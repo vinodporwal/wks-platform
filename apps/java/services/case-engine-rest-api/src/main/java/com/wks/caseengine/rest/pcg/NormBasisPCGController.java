@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.pcg.service.NormBasisPCGService;
 import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TCGTransactionDTO;
 import com.wks.caseengine.pcg.dto.TargetActualDafThroughtFilterDTO;
 import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -120,4 +121,21 @@ public class NormBasisPCGController {
     }
 
 
+    @GetMapping("/tgc-on-transaction")
+    public ResponseEntity<AOPMessageVM> getTCGTransactionData(@RequestParam String plantId, @RequestParam String aopYear) {
+        AOPMessageVM aopMessageVM = normBasisService.getTCGTransactionData(plantId, aopYear);
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @GetMapping("/tgc-on-dropdown")
+    public ResponseEntity<AOPMessageVM> getTCGTransactionDropDownData(@RequestParam String plantId, @RequestParam String aopYear) {
+        AOPMessageVM aopMessageVM = normBasisService.getTCGTransactionDropDownData(plantId, aopYear);
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @PostMapping("/tgc-on-transaction")
+    public ResponseEntity<AOPMessageVM> saveTCGTransactionData(@RequestBody List<TCGTransactionDTO> tcgTransactionDTOList, @RequestParam String plantId, @RequestParam String aopYear) {
+        AOPMessageVM aopMessageVM = normBasisService.saveTCGTransactionData(tcgTransactionDTOList, plantId, aopYear);
+        return ResponseEntity.ok(aopMessageVM);
+    }
 }
