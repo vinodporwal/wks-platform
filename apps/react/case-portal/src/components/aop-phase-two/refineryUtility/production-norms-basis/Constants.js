@@ -1,9 +1,12 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/refineryUtility/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import {
+  validateRowDataWithRemarks,
+  convertFromScientificNotation,
+} from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
@@ -70,7 +73,7 @@ const Constants = ({ startDate, endDate }) => {
           plantName.toLowerCase() === 'wao_unit (672)')
 
       if (isDtaUnitPlant) {
-        return (Math.trunc(num * 100) / 100).toFixed(2)
+        return num.toFixed(2)
       }
 
       const cleanUom = String(uom ?? '')
@@ -112,8 +115,12 @@ const Constants = ({ startDate, endDate }) => {
       // 1 decimal conditions:
       // 1) COC for DTA site and CT4 / CT6 plants
       // 2) Name like 'Cooling Water Design' for DMD site
-      if ((isCoc && isDtaCtPlant) || (isDmdSite && isCoolingWaterDesign) ||(isCoc && isDtapcgCtPlant)) {
-        return (Math.trunc(num * 10) / 10).toFixed(1)
+      if (
+        (isCoc && isDtaCtPlant) ||
+        (isDmdSite && isCoolingWaterDesign) ||
+        (isCoc && isDtapcgCtPlant)
+      ) {
+        return num.toFixed(1)
       }
 
       const isPcgAsuPlant =
@@ -125,22 +132,59 @@ const Constants = ({ startDate, endDate }) => {
         cleanName.includes('compressed air fixed ratio') ||
         cleanDisplayName.includes('compressed air fixed ratio')
 
-      // 3 decimal conditions:
-      // SEZ and DTA sites with PCG ASU plant for Compressed air fixed ratio
+      // 3 decimals: PCG ASU (DTA / SEZ) compressed air fixed ratio
       if (isPcgAsuPlant && isCompressedAirFixedRatio) {
-        return (Math.trunc(num * 1000) / 1000).toFixed(3)
+        return num.toFixed(3)
       }
 
       if (isSpecialPlant) {
         if (cleanUom === '%' || cleanUom === 'm3/hr') {
           return Math.trunc(num).toString()
         }
-        return (Math.trunc(num * 100) / 100).toFixed(2)
-      } else {
-        return Math.trunc(num).toString()
+        return num.toFixed(2)
       }
+
+      // Default: 3 decimals
+      return num.toFixed(3)
     },
     [siteObject?.name, plantObject?.name],
+  )
+
+  // Cell shows formatted value, hover shows the raw DB value (e.g. 1.12345).
+  // Edit mode reads the raw value from the row, so it also shows 1.12345.
+  const ValueDataCell = useCallback(
+    (props) => {
+      const { dataItem, field, tdProps, customModifiedCells } = props
+      const rowId = dataItem?.id
+      const rawValue = dataItem?.[field]
+      const uom = dataItem?.UOM || dataItem?.uom || ''
+      const formattedValue = formatUomValue(rawValue, uom, dataItem)
+
+      const isEdited = Object.prototype.hasOwnProperty.call(
+        customModifiedCells?.[rowId] || {},
+        field,
+      )
+
+      const tooltipText =
+        rawValue !== null && rawValue !== undefined && rawValue !== ''
+          ? convertFromScientificNotation(rawValue) ?? String(rawValue)
+          : ''
+
+      return (
+        <td
+          {...tdProps}
+          title={tooltipText}
+          className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''} k-number-right`.trim()}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'right',
+          }}
+        >
+          {formattedValue}
+        </td>
+      )
+    },
+    [formatUomValue],
   )
 
   useEffect(() => {
@@ -198,7 +242,8 @@ const Constants = ({ startDate, endDate }) => {
           widthT: 150,
           align: 'left',
           headerAlign: 'left',
-          type: 'uomWholeNumber',
+          type: 'number1',
+          customCell: ValueDataCell,
         },
         {
           field: 'oct',
@@ -209,7 +254,8 @@ const Constants = ({ startDate, endDate }) => {
           widthT: 150,
           align: 'left',
           headerAlign: 'left',
-          type: 'uomWholeNumber',
+          type: 'number1',
+          customCell: ValueDataCell,
         },
       )
     } else {
@@ -222,7 +268,8 @@ const Constants = ({ startDate, endDate }) => {
         widthT: 150,
         align: 'left',
         headerAlign: 'left',
-        type: 'uomWholeNumber',
+        type: 'number1',
+        customCell: ValueDataCell,
       })
     }
 
@@ -237,7 +284,7 @@ const Constants = ({ startDate, endDate }) => {
     })
 
     return baseCols
-  }, [isTwoColumnPlant])
+  }, [isTwoColumnPlant, ValueDataCell])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -256,12 +303,12 @@ const Constants = ({ startDate, endDate }) => {
 
       if (res?.data?.length === 0) {
         setRows([])
+        setOriginalRows([])
         return
       }
 
       // console.log('Constants data:', res)
       const formattedData = res?.data?.map((item, index) => {
-        const uom = item?.UOM || item?.uom || ''
         const name = item?.Name || item?.name || ''
         const displayName =
           item?.DisplayName ||
@@ -275,20 +322,15 @@ const Constants = ({ startDate, endDate }) => {
             : item?.value ?? ''
         const rawOct =
           item?.oct !== undefined && item?.oct !== null ? item?.oct : ''
-        const formattedApr = formatUomValue(rawApr, uom, item)
-        const formattedOct =
-          rawOct !== '' && rawOct !== null && rawOct !== undefined
-            ? formatUomValue(rawOct, uom, item)
-            : ''
 
         return {
           ...item,
           productName: displayName,
           DisplayName: displayName,
           Name: name,
-          value: formattedApr,
-          apr: formattedApr,
-          oct: formattedOct,
+          value: rawApr,
+          apr: rawApr,
+          oct: rawOct,
           remarks: item?.remarks || '',
           id: item?.normParameterFKId || item?.id || index + 1,
           isConstantsTab: true,
@@ -299,6 +341,7 @@ const Constants = ({ startDate, endDate }) => {
     } catch (error) {
       console.error('Error fetching constants data:', error)
       setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
     }
@@ -405,9 +448,7 @@ const Constants = ({ startDate, endDate }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      console.log('Saving constants data:', payload)
-
-      const response = await ProductionNormsApiService.saveConstantsData(
+      await ProductionNormsApiService.saveConstantsData(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
@@ -558,46 +599,6 @@ const Constants = ({ startDate, endDate }) => {
     setRemarkDialogOpen(true)
   }
 
-  const handleItemChange = useCallback(
-    (e, setRows, setModifiedCells, setCustomModifiedCells) => {
-      const { dataItem, field, value } = e
-      if (field === 'apr' || field === 'oct' || field === 'value') {
-        const uom = dataItem?.UOM || dataItem?.uom || ''
-        const formatted = formatUomValue(value, uom, dataItem)
-        if (formatted !== value) {
-          setRows((prev) =>
-            prev.map((r) =>
-              r.id === dataItem.id ? { ...r, [field]: formatted } : r,
-            ),
-          )
-          setModifiedCells((prev) => {
-            const rowMod = prev[dataItem.id] || {}
-            return {
-              ...prev,
-              [dataItem.id]: {
-                ...rowMod,
-                [field]: formatted,
-              },
-            }
-          })
-          if (setCustomModifiedCells) {
-            setCustomModifiedCells((prev) => {
-              const rowMod = prev[dataItem.id] || {}
-              return {
-                ...prev,
-                [dataItem.id]: {
-                  ...rowMod,
-                  [field]: formatted,
-                },
-              }
-            })
-          }
-        }
-      }
-    },
-    [formatUomValue],
-  )
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -610,7 +611,6 @@ const Constants = ({ startDate, endDate }) => {
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
-        customItemChange={handleItemChange}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

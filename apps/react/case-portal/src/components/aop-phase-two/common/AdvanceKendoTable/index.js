@@ -641,17 +641,54 @@ const AdvanceKendoTable = ({
     ],
   )
 
-  const handleEditChange = useCallback((e) => {
-    setEdit(e.edit)
-    // e.edit = { rowId: [field] } — extract active cell
-    if (e.edit && typeof e.edit === 'object') {
-      const rowId = Object.keys(e.edit)[0]
-      const field = e.edit[rowId]?.[0]
-      if (rowId && field) {
-        activeCellRef.current = { rowId, field }
+  const handleEditChange = useCallback(
+    (e) => {
+      const nextEdit = e.edit
+
+      // Veto entering edit mode when the target cell is not editable for
+      // that row (row-level isEditable=false, per-row editableFields /
+      // nonEditableFields, or a failing conditionalEditable rule). Without
+      // this, clicking a non-editable cell still opens incell edit mode
+      // because Kendo edit state is row-level.
+      if (nextEdit && typeof nextEdit === 'object') {
+        const rowId = Object.keys(nextEdit)[0]
+        const field = nextEdit[rowId]?.[0]
+        const row = (rows || []).find(
+          (r) =>
+            String(r?.id) === String(rowId) ||
+            String(r?.idFromApi) === String(rowId),
+        )
+        const col = extractAllColumns(columns || []).find(
+          (c) => c.field === field,
+        )
+
+        const blockedByRow = row?.isEditable === false
+        const blockedByFields =
+          row?.nonEditableFields?.includes(field) ||
+          (row?.editableFields && !row.editableFields.includes(field))
+        const { dependsOn, editableValues } = col?.conditionalEditable || {}
+        const blockedByCondition =
+          col?.conditionalEditable &&
+          !editableValues.includes(row?.[dependsOn])
+
+        if (blockedByRow || blockedByFields || blockedByCondition) {
+          setEdit({})
+          return
+        }
       }
-    }
-  }, [])
+
+      setEdit(nextEdit)
+      // e.edit = { rowId: [field] } — extract active cell
+      if (nextEdit && typeof nextEdit === 'object') {
+        const rowId = Object.keys(nextEdit)[0]
+        const field = nextEdit[rowId]?.[0]
+        if (rowId && field) {
+          activeCellRef.current = { rowId, field }
+        }
+      }
+    },
+    [rows, columns, extractAllColumns],
+  )
 
   // Helper function to add IST timezone offset (+5:30) to dates before sending to backend
   const addTimeOffset = (dateTime) => {

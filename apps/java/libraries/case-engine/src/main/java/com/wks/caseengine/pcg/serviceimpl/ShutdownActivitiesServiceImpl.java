@@ -37,6 +37,7 @@ import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.pcg.dto.AopProductionNormsDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownDTO;
+import com.wks.caseengine.pcg.dto.ShutdownSNGTransactionDTO;
 import com.wks.caseengine.pcg.dto.ShutdownTaTransactionDTO;
 import com.wks.caseengine.pcg.service.ShutdownActivitiesService;
 import com.wks.caseengine.repository.PlantMaintenanceRepository;
@@ -617,4 +618,167 @@ public class ShutdownActivitiesServiceImpl implements ShutdownActivitiesService 
             return null;
         }
     }
+
+    @Override
+    public List<ShutdownSNGTransactionDTO> getShutdownSNGTransactions(UUID plantId, String aopYear) {
+
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_GetShutdownTaTransactions";
+        String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+
+        List<Object[]> rows = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int columnCount = rs.getMetaData().getColumnCount();
+            Object[] row = new Object[columnCount];
+            for (int i = 0; i < columnCount; i++) {
+                row[i] = rs.getObject(i + 1);
+            }
+            return row;
+        }, plantId.toString(), aopYear);
+
+        List<ShutdownSNGTransactionDTO> resultList = new ArrayList<>();
+        for (Object[] row : rows) {
+            ShutdownSNGTransactionDTO dto = new ShutdownSNGTransactionDTO();
+            dto.setId(row[0] != null ? row[0].toString() : null);
+            dto.setName(row[1] != null ? row[1].toString() : "");
+            dto.setDescription(row[2] != null ? row[2].toString() : "");
+            dto.setMaintStartDateTime(row[3] != null ? new Date(((java.sql.Timestamp) row[3]).getTime()) : null);
+            dto.setMaintEndDateTime(row[4] != null ? new Date(((java.sql.Timestamp) row[4]).getTime()) : null);
+            dto.setDurationInMins(row[5] != null ? Integer.parseInt(row[5].toString()) : 0);
+            if (row[5] != null) {
+                int totalMinutes = (Integer) row[5];
+                int hours = totalMinutes / 60;
+                int minutes = totalMinutes % 60;
+                double durationInHrs = hours + (minutes / 100.0);
+                dto.setDurationInHrs(durationInHrs);
+            }
+            dto.setMaintForMonth(row[6] != null ? row[6].toString() : "");
+            dto.setAuditYear(row[7] != null ? row[7].toString() : "");
+            dto.setRemarks(row[8] != null ? row[8].toString() : "");
+            dto.setCreatedOn(row[9] != null ? row[9].toString() : "");
+            dto.setUser(row[10] != null ? row[10].toString() : "");
+            dto.setVersion(row[11] != null ? row[11].toString() : "");
+            dto.setPlantMaintenanceFKId(row[12] != null ? row[12].toString() : null);
+            dto.setNormParameterFKId(row[13] != null ? row[13].toString() : null);
+            dto.setPlantFKId(row[14] != null ? row[14].toString() : null);
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
+
+    @Override
+	public List<ShutdownSNGTransactionDTO> saveShutdownSNGTransactions(UUID plantId, String aopYear, List<ShutdownSNGTransactionDTO> shutdownSNGTransactionDTOList) {
+	
+        List<ShutdownSNGTransactionDTO> failedList = new ArrayList<>();
+
+
+			UUID plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
+			if (plantMaintenanceId == null) {
+				UUID maintenanceTypesId = plantMaintenanceTransactionRepository.findIdByName("Shutdown");
+				PlantMaintenance plantMaintenance = new PlantMaintenance();
+				plantMaintenance.setMaintenanceText("Shutdown");
+				plantMaintenance.setIsDefault(true);
+				plantMaintenance.setPlantFkId(plantId);
+				plantMaintenance.setMaintenanceTypeFkId(maintenanceTypesId);
+				plantMaintenanceRepository.save(plantMaintenance);
+				plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
+			}
+			for (ShutdownSNGTransactionDTO shutdownSNGTransactionDTO    : shutdownSNGTransactionDTOList) {
+				if ("Failed".equalsIgnoreCase(shutdownSNGTransactionDTO.getSaveStatus())) {
+					failedList.add(shutdownSNGTransactionDTO);
+					continue;
+				}
+			
+				if (!isSameMonthAndYear(shutdownSNGTransactionDTO.getMaintStartDateTime(), shutdownSNGTransactionDTO.getMaintEndDateTime())) {
+					shutdownSNGTransactionDTO.setSaveStatus("Failed");
+					shutdownSNGTransactionDTO.setErrDescription("SD - From and SD - To must be in the same month and year.");
+					failedList.add(shutdownSNGTransactionDTO);
+					continue;
+				}
+				try {
+				PlantMaintenanceTransaction plantMaintenanceTransaction =null;
+				if (shutdownSNGTransactionDTO.getId() == null || shutdownSNGTransactionDTO.getId().isEmpty()) {
+					plantMaintenanceTransaction = new PlantMaintenanceTransaction();
+					plantMaintenanceTransaction.setId(UUID.randomUUID());
+                    plantMaintenanceTransaction.setPlantMaintenanceFkId(plantMaintenanceId);
+                    if (shutdownSNGTransactionDTO.getNormParameterFKId() != null) {
+						plantMaintenanceTransaction.setNormParametersFKId(UUID.fromString(shutdownSNGTransactionDTO.getNormParameterFKId()));
+					}
+					
+				} else {
+
+					 plantMaintenanceTransaction = slowdownPlanRepository
+							.findById(UUID.fromString(shutdownSNGTransactionDTO.getId())).get();
+
+					if (!isRemarkUpdatedIfFieldsChangedSNG(shutdownSNGTransactionDTO, plantMaintenanceTransaction)) {
+						shutdownSNGTransactionDTO.setSaveStatus("Failed");
+						shutdownSNGTransactionDTO.setErrDescription("Please Update Remarks");
+						failedList.add(shutdownSNGTransactionDTO);
+						continue;
+					}
+				}
+				plantMaintenanceTransaction.setDiscription(shutdownSNGTransactionDTO.getDescription());
+					if (shutdownSNGTransactionDTO.getDurationInHrs() != null) {
+						plantMaintenanceTransaction
+								.setDurationInMins((int) (Math.floor(shutdownSNGTransactionDTO.getDurationInHrs()) * 60)
+										+ (int) Math.round((shutdownSNGTransactionDTO.getDurationInHrs()
+												- Math.floor(shutdownSNGTransactionDTO.getDurationInHrs())) * 100));
+					} else {
+						plantMaintenanceTransaction.setDurationInMins(0);
+					}
+
+					plantMaintenanceTransaction.setMaintEndDateTime(shutdownSNGTransactionDTO.getMaintEndDateTime());
+					plantMaintenanceTransaction.setMaintStartDateTime(shutdownSNGTransactionDTO.getMaintStartDateTime());
+					if (shutdownSNGTransactionDTO.getMaintStartDateTime() != null) {
+						plantMaintenanceTransaction
+								.setMaintForMonth(shutdownSNGTransactionDTO.getMaintStartDateTime().getMonth() + 1);
+					}
+
+				
+					plantMaintenanceTransaction.setRemarks(shutdownSNGTransactionDTO.getRemarks());
+					plantMaintenanceTransaction.setUser(Utility.getUserName());
+					plantMaintenanceTransaction.setVersion(shutdownSNGTransactionDTO.getVersion() != null && !shutdownSNGTransactionDTO.getVersion().isEmpty() ? shutdownSNGTransactionDTO.getVersion() : "V1");
+					plantMaintenanceTransaction.setPlantId(plantId);
+					plantMaintenanceTransaction.setAuditYear(shutdownSNGTransactionDTO.getAuditYear());
+					plantMaintenanceTransaction.setCreatedOn(new Date());
+                    plantMaintenanceTransaction.setName(shutdownSNGTransactionDTO.getName());
+					
+					slowdownPlanRepository.save(plantMaintenanceTransaction);
+				} catch (Exception e) {
+					shutdownSNGTransactionDTO.setSaveStatus("Failed");
+					shutdownSNGTransactionDTO.setErrDescription("Failed to save record: " + e.getMessage());
+					failedList.add(shutdownSNGTransactionDTO);
+				}
+			}
+	
+		return failedList;
+	}
+
+    private boolean isRemarkUpdatedIfFieldsChangedSNG(ShutdownSNGTransactionDTO dto,
+        PlantMaintenanceTransaction existing) {
+
+            String existingName = existing.getName() != null ? existing.getName().trim() : null;
+            String newName = dto.getName() != null ? dto.getName().trim() : null;
+            String existingDescription = existing.getDiscription() != null ? existing.getDiscription().trim() : null;
+            String newDescription = dto.getDescription() != null ? dto.getDescription().trim() : null;
+            String existingRemarks = existing.getRemarks() != null ? existing.getRemarks().trim() : null;
+            String newRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : null;
+
+    boolean nameChanged        = !Objects.equals(newName,                 existingName);
+    boolean descriptionChanged = !Objects.equals(newDescription,          existingDescription);
+    boolean startChanged       = !Objects.equals(dto.getMaintStartDateTime(),   existing.getMaintStartDateTime());
+    boolean endChanged         = !Objects.equals(dto.getMaintEndDateTime(),     existing.getMaintEndDateTime());
+
+    boolean fieldsChanged = nameChanged || descriptionChanged || startChanged || endChanged;
+
+    if (!fieldsChanged) {
+        return true; // nothing changed – no remark update required
+    }
+
+    // At least one field changed: the remark must be different from the stored one
+    return !Objects.equals(newRemarks, existingRemarks);
+}
 }

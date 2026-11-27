@@ -6,6 +6,8 @@ import java.util.UUID;
 import com.wks.caseengine.dto.NormBasisPCGDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TCGTransactionDTO;
+import com.wks.caseengine.pcg.dto.TCGTransactionDropDownDTO;
 import com.wks.caseengine.pcg.dto.TargetActualDafThroughtFilterDTO;
 import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 
@@ -25,6 +27,12 @@ public interface NormBasisPCGService {
 
     public List<TargetActualDafThroughtFilterDTO> getTargetActualDafThroughtFilter(UUID plantId, String aopYear);
 
+    public AOPMessageVM getTCGTransactionData(String plantId, String aopYear);
+
+    public AOPMessageVM getTCGTransactionDropDownData(String plantId, String aopYear);
+
     public AOPMessageVM saveTargetActualDafThroughtFilter(List<TargetActualDafThroughtFilterDTO> targetActualDafThroughtFilterDTOList, String year);
+
+    public AOPMessageVM saveTCGTransactionData(List<TCGTransactionDTO> tcgTransactionDTOList, String plantId, String aopYear);
 
 }

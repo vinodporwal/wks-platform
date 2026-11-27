@@ -5277,18 +5277,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				if (merox) {
 					list.add(dto.getLastFy());
 				}
-				list.add(dto.getApril());
-				list.add(dto.getMay());
-				list.add(dto.getJune());
-				list.add(dto.getJuly());
-				list.add(dto.getAugust());
-				list.add(dto.getSeptember());
-				list.add(dto.getOctober());
-				list.add(dto.getNovember());
-				list.add(dto.getDecember());
-				list.add(dto.getJanuary());
-				list.add(dto.getFebruary());
-				list.add(dto.getMarch());
+				
+				boolean isPiggingStatus = "pigging status".equalsIgnoreCase(dto.getNormParameterTypeDisplayName());
+				List<Object> monthValues = Arrays.asList(dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+						dto.getAugust(), dto.getSeptember(), dto.getOctober(), dto.getNovember(),
+						dto.getDecember(), dto.getJanuary(), dto.getFebruary(), dto.getMarch());
+				if (isPiggingStatus) {
+					monthValues = monthValues.stream().map(this::convertPiggingStatusValue).collect(Collectors.toList());
+				}
+				list.addAll(monthValues);
 				list.add(dto.getRemarks());
 				list.add(dto.getId());
 				isEditable.add(dto.getIsEditable());
@@ -5435,6 +5432,19 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		}
 		return null;
 
+	}
+
+	private Object convertPiggingStatusValue(Object value) {
+		if (value instanceof Number) {
+			switch (((Number) value).intValue()) {
+				case 1: return "NP";
+				case 2: return "P";
+				case 4: return "P-4";
+				case 5: return "P-5";
+				default: break;
+			}
+		}
+		return value;
 	}
 
 	// ref: createExcel | separate method to include sap code

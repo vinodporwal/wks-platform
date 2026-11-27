@@ -47,6 +47,10 @@ export const ProductionNormsApiService = {
   // Gasifier Target Actual DAF Throughput APIs
   getTargetActualDafThroughtFilter,
   saveTargetActualDafThroughtFilter,
+  //
+  getTcgOnlineofflineData,
+  saveTcgOnlineoffline,
+  getTcgOnlineofflineDropdownData,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -799,6 +803,65 @@ async function saveTargetActualDafThroughtFilter(keycloak, year, payload) {
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error in saveTargetActualDafThroughtFilter:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getTcgOnlineofflineData(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/tgc-on-transaction?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in getTcgOnlineofflineData:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveTcgOnlineoffline(keycloak, year,plantId, payload) {
+  const url = `${Config.CaseEngineUrl}/task/tgc-on-transaction?aopYear=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in TCG Online Offline:', e)
+    return Promise.reject(e)
+  }
+}
+async function getTcgOnlineofflineDropdownData(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/tgc-on-dropdown?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in getTcgOnlineofflineData:', e)
     return Promise.reject(e)
   }
 }
