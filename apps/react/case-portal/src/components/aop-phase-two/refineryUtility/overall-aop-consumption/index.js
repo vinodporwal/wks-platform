@@ -5,6 +5,7 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
+import { convertFromScientificNotation } from '../../common/commonUtilityFunctions'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
@@ -38,6 +39,21 @@ const SIX_DECIMAL_NORM_TYPES=[
 ].map(normalizeKey)
 const THREE_DECIMAL_NORM_TYPESDMD=['Utility Consumption'].map(normalizeKey)
 const THREE_DECIMAL_NORM_TYPESVMD=['Utility Consumption', 'Utility Specific Consumption(Total) Norms'].map(normalizeKey)
+const MONTH_COLUMNS = [
+  { field: 'april', headerKey: 4, widthT: 120 },
+  { field: 'may', headerKey: 5, widthT: 120 },
+  { field: 'june', headerKey: 6, widthT: 120 },
+  { field: 'july', headerKey: 7, widthT: 120 },
+  { field: 'aug', headerKey: 8, widthT: 120 },
+  { field: 'sep', headerKey: 9, widthT: 120 },
+  { field: 'oct', headerKey: 10, widthT: 120 },
+  { field: 'nov', headerKey: 11, widthT: 120 },
+  { field: 'dec', headerKey: 12, widthT: 120 },
+  { field: 'jan', headerKey: 1, widthT: 120 },
+  { field: 'feb', headerKey: 2, widthT: 120 },
+  { field: 'march', headerKey: 3 },
+]
+
 const THREE_DECIMAL_NORM_TYPESSMD = [
     'Raw Material',
     'Utility Consumption',
@@ -167,29 +183,29 @@ const ISETP_Plants=(siteName === 'DTA' &&
       setSnackbarData,
     })
   const formatValueByUom = useCallback(
-      (val, uom, row = {}) => {
-        if (val === null || val === undefined || val === '') return ''
-        const num = parseFloat(val)
-        if (isNaN(num)) return val
+    (val, uom, row = {}) => {
+      if (val === null || val === undefined || val === '') return ''
+      const num = parseFloat(val)
+      if (isNaN(num)) return val
 
-        if (isDtaUnitPlant) {
-          return (Math.trunc(num * 100) / 100).toFixed(2)
+      if (isDtaUnitPlant) {
+        return num.toFixed(2)
+      }
+
+      if (isDtapcgCtPlant || isSezpcgCtPlant || isDtaCtPlant || isSezCtPlant) {
+        // Decide by normParameterTypeName (or display name), not by UOM
+        const cleanUom = String(uom ?? '')
+          .trim()
+          .toLowerCase()
+        const isThreeDecimal = CoolingTowerUom.some(
+          (u) => u.trim().toLowerCase() === cleanUom,
+        )
+        if (isThreeDecimal) {
+          return num.toFixed(3)
         }
-  
-        if (isDtapcgCtPlant || isSezpcgCtPlant || isDtaCtPlant || isSezCtPlant) {
-          // Decide by normParameterTypeName (or display name), not by UOM
-          const cleanUom = String(uom ?? '')
-            .trim()
-            .toLowerCase()
-          const isThreeDecimal = CoolingTowerUom.some(
-            (u) => u.trim().toLowerCase() === cleanUom,
-          )
-          if (isThreeDecimal) {
-            return (Math.trunc(num * 1000) / 1000).toFixed(3)
-          }
-          return Math.trunc(num).toString()
-        }
-        if (isDtaUnitPlants || isC2UnitPlants || isSEZPlnatsUomM3) {
+        return Math.trunc(num).toString()
+      }
+      if (isDtaUnitPlants || isC2UnitPlants || isSEZPlnatsUomM3) {
         // Decide by normParameterTypeName (or display name), not by UOM
         const cleanUom = String(uom ?? '')
           .trim()
@@ -198,7 +214,7 @@ const ISETP_Plants=(siteName === 'DTA' &&
           (u) => u.trim().toLowerCase() === cleanUom,
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
         return Math.trunc(num).toString()
       }
@@ -211,33 +227,33 @@ const ISETP_Plants=(siteName === 'DTA' &&
           (u) => u.trim().toLowerCase() === cleanUom,
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(5)
+          return num.toFixed(5)
         }
         return Math.trunc(num).toString()
       }
-        if (isFCCTame) {
-          return (Math.trunc(num * 100000) / 100000).toFixed(5)
+      if (isFCCTame) {
+        return num.toFixed(5)
+      }
+      if (isAsuPlant) {
+        const typeKeys = [
+          normalizeKey(row?.normParameterTypeName),
+          normalizeKey(row?.normParameterTypeDisplayName),
+        ]
+        const isThreeDecimal = typeKeys.some((k) =>
+          THREE_DECIMAL_NORM_TYPES.includes(k),
+        )
+        if (isThreeDecimal) {
+          return num.toFixed(3)
         }
-        if (isAsuPlant) {
-          const typeKeys = [
-            normalizeKey(row?.normParameterTypeName),
-            normalizeKey(row?.normParameterTypeDisplayName),
-          ]
-          const isThreeDecimal = typeKeys.some((k) =>
-            THREE_DECIMAL_NORM_TYPES.includes(k),
-          )
-          if (isThreeDecimal) {
-            return (Math.trunc(num * 1000) / 1000).toFixed(3)
-          }
-          const isSixDecimal = typeKeys.some((k) =>
-            SIX_DECIMAL_NORM_TYPES.includes(k),
-          )
-          if (isSixDecimal) {
-            return (Math.trunc(num * 1000000) / 1000000).toFixed(6)
-          }
-          return (Math.trunc(num * 100000) / 100000).toFixed(5)
+        const isSixDecimal = typeKeys.some((k) =>
+          SIX_DECIMAL_NORM_TYPES.includes(k),
+        )
+        if (isSixDecimal) {
+          return num.toFixed(6)
         }
-        if(ISDMD_Plants){
+        return num.toFixed(5)
+      }
+      if (ISDMD_Plants) {
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
           normalizeKey(row?.normParameterTypeDisplayName),
@@ -246,11 +262,11 @@ const ISETP_Plants=(siteName === 'DTA' &&
           THREE_DECIMAL_NORM_TYPESDMD.includes(k),
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
         return Math.trunc(num).toString()
       }
-      if(ISSMD_Plants){
+      if (ISSMD_Plants) {
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
           normalizeKey(row?.normParameterTypeDisplayName),
@@ -259,11 +275,11 @@ const ISETP_Plants=(siteName === 'DTA' &&
           THREE_DECIMAL_NORM_TYPESSMD.includes(k),
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
         return Math.trunc(num).toString()
       }
-      if(ISVMD_Plants){
+      if (ISVMD_Plants) {
         const typeKeys = [
           normalizeKey(row?.normParameterTypeName),
           normalizeKey(row?.normParameterTypeDisplayName),
@@ -272,18 +288,67 @@ const ISETP_Plants=(siteName === 'DTA' &&
           THREE_DECIMAL_NORM_TYPESVMD.includes(k),
         )
         if (isThreeDecimal) {
-          return (Math.trunc(num * 1000) / 1000).toFixed(3)
+          return num.toFixed(3)
         }
         return Math.trunc(num).toString()
       }
-  
-        return Math.trunc(num).toString()
-      },
-      [isDtaCtPlant, isDtapcgCtPlant, isSezpcgCtPlant, isAsuPlant, isFCCTame, ISDMD_Plants, ISSMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3],
-    )
+
+      return Math.trunc(num).toString()
+    },
+    [
+      isDtaCtPlant,
+      isDtapcgCtPlant,
+      isSezpcgCtPlant,
+      isAsuPlant,
+      isFCCTame,
+      ISDMD_Plants,
+      ISSMD_Plants,
+      ISVMD_Plants,
+      isSezCtPlant,
+      isDtaUnitPlant,
+      isDtaUnitPlants,
+      isC2UnitPlants,
+      ISETP_Plants,
+      isSEZPlnatsUomM3,
+    ],
+  )
+
+  const MonthDataCell = useCallback(
+    (props) => {
+      const { dataItem, field, tdProps, customModifiedCells } = props
+      const rowId = dataItem?.id
+      const rawValue = dataItem?.[field]
+      const uom = dataItem?.UOM || dataItem?.uom || ''
+      const formattedValue = formatValueByUom(rawValue, uom, dataItem)
+
+      const isEdited = Object.prototype.hasOwnProperty.call(
+        customModifiedCells?.[rowId] || {},
+        field,
+      )
+
+      const tooltipText =
+        rawValue !== null && rawValue !== undefined && rawValue !== ''
+          ? convertFromScientificNotation(rawValue) ?? String(rawValue)
+          : ''
+
+      return (
+        <td
+          {...tdProps}
+          title={tooltipText}
+          className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''} k-number-right`.trim()}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'right',
+          }}
+        >
+          {formattedValue}
+        </td>
+      )
+    },
+    [formatValueByUom],
+  )
 
   const columns = useMemo(() => {
-    const valueFormat = undefined
     const headerMap = generateHeaderNames(AOP_YEAR)
 
     return [
@@ -324,122 +389,40 @@ const ISETP_Plants=(siteName === 'DTA' &&
         editable: false,
         locked: true,
       },
-      {
-        field: 'april',
-        title: headerMap[4],
-        widthT: 120,
+      ...MONTH_COLUMNS.map(({ field, headerKey, widthT }) => ({
+        field,
+        title: headerMap[headerKey],
+        ...(widthT ? { widthT } : {}),
         minWidth: 120,
         type: 'number1',
         editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'may',
-        title: headerMap[5],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'june',
-        title: headerMap[6],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'july',
-        title: headerMap[7],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'aug',
-        title: headerMap[8],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'sep',
-        title: headerMap[9],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'oct',
-        title: headerMap[10],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'nov',
-        title: headerMap[11],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'dec',
-        title: headerMap[12],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'jan',
-        title: headerMap[1],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'feb',
-        title: headerMap[2],
-        widthT: 120,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
-      {
-        field: 'march',
-        title: headerMap[3],
-        // widthT: 100,
-        minWidth: 120,
-        type: 'number1',
-        editable: false,
-        format: valueFormat,
-      },
+        customCell: MonthDataCell,
+      })),
     ]
-  }, [AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame, isDtapcgCtPlant, isSezpcgCtPlant, ISDMD_Plants, ISSMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3])
+  }, [AOP_YEAR, MonthDataCell])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
     }
-  }, [PLANT_ID, AOP_YEAR, isDtaCtPlant, isAsuPlant, isFCCTame, isDtapcgCtPlant, isSezpcgCtPlant, ISDMD_Plants, ISSMD_Plants, ISVMD_Plants, isSezCtPlant, isDtaUnitPlant, isDtaUnitPlants, isC2UnitPlants, ISETP_Plants, isSEZPlnatsUomM3])
+  }, [
+    PLANT_ID,
+    AOP_YEAR,
+    isDtaCtPlant,
+    isAsuPlant,
+    isFCCTame,
+    isDtapcgCtPlant,
+    isSezpcgCtPlant,
+    ISDMD_Plants,
+    ISSMD_Plants,
+    ISVMD_Plants,
+    isSezCtPlant,
+    isDtaUnitPlant,
+    isDtaUnitPlants,
+    isC2UnitPlants,
+    ISETP_Plants,
+    isSEZPlnatsUomM3,
+  ])
 
   const fetchData = async () => {
     setLoading(true)
@@ -451,23 +434,8 @@ const ISETP_Plants=(siteName === 'DTA' &&
           AOP_YEAR,
         )
       const data =
-        response?.data?.aopConsumptionNormDTOList?.map((item) => {
-          const monthFields = [
-            'april',
-            'may',
-            'june',
-            'july',
-            'aug',
-            'sep',
-            'oct',
-            'nov',
-            'dec',
-            'jan',
-            'feb',
-            'march',
-          ]
-
-          const monthValues = monthFields.map((field) => {
+        response?.data?.aopConsumptionNormDTOList?.map((item, index) => {
+          const monthValues = MONTH_COLUMNS.map(({ field }) => {
             const val = item[field]
             return val !== null && val !== undefined && !isNaN(val)
               ? Number(val)
@@ -477,28 +445,12 @@ const ISETP_Plants=(siteName === 'DTA' &&
           const sum = monthValues.reduce((acc, val) => acc + val, 0)
           const avgNorms = sum / 12
 
-          const uom = item?.UOM || item?.uom || ''
-          const formattedItem = {
+          return {
             ...item,
+            id: item?.id || index + 1,
             avgNorms,
             isEditable: false,
           }
-
-          monthFields.forEach((field) => {
-            if (
-              formattedItem[field] !== undefined &&
-              formattedItem[field] !== null &&
-              formattedItem[field] !== ''
-            ) {
-              formattedItem[field] = formatValueByUom(
-                formattedItem[field],
-                uom,
-                formattedItem,
-              )
-            }
-          })
-
-          return formattedItem
         }) || []
       setRows(data)
     } catch (error) {
