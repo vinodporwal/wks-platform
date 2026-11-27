@@ -1747,7 +1747,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	       }
 
 	       if (!aopConsumptionNormGrades.isEmpty()) {
-	           aopConsumptionNormGradeRepository.saveAll(aopConsumptionNormGrades);
+	           aopConsumptionNormGradeRepository.saveAllAndFlush(aopConsumptionNormGrades);
 
 	           String procedureName = vertical.getName() + "_" + site.getName() + "_CalculateTotalNorms";
 
