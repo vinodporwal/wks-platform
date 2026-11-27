@@ -9,6 +9,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from '../../common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import ShutdownPlanSNG from '../shutdown-plan-sng/index'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAINTENANCE_TYPE = 'Shutdown'
@@ -153,7 +154,7 @@ const dateCalculationConfig = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const ShutdownPlanPCG = () => {
+const ShutdownPlanGasifier = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year, screenTitle } =
@@ -713,6 +714,17 @@ const ShutdownPlanPCG = () => {
       />
     </Box>
   )
+}
+
+const ShutdownPlanPCG = () => {
+  const { plantObject } = useSelector((state) => state.dataGridStore)
+  const plantName = plantObject?.name?.trim()?.toUpperCase()
+
+  if (plantName === 'SNG') {
+    return <ShutdownPlanSNG />
+  }
+
+  return <ShutdownPlanGasifier />
 }
 
 export default ShutdownPlanPCG
