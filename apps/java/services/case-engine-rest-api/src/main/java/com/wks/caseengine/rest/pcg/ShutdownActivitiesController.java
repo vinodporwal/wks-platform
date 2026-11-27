@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.pcg.dto.AopProductionNormsDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownDTO;
+import com.wks.caseengine.pcg.dto.ShutdownSNGTransactionDTO;
 import com.wks.caseengine.pcg.dto.ShutdownTaTransactionDTO;
 import com.wks.caseengine.pcg.service.ShutdownActivitiesService;
 
@@ -126,6 +127,36 @@ public class ShutdownActivitiesController {
         }
 
         List<AopProductionNormsDTO> result = shutdownActivitiesService.getAopProductionNorms(UUID.fromString(plantId), aopYear);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setMessage("Success");
+        aopMessageVM.setData(result);
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @GetMapping("/shutdown-transactions-sng")
+    public ResponseEntity<AOPMessageVM> getShutdownSNGTransactions(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<ShutdownSNGTransactionDTO> result = shutdownActivitiesService.getShutdownSNGTransactions(UUID.fromString(plantId), aopYear);
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        aopMessageVM.setMessage("Success");
+        aopMessageVM.setData(result);
+        return ResponseEntity.ok(aopMessageVM);
+    }
+
+    @PostMapping ("/shutdown-transactions-sng")
+    public ResponseEntity<AOPMessageVM> saveShutdownSNGTransactions( @RequestParam String plantId, @RequestParam String aopYear, @RequestBody List<ShutdownSNGTransactionDTO> shutdownSNGTransactionDTOList) {
+
+        if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        List<ShutdownSNGTransactionDTO> result = shutdownActivitiesService.saveShutdownSNGTransactions(UUID.fromString(plantId), aopYear, shutdownSNGTransactionDTOList);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         aopMessageVM.setMessage("Success");
         aopMessageVM.setData(result);

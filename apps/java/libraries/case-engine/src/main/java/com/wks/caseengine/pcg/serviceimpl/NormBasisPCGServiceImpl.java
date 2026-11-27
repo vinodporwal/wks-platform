@@ -27,9 +27,12 @@ import java.util.Optional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.persistence.StoredProcedureQuery;
 import com.wks.caseengine.dto.NormBasisPCGDTO;
 import com.wks.caseengine.pcg.dto.GasifierDropdownAopBasisDTO;
+import com.wks.caseengine.pcg.dto.TCGTransactionDTO;
+import com.wks.caseengine.pcg.dto.TCGTransactionDropDownDTO;
 import com.wks.caseengine.pcg.dto.TargetActualDafThroughtFilterDTO;
 import com.wks.caseengine.pcg.dto.TargetGasifierFilterDTO;
 
@@ -453,5 +456,196 @@ public AOPMessageVM saveTargetActualDafThroughtFilterData(Double attributeValue,
 	aopMessageVM.setMessage("Target Actual DAF Throught Filter Data Saved Successfully");
 	return aopMessageVM;
 	}
+
+	@Override
+    public AOPMessageVM getTCGTransactionData(String plantId, String aopYear) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+		    Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String procedureName = vertical.getName()+"_"+site.getName() +"_"+"GetTCGTransaction";
+			String refinerySPName =  "[RIL.AOP.Refinery].[dbo].[" + procedureName + "]";
+		
+			List<Object[]> resultList = new ArrayList<>();
+		
+			resultList = getTCGTransactionDataFromSP(aopYear, plantId, refinerySPName);
+			List<TCGTransactionDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				TCGTransactionDTO dto = new TCGTransactionDTO();
+
+				dto.setNormparameterFkId(row[0] != null ? row[0].toString() : null);
+				dto.setName(row[1] != null ? row[1].toString() : null);
+				dto.setDisplayName(row[2] != null ? row[2].toString() : null);
+				dto.setUom(row[3] != null ? row[3].toString() : null);
+				dto.setNormParameterType(row[4] != null ? row[4].toString() : null);
+				dto.setDisplayOrder(row[5] != null ? Integer.parseInt(row[5].toString()) : null);
+				dto.setIsEditable(row[6] != null ? Boolean.parseBoolean(row[6].toString()) : null);
+				dto.setConfig(row[7] != null ? row[7].toString() : null);
+                dto.setRemarks(row[8] != null ? row[8].toString() : null);
+				dto.setType(row[9] != null ? row[9].toString() : null);
+				dto.setApr(row[10] != null ? row[10].toString() : null);
+				dto.setMay(row[11] != null ? row[11].toString() : null);
+				dto.setJun(row[12] != null ? row[12].toString() : null);
+				dto.setJul(row[13] != null ? row[13].toString() : null);
+				dto.setAug(row[14] != null ? row[14].toString() : null);
+				dto.setSep(row[15] != null ? row[15].toString() : null);
+				dto.setOct(row[16] != null ? row[16].toString() : null);
+				dto.setNov(row[17] != null ? row[17].toString() : null);
+				dto.setDec(row[18] != null ? row[18].toString() : null);
+				dto.setJan(row[19] != null ? row[19].toString() : null);
+				dto.setFeb(row[20] != null ? row[20].toString() : null);
+				dto.setMar(row[21] != null ? row[21].toString() : null);
+			
+				dtoList.add(dto);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(dtoList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getTCGTransactionDataFromSP(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC "  + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getTCGTransactionDropDownData(String plantId, String aopYear) {
+
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+		String procedureName = vertical.getName() + "_" + site.getName() + "_GetTCGDropDown";
+		String refinerySPName =  "[RIL.AOP.Refinery].[dbo].[" + procedureName + "]";
+		String sql = "EXEC " + refinerySPName + " @plantId = ?, @aopYear = ?";
+
+		List<TCGTransactionDropDownDTO> dtoList = jdbcTemplate.query(sql, (rs, rowNum) -> {
+			return TCGTransactionDropDownDTO.builder()
+					.name(rs.getString("name"))
+					.displayName(rs.getString("displayName"))
+					.build();
+		}, plantId, aopYear);
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("TCG Transaction Dropdown Data Fetched Successfully");
+		aopMessageVM.setData(dtoList);
+		return aopMessageVM;
+	}
+
+	@Override
+	public  AOPMessageVM saveTCGTransactionData(List<TCGTransactionDTO> tcgTransactionDTOList, String plantId, String aopYear) { 
+
+		if (plantId == null || plantId.isEmpty() || aopYear == null || aopYear.isEmpty()) {
+			throw new IllegalArgumentException("Plant ID and AOP Year are required");
+		}
+
+		for (TCGTransactionDTO tcgTransactionDTO : tcgTransactionDTOList) {
+			
+			if(tcgTransactionDTO.getNormparameterFkId() == null || tcgTransactionDTO.getNormparameterFkId().isEmpty()) { 
+				throw new IllegalArgumentException("Norm Parameter FK ID is required");
+			}
+
+			for (int month = 1; month <= 12; month++) { 
+				saveTCGTransactionDataInDB(tcgTransactionDTO, month, aopYear);
+			}
+		}
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("TCG Transaction Data Saved Successfully");
+		return aopMessageVM;
+
+}
+
+   @Transactional 
+	public void saveTCGTransactionDataInDB(TCGTransactionDTO tcgTransactionDTO, int month, String aopYear) {
+
+		UUID normParameterFKId = UUID.fromString(tcgTransactionDTO.getNormparameterFkId());
+		String attributeValue = getTCGAttributeValue(tcgTransactionDTO, month);
+		String remarks = tcgTransactionDTO.getRemarks();
+		if(attributeValue == null) { 
+			return;
+		}
+		Optional<NormAttributeTransactions> existingRecord = transactionsRepository
+				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, month, aopYear);
+	
+		NormAttributeTransactions normAttributeTransactions;
+	
+		if (existingRecord.isPresent()) {
+			normAttributeTransactions = existingRecord.get();
+			normAttributeTransactions.setModifiedOn(new Date());
+			
+		} else {
+	
+			normAttributeTransactions = new NormAttributeTransactions();
+			normAttributeTransactions.setCreatedOn(new Date());
+			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+			normAttributeTransactions.setAopMonth(month);
+			normAttributeTransactions.setAuditYear(aopYear);
+		}
+	
+		normAttributeTransactions
+				.setAttributeValue(attributeValue);
+		normAttributeTransactions.setRemarks(remarks);
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		transactionsRepository.save(normAttributeTransactions);
+	
+		}
+
+	private String getTCGAttributeValue(TCGTransactionDTO tcgTransactionDTO, int month) {
+		switch (month) {
+			case 1:
+				return tcgTransactionDTO.getJan();
+			case 2:
+				return tcgTransactionDTO.getFeb();
+			case 3:
+				return tcgTransactionDTO.getMar();
+			case 4:
+				return tcgTransactionDTO.getApr();
+			case 5:
+				return tcgTransactionDTO.getMay();
+			case 6:
+				return tcgTransactionDTO.getJun();
+			case 7:
+				return tcgTransactionDTO.getJul();
+			case 8:
+				return tcgTransactionDTO.getAug();
+			case 9:
+				return tcgTransactionDTO.getSep();
+			case 10:
+				return tcgTransactionDTO.getOct();
+			case 11:
+				return tcgTransactionDTO.getNov();
+			case 12:
+				return tcgTransactionDTO.getDec();
+
+			default:
+				throw new RuntimeException("Invalid month: " + month);
+		}
+	
+	}
+
 
 }

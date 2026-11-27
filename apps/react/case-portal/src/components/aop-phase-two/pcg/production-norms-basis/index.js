@@ -15,6 +15,7 @@ import Notification from 'components/aop-phase-two/common/utilities/Notification
 import ManualEntry from './ManualEntry'
 import TargetGasifierOperation from './TargetGasifierOperation'
 import GasifierOperation from './gasifierOperation'
+import TcgOnlineOffline from './TcgOnlineOffline'
 
 const ProductionNormsBasisPCG = () => {
   const keycloak = useSession()
@@ -266,6 +267,12 @@ const ProductionNormsBasisPCG = () => {
 
       case 'Target Gasifier Filter':
         return <GasifierOperation />
+
+      case 'TGC Online Offline':
+      case 'TGC Configuration':
+      case 'R Configuration':
+      case 'Additional Constraints':
+        return <TcgOnlineOffline/>
       default:
         return null
     }
