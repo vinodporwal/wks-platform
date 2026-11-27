@@ -564,6 +564,7 @@ const IntersiteSteamTransfer = () => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           customHeight={50}
+          groupBy={['senderPlantName']}
         />
       </Box>
     </Box>
