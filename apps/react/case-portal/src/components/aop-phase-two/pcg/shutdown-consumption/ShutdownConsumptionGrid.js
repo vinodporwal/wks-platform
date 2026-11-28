@@ -164,37 +164,68 @@ const ShutdownConsumptionGrid = () => {
   }, [PLANT_ID, AOP_YEAR])
 
   const fetchData = async () => {
-    setLoading(true)
-    try {
-      const response =
-        await ShutdownConsumptionApiService.getShutdownConsumption(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      const data = Array.isArray(response)
+  setLoading(true)
+  try {
+    const response =
+      await ShutdownConsumptionApiService.getShutdownConsumption(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+    // Handle both axios-style (response.data.data) and already-unwrapped responses
+    const payload = response?.data?.mcuNormsValueDTOList
+      ? response.data
+      : response?.mcuNormsValueDTOList
         ? response
-        : Array.isArray(response?.data)
-          ? response.data
-          : []
-      setRows(data)
-      setOriginalRows(data)
-    } catch (error) {
-      console.error('Error fetching shutdown consumption data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
+        : response?.data?.data ?? {}
+
+    const list = Array.isArray(payload?.mcuNormsValueDTOList)
+      ? payload.mcuNormsValueDTOList
+      : []
+
+    const data = list.map((item, index) => ({
+      ...item,
+      id: item.id ?? item.materialFkId ?? index,
+      particulars: item.particulars ?? item.materialName ?? item.displayName ?? '',
+      uom: item.UOM ?? item.uom ?? '',
+      apr: item.april,
+      may: item.may,
+      jun: item.june,
+      jul: item.july,
+      aug: item.august,
+      sep: item.september,
+      oct: item.october,
+      nov: item.november,
+      dec: item.december,
+      jan: item.january,
+      feb: item.february,
+      mar: item.march,
+      remark: item.remark ?? item.remarks ?? '',
+    }))
+
+    setRows(data)
+    setOriginalRows(data)
+  } catch (error) {
+    console.error('Error fetching shutdown consumption data:', error)
+    setSnackbarOpen(true)
+    setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+  } finally {
+    setLoading(false)
   }
+}
 
   const saveChanges = async () => {
     setLoading(true)
 
-    const modifiedData = Object.values(modifiedCells)
+    const modifiedData = Object.values(modifiedCells).map((r) => ({
+  ...r,
+  UOM: r.uom,
+  april: r.apr, may: r.may, june: r.jun, july: r.jul,
+  august: r.aug, september: r.sep, october: r.oct,
+  november: r.nov, december: r.dec,
+  january: r.jan, february: r.feb, march: r.mar,
+}))
     if (modifiedData.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
